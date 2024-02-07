@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "energy-box-control"
+version = "0.1.0"
+description = ""
+authors = ["Boudewijn van Groos <boudewijn.vangroos@foundationzero.org>"]
+readme = "README.md"
+packages = [{include = "energy_box_control"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.1.1"
+pyright = "^1.1.350"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
