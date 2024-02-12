@@ -1,13 +1,11 @@
-from typing import Tuple
-
-State = Tuple[()]
-Sensors = Tuple[()]
-Controls = Tuple[()]
+from dataclasses import dataclass
 
 
-def control(state: State, sensors: Sensors) -> Tuple[(State, Controls)]:
-    return ((), ())
+@dataclass
+class Control:
+    heater_on: bool
 
 
-if __name__ == "__main__":
-    print("hello world")
+@dataclass
+class Sensors:
+    boiler_temperature: float
