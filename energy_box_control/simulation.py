@@ -79,8 +79,8 @@ class Boiler(Appliance[BoilerState]):
     specific_heat_capacity_input: float  # J / l K #TODO: this should probably go into Connection or ConnectionState (as it varies with temp), and be in J / kg K
 
     # TODO: make temp dependent
-    # heat_capacity_glycol = 2382  # J / (kg K) at 20C
-    # density_glycol = 1.11665  # kg / l at 20C
+    # heat_capacity_pipefluid = 3790  # J / (kg K) at 20C
+    # density_pipefluid = 1.009  # kg / l at 20C
     # heat_capacity_water = 4184  # J / (kg K) at 20C
     # density_water = 0.997  # kg / l at 20C
 
