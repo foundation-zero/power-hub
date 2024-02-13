@@ -10,6 +10,8 @@ from energy_box_control.simulation import (
     NetworkState,
     BoilerState,
     SourceState,
+    Valve,
+    ValveState,
 )
 from energy_box_control.control import Control
 
@@ -31,10 +33,12 @@ def test_simulate_heater_off(
 
     network = Network(
         Source(0, source_temp),
+        Valve(),
         Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
     )
     state = NetworkState(
         SourceState(inputs=[], outputs=[]),
+        ValveState(inputs=[], outputs=[], position=0.5),
         BoilerState(inputs=[], outputs=[], temperature=boiler_temperature),
     )
     control = Control(heater_on=False)
@@ -49,10 +53,12 @@ def test_simulate_heater_on(
 ):
     network = Network(
         Source(0, source_temp),
+        Valve(),
         Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
     )
     state = NetworkState(
         SourceState(inputs=[], outputs=[]),
+        ValveState(inputs=[], outputs=[], position=0),
         BoilerState(inputs=[], outputs=[], temperature=0),
     )
     control = Control(heater_on=True)
@@ -77,10 +83,12 @@ def test_simulate_equal_temp(
 ):
     network = Network(
         Source(source_flow, test_temperature),
+        Valve(),
         Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
     )
     state = NetworkState(
         SourceState(inputs=[], outputs=[]),
+        ValveState(inputs=[], outputs=[], position=0),
         BoilerState(inputs=[], outputs=[], temperature=test_temperature),
     )
     control = Control(heater_on=False)
@@ -96,11 +104,13 @@ def test_simulate_equal_capacity(
 
     network = Network(
         Source(source_flow, source_temp),
+        Valve(),
         Boiler(boiler_heat_capacity, 0, 0, boiler_heat_capacity / source_flow),
     )
 
     state = NetworkState(
         SourceState(inputs=[], outputs=[]),
+        ValveState(inputs=[], outputs=[], position=0),
         BoilerState(inputs=[], outputs=[], temperature=boiler_temp),
     )
     control = Control(heater_on=False)
@@ -130,6 +140,7 @@ def test_simulate_heat_loss(
     assume(boiler_heat_loss < heater_power)
     network = Network(
         Source(0, source_temp),
+        Valve(),
         Boiler(
             boiler_heat_capacity,
             heater_power,
@@ -139,6 +150,7 @@ def test_simulate_heat_loss(
     )
     state = NetworkState(
         SourceState(inputs=[], outputs=[]),
+        ValveState(inputs=[], outputs=[], position=0),
         BoilerState(inputs=[], outputs=[], temperature=boiler_temp),
     )
     control = Control(heater_on=True)
