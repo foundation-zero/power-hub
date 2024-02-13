@@ -1,4 +1,4 @@
-from hypothesis import assume, given
+from hypothesis import assume, example, given
 from hypothesis.strategies import floats
 from pytest import approx
 
@@ -13,13 +13,14 @@ from energy_box_control.simulation import (
 )
 from energy_box_control.control import Control
 
-temp_float = floats(0, 150, allow_nan=False)
-flow_float = floats(0, 100, allow_nan=False)
-heat_capacity_float = floats(1, 1e5, allow_nan=False)
-power_float = floats(0, 1e6, allow_nan=False)
+temp_strat = floats(0, 150, allow_nan=False)
+flow_strat = floats(0, 100, allow_nan=False)
+heat_capacity_strat = floats(1, 1e5, allow_nan=False)
+power_strat = floats(0, 1e6, allow_nan=False)
 
 
-@given(temp_float, heat_capacity_float, power_float, heat_capacity_float, temp_float)
+@given(temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat, temp_strat)
+@example(20, 1, 1, 1, 10)
 def test_simulate_heater_off(
     source_temp,
     boiler_heat_capacity,
@@ -41,7 +42,8 @@ def test_simulate_heater_off(
     assert next_state.boiler_state.temperature == approx(boiler_temperature)
 
 
-@given(temp_float, heat_capacity_float, power_float, heat_capacity_float)
+@given(temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat)
+@example(20, 1, 1, 1)
 def test_simulate_heater_on(
     source_temp, boiler_heat_capacity, heater_power, specific_heat_capacity_input
 ):
@@ -64,7 +66,8 @@ def test_simulate_heater_on(
     )
 
 
-@given(flow_float, temp_float, heat_capacity_float, power_float, heat_capacity_float)
+@given(flow_strat, temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat)
+@example(1, 20, 1, 1, 1)
 def test_simulate_equal_temp(
     source_flow,
     test_temperature,
@@ -85,7 +88,8 @@ def test_simulate_equal_temp(
     assert next_state.boiler_state.temperature == approx(test_temperature)
 
 
-@given(floats(0.1, 100, allow_nan=False), temp_float, heat_capacity_float, temp_float)
+@given(floats(0.1, 100, allow_nan=False), temp_strat, heat_capacity_strat, temp_strat)
+@example(1, 20, 1, 10)
 def test_simulate_equal_capacity(
     source_flow, source_temp, boiler_heat_capacity, boiler_temp
 ):
@@ -107,13 +111,14 @@ def test_simulate_equal_capacity(
 
 
 @given(
-    temp_float,
-    heat_capacity_float,
-    power_float,
-    power_float,
-    heat_capacity_float,
-    temp_float,
+    temp_strat,
+    heat_capacity_strat,
+    power_strat,
+    power_strat,
+    heat_capacity_strat,
+    temp_strat,
 )
+@example(20, 1, 2, 1, 1, 10)
 def test_simulate_heat_loss(
     source_temp,
     boiler_heat_capacity,
@@ -122,6 +127,7 @@ def test_simulate_heat_loss(
     specific_heat_capacity_input,
     boiler_temp,
 ):
+    assume(boiler_heat_loss < heater_power)
     network = Network(
         Source(0, source_temp),
         Boiler(
