@@ -54,6 +54,7 @@ class Source(Appliance[SourceState]):
 @dataclass
 class NetworkState:
     source_state: SourceState
+    valve_state: "ValveState"
     boiler_state: "BoilerState"
 
     def sensors(self) -> Sensors:
@@ -113,18 +114,58 @@ class Boiler(Appliance[BoilerState]):
 
 
 @dataclass
+class ValveState(ApplianceState):
+    position: float
+
+
+@dataclass
+class Valve(Appliance[ValveState]):
+    def simulate(
+        self,
+        inputs: list[ConnectionState],
+        previous_state: ValveState,
+        control: Control,
+    ) -> ValveState:
+
+        (input,) = inputs
+
+        return ValveState(
+            [input],
+            [
+                ConnectionState(
+                    (1 - previous_state.position) * input.flow, input.temperature
+                ),
+                ConnectionState(
+                    previous_state.position * input.flow, input.temperature
+                ),
+            ],
+            previous_state.position,
+        )
+
+    def state(self, network_state: NetworkState) -> ValveState:
+        return network_state.valve_state
+
+
+@dataclass
 class Network:
     source: Source
+    valve: Valve
     boiler: Boiler
 
     def simulate(self, previous_state: NetworkState, control: Control) -> NetworkState:
         source_state = self.source.state(previous_state)
         new_source_state = self.source.simulate([], source_state, control)
+        valve_state = self.valve.state(previous_state)
+        new_valve_state = self.valve.simulate(
+            new_source_state.outputs, valve_state, control
+        )
         boiler_state = self.boiler.state(previous_state)
         new_boiler_state = self.boiler.simulate(
-            new_source_state.outputs, boiler_state, control
+            new_valve_state.outputs[0:1], boiler_state, control
         )
 
         return NetworkState(
-            source_state=new_source_state, boiler_state=new_boiler_state
+            source_state=new_source_state,
+            valve_state=new_valve_state,
+            boiler_state=new_boiler_state,
         )
