@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "energy_box_control"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 pint = "^0.23"
 
 

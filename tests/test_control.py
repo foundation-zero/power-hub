@@ -1,14 +1,21 @@
 from pytest import approx
 from energy_box_control.logic import ControlState, control
 
-from energy_box_control.simulation import Boiler, BoilerState, Network, State, simulate
+from energy_box_control.simulation import (
+    Boiler,
+    BoilerState,
+    Network,
+    NetworkState,
+    Source,
+    SourceState,
+)
 
 
 def run(network, state, control_state, times):
     for _ in range(times):
         sensors = state.sensors()
         new_control_state, control_values = control(network, control_state, sensors)
-        new_state = simulate(network, state, control_values)
+        new_state = network.simulate(state, control_values)
 
         control_state = new_control_state
         state = new_state
@@ -17,8 +24,8 @@ def run(network, state, control_state, times):
 
 
 def test_heater():
-    network = Network(Boiler(10, 1))
-    state = State(BoilerState(0))
+    network = Network(Source(0, 0), Boiler(10, 1, 0, 0))
+    state = NetworkState(SourceState([], []), BoilerState([], [], 0))
     control_state = ControlState(50)
 
     state_1, new_control_state = run(network, state, control_state, 1000)
