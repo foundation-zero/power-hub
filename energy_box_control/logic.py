@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Tuple
 from energy_box_control.control import Control, Sensors
 
-from energy_box_control.simulation import Network
+from energy_box_control.network import Network
 
 
 @dataclass

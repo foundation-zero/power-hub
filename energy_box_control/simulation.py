@@ -1,79 +1,75 @@
-from dataclasses import dataclass
 from abc import abstractmethod
-from typing import TypeVar
+from dataclasses import dataclass
+from enum import Enum
+from typing import Self, Tuple
 
-from energy_box_control.control import Control, Sensors
+from energy_box_control.control import Control
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class ApplianceState:
-    inputs: "list[ConnectionState]"
-    outputs: "list[ConnectionState]"
+    pass
 
 
-TState = TypeVar("TState", bound="ApplianceState")
-
-
-@dataclass
-class Appliance[TState]:
-
-    @abstractmethod
-    def state(self, network_state: "NetworkState") -> ApplianceState: ...
+@dataclass(frozen=True, eq=True)
+class Appliance[TState: ApplianceState, TPort: "Port"]:
+    def port(self, port: TPort) -> Tuple[Self, TPort]:
+        return self, port
 
     @abstractmethod
     def simulate(
         self,
-        inputs: "list[ConnectionState]",
+        inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
         control: Control,
-    ) -> TState: ...
+    ) -> Tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class SourceState(ApplianceState):
     pass
 
 
-@dataclass
-class Source(Appliance[SourceState]):
+class Port(Enum):
+    pass
+
+
+class SourcePort(Port):
+    OUTPUT = "output"
+
+
+@dataclass(frozen=True, eq=True)
+class Source(Appliance[SourceState, SourcePort]):
     flow: float
     temp: float
 
-    def state(self, network_state: "NetworkState") -> SourceState:
-        return network_state.source_state
-
     def simulate(
         self,
-        inputs: "list[ConnectionState]",
+        inputs: dict[SourcePort, "ConnectionState"],
         previous_state: SourceState,
         control: Control,
-    ) -> SourceState:
-        return SourceState(inputs=[], outputs=[ConnectionState(self.flow, self.temp)])
+    ) -> Tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
+        return SourceState(), {SourcePort.OUTPUT: ConnectionState(self.flow, self.temp)}
 
 
-@dataclass
-class NetworkState:
-    source_state: SourceState
-    valve_state: "ValveState"
-    boiler_state: "BoilerState"
-
-    def sensors(self) -> Sensors:
-        return Sensors(self.boiler_state.temperature)
-
-
-@dataclass
+@dataclass(frozen=True, eq=True)
 class ConnectionState:
     flow: float
     temperature: float
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class BoilerState(ApplianceState):
     temperature: float
 
 
-@dataclass
-class Boiler(Appliance[BoilerState]):
+class BoilerPort(Port):
+    HEAT_EXCHANGE_IN = "HEAT_EXCHANGE_IN"
+    HEAT_EXCHANGE_OUT = "HEAT_EXCHANGE_OUT"
+
+
+@dataclass(frozen=True, eq=True)
+class Boiler(Appliance[BoilerState, BoilerPort]):
     heat_capacity: float  # TODO: split into volume & specific heat capacity
     heater_power: float  # TODO: power going into water. Define efficiency later
     heat_loss: float
@@ -85,17 +81,14 @@ class Boiler(Appliance[BoilerState]):
     # heat_capacity_water = 4184  # J / (kg K) at 20C
     # density_water = 0.997  # kg / l at 20C
 
-    def state(self, network_state: NetworkState) -> BoilerState:
-        return network_state.boiler_state
-
     def simulate(
         self,
-        inputs: list[ConnectionState],
+        inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: Control,
-    ) -> BoilerState:
+    ) -> Tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
-        (input,) = inputs
+        input = inputs[BoilerPort.HEAT_EXCHANGE_IN]
 
         # assuming a perfect heat exchange, reaching thermal equilibrium in every time step #TODO: properly simulate heat exchange, which would require transfer coefficient or something similar
         element_heat = self.heater_power * control.heater_on
@@ -107,65 +100,43 @@ class Boiler(Appliance[BoilerState]):
         ) / (self.heat_capacity + input.flow * self.specific_heat_capacity_input)
 
         return BoilerState(
-            inputs=inputs,
             temperature=equilibrium_temperature,
-            outputs=[ConnectionState(input.flow, equilibrium_temperature)],
-        )
+        ), {
+            BoilerPort.HEAT_EXCHANGE_OUT: ConnectionState(
+                input.flow, equilibrium_temperature
+            )
+        }
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class ValveState(ApplianceState):
     position: float
 
 
-@dataclass
-class Valve(Appliance[ValveState]):
+class ValvePort(Port):
+    A = "a"
+    B = "b"
+    AB = "ab"
+
+
+@dataclass(eq=True, frozen=True)
+class Valve(Appliance[ValveState, ValvePort]):
     def simulate(
         self,
-        inputs: list[ConnectionState],
+        inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
         control: Control,
-    ) -> ValveState:
+    ) -> Tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
-        (input,) = inputs
+        input = inputs[ValvePort.AB]
 
         return ValveState(
-            [input],
-            [
-                ConnectionState(
-                    (1 - previous_state.position) * input.flow, input.temperature
-                ),
-                ConnectionState(
-                    previous_state.position * input.flow, input.temperature
-                ),
-            ],
             previous_state.position,
-        )
-
-    def state(self, network_state: NetworkState) -> ValveState:
-        return network_state.valve_state
-
-
-@dataclass
-class Network:
-    source: Source
-    valve: Valve
-    boiler: Boiler
-
-    def simulate(self, previous_state: NetworkState, control: Control) -> NetworkState:
-        source_state = self.source.state(previous_state)
-        new_source_state = self.source.simulate([], source_state, control)
-        valve_state = self.valve.state(previous_state)
-        new_valve_state = self.valve.simulate(
-            new_source_state.outputs, valve_state, control
-        )
-        boiler_state = self.boiler.state(previous_state)
-        new_boiler_state = self.boiler.simulate(
-            new_valve_state.outputs[0:1], boiler_state, control
-        )
-
-        return NetworkState(
-            source_state=new_source_state,
-            valve_state=new_valve_state,
-            boiler_state=new_boiler_state,
-        )
+        ), {
+            ValvePort.A: ConnectionState(
+                (1 - previous_state.position) * input.flow, input.temperature
+            ),
+            ValvePort.B: ConnectionState(
+                previous_state.position * input.flow, input.temperature
+            ),
+        }
