@@ -2,7 +2,6 @@ from hypothesis import assume, example, given
 from hypothesis.strategies import floats
 from pytest import approx
 
-from energy_box_control.control import Control
 from energy_box_control.simulation import (
     Boiler,
     BoilerPort,
@@ -34,8 +33,7 @@ def test_simulate_heater_off(
     )
 
     state = network.initial_state()
-    control = Control(heater_on=False)
-    next_state = network.simulate(state, control)
+    next_state = network.simulate(state, network.heater_off())
     assert next_state.appliance(network.boiler).get().temperature == approx(
         boiler_temperature
     )
@@ -51,7 +49,7 @@ def test_simulate_heater_on(
         Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
         BoilerState(temperature=0),
     )
-    control = Control(heater_on=True)
+    control = network.heater_on()
     state_1 = network.simulate(network.initial_state(), control)
     assert state_1.appliance(network.boiler).get().temperature == approx(
         heater_power / boiler_heat_capacity
@@ -76,7 +74,7 @@ def test_simulate_equal_temp(
         Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
         BoilerState(temperature=test_temperature),
     )
-    control = Control(heater_on=False)
+    control = network.heater_off()
     next_state = network.simulate(network.initial_state(), control)
     assert next_state.appliance(network.boiler).get().temperature == approx(
         test_temperature
@@ -94,7 +92,7 @@ def test_simulate_equal_capacity(
         Boiler(boiler_heat_capacity, 0, 0, boiler_heat_capacity / source_flow),
         BoilerState(temperature=boiler_temp),
     )
-    control = Control(heater_on=False)
+    control = network.heater_on()
     next_state = network.simulate(network.initial_state(), control)
     assert next_state.appliance(network.boiler).get().temperature == approx(
         (source_temp + boiler_temp) / 2
@@ -129,7 +127,7 @@ def test_simulate_heat_loss(
         ),
         BoilerState(temperature=boiler_temp),
     )
-    control = Control(heater_on=True)
+    control = network.heater_on()
     state_1 = network.simulate(network.initial_state(), control)
     assert state_1.appliance(network.boiler).get().temperature == approx(
         boiler_temp + (heater_power - boiler_heat_loss) / boiler_heat_capacity
@@ -140,7 +138,7 @@ def test_valve():
     network = BoilerValveNetwork(
         Source(2, 100), Boiler(1, 0, 0, 1), BoilerState(temperature=0), ValveState(0.5)
     )
-    control = Control(heater_on=True)
+    control = network.heater_on()
     state_1 = network.simulate(network.initial_state(), control)
     assert state_1.connection(network.boiler, BoilerPort.HEAT_EXCHANGE_IN).flow == 1.0
     assert state_1.appliance(network.boiler).get().temperature == 50

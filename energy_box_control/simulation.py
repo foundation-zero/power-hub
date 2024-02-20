@@ -1,9 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Self, Tuple
-
-from energy_box_control.control import Control
+from typing import Tuple
 
 
 @dataclass(frozen=True, eq=True)
@@ -12,16 +10,18 @@ class ApplianceState:
 
 
 @dataclass(frozen=True, eq=True)
-class Appliance[TState: ApplianceState, TPort: "Port"]:
-    def port(self, port: TPort) -> Tuple[Self, TPort]:
-        return self, port
+class ApplianceControl:
+    pass
 
+
+@dataclass(frozen=True, eq=True)
+class Appliance[TState: ApplianceState, TControl: ApplianceControl, TPort: "Port"]:
     @abstractmethod
     def simulate(
         self,
         inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
-        control: Control,
+        control: TControl,
     ) -> Tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
@@ -39,7 +39,7 @@ class SourcePort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class Source(Appliance[SourceState, SourcePort]):
+class Source(Appliance[SourceState, ApplianceControl, SourcePort]):
     flow: float
     temp: float
 
@@ -47,7 +47,7 @@ class Source(Appliance[SourceState, SourcePort]):
         self,
         inputs: dict[SourcePort, "ConnectionState"],
         previous_state: SourceState,
-        control: Control,
+        control: ApplianceControl,
     ) -> Tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
         return SourceState(), {SourcePort.OUTPUT: ConnectionState(self.flow, self.temp)}
 
@@ -69,7 +69,12 @@ class BoilerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class Boiler(Appliance[BoilerState, BoilerPort]):
+class BoilerControl(ApplianceControl):
+    heater_on: bool
+
+
+@dataclass(frozen=True, eq=True)
+class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
     heat_capacity: float  # TODO: split into volume & specific heat capacity
     heater_power: float  # TODO: power going into water. Define efficiency later
     heat_loss: float
@@ -85,7 +90,7 @@ class Boiler(Appliance[BoilerState, BoilerPort]):
         self,
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
-        control: Control,
+        control: BoilerControl,
     ) -> Tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         input = inputs[BoilerPort.HEAT_EXCHANGE_IN]
@@ -120,12 +125,13 @@ class ValvePort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Valve(Appliance[ValveState, ValvePort]):
+class Valve(Appliance[ValveState, ApplianceControl, ValvePort]):
+
     def simulate(
         self,
         inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
-        control: Control,
+        control: ApplianceControl,
     ) -> Tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
         input = inputs[ValvePort.AB]

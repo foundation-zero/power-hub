@@ -1,8 +1,15 @@
 from dataclasses import dataclass
 from typing import Self
-from energy_box_control.network import Network, NetworkConnections, NetworkState
+from energy_box_control.network import (
+    ControlBuilder,
+    Network,
+    NetworkConnections,
+    NetworkControl,
+    NetworkState,
+)
 from energy_box_control.simulation import (
     Boiler,
+    BoilerControl,
     BoilerPort,
     BoilerState,
     Source,
@@ -25,6 +32,12 @@ class BoilerNetwork(Network[BoilerSensors]):
         self.boiler = boiler
         self.boiler_state = boiler_state
         super().__init__()
+
+    def heater_off(self) -> NetworkControl[Self]:
+        return self.control(self.boiler).value(BoilerControl(heater_on=False)).build()
+
+    def heater_on(self) -> NetworkControl[Self]:
+        return self.control(self.boiler).value(BoilerControl(heater_on=True)).build()
 
     def initial_state(self) -> NetworkState[Self]:
         return (

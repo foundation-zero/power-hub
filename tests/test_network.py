@@ -1,8 +1,8 @@
 from pytest import approx
-from energy_box_control.control import Control
 from energy_box_control.network import Network
 from energy_box_control.simulation import (
     Boiler,
+    BoilerControl,
     BoilerPort,
     BoilerState,
     Source,
@@ -45,5 +45,6 @@ def test_network():
             )
 
     my = MyNetwork()
-    state = my.simulate(my.initial_state(), Control(heater_on=False))
+    control = my.control(my.boiler).value(BoilerControl(heater_on=False)).build()
+    state = my.simulate(my.initial_state(), control)
     assert state.appliance(my.boiler).get().temperature == approx(50)

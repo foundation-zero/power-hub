@@ -1,12 +1,11 @@
 from pytest import approx
 
 from energy_box_control.logic import ControlState, control
-from energy_box_control.network import Network
 from energy_box_control.simulation import Boiler, BoilerState, Source
 from tests.networks import BoilerNetwork
 
 
-def run(network: Network, state, control_state, times):
+def run(network: BoilerNetwork, state, control_state, times):
     for _ in range(times):
         sensors = network.sensors(state)
         new_control_state, control_values = control(network, control_state, sensors)
