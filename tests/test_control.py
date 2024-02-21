@@ -2,7 +2,7 @@ from pytest import approx
 
 from energy_box_control.logic import ControlState, control
 from energy_box_control.simulation import Boiler, BoilerState, Source
-from tests.networks import BoilerNetwork
+from energy_box_control.networks import BoilerNetwork
 
 
 def run(network: BoilerNetwork, state, control_state, times):

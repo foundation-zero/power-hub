@@ -3,7 +3,7 @@ from typing import Tuple
 
 from energy_box_control.network import NetworkControl
 from energy_box_control.simulation import BoilerControl
-from tests.networks import BoilerNetwork, BoilerSensors
+from energy_box_control.networks import BoilerNetwork, BoilerSensors
 
 
 @dataclass

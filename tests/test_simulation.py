@@ -1,3 +1,4 @@
+from typing import Literal, overload
 from hypothesis import assume, example, given
 from hypothesis.strategies import floats
 from pytest import approx
@@ -9,7 +10,7 @@ from energy_box_control.simulation import (
     Source,
     ValveState,
 )
-from tests.networks import BoilerNetwork, BoilerValveNetwork
+from energy_box_control.networks import BoilerNetwork, BoilerValveNetwork
 
 temp_strat = floats(0, 150, allow_nan=False)
 flow_strat = floats(0, 100, allow_nan=False)
