@@ -1,5 +1,6 @@
+from typing import Self
 from pytest import approx
-from energy_box_control.network import Network
+from energy_box_control.network import Network, NetworkState
 from energy_box_control.appliances import (
     Boiler,
     BoilerControl,
@@ -15,7 +16,7 @@ from energy_box_control.appliances import (
 
 
 def test_network():
-    class MyNetwork(Network):
+    class MyNetwork(Network[None]):
         source = Source(0, 1)
         valve = Valve()
         boiler = Boiler(1, 0, 0, 1)
@@ -43,6 +44,9 @@ def test_network():
                 .at(BoilerPort.HEAT_EXCHANGE_IN)
                 .build()
             )
+
+        def sensors(self, state: NetworkState[Self]) -> None:
+            return None
 
     my = MyNetwork()
     control = my.control(my.boiler).value(BoilerControl(heater_on=False)).build()
