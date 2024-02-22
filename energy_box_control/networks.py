@@ -1,7 +1,7 @@
+# pyright: reportIncompatibleMethodOverride=true
 from dataclasses import dataclass
 from typing import Self, Tuple
 from energy_box_control.network import (
-    ControlBuilder,
     Network,
     NetworkConnections,
     NetworkControl,

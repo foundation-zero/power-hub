@@ -1,13 +1,15 @@
 # pyright: reportInvalidTypeVarUse=false
 # Disable single use of type vars, which is actually required to get the type checker to pass
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import (
+    Any,
     Callable,
     Generic,
     Iterable,
     Self,
+    Set,
     Tuple,
     TypeVar,
     TypeVarTuple,
@@ -23,13 +25,14 @@ from energy_box_control.appliances import (
 )
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
-
-App = TypeVar("App", bound=Appliance, covariant=True)
+AnyAppliance = Appliance[Any, Any, Any]
+SpecificAppliance = Appliance[ApplianceState, ApplianceControl, Port]
+App = TypeVar("App", bound=AnyAppliance, covariant=True)
 Prev = TypeVarTuple("Prev")
-Net = TypeVar("Net", bound="Network")
+Net = TypeVar("Net", bound="Network[Any]")
 
 
-class StateGetter[App: Appliance]:
+class StateGetter[App: AnyAppliance]:
     def __init__[
         State: ApplianceState, Control: ApplianceControl, Port: Port
     ](self: "StateGetter[Appliance[State, Control, Port]]", _: App, state: State):
@@ -46,16 +49,18 @@ class StateGetter[App: Appliance]:
 class NetworkState(Generic[Net]):
     def __init__(
         self,
-        appliance_state: dict[Appliance, ApplianceState],
-        connection_state: dict[Tuple[Appliance, Port], ConnectionState] = {},
+        appliance_state: dict[Appliance[Any, Any, Any], ApplianceState],
+        connection_state: dict[
+            Tuple[Appliance[Any, Any, Any], Port], ConnectionState
+        ] = {},
     ):
         self._appliance_state = appliance_state
         self._connection_state = connection_state
 
-    def appliance[T: Appliance](self, appliance: T) -> StateGetter[T]:
+    def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
-    def connection(self, appliance: Appliance, port: Port) -> ConnectionState:
+    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState:
         return self._connection_state[(appliance, port)]
 
 
@@ -64,12 +69,22 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
         self._prev = prev
 
     def define_state[
-        App: Appliance
+        App: AnyAppliance
     ](self, app: App) -> "NetworkStateValueBuilder[Net, App, *Prev]":
         return NetworkStateValueBuilder(app, *self._prev)
 
     def build(self, connections: "NetworkConnections[Net]") -> NetworkState[Net]:
-        state = dict(cast(Iterable[tuple[Appliance, ApplianceState]], self._prev))
+        state = dict(
+            cast(
+                Iterable[
+                    tuple[
+                        Appliance[ApplianceState, ApplianceControl, Port],
+                        ApplianceState,
+                    ]
+                ],
+                self._prev,
+            )
+        )
 
         missing_appliances = set(connections.execution_order()) - set(state.keys())
         if missing_appliances:
@@ -97,8 +112,8 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
 
 FromPort = TypeVar("FromPort", bound=Port)
 ToPort = TypeVar("ToPort", bound=Port)
-From = TypeVar("From", bound=Appliance, covariant=True)
-To = TypeVar("To", bound=Appliance, covariant=True)
+From = TypeVar("From", bound=AnyAppliance, covariant=True)
+To = TypeVar("To", bound=AnyAppliance, covariant=True)
 ToControl = TypeVar("ToControl", bound=ApplianceControl)
 
 
@@ -123,11 +138,15 @@ class PortToConnector(Generic[Net, From, FromPort, To, ToControl, *Prev]):
         self: "PortToConnector[Net, From, FromPort, Appliance[State, ToControl, ToPort], ToControl, *Prev]",
         to_port: ToPort,
     ) -> "NetworkConnector[Net, *Prev, Connection[Net, From, FromPort, To, ToPort]]":
+        new_connection = cast(
+            Connection[Net, From, FromPort, To, ToPort],
+            Connection(self._from_app, self._from_port, self._to_app, to_port),
+        )
         return cast(
             "NetworkConnector[Net, *Prev, Connection[Net, From, FromPort, To, ToPort]]",
             NetworkConnector(
                 *self._prev,
-                Connection(self._from_app, self._from_port, self._to_app, to_port),
+                new_connection,
             ),
         )
 
@@ -139,7 +158,7 @@ class PortFromConnector(Generic[Net, From, FromPort, *Prev]):
         self._prev = prev
 
     def to[
-        To: Appliance, ToControl: ApplianceControl
+        To: AnyAppliance, ToControl: ApplianceControl
     ](self, to: To) -> PortToConnector[Net, From, FromPort, To, ToControl, *Prev]:
         return PortToConnector(self._from_app, self._from_port, to, *self._prev)
 
@@ -166,25 +185,35 @@ class NetworkConnector(Generic[Net, *Prev]):
         self._prev = prev
 
     def connect[
-        From: Appliance
+        From: AnyAppliance
     ](self, from_app: From) -> ApplianceConnector[Net, From, *Prev]:
         return ApplianceConnector(from_app, *self._prev)
 
     def build(self) -> "NetworkConnections[Net]":
-        return NetworkConnections(cast(list[Connection], list(self._prev)))
+        connections = cast(
+            list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]],
+            list(self._prev),
+        )
+        return NetworkConnections[Net](connections)
 
 
-class NetworkConnections[Net: "Network"]:
+class NetworkConnections[Net: "Network[Any]"]:
     def __init__(
-        self, connections: list[Connection[Net, Appliance, Port, Appliance, Port]]
+        self, connections: list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]]
     ):
         self._connections = connections
 
     def _connection_dict(
-        self, key: Callable[[Connection], Appliance]
-    ) -> dict[Appliance, list[Connection[Net, Appliance, Port, Appliance, Port]]]:
+        self,
+        key: Callable[
+            [Connection[Net, AnyAppliance, Port, AnyAppliance, Port]], AnyAppliance
+        ],
+    ) -> dict[
+        SpecificAppliance, list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]]
+    ]:
         connections: dict[
-            Appliance, list[Connection[Net, Appliance, Port, Appliance, Port]]
+            SpecificAppliance,
+            list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]],
         ] = {}
         for connection in self._connections:
             connections[connection.to_app] = []
@@ -197,7 +226,7 @@ class NetworkConnections[Net: "Network"]:
 
     def execution_order(
         self,
-    ) -> list[Appliance]:
+    ) -> list[SpecificAppliance]:
         incoming_connections = self._connection_dict(
             lambda connection: connection.to_app
         )
@@ -205,10 +234,10 @@ class NetworkConnections[Net: "Network"]:
             lambda connection: connection.from_app
         )
 
-        ordered: list[Appliance] = []
-        found = set()
+        ordered: list[AnyAppliance] = []
+        found: Set[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]] = set()
         while incoming_connections:
-            newly_found = []
+            newly_found: list[AnyAppliance] = []
             for appliance, connections in incoming_connections.items():
                 if not (set(connections) - found):
                     found.update(outgoing_connections[appliance])
@@ -227,7 +256,9 @@ class NetworkConnections[Net: "Network"]:
 
         return ordered
 
-    def port_mapping(self) -> dict[Tuple[Appliance, Port], Tuple[Appliance, Port]]:
+    def port_mapping(
+        self,
+    ) -> dict[Tuple[SpecificAppliance, Port], Tuple[AnyAppliance, Port]]:
         return {
             (connection.from_app, connection.from_port): (
                 connection.to_app,
@@ -237,7 +268,7 @@ class NetworkConnections[Net: "Network"]:
         }
 
 
-class ControlGetter[App: Appliance]:
+class ControlGetter[App: AnyAppliance]:
     def __init__[
         Control: ApplianceControl
     ](
@@ -255,31 +286,33 @@ class ControlGetter[App: Appliance]:
         )  # cast should be safe; Control and App are bound together
 
 
-class NetworkControl[Net: "Network"]:
-    def __init__(self, controls: dict[Appliance, ApplianceControl]):
+class NetworkControl[Net: "Network[Any]"]:
+    def __init__(self, controls: dict[AnyAppliance, ApplianceControl]):
         self._controls = controls
 
-    def appliance[App: Appliance](self, app: App) -> ControlGetter[App]:
+    def appliance[App: AnyAppliance](self, app: App) -> ControlGetter[App]:
         return ControlGetter(app, self._controls.get(app, ApplianceControl()))
 
 
-class ControlBuilder[Net: "Network", *Prev]:
+class ControlBuilder[Net: "Network[Any]", *Prev]:
     def __init__(self: "ControlBuilder[Net, *Prev]", *prev: *Prev):
         self._prev = prev
 
     def control[
-        App: Appliance
+        App: AnyAppliance
     ](
         self: "ControlBuilder[Net, *Prev]", app: App
     ) -> "ControlApplianceBuilder[Net, App, *Prev]":
         return ControlApplianceBuilder(app, *self._prev)
 
     def build(self) -> NetworkControl[Net]:
-        control = dict(cast(Iterable[tuple[Appliance, ApplianceControl]], self._prev))
+        control = dict(
+            cast(Iterable[tuple[AnyAppliance, ApplianceControl]], self._prev)
+        )
         return NetworkControl(control)
 
 
-class ControlApplianceBuilder[Net: "Network", App: Appliance, *Prev]:
+class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
     def __init__[
         State: ApplianceState, Control: ApplianceControl, Port: Port
     ](
@@ -302,23 +335,23 @@ class ControlApplianceBuilder[Net: "Network", App: Appliance, *Prev]:
         )
 
 
-class Network[Sensors]:
+class Network[Sensors](ABC):
     def __init__(self):
         connections = self.connections()
         self._execution_order = connections.execution_order()
         self._port_mapping = connections.port_mapping()
 
     def connect[
-        From: Appliance
+        From: AnyAppliance
     ](self, from_app: From) -> ApplianceConnector[Self, From]:
         return ApplianceConnector(from_app)
 
     def simulate(
         self, state: NetworkState[Self], controls: NetworkControl[Self]
     ) -> NetworkState[Self]:
-        port_inputs: dict[Appliance, dict[Port, ConnectionState]] = {}
-        appliance_states: dict[Appliance, ApplianceState] = {}
-        connection_states: dict[tuple[Appliance, Port], ConnectionState] = {}
+        port_inputs: dict[SpecificAppliance, dict[Port, ConnectionState]] = {}
+        appliance_states: dict[SpecificAppliance, ApplianceState] = {}
+        connection_states: dict[tuple[SpecificAppliance, Port], ConnectionState] = {}
         for appliance in self._execution_order:
             appliance_state = state.appliance(appliance).get()
             new_appliance_state, outputs = appliance.simulate(
@@ -344,11 +377,13 @@ class Network[Sensors]:
         return NetworkState(appliance_states, connection_states)
 
     def define_state[
-        App: Appliance
+        App: AnyAppliance
     ](self, app: App) -> NetworkStateValueBuilder[Self, App]:
         return NetworkStateValueBuilder(app)
 
-    def control[App: Appliance](self, app: App) -> ControlApplianceBuilder[Self, App]:
+    def control[
+        App: AnyAppliance
+    ](self, app: App) -> ControlApplianceBuilder[Self, App]:
         return ControlApplianceBuilder(app)
 
     @abstractmethod
