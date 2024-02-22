@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Tuple
@@ -16,7 +16,7 @@ class ApplianceControl:
 
 
 @dataclass(frozen=True, eq=True)
-class Appliance[TState: ApplianceState, TControl: ApplianceControl, TPort: "Port"]:
+class Appliance[TState: ApplianceState, TControl: ApplianceControl, TPort: "Port"](ABC):
     id: uuid.UUID = field(init=False, default_factory=lambda: uuid.uuid4())
 
     @abstractmethod
