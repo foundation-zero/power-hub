@@ -169,9 +169,9 @@ class ApplianceConnector(Generic[Net, From, *Prev]):
         self.prev = prev
 
     def at[
-        State: ApplianceState, Port: Port
+        State: ApplianceState, Control: ApplianceControl, Port: Port
     ](
-        self: "ApplianceConnector[Net, Appliance[State, ApplianceControl, Port], *Prev]",
+        self: "ApplianceConnector[Net, Appliance[State, Control, Port], *Prev]",
         from_port: Port,
     ) -> PortFromConnector[Net, From, Port, *Prev]:
         return cast(
