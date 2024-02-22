@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Tuple
 from energy_box_control.network import (
     ControlBuilder,
     Network,
@@ -24,6 +24,11 @@ from energy_box_control.simulation import (
 @dataclass
 class BoilerSensors:
     boiler_temperature: float
+
+
+@dataclass
+class ControlState:
+    boiler_setpoint: float
 
 
 class BoilerNetwork(Network[BoilerSensors]):
@@ -59,6 +64,16 @@ class BoilerNetwork(Network[BoilerSensors]):
 
     def sensors(self, state: NetworkState[Self]) -> BoilerSensors:
         return BoilerSensors(state.appliance(self.boiler).get().temperature)
+
+    def regulate(
+        self, control_state: ControlState, sensors: BoilerSensors
+    ) -> Tuple[(ControlState, NetworkControl[Self])]:
+        heater_on = sensors.boiler_temperature < control_state.boiler_setpoint
+
+        return (
+            control_state,
+            self.control(self.boiler).value(BoilerControl(heater_on=heater_on)).build(),
+        )
 
 
 class BoilerValveNetwork(BoilerNetwork):
