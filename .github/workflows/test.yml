@@ -17,6 +17,8 @@ jobs:
 
       - run: poetry install
 
+      - run: poetry check
+
       - name: Black
         run: poetry run black --check energy_box_control tests
 
