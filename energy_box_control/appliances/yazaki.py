@@ -33,7 +33,6 @@ class YazakiControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
-    cooling_capacity: float
     specific_heat_capacity_hot: float
     specific_heat_capacity_cooling: float
     specific_heat_capacity_chilled: float
@@ -49,68 +48,38 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         cooling_in = inputs[YazakiPort.COOLING_IN]
         chilled_in = inputs[YazakiPort.CHILLED_IN]
 
-        ##stagnation if heat input temp is not between 70 and 95
-
-        # Chilled water: assuming chilled water flow of 0.77 l/s should lead to cooling capacity of 17.6 kW at inlet temp of 12.5 and outlet temp of 17.6
-        # Cooling water: assuming cooling water flow of 2.55 l/s should lead to heat rejection of 42.7 kW at inlet temp of 31 and outlet temp of 35
         # Hot water: assuming flow of 1.2 l/s should lead to heat input of 25.1 kW at inlet temp of 88 and outlet temp of 83
+        # Cooling water: assuming cooling water flow of 2.55 l/s should lead to heat rejection of 42.7 kW at inlet temp of 31 and outlet temp of 35
+        # Chilled water: assuming chilled water flow of 0.77 l/s should lead to cooling capacity of 17.6 kW at inlet temp of 17.6 and outlet temp of 12.5
 
         # Here we will assume that the flows are close to optimal. We then use the lookup table (page 5,6 in https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing) to get cooling capacity from cooling water temp and hot water temp
 
         ref_temps_cooling = [27, 29.5, 31, 32]
         ref_temps_heat = [70, 80, 87, 95]
-        cooling_capacity_values = (
-            x * 1000
-            for x in (
-                10,
-                16.5,
-                21,
-                22.5,
-                7,
-                14,
-                18,
-                21,
-                6,
-                13,
-                17.5,
-                19.5,
-                4,
-                10,
-                15,
-                16,
-            )
-        )
-        heat_input_values = (
-            x * 1000
-            for x in (
-                12,
-                5,
-                10,
-                9,
-                7,
-                21,
-                18,
-                17,
-                14,
-                30,
-                26,
-                25,
-                22,
-                5,
-                37,
-                34,
-                32,
-                27,
-                5,
-            )
-        )
+        cooling_capacity_values = [
+            [10, 16.5, 21, 22.5],
+            [7, 14, 18, 21],
+            [6, 13, 17.5, 19.5],
+            [4, 10, 15, 16],
+        ]
 
-        cooling_capacity = RegularGridInterpolator(
-            (ref_temps_cooling, ref_temps_heat), cooling_capacity_values
-        )((cooling_in.temperature, hot_in.temperature))[0]
-        heat_input = RegularGridInterpolator(
-            (ref_temps_cooling, ref_temps_heat), heat_input_values
-        )((cooling_in.temperature, hot_in.temperature))[0]
+        heat_input_values = [
+            [12.5, 10, 9, 7],
+            [21, 18, 17, 14],
+            [30, 26, 25, 22.5],
+            [37, 34, 32, 27.5],
+        ]
+
+        cooling_capacity = 1000 * float(
+            RegularGridInterpolator(
+                (ref_temps_cooling, ref_temps_heat), cooling_capacity_values
+            )((cooling_in.temperature, hot_in.temperature))
+        )
+        heat_input = 1000 * float(
+            RegularGridInterpolator(
+                (ref_temps_cooling, ref_temps_heat), heat_input_values
+            )((cooling_in.temperature, hot_in.temperature))
+        )
 
         hot_temp_out = hot_in.temperature - heat_input / (
             hot_in.flow * self.specific_heat_capacity_hot

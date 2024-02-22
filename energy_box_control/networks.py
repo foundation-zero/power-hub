@@ -1,7 +1,7 @@
 # pyright: reportIncompatibleMethodOverride=true
 from dataclasses import dataclass
 from typing import Self, Tuple
-from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
+from energy_box_control.appliances.yazaki import Yazaki, YazakiPort, YazakiState
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -122,14 +122,15 @@ class YazakiNetwork(Network[None]):
     def __init__(
         self,
         hot_source: Source,
-        chilled_source: Source,
         cooling_source: Source,
+        chilled_source: Source,
         yazaki: Yazaki,
     ):
         self.hot_source = hot_source
-        self.chilled_source = chilled_source
         self.cooling_source = cooling_source
+        self.chilled_source = chilled_source
         self.yazaki = yazaki
+        super().__init__()
 
     def initial_state(self) -> NetworkState[Self]:
         return (
@@ -139,6 +140,8 @@ class YazakiNetwork(Network[None]):
             .value(SourceState())
             .define_state(self.cooling_source)
             .value(SourceState())
+            .define_state(self.yazaki)
+            .value(YazakiState(0))
             .build(self.connections())
         )
 
