@@ -3,7 +3,7 @@ from hypothesis import assume, example, given
 from hypothesis.strategies import floats
 from pytest import approx
 
-from energy_box_control.simulation import (
+from energy_box_control.appliances import (
     Boiler,
     BoilerPort,
     BoilerState,

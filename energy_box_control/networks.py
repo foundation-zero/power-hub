@@ -7,7 +7,7 @@ from energy_box_control.network import (
     NetworkControl,
     NetworkState,
 )
-from energy_box_control.simulation import (
+from energy_box_control.appliances import (
     Boiler,
     BoilerControl,
     BoilerPort,
@@ -100,14 +100,18 @@ class BoilerValveNetwork(BoilerNetwork):
         )
 
     def connections(self) -> NetworkConnections[Self]:
-        return (
+        source_to_valve = (
             self.connect(self.source)
             .at(SourcePort.OUTPUT)
             .to(self.valve)
             .at(ValvePort.AB)
-            .connect(self.valve)
+        )
+
+        valve_to_boiler = (
+            source_to_valve.connect(self.valve)
             .at(ValvePort.A)
             .to(self.boiler)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
-            .build()
         )
+
+        return valve_to_boiler.build()

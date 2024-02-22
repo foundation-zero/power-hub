@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from energy_box_control.simulation import (
+from energy_box_control.appliances import (
     Appliance,
     ApplianceControl,
     ApplianceState,

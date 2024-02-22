@@ -1,6 +1,6 @@
 from pytest import approx
 from energy_box_control.network import Network
-from energy_box_control.simulation import (
+from energy_box_control.appliances import (
     Boiler,
     BoilerControl,
     BoilerPort,

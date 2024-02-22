@@ -1,6 +1,6 @@
 from pytest import approx
 
-from energy_box_control.simulation import Boiler, BoilerState, Source
+from energy_box_control.appliances import Boiler, BoilerState, Source
 from energy_box_control.networks import BoilerNetwork, ControlState
 
 
