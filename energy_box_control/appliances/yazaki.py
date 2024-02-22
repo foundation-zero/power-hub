@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from itertools import product
 from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
@@ -7,6 +8,8 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
+
+from scipy.interpolate import RegularGridInterpolator
 
 
 class YazakiPort(Port):
@@ -20,7 +23,7 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    pass
+    efficiency: float
 
 
 @dataclass(frozen=True, eq=True)
@@ -32,8 +35,8 @@ class YazakiControl(ApplianceControl):
 class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
     cooling_capacity: float
     specific_heat_capacity_hot: float
-    specific_heat_capacity_cold: float
-    COP: float
+    specific_heat_capacity_cooling: float
+    specific_heat_capacity_chilled: float
 
     def simulate(
         self,
@@ -43,17 +46,94 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
     ) -> Tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
 
         hot_in = inputs[YazakiPort.HOT_IN]
-        
-        ##Some lookup table, e.g. https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing
-        hot_power = hot_in.flow * hot_in.temperature * self.specific_heat_capacity_hot
-        cooling_power = self.COP * hot_power
+        cooling_in = inputs[YazakiPort.COOLING_IN]
+        chilled_in = inputs[YazakiPort.CHILLED_IN]
 
-        chilled_temp = inputs[YazakiPort.CHILLED_IN].temperature - cooling_power / (
-            inputs[YazakiPort.CHILLED_IN].flow * self.specific_heat_capacity_cold
+        ##stagnation if heat input temp is not between 70 and 95
+
+        # Chilled water: assuming chilled water flow of 0.77 l/s should lead to cooling capacity of 17.6 kW at inlet temp of 12.5 and outlet temp of 17.6
+        # Cooling water: assuming cooling water flow of 2.55 l/s should lead to heat rejection of 42.7 kW at inlet temp of 31 and outlet temp of 35
+        # Hot water: assuming flow of 1.2 l/s should lead to heat input of 25.1 kW at inlet temp of 88 and outlet temp of 83
+
+        # Here we will assume that the flows are close to optimal. We then use the lookup table (page 5,6 in https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing) to get cooling capacity from cooling water temp and hot water temp
+
+        ref_temps_cooling = [27, 29.5, 31, 32]
+        ref_temps_heat = [70, 80, 87, 95]
+        cooling_capacity_values = (
+            x * 1000
+            for x in (
+                10,
+                16.5,
+                21,
+                22.5,
+                7,
+                14,
+                18,
+                21,
+                6,
+                13,
+                17.5,
+                19.5,
+                4,
+                10,
+                15,
+                16,
+            )
+        )
+        heat_input_values = (
+            x * 1000
+            for x in (
+                12,
+                5,
+                10,
+                9,
+                7,
+                21,
+                18,
+                17,
+                14,
+                30,
+                26,
+                25,
+                22,
+                5,
+                37,
+                34,
+                32,
+                27,
+                5,
+            )
         )
 
-        return YazakiState(), {
+        cooling_capacity = RegularGridInterpolator(
+            (ref_temps_cooling, ref_temps_heat), cooling_capacity_values
+        )((cooling_in.temperature, hot_in.temperature))[0]
+        heat_input = RegularGridInterpolator(
+            (ref_temps_cooling, ref_temps_heat), heat_input_values
+        )((cooling_in.temperature, hot_in.temperature))[0]
+
+        hot_temp_out = hot_in.temperature - heat_input / (
+            hot_in.flow * self.specific_heat_capacity_hot
+        )
+
+        cooling_temp_out = cooling_in.temperature + (heat_input + cooling_capacity) / (
+            cooling_in.flow * self.specific_heat_capacity_cooling
+        )
+
+        chilled_temp_out = chilled_in.temperature - cooling_capacity / (
+            chilled_in.flow * self.specific_heat_capacity_chilled
+        )
+
+        efficiency = heat_input / cooling_capacity
+
+        return YazakiState(efficiency), {
+            YazakiPort.HOT_OUT: ConnectionState(
+                inputs[YazakiPort.HOT_IN].flow, hot_temp_out
+            ),
+            YazakiPort.COOLING_OUT: ConnectionState(
+                inputs[YazakiPort.COOLING_IN].flow, cooling_temp_out
+            ),
             YazakiPort.CHILLED_OUT: ConnectionState(
-                inputs[YazakiPort.CHILLED_IN].flow, chilled_temp
-            )
+                inputs[YazakiPort.CHILLED_IN].flow, chilled_temp_out
+            ),
         }
