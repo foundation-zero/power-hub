@@ -20,6 +20,9 @@ hypothesis = "^6.98.4"
 black = "^24.1.1"
 pyright = "^1.1.350"
 
+[tool.pyright]
+strict = ["energy_box_control"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
