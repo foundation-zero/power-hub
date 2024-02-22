@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from energy_box_control.simulation import (
+from typing import Tuple
+from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
     ApplianceState,
@@ -42,7 +43,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
     ) -> Tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
 
         hot_in = inputs[YazakiPort.HOT_IN]
-
+        
         ##Some lookup table, e.g. https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing
         hot_power = hot_in.flow * hot_in.temperature * self.specific_heat_capacity_hot
         cooling_power = self.COP * hot_power

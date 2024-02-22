@@ -1,6 +1,7 @@
 # pyright: reportIncompatibleMethodOverride=true
 from dataclasses import dataclass
 from typing import Self, Tuple
+from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -115,3 +116,49 @@ class BoilerValveNetwork(BoilerNetwork):
         )
 
         return valve_to_boiler.build()
+
+
+class YazakiNetwork(Network[None]):
+    def __init__(
+        self,
+        hot_source: Source,
+        chilled_source: Source,
+        cooling_source: Source,
+        yazaki: Yazaki,
+    ):
+        self.hot_source = hot_source
+        self.chilled_source = chilled_source
+        self.cooling_source = cooling_source
+        self.yazaki = yazaki
+
+    def initial_state(self) -> NetworkState[Self]:
+        return (
+            self.define_state(self.hot_source)
+            .value(SourceState())
+            .define_state(self.chilled_source)
+            .value(SourceState())
+            .define_state(self.cooling_source)
+            .value(SourceState())
+            .build(self.connections())
+        )
+
+    def connections(self) -> NetworkConnections[Self]:
+
+        return (
+            self.connect(self.hot_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.yazaki)
+            .at(YazakiPort.HOT_IN)
+            .connect(self.chilled_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.yazaki)
+            .at(YazakiPort.CHILLED_IN)
+            .connect(self.cooling_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.yazaki)
+            .at(YazakiPort.COOLING_IN)
+            .build()
+        )
+
+    def sensors(self, state: NetworkState[Self]) -> None:
+        return None
