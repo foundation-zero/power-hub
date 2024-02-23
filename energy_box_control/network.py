@@ -189,6 +189,13 @@ class NetworkConnector(Generic[Net, *Prev]):
     ](self, from_app: From) -> ApplianceConnector[Net, From, *Prev]:
         return ApplianceConnector(from_app, *self._prev)
 
+    def combine[
+        *Others
+    ](
+        self, connector: "NetworkConnector[Net, *Others]"
+    ) -> "NetworkConnector[Net, *Prev, *Others]":
+        return NetworkConnector(*self._prev, *connector._prev)
+
     def build(self) -> "NetworkConnections[Net]":
         connections = cast(
             list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]],
