@@ -9,7 +9,9 @@ from energy_box_control.appliances import (
     Source,
     ValveState,
 )
-from energy_box_control.networks import BoilerNetwork, BoilerValveNetwork
+from energy_box_control.appliances.yazaki import Yazaki, YazakiControl, YazakiPort
+from energy_box_control.network import NetworkControl
+from energy_box_control.networks import BoilerNetwork, BoilerValveNetwork, YazakiNetwork
 
 temp_strat = floats(0, 150, allow_nan=False)
 flow_strat = floats(0, 100, allow_nan=False)
@@ -142,3 +144,23 @@ def test_valve():
     state_1 = network.simulate(network.initial_state(), control)
     assert state_1.connection(network.boiler, BoilerPort.HEAT_EXCHANGE_IN).flow == 1.0
     assert state_1.appliance(network.boiler).get().temperature == 50
+
+
+def test_yazaki():
+    network = YazakiNetwork(
+        Source(1.2, 88), Source(2.55, 31), Source(0.77, 17.6), Yazaki(4184, 4184, 4184)
+    )
+
+    control = network.control(network.yazaki).value(YazakiControl()).build()
+
+    state_1 = network.simulate(network.initial_state(), control)
+
+    assert state_1.connection(network.yazaki, YazakiPort.HOT_OUT).temperature == approx(
+        83, abs=1
+    )
+    assert state_1.connection(
+        network.yazaki, YazakiPort.COOLING_OUT
+    ).temperature == approx(35, abs=1)
+    assert state_1.connection(
+        network.yazaki, YazakiPort.CHILLED_OUT
+    ).temperature == approx(12.5, abs=1)
