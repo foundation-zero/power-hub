@@ -30,6 +30,23 @@ class YazakiControl(ApplianceControl):
     pass
 
 
+_ref_temps_cooling: list[float] = [27, 29.5, 31, 32]
+_ref_temps_heat: list[float] = [70, 80, 87, 95]
+_cooling_capacity_values: list[list[float]] = [
+    [10.0, 16.5, 21.0, 22.5],
+    [7.0, 14.0, 18.0, 21],
+    [6.0, 13.0, 17.5, 19.5],
+    [4.0, 10.0, 15.0, 16],
+]
+
+_heat_input_values: list[list[float]] = [
+    [12.5, 10, 9, 7],
+    [21, 18, 17, 14],
+    [30, 26, 25, 22.5],
+    [37, 34, 32, 27.5],
+]
+
+
 @dataclass(frozen=True, eq=True)
 class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
     specific_heat_capacity_hot: float
@@ -53,30 +70,15 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
 
         # Here we will assume that the flows are close to optimal. We then use the lookup table (page 5,6 in https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing) to get cooling capacity from cooling water temp and hot water temp
 
-        ref_temps_cooling: list[float] = [27, 29.5, 31, 32]
-        ref_temps_heat: list[float] = [70, 80, 87, 95]
-        cooling_capacity_values: list[list[float]] = [
-            [10.0, 16.5, 21.0, 22.5],
-            [7.0, 14.0, 18.0, 21],
-            [6.0, 13.0, 17.5, 19.5],
-            [4.0, 10.0, 15.0, 16],
-        ]
-
-        heat_input_values: list[list[float]] = [
-            [12.5, 10, 9, 7],
-            [21, 18, 17, 14],
-            [30, 26, 25, 22.5],
-            [37, 34, 32, 27.5],
-        ]
-
         cooling_capacity = 1000 * float(
             RegularGridInterpolator(
-                (ref_temps_cooling, ref_temps_heat), cooling_capacity_values
+                (_ref_temps_cooling, _ref_temps_heat),
+                _cooling_capacity_values,
             )((cooling_in.temperature, hot_in.temperature))
         )
         heat_input = 1000 * float(
             RegularGridInterpolator(
-                (ref_temps_cooling, ref_temps_heat), heat_input_values
+                (_ref_temps_cooling, _ref_temps_heat), _heat_input_values
             )((cooling_in.temperature, hot_in.temperature))
         )
 

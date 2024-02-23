@@ -1,8 +1,7 @@
-__all__ = ['RegularGridInterpolator']
+__all__ = ["RegularGridInterpolator"]
 from typing import Any, Sequence
 
 from numpy import dtype, float_, ndarray
-
 
 class RegularGridInterpolator:
     """
@@ -180,12 +179,18 @@ class RegularGridInterpolator:
            :doi:`10.1090/S0025-5718-1988-0917826-0`
 
     """
+
     _SPLINE_DEGREE_MAP = ...
     _SPLINE_METHODS = ...
     _ALL_METHODS = ...
-    def __init__(self, points: tuple[list[float], list[float]], values: list[list[float]], method=..., bounds_error=..., fill_value=...) -> None:
-        ...
-    
+    def __init__(
+        self,
+        points: tuple[list[float], list[float]],
+        values: list[list[float]],
+        method=...,
+        bounds_error=...,
+        fill_value=...,
+    ) -> None: ...
     def __call__(self, xi: Sequence[float], method=...) -> ndarray[Any, dtype[float_]]:
         """
         Interpolation at coordinates.
