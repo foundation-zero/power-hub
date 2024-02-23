@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from itertools import product
 from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
@@ -54,16 +53,16 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
 
         # Here we will assume that the flows are close to optimal. We then use the lookup table (page 5,6 in https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing) to get cooling capacity from cooling water temp and hot water temp
 
-        ref_temps_cooling = [27, 29.5, 31, 32]
-        ref_temps_heat = [70, 80, 87, 95]
-        cooling_capacity_values = [
-            [10, 16.5, 21, 22.5],
-            [7, 14, 18, 21],
-            [6, 13, 17.5, 19.5],
-            [4, 10, 15, 16],
+        ref_temps_cooling: list[float] = [27, 29.5, 31, 32]
+        ref_temps_heat: list[float] = [70, 80, 87, 95]
+        cooling_capacity_values: list[list[float]] = [
+            [10.0, 16.5, 21.0, 22.5],
+            [7.0, 14.0, 18.0, 21],
+            [6.0, 13.0, 17.5, 19.5],
+            [4.0, 10.0, 15.0, 16],
         ]
 
-        heat_input_values = [
+        heat_input_values: list[list[float]] = [
             [12.5, 10, 9, 7],
             [21, 18, 17, 14],
             [30, 26, 25, 22.5],
