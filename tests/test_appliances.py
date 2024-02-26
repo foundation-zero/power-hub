@@ -19,18 +19,32 @@ heat_capacity_strat = floats(1, 1e5, allow_nan=False)
 power_strat = floats(0, 1e6, allow_nan=False)
 
 
-@given(temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat, temp_strat)
-@example(20, 1, 1, 1, 10)
+@given(
+    temp_strat,
+    heat_capacity_strat,
+    power_strat,
+    heat_capacity_strat,
+    heat_capacity_strat,
+    temp_strat,
+)
+@example(20, 1, 1, 1, 1, 10)
 def test_simulate_heater_off(
     source_temp,
     boiler_heat_capacity,
     heater_power,
-    specific_heat_capacity_input,
+    specific_heat_capacity_exchange,
+    specific_heat_capacity_fill,
     boiler_temperature,
 ):
     network = BoilerNetwork(
         Source(0, source_temp),
-        Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
+        Boiler(
+            boiler_heat_capacity,
+            heater_power,
+            0,
+            specific_heat_capacity_exchange,
+            specific_heat_capacity_fill,
+        ),
         BoilerState(temperature=boiler_temperature),
     )
 
@@ -41,14 +55,30 @@ def test_simulate_heater_off(
     )
 
 
-@given(temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat)
-@example(20, 1, 1, 1)
+@given(
+    temp_strat,
+    heat_capacity_strat,
+    power_strat,
+    heat_capacity_strat,
+    heat_capacity_strat,
+)
+@example(20, 1, 1, 1, 1)
 def test_simulate_heater_on(
-    source_temp, boiler_heat_capacity, heater_power, specific_heat_capacity_input
+    source_temp,
+    boiler_heat_capacity,
+    heater_power,
+    specific_heat_capacity_exchange,
+    specific_heat_capacity_fill,
 ):
     network = BoilerNetwork(
         Source(0, source_temp),
-        Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
+        Boiler(
+            boiler_heat_capacity,
+            heater_power,
+            0,
+            specific_heat_capacity_exchange,
+            specific_heat_capacity_fill,
+        ),
         BoilerState(temperature=0),
     )
     control = network.heater_on()
@@ -62,18 +92,32 @@ def test_simulate_heater_on(
     )
 
 
-@given(flow_strat, temp_strat, heat_capacity_strat, power_strat, heat_capacity_strat)
-@example(1, 20, 1, 1, 1)
+@given(
+    flow_strat,
+    temp_strat,
+    heat_capacity_strat,
+    power_strat,
+    heat_capacity_strat,
+    heat_capacity_strat,
+)
+@example(1, 20, 1, 1, 1, 1)
 def test_simulate_equal_temp(
     source_flow,
     test_temperature,
     boiler_heat_capacity,
     heater_power,
-    specific_heat_capacity_input,
+    specific_heat_capacity_exchange,
+    specific_heat_capacity_fill,
 ):
     network = BoilerNetwork(
         Source(source_flow, test_temperature),
-        Boiler(boiler_heat_capacity, heater_power, 0, specific_heat_capacity_input),
+        Boiler(
+            boiler_heat_capacity,
+            heater_power,
+            0,
+            specific_heat_capacity_exchange,
+            specific_heat_capacity_fill,
+        ),
         BoilerState(temperature=test_temperature),
     )
     control = network.heater_off()
@@ -91,7 +135,7 @@ def test_simulate_equal_capacity(
 
     network = BoilerNetwork(
         Source(source_flow, source_temp),
-        Boiler(boiler_heat_capacity, 0, 0, boiler_heat_capacity / source_flow),
+        Boiler(boiler_heat_capacity, 0, 0, boiler_heat_capacity / source_flow, 0),
         BoilerState(temperature=boiler_temp),
     )
     control = network.heater_on()
@@ -107,15 +151,17 @@ def test_simulate_equal_capacity(
     power_strat,
     power_strat,
     heat_capacity_strat,
+    heat_capacity_strat,
     temp_strat,
 )
-@example(20, 1, 2, 1, 1, 10)
+@example(20, 1, 2, 1, 1, 1, 10)
 def test_simulate_heat_loss(
     source_temp,
     boiler_heat_capacity,
     heater_power,
     boiler_heat_loss,
-    specific_heat_capacity_input,
+    specific_heat_capacity_exchange,
+    specific_heat_capacity_fill,
     boiler_temp,
 ):
     assume(boiler_heat_loss < heater_power)
@@ -125,7 +171,8 @@ def test_simulate_heat_loss(
             boiler_heat_capacity,
             heater_power,
             boiler_heat_loss,
-            specific_heat_capacity_input,
+            specific_heat_capacity_exchange,
+            specific_heat_capacity_fill,
         ),
         BoilerState(temperature=boiler_temp),
     )
@@ -138,7 +185,10 @@ def test_simulate_heat_loss(
 
 def test_valve():
     network = BoilerValveNetwork(
-        Source(2, 100), Boiler(1, 0, 0, 1), BoilerState(temperature=0), ValveState(0.5)
+        Source(2, 100),
+        Boiler(1, 0, 0, 1, 1),
+        BoilerState(temperature=0),
+        ValveState(0.5),
     )
     control = network.heater_on()
     state_1 = network.simulate(network.initial_state(), control)

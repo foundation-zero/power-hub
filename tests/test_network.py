@@ -17,13 +17,16 @@ from energy_box_control.appliances import (
 
 def test_network():
     class MyNetwork(Network[None]):
-        source = Source(0, 1)
+        exchange_source = Source(0, 1)
+        fill_source = Source(0, 1)
         valve = Valve()
-        boiler = Boiler(1, 0, 0, 1)
+        boiler = Boiler(1, 0, 0, 1, 1)
 
         def initial_state(self):
             return (
-                self.define_state(self.source)
+                self.define_state(self.exchange_source)
+                .value(SourceState())
+                .define_state(self.fill_source)
                 .value(SourceState())
                 .define_state(self.valve)
                 .value(ValveState(0.5))
@@ -34,10 +37,14 @@ def test_network():
 
         def connections(self):
             return (
-                self.connect(self.source)
+                self.connect(self.exchange_source)
                 .at(SourcePort.OUTPUT)
                 .to(self.valve)
                 .at(ValvePort.AB)
+                .connect(self.fill_source)
+                .at(SourcePort.OUTPUT)
+                .to(self.boiler)
+                .at(BoilerPort.FILL_IN)
                 .connect(self.valve)
                 .at(ValvePort.A)
                 .to(self.boiler)
