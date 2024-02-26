@@ -1,6 +1,6 @@
 # pyright: reportIncompatibleMethodOverride=true
 from dataclasses import dataclass
-from typing import Self, Tuple
+from typing import Self
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort, YazakiState
 from energy_box_control.network import (
     Network,
@@ -68,7 +68,7 @@ class BoilerNetwork(Network[BoilerSensors]):
 
     def regulate(
         self, control_state: ControlState, sensors: BoilerSensors
-    ) -> Tuple[(ControlState, NetworkControl[Self])]:
+    ) -> tuple[(ControlState, NetworkControl[Self])]:
         heater_on = sensors.boiler_temperature < control_state.boiler_setpoint
 
         return (

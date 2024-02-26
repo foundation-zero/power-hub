@@ -10,7 +10,6 @@ from typing import (
     Iterable,
     Self,
     Set,
-    Tuple,
     TypeVar,
     TypeVarTuple,
     cast,
@@ -51,7 +50,7 @@ class NetworkState(Generic[Net]):
         self,
         appliance_state: dict[Appliance[Any, Any, Any], ApplianceState],
         connection_state: dict[
-            Tuple[Appliance[Any, Any, Any], Port], ConnectionState
+            tuple[Appliance[Any, Any, Any], Port], ConnectionState
         ] = {},
     ):
         self._appliance_state = appliance_state
@@ -265,7 +264,7 @@ class NetworkConnections[Net: "Network[Any]"]:
 
     def port_mapping(
         self,
-    ) -> dict[Tuple[SpecificAppliance, Port], Tuple[AnyAppliance, Port]]:
+    ) -> dict[tuple[SpecificAppliance, Port], tuple[AnyAppliance, Port]]:
         return {
             (connection.from_app, connection.from_port): (
                 connection.to_app,
@@ -335,9 +334,9 @@ class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
     ](
         self: "ControlApplianceBuilder[Net, Appliance[State, Control, Port], *Prev]",
         control: Control,
-    ) -> ControlBuilder[Net, Tuple[App, Control], *Prev]:
+    ) -> ControlBuilder[Net, tuple[App, Control], *Prev]:
         return cast(
-            ControlBuilder[Net, Tuple[App, Control], *Prev],
+            ControlBuilder[Net, tuple[App, Control], *Prev],
             ControlBuilder((self._app, control), *self._prev),
         )
 
