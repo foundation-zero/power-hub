@@ -42,7 +42,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
     ) -> Tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges
-        # assuming a perfect heat exchange, reaching thermal equilibrium in every time step
+        # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
         element_heat = self.heater_power * control.heater_on
         tank_heat = self.heat_capacity_tank * previous_state.temperature
 
@@ -62,6 +62,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             fill_capacity = (
                 inputs[BoilerPort.FILL_IN].flow * self.specific_heat_capacity_fill
             )
+            fill_heat = fill_capacity * (inputs[BoilerPort.FILL_IN].temperature)
             fill_heat = fill_capacity * inputs[BoilerPort.FILL_IN].temperature
 
         else:
