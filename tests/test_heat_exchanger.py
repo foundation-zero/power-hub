@@ -10,7 +10,7 @@ from energy_box_control.appliances.heat_exchanger import (
 
 
 def test_heat_exchanger_equal_flow():
-    exchanger = HeatExchanger(4184, 2092)
+    exchanger = HeatExchanger(2, 1)
 
     _, output = exchanger.simulate(
         {
@@ -26,7 +26,7 @@ def test_heat_exchanger_equal_flow():
 
 
 def test_heat_exchanger_equal_capacity():
-    exchanger = HeatExchanger(4184, 4184)
+    exchanger = HeatExchanger(1, 1)
 
     _, output = exchanger.simulate(
         {
