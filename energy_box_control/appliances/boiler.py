@@ -73,16 +73,27 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             element_heat + tank_heat + exchange_heat + fill_heat - self.heat_loss
         ) / (self.heat_capacity_tank + exchange_capacity + fill_capacity)
 
-        connection_states: dict[BoilerPort, ConnectionState] = {}
-        if BoilerPort.HEAT_EXCHANGE_IN in inputs:
-            connection_states[BoilerPort.HEAT_EXCHANGE_OUT] = ConnectionState(
-                inputs[BoilerPort.HEAT_EXCHANGE_IN].flow, equilibrium_temperature
-            )
-
-        if BoilerPort.FILL_IN in inputs:
-            connection_states[BoilerPort.FILL_OUT] = ConnectionState(
-                inputs[BoilerPort.FILL_IN].flow, equilibrium_temperature
-            )
+        connection_states = {
+            **(
+                {
+                    BoilerPort.HEAT_EXCHANGE_OUT: ConnectionState(
+                        inputs[BoilerPort.HEAT_EXCHANGE_IN].flow,
+                        equilibrium_temperature,
+                    )
+                }
+                if BoilerPort.HEAT_EXCHANGE_IN in inputs
+                else {}
+            ),
+            **(
+                {
+                    BoilerPort.FILL_OUT: ConnectionState(
+                        inputs[BoilerPort.FILL_IN].flow, equilibrium_temperature
+                    )
+                }
+                if BoilerPort.FILL_IN in inputs
+                else {}
+            ),
+        }
 
         return (
             BoilerState(

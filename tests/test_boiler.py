@@ -74,7 +74,7 @@ def test_boiler_exchange(
     exchange_in_flow = (
         heat_capacity_tank / specific_heat_capacity_exchange
     )  # to have equal heat capacities
-    state = boiler.simulate(
+    state, _ = boiler.simulate(
         {
             BoilerPort.HEAT_EXCHANGE_IN: ConnectionState(
                 exchange_in_flow, exchange_in_temp
@@ -83,7 +83,7 @@ def test_boiler_exchange(
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
     )
-    assert state[0].temperature == approx((boiler_temp + exchange_in_temp) / 2)
+    assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2)
 
 
 @given(heat_capacity_strat, heat_capacity_strat, temp_strat, flow_strat, temp_strat)
@@ -106,9 +106,9 @@ def test_boiler_fill(
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
     )
-    state = boiler.simulate(
+    state, _ = boiler.simulate(
         {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
     )
-    assert state[0].temperature == approx((boiler_temp + fill_in_temp) / 2)
+    assert state.temperature == approx((boiler_temp + fill_in_temp) / 2)
