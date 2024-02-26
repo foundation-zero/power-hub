@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
@@ -23,7 +22,7 @@ class Mix(Appliance[ApplianceState, ApplianceControl, MixPort]):
         inputs: dict[MixPort, ConnectionState],
         previous_state: ApplianceState,
         control: ApplianceControl,
-    ) -> Tuple[ApplianceState, dict[MixPort, ConnectionState]]:
+    ) -> tuple[ApplianceState, dict[MixPort, ConnectionState]]:
         a = inputs[MixPort.A]
         b = inputs[MixPort.B]
 

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
@@ -39,7 +38,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
-    ) -> Tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
+    ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
