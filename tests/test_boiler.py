@@ -41,9 +41,9 @@ def test_boiler_heating(
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
     )
-    state = boiler.simulate({}, BoilerState(boiler_temp), BoilerControl(heater_on=True))
+    state, _ = boiler.simulate({}, BoilerState(boiler_temp), BoilerControl(heater_on=True))
 
-    assert state[0].temperature == approx(
+    assert state.temperature == approx(
         boiler_temp + (heater_power - heat_loss) / heat_capacity_tank
     )
 
