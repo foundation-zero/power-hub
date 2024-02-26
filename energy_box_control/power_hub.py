@@ -268,8 +268,7 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.boiler)
             .at(BoilerPort.FILL_IN)
         )
-
-    # fmt: on
+        # fmt: on
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
         return PowerHubSensors()
