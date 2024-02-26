@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
@@ -67,7 +66,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         inputs: dict[YazakiPort, ConnectionState],
         previous_state: YazakiState,
         control: YazakiControl,
-    ) -> Tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
+    ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
 
         hot_in = inputs[YazakiPort.HOT_IN]
         cooling_in = inputs[YazakiPort.COOLING_IN]

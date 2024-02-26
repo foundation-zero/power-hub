@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
@@ -42,7 +41,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
-    ) -> Tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
+    ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         input = inputs[BoilerPort.HEAT_EXCHANGE_IN]
 

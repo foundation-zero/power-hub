@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Tuple
 import uuid
 
 
@@ -25,7 +24,7 @@ class Appliance[TState: ApplianceState, TControl: ApplianceControl, TPort: "Port
         inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
         control: TControl,
-    ) -> Tuple[TState, dict[TPort, "ConnectionState"]]: ...
+    ) -> tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
 class Port(Enum):
