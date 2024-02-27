@@ -1,6 +1,12 @@
 from typing import Self
 from pytest import approx
-from energy_box_control.network import Network, NetworkState
+from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.network import (
+    Network,
+    NetworkConnections,
+    NetworkFeedbacks,
+    NetworkState,
+)
 from energy_box_control.appliances import (
     Boiler,
     BoilerControl,
@@ -32,7 +38,7 @@ def test_network():
                 .value(ValveState(0.5))
                 .define_state(self.boiler)
                 .value(BoilerState(50))
-                .build(self.connections())
+                .build(self.connections(), self.feedback())
             )
 
         def connections(self):
@@ -59,3 +65,50 @@ def test_network():
     control = my.control(my.boiler).value(BoilerControl(heater_on=False)).build()
     state = my.simulate(my.initial_state(), control)
     assert state.appliance(my.boiler).get().temperature == approx(50)
+
+
+def test_circular_network():
+    """Tests a circular network with just a boiler this in essence turns the flow through the heat exchanger into extra heat capacity"""
+
+    class CircularNetwork(Network[None]):
+        boiler = Boiler(99, 100, 0, 1, 0)
+
+        def initial_state(self) -> NetworkState[Self]:
+            return (
+                self.define_state(self.boiler)
+                .value(BoilerState(100))
+                .build(self.connections(), self.feedback())
+            )
+
+        def connections(self) -> NetworkConnections[Self]:
+            return NetworkConnections([])
+
+        def feedback(self) -> NetworkFeedbacks[Self]:
+            return (
+                self.define_feedback(self.boiler)
+                .at(BoilerPort.HEAT_EXCHANGE_OUT)
+                .to(self.boiler)
+                .at(BoilerPort.HEAT_EXCHANGE_IN)
+                .initial_state(ConnectionState(1, 100))
+                .build()
+            )
+
+        def sensors(self, state: NetworkState[Self]) -> None:
+            return None
+
+    circle = CircularNetwork()
+    control = circle.control(circle.boiler).value(BoilerControl(heater_on=True)).build()
+    state = circle.simulate(circle.initial_state(), control)
+    assert (
+        state.connection(circle.boiler, BoilerPort.HEAT_EXCHANGE_OUT).temperature == 101
+    )
+    assert state.appliance(circle.boiler).get().temperature == 101
+
+    for _ in range(999):
+        state = circle.simulate(state, control)
+
+    assert (
+        state.connection(circle.boiler, BoilerPort.HEAT_EXCHANGE_OUT).temperature
+        == 1100
+    )
+    assert state.appliance(circle.boiler).get().temperature == 1100
