@@ -18,6 +18,7 @@ from energy_box_control.appliances import (
     HeatExchanger,
     HeatExchangerPort,
 )
+from energy_box_control.appliances.source import Source, SourcePort
 
 from energy_box_control.network import (
     Network,
@@ -54,17 +55,20 @@ class PowerHub(Network[PowerHubSensors]):
     waste_switch_valve: Valve  # CV-1007
     chiller_waste_bypass_valve: Valve  # CV-1009
     chiller_waste_mix: Mix
+    fresh_water_source: Source
 
     def connections(self) -> NetworkConnections[Self]:
         pcm_circuit = self._pcm_circuit()
         pcm_to_yazaki = self._pcm_to_yazaki()
         chilled_side = self._chilled_side()
         waste_side = self._waste_side()
+        fresh_water_circuit = self._fresh_water_circuit()
 
         return (
             pcm_circuit.combine(pcm_to_yazaki)
             .combine(chilled_side)
             .combine(waste_side)
+            .combine(fresh_water_circuit)
             .build()
         )
 
@@ -248,6 +252,21 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.B)
             .to(self.chiller_waste_mix)
             .at(MixPort.B)
+        )
+        # fmt: on
+
+    def _fresh_water_circuit(self):
+        # fmt: off
+        return (
+            self.connect(self.fresh_water_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.preheat_reservoir)
+            .at(BoilerPort.FILL_IN)
+            
+            .connect(self.preheat_reservoir)
+            .at(BoilerPort.FILL_OUT)
+            .to(self.boiler)
+            .at(BoilerPort.FILL_IN)
         )
         # fmt: on
 
