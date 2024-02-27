@@ -17,12 +17,15 @@ from energy_box_control.appliances import (
     ChillerPort,
     HeatExchanger,
     HeatExchangerPort,
+    Source,
+    SourcePort,
 )
-from energy_box_control.appliances.source import Source, SourcePort
+from energy_box_control.appliances.base import ConnectionState
 
 from energy_box_control.network import (
     Network,
     NetworkConnections,
+    NetworkFeedbacks,
     NetworkState,
 )
 
@@ -166,11 +169,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.B)
             .to(self.chiller)
             .at(ChillerPort.CHILLED_IN)
-
-            .connect(self.chiller)
-            .at(ChillerPort.CHILLED_OUT)
-            .to(self.chill_mix)
-            .at(MixPort.B)
         )
         # fmt: on
 
@@ -178,6 +176,41 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: off
         return (
             self
+            .connect(self.waste_switch_valve)
+            .at(ValvePort.B)
+            .to(self.chiller_waste_bypass_valve)
+            .at(ValvePort.AB)
+
+            .connect(self.chiller_waste_bypass_valve)
+            .at(ValvePort.A)
+            .to(self.chiller)
+            .at(ChillerPort.COOLING_IN)
+
+            .connect(self.chiller)
+            .at(ChillerPort.COOLING_OUT)
+            .to(self.chiller_waste_mix)
+            .at(MixPort.A)
+
+            .connect(self.chiller_waste_bypass_valve)
+            .at(ValvePort.B)
+            .to(self.chiller_waste_mix)
+            .at(MixPort.B)
+
+            .connect(self.waste_switch_valve)
+            .at(ValvePort.A)
+            .to(self.yazaki_waste_bypass_valve)
+            .at(ValvePort.AB)
+
+            .connect(self.yazaki_waste_bypass_valve)
+            .at(ValvePort.A)
+            .to(self.yazaki)
+            .at(YazakiPort.COOLING_IN)
+
+            .connect(self.yazaki_waste_bypass_valve)
+            .at(ValvePort.B)
+            .to(self.yazaki_waste_mix)
+            .at(MixPort.B)
+
             .connect(self.yazaki)
             .at(YazakiPort.COOLING_OUT)
             .to(self.yazaki_waste_mix)
@@ -211,47 +244,38 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.preheat_mix)
             .at(MixPort.AB)
             .to(self.outboat_exchange)
-            .at(HeatExchangerPort.A_IN)
+            .at(HeatExchangerPort.A_IN)            
+        )
+        # fmt: on
 
-            .connect(self.outboat_exchange)
+    def feedback(self) -> NetworkFeedbacks[Self]:
+        # fmt: off
+        return (
+            self.define_feedback(self.heat_pipes_mix)
+            .at(MixPort.AB)
+            .to(self.heat_pipes)
+            .at(HeatPipesPort.IN)
+            .initial_state(ConnectionState(0, 0))
+
+            .feedback(self.yazaki)
+            .at(YazakiPort.HOT_OUT)
+            .to(self.pcm)
+            .at(PcmPort.DISCHARGE_IN)
+            .initial_state(ConnectionState(0, 0))
+
+            .feedback(self.chiller)
+            .at(ChillerPort.CHILLED_OUT)
+            .to(self.chill_mix)
+            .at(MixPort.B)
+            .initial_state(ConnectionState(0, 0))
+
+            .feedback(self.outboat_exchange)
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
+            .initial_state(ConnectionState(0, 0))
 
-            .connect(self.waste_switch_valve)
-            .at(ValvePort.A)
-            .to(self.yazaki_waste_bypass_valve)
-            .at(ValvePort.AB)
-
-            .connect(self.yazaki_waste_bypass_valve)
-            .at(ValvePort.A)
-            .to(self.yazaki)
-            .at(YazakiPort.COOLING_IN)
-
-            .connect(self.yazaki_waste_bypass_valve)
-            .at(ValvePort.B)
-            .to(self.yazaki_waste_mix)
-            .at(MixPort.B)
-
-            .connect(self.chiller_switch_valve)
-            .at(ValvePort.B)
-            .to(self.chiller_waste_bypass_valve)
-            .at(ValvePort.AB)
-
-            .connect(self.chiller_waste_bypass_valve)
-            .at(ValvePort.A)
-            .to(self.chiller)
-            .at(ChillerPort.COOLING_IN)
-
-            .connect(self.chiller)
-            .at(ChillerPort.COOLING_OUT)
-            .to(self.chiller_waste_mix)
-            .at(MixPort.A)
-
-            .connect(self.chiller_waste_bypass_valve)
-            .at(ValvePort.B)
-            .to(self.chiller_waste_mix)
-            .at(MixPort.B)
+            .build()
         )
         # fmt: on
 
