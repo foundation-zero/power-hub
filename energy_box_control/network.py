@@ -394,7 +394,7 @@ class PortFromFeedback(Generic[Net, From, FromPort, *Prev]):
         self._prev = prev
 
     def to[
-        To: AnyAppliance, ToControl: ApplianceControl
+        To: AnyAppliance, ToControl: GenericControl
     ](self, to: To) -> PortToFeedback[Net, From, FromPort, To, ToControl, *Prev]:
         return PortToFeedback(self._from_app, self._from_port, to, *self._prev)
 
@@ -405,7 +405,7 @@ class ApplianceFeedback(Generic[Net, From, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](
         self: "ApplianceFeedback[Net, Appliance[State, Control, Port], *Prev]",
         from_port: Port,
