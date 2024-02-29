@@ -2,7 +2,6 @@ from energy_box_control.appliances import (
     Mix,
     MixPort,
     ConnectionState,
-    ApplianceControl,
     ApplianceState,
 )
 
@@ -16,7 +15,7 @@ def test_mix():
             MixPort.B: ConnectionState(1, 100),
         },
         ApplianceState(),
-        ApplianceControl(),
+        None,
     )
 
     assert output[MixPort.AB] == ConnectionState(4, 25)

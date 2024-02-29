@@ -108,10 +108,10 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.boiler_pcm_valve)
             .at(ValvePort.A)
             .to(self.pcm)
-            .at(PcmPort.PCM_CHARGE_IN)
+            .at(PcmPort.CHARGE_IN)
 
             .connect(self.pcm)
-            .at(PcmPort.PCM_CHARGE_OUT)
+            .at(PcmPort.CHARGE_OUT)
             .to(self.boiler_mix)
             .at(MixPort.A)
 
@@ -127,14 +127,14 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self
             .connect(self.pcm)
-            .at(PcmPort.PCM_DISCHARGE_OUT)
+            .at(PcmPort.DISCHARGE_OUT)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
 
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.pcm)
-            .at(PcmPort.PCM_DISCHARGE_IN)
+            .at(PcmPort.DISCHARGE_IN)
         )
         # fmt: on
 

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -19,7 +18,7 @@ class HeatPipesPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class HeatPipes(Appliance[HeatPipesState, ApplianceControl, HeatPipesPort]):
+class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
     power: float
     max_temp: float
     specific_heat: float
@@ -28,7 +27,7 @@ class HeatPipes(Appliance[HeatPipesState, ApplianceControl, HeatPipesPort]):
         self,
         inputs: dict[HeatPipesPort, ConnectionState],
         previous_state: HeatPipesState,
-        control: ApplianceControl,
+        control: None,
     ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
         input = inputs[HeatPipesPort.IN]
 
