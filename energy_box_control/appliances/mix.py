@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -15,13 +14,13 @@ class MixPort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Mix(Appliance[ApplianceState, ApplianceControl, MixPort]):
+class Mix(Appliance[ApplianceState, None, MixPort]):
 
     def simulate(
         self,
         inputs: dict[MixPort, ConnectionState],
         previous_state: ApplianceState,
-        control: ApplianceControl,
+        control: None,
     ) -> tuple[ApplianceState, dict[MixPort, ConnectionState]]:
         a = inputs[MixPort.A]
         b = inputs[MixPort.B]

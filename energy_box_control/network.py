@@ -25,7 +25,8 @@ from energy_box_control.appliances import (
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
 AnyAppliance = Appliance[Any, Any, Any]
-SpecificAppliance = Appliance[ApplianceState, ApplianceControl, Port]
+SpecificAppliance = Appliance[ApplianceState, ApplianceControl | None, Port]
+GenericControl = ApplianceControl | None
 App = TypeVar("App", bound=AnyAppliance, covariant=True)
 Prev = TypeVarTuple("Prev")
 Net = TypeVar("Net", bound="Network[Any]")
@@ -33,12 +34,12 @@ Net = TypeVar("Net", bound="Network[Any]")
 
 class StateGetter[App: AnyAppliance]:
     def __init__[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](self: "StateGetter[Appliance[State, Control, Port]]", _: App, state: State):
         self._state = state
 
     def get[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](self: "StateGetter[Appliance[State, Control, Port]]") -> State:
         return cast(
             State, self._state
@@ -77,7 +78,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
             cast(
                 Iterable[
                     tuple[
-                        Appliance[ApplianceState, ApplianceControl, Port],
+                        Appliance[ApplianceState, GenericControl, Port],
                         ApplianceState,
                     ]
                 ],
@@ -98,7 +99,7 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
         self.prev = prev
 
     def value[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](
         self: "NetworkStateValueBuilder[Net, Appliance[State, Control, Port], *Prev]",
         state: State,
@@ -113,7 +114,7 @@ FromPort = TypeVar("FromPort", bound=Port)
 ToPort = TypeVar("ToPort", bound=Port)
 From = TypeVar("From", bound=AnyAppliance, covariant=True)
 To = TypeVar("To", bound=AnyAppliance, covariant=True)
-ToControl = TypeVar("ToControl", bound=ApplianceControl)
+ToControl = TypeVar("ToControl", bound=GenericControl)
 
 
 @dataclass(frozen=True, eq=True)
@@ -157,7 +158,7 @@ class PortFromConnector(Generic[Net, From, FromPort, *Prev]):
         self._prev = prev
 
     def to[
-        To: AnyAppliance, ToControl: ApplianceControl
+        To: AnyAppliance, ToControl: GenericControl
     ](self, to: To) -> PortToConnector[Net, From, FromPort, To, ToControl, *Prev]:
         return PortToConnector(self._from_app, self._from_port, to, *self._prev)
 
@@ -168,7 +169,7 @@ class ApplianceConnector(Generic[Net, From, *Prev]):
         self.prev = prev
 
     def at[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](
         self: "ApplianceConnector[Net, Appliance[State, Control, Port], *Prev]",
         from_port: Port,
@@ -275,8 +276,9 @@ class NetworkConnections[Net: "Network[Any]"]:
 
 
 class ControlGetter[App: AnyAppliance]:
+
     def __init__[
-        Control: ApplianceControl
+        Control: GenericControl
     ](
         self: "ControlGetter[Appliance[ApplianceState, Control, Port]]",
         _: App,
@@ -285,7 +287,7 @@ class ControlGetter[App: AnyAppliance]:
         self._control = control
 
     def get[
-        Control: ApplianceControl
+        Control: GenericControl
     ](self: "ControlGetter[Appliance[ApplianceState, Control, Port]]") -> Control:
         return cast(
             Control, self._control
@@ -293,11 +295,12 @@ class ControlGetter[App: AnyAppliance]:
 
 
 class NetworkControl[Net: "Network[Any]"]:
-    def __init__(self, controls: dict[AnyAppliance, ApplianceControl]):
+
+    def __init__(self, controls: dict[AnyAppliance, GenericControl]):
         self._controls = controls
 
     def appliance[App: AnyAppliance](self, app: App) -> ControlGetter[App]:
-        return ControlGetter(app, self._controls.get(app, ApplianceControl()))
+        return ControlGetter(app, self._controls.get(app, None))
 
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:
@@ -312,15 +315,14 @@ class ControlBuilder[Net: "Network[Any]", *Prev]:
         return ControlApplianceBuilder(app, *self._prev)
 
     def build(self) -> NetworkControl[Net]:
-        control = dict(
-            cast(Iterable[tuple[AnyAppliance, ApplianceControl]], self._prev)
-        )
+        control = dict(cast(Iterable[tuple[AnyAppliance, GenericControl]], self._prev))
         return NetworkControl(control)
 
 
 class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
+
     def __init__[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](
         self: "ControlApplianceBuilder[Net, Appliance[State, Control, Port], *Prev]",
         app: App,
@@ -330,7 +332,7 @@ class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
         self._app = app
 
     def value[
-        State: ApplianceState, Control: ApplianceControl, Port: Port
+        State: ApplianceState, Control: GenericControl, Port: Port
     ](
         self: "ControlApplianceBuilder[Net, Appliance[State, Control, Port], *Prev]",
         control: Control,

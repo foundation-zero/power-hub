@@ -1,5 +1,5 @@
 from pytest import fixture
-from energy_box_control.appliances.base import ApplianceControl, ConnectionState
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPort
 
 
@@ -14,7 +14,7 @@ def test_heat(heat_pipes):
             HeatPipesPort.IN: ConnectionState(1, 0),
         },
         HeatPipesState(),
-        ApplianceControl(),
+        None,
     )
     assert (
         outputs[HeatPipesPort.OUT].temperature
@@ -29,7 +29,7 @@ def test_maintain_max_temp(heat_pipes):
             HeatPipesPort.IN: ConnectionState(1, heat_pipes.max_temp),
         },
         HeatPipesState(),
-        ApplianceControl(),
+        None,
     )
     assert outputs[HeatPipesPort.OUT].temperature == heat_pipes.max_temp
     assert outputs[HeatPipesPort.OUT].flow == 1

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     Port,
 )
@@ -20,5 +19,5 @@ class ChillerPort(Port):
     COOLING_OUT = "COOLING_OUT"
 
 
-class Chiller(Appliance[ChillerState, ApplianceControl, ChillerPort]):
+class Chiller(Appliance[ChillerState, None, ChillerPort]):
     pass
