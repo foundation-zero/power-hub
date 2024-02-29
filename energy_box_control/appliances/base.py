@@ -15,7 +15,9 @@ class ApplianceControl:
 
 
 @dataclass(frozen=True, eq=True)
-class Appliance[TState: ApplianceState, TControl: ApplianceControl, TPort: "Port"](ABC):
+class Appliance[
+    TState: ApplianceState, TControl: ApplianceControl | None, TPort: "Port"
+](ABC):
     id: uuid.UUID = field(init=False, default_factory=lambda: uuid.uuid4())
 
     @abstractmethod

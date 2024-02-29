@@ -1,5 +1,4 @@
 from energy_box_control.appliances.base import (
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
 )
@@ -18,7 +17,7 @@ def test_heat_exchanger_equal_flow():
             HeatExchangerPort.B_IN: ConnectionState(1, 90),
         },
         ApplianceState(),
-        ApplianceControl(),
+        None,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(1, 30)
@@ -34,7 +33,7 @@ def test_heat_exchanger_equal_capacity():
             HeatExchangerPort.B_IN: ConnectionState(1, 100),
         },
         ApplianceState(),
-        ApplianceControl(),
+        None,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(3, 25)

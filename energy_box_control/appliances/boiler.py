@@ -61,7 +61,6 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             fill_capacity = (
                 inputs[BoilerPort.FILL_IN].flow * self.specific_heat_capacity_fill
             )
-            fill_heat = fill_capacity * (inputs[BoilerPort.FILL_IN].temperature)
             fill_heat = fill_capacity * inputs[BoilerPort.FILL_IN].temperature
 
         else:

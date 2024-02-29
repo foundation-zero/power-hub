@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -18,7 +17,7 @@ class SourcePort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class Source(Appliance[SourceState, ApplianceControl, SourcePort]):
+class Source(Appliance[SourceState, None, SourcePort]):
     flow: float
     temp: float
 
@@ -26,6 +25,6 @@ class Source(Appliance[SourceState, ApplianceControl, SourcePort]):
         self,
         inputs: dict[SourcePort, "ConnectionState"],
         previous_state: SourceState,
-        control: ApplianceControl,
+        control: None,
     ) -> tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
         return SourceState(), {SourcePort.OUTPUT: ConnectionState(self.flow, self.temp)}

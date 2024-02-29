@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -16,7 +15,7 @@ class HeatExchangerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class HeatExchanger(Appliance[ApplianceState, ApplianceControl, HeatExchangerPort]):
+class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
     specific_heat_capacity_A: float
     specific_heat_capacity_B: float
 
@@ -25,7 +24,7 @@ class HeatExchanger(Appliance[ApplianceState, ApplianceControl, HeatExchangerPor
         self,
         inputs: dict[HeatExchangerPort, ConnectionState],
         previous_state: ApplianceState,
-        control: ApplianceControl,
+        control: None,
     ) -> tuple[ApplianceState, dict[HeatExchangerPort, ConnectionState]]:
 
         heat_A = (
