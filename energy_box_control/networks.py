@@ -55,9 +55,10 @@ class BoilerNetwork(Network[BoilerSensors]):
         )
 
     def connections(self) -> NetworkConnections[Self]:
+        connect = self.connect(self.source)
         return (
-            self.connect(self.source)
-            .at(SourcePort.OUTPUT)
+            connect
+            .at(BoilerPort.HEAT_EXCHANGE_IN)
             .to(self.boiler)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
             .build()

@@ -27,3 +27,6 @@ strict = ["energy_box_control"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+run_power_hub_simulation = 'energy_box_control.simulation:run'
