@@ -57,6 +57,14 @@ class NetworkState(Generic[Net]):
         self._appliance_state = appliance_state
         self._connection_state = connection_state
 
+    def get_appliances_states(self) -> dict[Appliance[Any, Any, Any], ApplianceState]:
+        return self._appliance_state
+
+    def get_connections_states(
+        self,
+    ) -> dict[tuple[Appliance[Any, Any, Any], Port], ConnectionState]:
+        return self._connection_state
+
     def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
