@@ -51,7 +51,7 @@ class BoilerNetwork(Network[BoilerSensors]):
             .value(SourceState())
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build(self.connections(), self.feedback())
+            .build()
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -97,7 +97,7 @@ class BoilerValveNetwork(BoilerNetwork):
             .value(self.valve_state)
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build(self.connections(), self.feedback())
+            .build()
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -142,7 +142,7 @@ class YazakiNetwork(Network[None]):
             .value(SourceState())
             .define_state(self.yazaki)
             .value(YazakiState(0))
-            .build(self.connections(), self.feedback())
+            .build()
         )
 
     def connections(self) -> NetworkConnections[Self]:

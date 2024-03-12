@@ -38,7 +38,7 @@ def test_network():
                 .value(ValveState(0.5))
                 .define_state(self.boiler)
                 .value(BoilerState(50))
-                .build(self.connections(), self.feedback())
+                .build()
             )
 
         def connections(self):
@@ -74,11 +74,7 @@ def test_circular_network():
         boiler = Boiler(99, 100, 0, 1, 0)
 
         def initial_state(self) -> NetworkState[Self]:
-            return (
-                self.define_state(self.boiler)
-                .value(BoilerState(100))
-                .build(self.connections(), self.feedback())
-            )
+            return self.define_state(self.boiler).value(BoilerState(100)).build()
 
         def connections(self) -> NetworkConnections[Self]:
             return NetworkConnections([])

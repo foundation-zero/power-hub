@@ -65,17 +65,16 @@ class NetworkState(Generic[Net]):
 
 
 class NetworkStateBuilder(Generic[Net, *Prev]):
-    def __init__(self, *prev: *Prev):
+    def __init__(self, network: Net, *prev: *Prev):
+        self._network = network
         self._prev = prev
 
     def define_state[
         App: AnyAppliance
     ](self, app: App) -> "NetworkStateValueBuilder[Net, App, *Prev]":
-        return NetworkStateValueBuilder(app, *self._prev)
+        return NetworkStateValueBuilder(self._network, app, *self._prev)
 
-    def build(
-        self, connections: "NetworkConnections[Net]", feedback: "NetworkFeedbacks[Net]"
-    ) -> NetworkState[Net]:
+    def build(self) -> NetworkState[Net]:
         state = dict(
             cast(
                 Iterable[
@@ -88,15 +87,18 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
             )
         )
 
-        missing_appliances = set(connections.execution_order()) - set(state.keys())
+        missing_appliances = set(self._network.connections().execution_order()) - set(
+            state.keys()
+        )
         if missing_appliances:
             raise Exception(f"missing states for {missing_appliances}")
 
-        return NetworkState(state, feedback.initial_states())
+        return NetworkState(state, self._network.feedback().initial_states())
 
 
 class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
-    def __init__(self, app: App, *prev: *Prev):
+    def __init__(self, network: Net, app: App, *prev: *Prev):
+        self._network = network
         self._app = app
         self._prev = prev
 
@@ -108,7 +110,7 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
     ) -> NetworkStateBuilder[Net, *Prev, App, State]:
         return cast(
             NetworkStateBuilder[Net, *Prev, App, State],
-            NetworkStateBuilder(*self._prev, (self._app, state)),
+            NetworkStateBuilder(self._network, *self._prev, (self._app, state)),
         )
 
 
@@ -549,15 +551,12 @@ class Network[Sensors](ABC):
     def define_state[
         App: AnyAppliance
     ](self, app: App) -> NetworkStateValueBuilder[Self, App]:
-        return NetworkStateValueBuilder(app)
+        return NetworkStateValueBuilder(self, app)
 
     def control[
         App: AnyAppliance
     ](self, app: App) -> ControlApplianceBuilder[Self, App]:
         return ControlApplianceBuilder(app)
-
-    @abstractmethod
-    def initial_state(self) -> NetworkState[Self]: ...
 
     @abstractmethod
     def connections(self) -> NetworkConnections[Self]: ...

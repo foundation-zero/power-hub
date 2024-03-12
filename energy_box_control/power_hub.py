@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Self
+import uuid
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -35,13 +36,14 @@ class PowerHubSensors:
     pass
 
 
+@dataclass
 class PowerHub(Network[PowerHubSensors]):
     heat_pipes: HeatPipes  # W-1001
     heat_pipes_valve: Valve  # CV-1006
     heat_pipes_mix: Mix
-    boiler: Boiler  # W-1002
-    boiler_pcm_valve: Valve  # CV-1001
-    boiler_mix: Mix
+    hot_reservoir: Boiler  # W-1002
+    hot_reservoir_pcm_valve: Valve  # CV-1001
+    hot_mix: Mix
     pcm: Pcm  # W-1003
     chiller_switch_valve: Valve  # CV-1008
     yazaki: Yazaki  # W-1005
@@ -54,11 +56,15 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_bypass_valve: Valve  # CV-1003
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
-    outboat_exchange: HeatExchanger  # W-1007
+    outboard_exchange: HeatExchanger  # W-1007
     waste_switch_valve: Valve  # CV-1007
     chiller_waste_bypass_valve: Valve  # CV-1009
     chiller_waste_mix: Mix
     fresh_water_source: Source
+    outboard_source: Source
+
+    def __post_init__(self):
+        super().__init__()
 
     def connections(self) -> NetworkConnections[Self]:
         pcm_circuit = self._pcm_circuit()
@@ -66,14 +72,21 @@ class PowerHub(Network[PowerHubSensors]):
         chilled_side = self._chilled_side()
         waste_side = self._waste_side()
         fresh_water_circuit = self._fresh_water_circuit()
+        outboard = self._outboard()
 
         return (
             pcm_circuit.combine(pcm_to_yazaki)
             .combine(chilled_side)
             .combine(waste_side)
             .combine(fresh_water_circuit)
+            .combine(outboard)
             .build()
         )
+
+    def find_appliance_name_by_id(self, id: uuid.UUID):
+        for name, appliance in self.__dict__.items():
+            if appliance.id == id:
+                return name
 
     def _pcm_circuit(self):
         # fmt: off
@@ -88,37 +101,32 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.heat_pipes_mix)
             .at(MixPort.B)
 
-            .connect(self.heat_pipes_mix)
-            .at(MixPort.AB)
-            .to(self.heat_pipes)
-            .at(HeatPipesPort.IN)
-
             .connect(self.heat_pipes_valve)
             .at(ValvePort.A)
-            .to(self.boiler_pcm_valve)
+            .to(self.hot_reservoir_pcm_valve)
             .at(ValvePort.AB)
 
-            .connect(self.boiler_pcm_valve)
+            .connect(self.hot_reservoir_pcm_valve)
             .at(ValvePort.B)
-            .to(self.boiler)
+            .to(self.hot_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
 
-            .connect(self.boiler)
+            .connect(self.hot_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_OUT)
-            .to(self.boiler_mix)
+            .to(self.hot_mix)
             .at(MixPort.B)
 
-            .connect(self.boiler_pcm_valve)
+            .connect(self.hot_reservoir_pcm_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.CHARGE_IN)
 
             .connect(self.pcm)
             .at(PcmPort.CHARGE_OUT)
-            .to(self.boiler_mix)
+            .to(self.hot_mix)
             .at(MixPort.A)
 
-            .connect(self.boiler_mix)
+            .connect(self.hot_mix)
             .at(MixPort.AB)
             .to(self.heat_pipes_mix)
             .at(MixPort.A)
@@ -133,11 +141,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(PcmPort.DISCHARGE_OUT)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
-
-            .connect(self.yazaki)
-            .at(YazakiPort.HOT_OUT)
-            .to(self.pcm)
-            .at(PcmPort.DISCHARGE_IN)
         )
         # fmt: on
 
@@ -150,10 +153,12 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.chill_mix)
             .at(MixPort.A)
 
-            .connect(self.chill_mix)
-            .at(MixPort.AB)
-            .to(self.cold_reservoir)
-            .at(BoilerPort.HEAT_EXCHANGE_IN)
+            .connect(self.chiller)
+            .at(ChillerPort.CHILLED_OUT)
+            .to(self.chill_mix)
+            .at(MixPort.B)
+
+            # feedback
 
             .connect(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_OUT)
@@ -194,6 +199,11 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.chiller_waste_bypass_valve)
             .at(ValvePort.B)
             .to(self.chiller_waste_mix)
+            .at(MixPort.B)
+
+            .connect(self.chiller_waste_mix)
+            .at(MixPort.AB)
+            .to(self.waste_mix)
             .at(MixPort.B)
 
             .connect(self.waste_switch_valve)
@@ -243,10 +253,18 @@ class PowerHub(Network[PowerHubSensors]):
 
             .connect(self.preheat_mix)
             .at(MixPort.AB)
-            .to(self.outboat_exchange)
+            .to(self.outboard_exchange)
             .at(HeatExchangerPort.A_IN)            
         )
         # fmt: on
+
+    def _outboard(self):
+        return (
+            self.connect(self.outboard_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.outboard_exchange)
+            .at(HeatExchangerPort.B_IN)
+        )
 
     def feedback(self) -> NetworkFeedbacks[Self]:
         # fmt: off
@@ -255,25 +273,31 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.AB)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(0, 0))
+            .initial_state(ConnectionState(1, 0))
 
             .feedback(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(0, 0))
+            .initial_state(ConnectionState(1, 0))
 
-            .feedback(self.chiller)
-            .at(ChillerPort.CHILLED_OUT)
-            .to(self.chill_mix)
-            .at(MixPort.B)
-            .initial_state(ConnectionState(0, 0))
+            .feedback(self.chill_mix)
+            .at(MixPort.AB)
+            .to(self.cold_reservoir)
+            .at(BoilerPort.HEAT_EXCHANGE_IN)
+            .initial_state(ConnectionState(1, 0))
 
-            .feedback(self.outboat_exchange)
+            .feedback(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
-            .initial_state(ConnectionState(0, 0))
+            .initial_state(ConnectionState(1, 0))
+
+            .feedback(self.yazaki)
+            .at(YazakiPort.HOT_OUT)
+            .to(self.pcm)
+            .at(PcmPort.DISCHARGE_IN)
+            .initial_state(ConnectionState(1, 0))
 
             .build()
         )
@@ -289,7 +313,7 @@ class PowerHub(Network[PowerHubSensors]):
             
             .connect(self.preheat_reservoir)
             .at(BoilerPort.FILL_OUT)
-            .to(self.boiler)
+            .to(self.hot_reservoir)
             .at(BoilerPort.FILL_IN)
         )
         # fmt: on
