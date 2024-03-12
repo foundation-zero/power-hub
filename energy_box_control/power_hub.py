@@ -56,7 +56,7 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_bypass_valve: Valve  # CV-1003
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
-    outboat_exchange: HeatExchanger  # W-1007
+    outboard_exchange: HeatExchanger  # W-1007
     waste_switch_valve: Valve  # CV-1007
     chiller_waste_bypass_valve: Valve  # CV-1009
     chiller_waste_mix: Mix
@@ -253,7 +253,7 @@ class PowerHub(Network[PowerHubSensors]):
 
             .connect(self.preheat_mix)
             .at(MixPort.AB)
-            .to(self.outboat_exchange)
+            .to(self.outboard_exchange)
             .at(HeatExchangerPort.A_IN)            
         )
         # fmt: on
@@ -262,7 +262,7 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self.connect(self.outboard_source)
             .at(SourcePort.OUTPUT)
-            .to(self.outboat_exchange)
+            .to(self.outboard_exchange)
             .at(HeatExchangerPort.B_IN)
         )
 
@@ -287,7 +287,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(BoilerPort.HEAT_EXCHANGE_IN)
             .initial_state(ConnectionState(1, 0))
 
-            .feedback(self.outboat_exchange)
+            .feedback(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)

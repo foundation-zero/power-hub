@@ -57,7 +57,7 @@ def test_power_hub_simulation():
         preheat_bypass_valve=Valve(),
         preheat_reservoir=Boiler(1, 1, 1, 1, 1),  # incorrect
         preheat_mix=Mix(),
-        outboat_exchange=HeatExchanger(1, 1),  # incorrect
+        outboard_exchange=HeatExchanger(1, 1),  # incorrect
         waste_switch_valve=Valve(),
         chiller_waste_bypass_valve=Valve(),
         chiller_waste_mix=Mix(),
@@ -107,7 +107,7 @@ def test_power_hub_simulation():
         .value(ApplianceState())
         .define_state(power_hub.waste_mix)
         .value(ApplianceState())
-        .define_state(power_hub.outboat_exchange)
+        .define_state(power_hub.outboard_exchange)
         .value(ApplianceState())
         .define_state(power_hub.heat_pipes)
         .value(HeatPipesState())
