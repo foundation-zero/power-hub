@@ -1,8 +1,7 @@
 from pytest import fixture
 from energy_box_control.appliances.base import ApplianceControl, ConnectionState
-from energy_box_control.appliances.chiller import (
+from energy_box_control.appliances import (
     Chiller,
-    ChillerControl,
     ChillerPort,
     ChillerState,
 )
@@ -20,7 +19,7 @@ def test_chiller(chiller):
             ChillerPort.COOLING_IN: ConnectionState(1, 20),
         },
         ChillerState(),
-        ChillerControl(),
+        None,
     )
     assert outputs[ChillerPort.CHILLED_OUT].temperature == 9
 

@@ -48,10 +48,15 @@ _heat_input_values: list[list[float]] = [
 _cooling_capacity_interpolator = RegularGridInterpolator(
     (_ref_temps_cooling, _ref_temps_heat),
     _cooling_capacity_values,
+    bounds_error=False,
+    fill_value=None,
 )
 
 _heat_input_interpolator = RegularGridInterpolator(
-    (_ref_temps_cooling, _ref_temps_heat), _heat_input_values
+    (_ref_temps_cooling, _ref_temps_heat),
+    _heat_input_values,
+    bounds_error=False,
+    fill_value=None,
 )
 
 

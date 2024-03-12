@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
     Appliance,
-    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -22,12 +21,7 @@ class ChillerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class ChillerControl(ApplianceControl):
-    pass
-
-
-@dataclass(frozen=True, eq=True)
-class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
+class Chiller(Appliance[ChillerState, None, ChillerPort]):
     cooling_capacity: float
     specific_heat_capacity_chilled: float  # J / l K
     specific_heat_capacity_cooling: float  # J / l K
@@ -36,7 +30,7 @@ class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
         self,
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
-        control: ChillerControl,
+        control: None,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
 
         chilled_out_temp = inputs[
