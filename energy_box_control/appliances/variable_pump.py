@@ -14,8 +14,8 @@ class VariablePumpState(ApplianceState):
 
 
 class VariablePumpPort(Port):
-    IN = "IN"
-    OUT = "OUT"
+    IN = "in"
+    OUT = "out"
 
 
 @dataclass(frozen=True, eq=True)

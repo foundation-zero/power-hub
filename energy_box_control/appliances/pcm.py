@@ -19,10 +19,10 @@ class PcmState(ApplianceState):
 
 
 class PcmPort(Port):
-    CHARGE_IN = "CHARGE_IN"
-    CHARGE_OUT = "CHARGE_OUT"
-    DISCHARGE_IN = "DISCHARGE_IN"
-    DISCHARGE_OUT = "DISCHARGE_OUT"
+    CHARGE_IN = "charge_in"
+    CHARGE_OUT = "charge_out"
+    DISCHARGE_IN = "discharge_in"
+    DISCHARGE_OUT = "discharge_out"
 
 
 @dataclass(eq=True, frozen=True)

@@ -46,10 +46,25 @@ services:
     container_name: simulation
     build:
       context: .
-      dockerfile: simulation.Dockerfile
+      dockerfile: python_script.Dockerfile
+    command: "run_power_hub_simulation"
     networks:
       - power_hub_simulation
 
+  power_hub_api:
+    depends_on:
+      - influxdb
+    container_name: power_hub_api
+    ports:
+      - "5001:5001"
+    build:
+      context: .
+      dockerfile: python_script.Dockerfile
+    command: "run_power_hub_api"
+    networks:
+      - power_hub_simulation
+    env_file:
+      - simulation.env
 
 networks:
   power_hub_simulation:

@@ -8,10 +8,10 @@ from energy_box_control.appliances.base import (
 
 
 class HeatExchangerPort(Port):
-    A_IN = "A_IN"
-    A_OUT = "A_OUT"
-    B_IN = "B_IN"
-    B_OUT = "B_OUT"
+    A_IN = "a_in"
+    A_OUT = "a_out"
+    B_IN = "b_in"
+    B_OUT = "b_out"
 
 
 @dataclass(frozen=True, eq=True)

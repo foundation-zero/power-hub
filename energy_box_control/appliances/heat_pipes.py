@@ -15,8 +15,8 @@ class HeatPipesState(ApplianceState):
 
 
 class HeatPipesPort(Port):
-    IN = "IN"
-    OUT = "OUT"
+    IN = "in"
+    OUT = "out"
 
 
 @dataclass(frozen=True, eq=True)

@@ -26,9 +26,9 @@ def create_and_connect_client() -> mqtt_client.Client:
     return client
 
 
-def publish_mqtt(client: mqtt_client.Client, topic: str, msg: str):
-    result = client.publish(topic, msg)
+def publish_mqtt(client: mqtt_client.Client, topic: str, value: float):
+    result = client.publish(topic, value)
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        print(f"Send `{msg}` to topic `{topic}`")
+        print(f"Send `{value}` to topic `{topic}`")
     else:
         print(f"Failed to send message to topic {topic}")
