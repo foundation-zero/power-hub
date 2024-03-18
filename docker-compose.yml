@@ -1,0 +1,59 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - power_hub_simulation
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+  
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    ports:
+      - "8086:8086"
+    networks:
+      - power_hub_simulation
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    env_file:
+      - simulation.env
+  
+  telegraf:
+    image: telegraf
+    container_name: telegraf
+    restart: always
+    volumes:
+      - ./docker/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - mosquitto
+      - influxdb
+    networks:
+      - power_hub_simulation
+    env_file:
+      - simulation.env
+
+  simulation:
+    depends_on:
+      - mosquitto
+      - telegraf
+    container_name: simulation
+    build:
+      context: .
+      dockerfile: simulation.Dockerfile
+    networks:
+      - power_hub_simulation
+
+
+networks:
+  power_hub_simulation:
+
+volumes:
+  influxdb-data:
+  influxdb-config:
