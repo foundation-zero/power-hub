@@ -8,3 +8,5 @@ from .pcm import *
 from .yazaki import *
 from .chiller import *
 from .heat_exchanger import *
+from .switch_pump import *
+from .variable_pump import *
