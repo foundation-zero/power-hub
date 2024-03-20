@@ -435,22 +435,30 @@ class PowerHub(Network[PowerHubSensors]):
     def regulate(
         self, control_state: ControlState
     ) -> tuple[(ControlState, NetworkControl[Self])]:
+        # Rough Initial description of envisioned control plan
+        # All specific values can very well be tweaked depending on calibration or performance tuning
+
         # Control modes
-        # Hot: heat boiler / heat PCM
+        # Hot: heat boiler / heat PCM / off
         # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
         # Waste: preheat below temp / preheat full: waste heat outboard
-        # Domestic: provide cooling / ventilation cooling
+        # Domestic cooling: provide cooling / ventilation cooling
 
         # hot water usage
         # PID heat pipes feedback valve by ~ +5 degrees above the heat destination (depending on the hot_reservoir_pcm_valve)
         # every 5 minutes
         #   if hot reservoir is below its target temp: heat boiler
-        #   else: heat PCM
+        #   else if PCM is below its max temperature (95 degrees C): heat PCM
+        #   else off
         # if heat boiler
         #   have hot_reservoir_pcm_valve feed water into reservoir heat exchanger
+        #   run pump
         # if heat PCM
-        #   feed heat into PCM
+        #   have hot_reservoir_pcm_valve feed water into PCM
         #   monitor PCM SoC by counting power
+        #   run pump
+        # if off
+        #   (do not run pump)
 
         # Chill
         # every 15 minutes
@@ -475,8 +483,8 @@ class PowerHub(Network[PowerHubSensors]):
 
         # Waste
         # every 5 minutes
-        #   if preheat reservoir > 35 degrees C: bypass preheat
-        #   if preheat reservoir < 35 degrees C: enter preheat
+        #   if preheat reservoir > waste output temp or preheat reservoir > 35 degrees C: bypass preheat
+        #   if preheat reservoir < waste output temp and preheat reservoir < 35 degrees: enter preheat
 
         # if bypass preheat:
         #   direct flow into active chiller (no bypass)
@@ -487,7 +495,7 @@ class PowerHub(Network[PowerHubSensors]):
         #   fully enter preheat reservoir
         #   do not run outboard heat exchange pump
 
-        # Domestic
+        # Domestic cooling
         # every 30 miuntes
         #   if ambient temperature > 25 degrees C: provide active cooling
         #   if ambient temperature < 25 degrees C: ventilation cooling
