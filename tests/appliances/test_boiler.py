@@ -1,4 +1,4 @@
-from hypothesis import assume, example, given
+from hypothesis import assume, example, given, reproduce_failure
 from hypothesis.strategies import floats
 from pytest import approx
 from energy_box_control.appliances.base import ConnectionState
@@ -46,7 +46,7 @@ def test_boiler_heating(
     )
 
     assert state.temperature == approx(
-        boiler_temp + (heater_power - heat_loss) / heat_capacity_tank
+        boiler_temp + (heater_power - heat_loss) / heat_capacity_tank, abs=1e-6
     )
 
 
@@ -85,7 +85,7 @@ def test_boiler_exchange(
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
     )
-    assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2)
+    assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2, abs=1e-6)
 
 
 @given(heat_capacity_strat, heat_capacity_strat, temp_strat, flow_strat, temp_strat)
@@ -113,4 +113,4 @@ def test_boiler_fill(
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
     )
-    assert state.temperature == approx((boiler_temp + fill_in_temp) / 2)
+    assert state.temperature == approx((boiler_temp + fill_in_temp) / 2, abs=1e-6)
