@@ -435,6 +435,66 @@ class PowerHub(Network[PowerHubSensors]):
     def regulate(
         self, control_state: ControlState
     ) -> tuple[(ControlState, NetworkControl[Self])]:
+        # Control modes
+        # Hot: heat boiler / heat PCM
+        # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
+        # Waste: preheat below temp / preheat full: waste heat outboard
+        # Domestic: provide cooling / ventilation cooling
+
+        # hot water usage
+        # PID heat pipes feedback valve by ~ +5 degrees above the heat destination (depending on the hot_reservoir_pcm_valve)
+        # every 5 minutes
+        #   if hot reservoir is below its target temp: heat boiler
+        #   else: heat PCM
+        # if heat boiler
+        #   have hot_reservoir_pcm_valve feed water into reservoir heat exchanger
+        # if heat PCM
+        #   feed heat into PCM
+        #   monitor PCM SoC by counting power
+
+        # Chill
+        # every 15 minutes
+        #   if cold reservoir < 9 degrees C: reservoir full
+        #   if cold reservoir > 9 degrees C and PCM SoC > 80%: chill Yazaki
+        #   if cold reservoir > 9 degrees C and PCM SoC < 80%: wait before starting e-chiller
+        #   if cold reservoir > 11 degrees C and PCM SoC < 80%: chill e-chiller
+
+        # if chill yazaki:
+        #   switch chiller valve to Yazaki
+        #   switch waste valve to Yazaki
+        #   keep pcm Yazaki valve open
+        #   ensure waste heat take away is flowing
+        #   run pcm pump
+        #   PID chill pump at speed at which Yazaki chill output is -3 degrees from chill reservoir
+        # if chill e-chiller:
+        #   switch chiller valve to e-chiller
+        #   switch waste valve to e-chiller
+        #   keep pcm e-chiller valve open
+        #   ensure waste heat take away is flowing
+        #   PID chill pump at speed at which e-chiller chill output is -3 degrees from chill reservoir
+
+        # Waste
+        # every 5 minutes
+        #   if preheat reservoir > 35 degrees C: bypass preheat
+        #   if preheat reservoir < 35 degrees C: enter preheat
+
+        # if bypass preheat:
+        #   direct flow into active chiller (no bypass)
+        #   bypass preheat reservoir
+        #   run outboard heat exchange pump
+        # if enter preheat:
+        #   bypass waste heat for +3 degrees over preheat reservoir temp
+        #   fully enter preheat reservoir
+        #   do not run outboard heat exchange pump
+
+        # Domestic
+        # every 30 miuntes
+        #   if ambient temperature > 25 degrees C: provide active cooling
+        #   if ambient temperature < 25 degrees C: ventilation cooling
+
+        # if provide active cooling:
+        #   PID domestic cooling pump based on setpoint of cold reservoir temperature + 3 degrees
+
         return (
             control_state,
             self.control(self.hot_reservoir)
