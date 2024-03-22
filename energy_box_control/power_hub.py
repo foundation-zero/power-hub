@@ -89,7 +89,7 @@ class PowerHub(Network[PowerHubSensors]):
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             hot_reservoir=Boiler(
-                1, 1, 1, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
+                100, 1, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
             ),  # incorrect
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),

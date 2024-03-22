@@ -9,7 +9,7 @@ from energy_box_control.appliances.boiler import (
     BoilerState,
 )
 
-
+volume_strat = floats(1, 1e3, allow_nan=False)
 temp_strat = floats(0, 150, allow_nan=False)
 flow_strat = floats(0, 100, allow_nan=False)
 heat_capacity_strat = floats(1, 1e5, allow_nan=False)
@@ -17,7 +17,7 @@ power_strat = floats(0, 1e6, allow_nan=False)
 
 
 @given(
-    heat_capacity_strat,
+    volume_strat,
     power_strat,
     power_strat,
     heat_capacity_strat,
@@ -26,7 +26,7 @@ power_strat = floats(0, 1e6, allow_nan=False)
 )
 @example(20, 1, 1, 1, 1, 0)
 def test_boiler_heating(
-    heat_capacity_tank,
+    volume,
     heater_power,
     heat_loss,
     specific_heat_capacity_exchange,
@@ -35,7 +35,7 @@ def test_boiler_heating(
 ):
 
     boiler = Boiler(
-        heat_capacity_tank,
+        volume,
         heater_power,
         heat_loss,
         specific_heat_capacity_exchange,
@@ -46,12 +46,12 @@ def test_boiler_heating(
     )
 
     assert state.temperature == approx(
-        boiler_temp + (heater_power - heat_loss) / heat_capacity_tank, abs=1e-6
+        boiler_temp + (heater_power - heat_loss) / (volume * specific_heat_capacity_fill), abs=1e-6
     )
 
 
 @given(
-    heat_capacity_strat,
+    volume_strat,
     heat_capacity_strat,
     heat_capacity_strat,
     temp_strat,
@@ -59,7 +59,7 @@ def test_boiler_heating(
 )
 @example(10, 1, 1, 10, 20)
 def test_boiler_exchange(
-    heat_capacity_tank,
+    volume,
     specific_heat_capacity_exchange,
     specific_heat_capacity_fill,
     exchange_in_temp,
@@ -67,14 +67,14 @@ def test_boiler_exchange(
 ):
 
     boiler = Boiler(
-        heat_capacity_tank,
+        volume,
         0,
         0,
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
     )
     exchange_in_flow = (
-        heat_capacity_tank / specific_heat_capacity_exchange
+        volume * specific_heat_capacity_fill / specific_heat_capacity_exchange
     )  # to have equal heat capacities
     state, _ = boiler.simulate(
         {
