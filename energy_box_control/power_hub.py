@@ -43,6 +43,8 @@ from energy_box_control.networks import ControlState
 
 WATER_SPECIFIC_HEAT = 4184
 GLYCOL_SPECIFIC_HEAT = 3565
+AMBIENT_TEMPERATURE = 20
+GLOBAL_IRRADIANCE = 800
 
 
 @dataclass
@@ -83,7 +85,7 @@ class PowerHub(Network[PowerHubSensors]):
     @staticmethod
     def example_power_hub() -> "PowerHub":
         return PowerHub(
-            heat_pipes=HeatPipes(13000, 150, GLYCOL_SPECIFIC_HEAT),
+            heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             hot_reservoir=Boiler(
@@ -170,7 +172,11 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .value(ApplianceState())
             .define_state(power_hub.heat_pipes)
-            .value(HeatPipesState())
+            .value(
+                HeatPipesState(
+                    AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE
+                )
+            )
             .define_state(power_hub.outboard_source)
             .value(SourceState())
             .build()
