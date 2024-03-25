@@ -100,11 +100,9 @@ def test_boiler_fill(
     boiler_temp,
 ):
     assume(fill_in_flow > 0.5)
-    heat_capacity_tank = (
-        specific_heat_capacity_fill * fill_in_flow
-    )  # equal heat capacities
+
     boiler = Boiler(
-        heat_capacity_tank,
+        fill_in_flow,
         0,
         0,
         specific_heat_capacity_exchange,
