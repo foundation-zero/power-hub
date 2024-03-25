@@ -41,8 +41,8 @@ from energy_box_control.network import (
 from energy_box_control.networks import ControlState
 
 
-WATER_SPECIFIC_HEAT = 4186 * 0.997 # J / l K
-GLYCOL_SPECIFIC_HEAT = 3747 * 1.016 # J / l K, 40% glycol at 40 C
+WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
+GLYCOL_SPECIFIC_HEAT = 3747 * 1.016  # J / l K, 40% glycol at 40 C
 AMBIENT_TEMPERATURE = 20
 GLOBAL_IRRADIANCE = 800
 
@@ -88,16 +88,14 @@ class PowerHub(Network[PowerHubSensors]):
             heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
-            hot_reservoir=Boiler(
-                100, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
-            ), 
+            hot_reservoir=Boiler(100, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT),
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),
             pcm=Pcm(
-                latent_heat=100,
-                phase_change_temperature=80,
-                sensible_capacity=1,
-                transfer_power=10000,
+                latent_heat=242000 * 600,  # 600 kg at 242 kJ / kg
+                phase_change_temperature=78,
+                sensible_capacity=1590,  # in liquid state @82C
+                transfer_power=10000,  # random number
                 specific_heat_capacity_charge=WATER_SPECIFIC_HEAT,
                 specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,
             ),
