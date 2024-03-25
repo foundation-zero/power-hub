@@ -46,7 +46,9 @@ def test_boiler_heating(
     )
 
     assert state.temperature == approx(
-        boiler_temp + (heater_power - heat_loss) / (volume * specific_heat_capacity_fill), abs=1e-6
+        boiler_temp
+        + (heater_power - heat_loss) / (volume * specific_heat_capacity_fill),
+        abs=1e-6,
     )
 
 

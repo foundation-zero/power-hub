@@ -41,8 +41,8 @@ from energy_box_control.network import (
 from energy_box_control.networks import ControlState
 
 
-WATER_SPECIFIC_HEAT = 4184
-GLYCOL_SPECIFIC_HEAT = 3565
+WATER_SPECIFIC_HEAT = 4186 * 0.997 # J / l K
+GLYCOL_SPECIFIC_HEAT = 3747 * 1.016 # J / l K, 40% glycol at 40 C
 AMBIENT_TEMPERATURE = 20
 GLOBAL_IRRADIANCE = 800
 
@@ -89,8 +89,8 @@ class PowerHub(Network[PowerHubSensors]):
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             hot_reservoir=Boiler(
-                100, 1, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
-            ),  # incorrect
+                100, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
+            ), 
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),
             pcm=Pcm(

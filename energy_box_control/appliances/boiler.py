@@ -27,9 +27,9 @@ class BoilerControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
-    volume: float # l
-    heater_power: float # W
-    heat_loss: float # W
+    volume: float  # l
+    heater_power: float  # W
+    heat_loss: float  # W
     specific_heat_capacity_exchange: float  # J / l K
     specific_heat_capacity_fill: float  # J / l K
 
@@ -43,7 +43,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         # assuming constant specific heat capacities with the temperature ranges
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
         tank_capacity = self.volume * self.specific_heat_capacity_fill
-        
+
         element_heat = self.heater_power * control.heater_on
         tank_heat = tank_capacity * previous_state.temperature
 
