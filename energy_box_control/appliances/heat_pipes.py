@@ -22,8 +22,8 @@ class HeatPipesPort(Port):
 @dataclass(frozen=True, eq=True)
 class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
     optical_efficiency: float  #
-    convective_loss_factor: float  # W/m2K
-    radiative_loss_factor: float  #  W/m2K2
+    first_order_loss_coefficient: float  # W/m2K
+    second_order_loss_coefficient: float  #  W/m2K2
     absorber_area: float  # m2
     specific_heat_medium: float  # J/lK
 
@@ -39,7 +39,10 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
 
         efficiency = (
             self.optical_efficiency
-            - (self.convective_loss_factor * dT + self.radiative_loss_factor * dT**2)
+            - (
+                self.first_order_loss_coefficient * dT
+                + self.second_order_loss_coefficient * dT**2
+            )
             / previous_state.global_irradiance
         )
 
