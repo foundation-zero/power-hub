@@ -15,7 +15,13 @@ class ApplianceControl:
 
 
 @dataclass(frozen=True, eq=True)
-class Appliance[
+class BaseAppliance[
+    TState: ApplianceState, TControl: ApplianceControl | None, TPort: "Port"
+]:
+    id: uuid.UUID = field(init=False, default_factory=lambda: uuid.uuid4())
+
+
+class Simulatable[
     TState: ApplianceState, TControl: ApplianceControl | None, TPort: "Port"
 ](ABC):
     id: uuid.UUID = field(init=False, default_factory=lambda: uuid.uuid4())
@@ -27,6 +33,12 @@ class Appliance[
         previous_state: TState,
         control: TControl,
     ) -> tuple[TState, dict[TPort, "ConnectionState"]]: ...
+
+
+class Appliance[
+    TState: ApplianceState, TControl: ApplianceControl | None, TPort: "Port"
+](BaseAppliance[TState, TControl, TPort], Simulatable[TState, TControl, TPort], ABC):
+    pass
 
 
 class Port(Enum):
