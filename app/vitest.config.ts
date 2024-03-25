@@ -14,6 +14,7 @@ export default mergeConfig(
           inline: ["vuetify"],
         },
       },
+      restoreMocks: true,
     },
   }),
 );
