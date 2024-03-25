@@ -5,31 +5,29 @@ from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPo
 
 @fixture
 def heat_pipes():
-    return HeatPipes(50, 100, 1)
+    return HeatPipes(50, 5, 5, 1, 1)
 
 
-def test_heat(heat_pipes):
+def test_equal_temps(heat_pipes):
     _, outputs = heat_pipes.simulate(
         {
-            HeatPipesPort.IN: ConnectionState(1, 0),
+            HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(),
+        HeatPipesState(10, 10, 1),
         None,
     )
-    assert (
-        outputs[HeatPipesPort.OUT].temperature
-        == heat_pipes.power / heat_pipes.specific_heat
-    )
+    assert outputs[HeatPipesPort.OUT].temperature == 10.5
     assert outputs[HeatPipesPort.OUT].flow == 1
 
 
-def test_maintain_max_temp(heat_pipes):
-    _, outputs = heat_pipes.simulate(
+def test_differential_temp(heat_pipes):
+    new_state, outputs = heat_pipes.simulate(
         {
-            HeatPipesPort.IN: ConnectionState(1, heat_pipes.max_temp),
+            HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(),
+        HeatPipesState(10, 9, 1),
         None,
     )
-    assert outputs[HeatPipesPort.OUT].temperature == heat_pipes.max_temp
+    assert outputs[HeatPipesPort.OUT].temperature == 10.4
     assert outputs[HeatPipesPort.OUT].flow == 1
+    assert new_state.mean_temperature == 10.2
