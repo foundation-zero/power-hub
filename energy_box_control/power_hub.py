@@ -43,6 +43,8 @@ from energy_box_control.networks import ControlState
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
 GLYCOL_SPECIFIC_HEAT = 3747 * 1.016  # J / l K, 40% glycol at 40 C
+SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
+SEAWATER_TEMP = 24
 AMBIENT_TEMPERATURE = 20
 GLOBAL_IRRADIANCE = 800
 
@@ -88,7 +90,7 @@ class PowerHub(Network[PowerHubSensors]):
             heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
-            hot_reservoir=Boiler(100, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT),
+            hot_reservoir=Boiler(130, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT),
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),
             pcm=Pcm(
@@ -103,21 +105,27 @@ class PowerHub(Network[PowerHubSensors]):
             yazaki=Yazaki(
                 WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
             ),
-            chiller=Chiller(1000, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT),
+            chiller=Chiller(
+                10000, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT  # 2.5 - 18.7 kW
+            ),
             chill_mix=Mix(),
-            cold_reservoir=Boiler(1, 1, 1, 1, 1),  # incorrect
+            cold_reservoir=Boiler(800, 0, 0, 0, WATER_SPECIFIC_HEAT),
             yazaki_waste_bypass_valve=Valve(),
             yazaki_waste_mix=Mix(),
             waste_mix=Mix(),
             preheat_bypass_valve=Valve(),
-            preheat_reservoir=Boiler(1, 1, 1, 1, 1),  # incorrect
+            preheat_reservoir=Boiler(
+                100, 0, 36, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
+            ),  # incorrect
             preheat_mix=Mix(),
-            outboard_exchange=HeatExchanger(1, 1),  # incorrect
+            outboard_exchange=HeatExchanger(
+                SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
+            ),  # incorrect
             waste_switch_valve=Valve(),
             chiller_waste_bypass_valve=Valve(),
             chiller_waste_mix=Mix(),
-            fresh_water_source=Source(1, 20),
-            outboard_source=Source(1, 20),
+            fresh_water_source=Source(0, SEAWATER_TEMP),
+            outboard_source=Source(0, SEAWATER_TEMP),
         )
 
     @staticmethod
