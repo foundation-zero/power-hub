@@ -8,9 +8,9 @@ from energy_box_control.appliances.base import (
 
 
 class MixPort(Port):
-    A = "A"
-    B = "B"
-    AB = "AB"
+    A = "a"
+    B = "b"
+    AB = "ab"
 
 
 @dataclass(eq=True, frozen=True)

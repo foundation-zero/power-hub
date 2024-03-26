@@ -15,8 +15,8 @@ class SwitchPumpState(ApplianceState):
 
 
 class SwitchPumpPort(Port):
-    IN = "IN"
-    OUT = "OUT"
+    IN = "in"
+    OUT = "out"
 
 
 @dataclass(frozen=True, eq=True)
