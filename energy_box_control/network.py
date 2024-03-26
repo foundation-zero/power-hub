@@ -524,8 +524,22 @@ class Network[Sensors](ABC):
 
         return inputs
 
+    @staticmethod
+    def check_temperatures(
+        min_max_temperature: tuple[int, int], connection_state: ConnectionState
+    ):
+        (
+            min_temperature,
+            max_temperature,
+        ) = min_max_temperature
+        if not min_temperature < connection_state.temperature < max_temperature:
+            raise Exception(f"{connection_state} is exceeding {max_temperature}")
+
     def simulate(
-        self, state: NetworkState[Self], controls: NetworkControl[Self]
+        self,
+        state: NetworkState[Self],
+        controls: NetworkControl[Self],
+        min_max_temperature: tuple[int, int] | None = None,
     ) -> NetworkState[Self]:
         port_inputs: dict[SpecificAppliance, dict[Port, ConnectionState]] = (
             self._map_feedback(state)
@@ -542,6 +556,8 @@ class Network[Sensors](ABC):
             appliance_states[appliance] = new_appliance_state
             for port, connection_state in outputs.items():
                 connection_states[(appliance, port)] = connection_state
+                if min_max_temperature is not None:
+                    self.check_temperatures(min_max_temperature, connection_state)
                 to = self._port_mapping.get((appliance, port), None)
                 if to is not None:
                     to_app, to_port = to
@@ -553,7 +569,6 @@ class Network[Sensors](ABC):
                     to_mapping[to_port] = connection_state
                     port_inputs[to_app] = to_mapping
                     connection_states[(to_app, to_port)] = connection_state
-
         return NetworkState(appliance_states, connection_states)
 
     def define_state[
