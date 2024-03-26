@@ -85,12 +85,10 @@ def build_get_values_query(
     )
 
 
-async def execute_influx_query(query: fluxy.Query) -> list[list[str]]:
-    url = os.environ["DOCKER_INFLUXDB_URL"]
-    token = os.environ["DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"]
-    org = os.environ["DOCKER_INFLUXDB_INIT_ORG"]
-    async with InfluxDBClientAsync(url, token, org=org) as client:
-        df = await client.query_api().query_data_frame(query.to_flux())
+async def execute_influx_query(
+    client: InfluxDBClientAsync, query: fluxy.Query
+) -> list[list[str]]:
+    df = await client.query_api().query_data_frame(query.to_flux())
     return df.to_csv()
 
 
@@ -153,6 +151,19 @@ def token_required(f):
     return decorator
 
 
+@app.while_serving
+async def influx_client():
+    url = os.environ["DOCKER_INFLUXDB_URL"]
+    token = os.environ["DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"]
+    org = os.environ["DOCKER_INFLUXDB_INIT_ORG"]
+    try:
+        async with InfluxDBClientAsync(url, token, org=org) as client:
+            app.influx = client
+            yield
+    except Exception as e:
+        print(e)
+
+
 @app.route("/")
 async def hello_world() -> str:
     return "Hello World!"
@@ -195,12 +206,13 @@ async def get_last_values_for_appliances(
     appliance_name: str, field_name: str
 ) -> list[list[ApplianceFieldValue]]:
     return await execute_influx_query(
+        app.influx,
         build_get_values_query(
             request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK),
             appliance_name,
             None,
             field_name,
-        )
+        ),
     )
 
 
@@ -212,12 +224,13 @@ async def get_last_values_for_connections(
     appliance_name: str, connection_name: str, field_name: str
 ) -> list[list[ConnectionFieldValue]]:
     return await execute_influx_query(
+        app.influx,
         build_get_values_query(
             request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK),
             appliance_name,
             connection_name,
             field_name,
-        )
+        ),
     )
 
 
