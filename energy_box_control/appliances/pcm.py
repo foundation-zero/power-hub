@@ -27,11 +27,9 @@ class PcmPort(Port):
 
 @dataclass(eq=True, frozen=True)
 class Pcm(Appliance[PcmState, None, PcmPort]):
-    latent_heat: (
-        float  # latent capacity is modelled as J, whereas sensible capacity is J/K
-    )
-    phase_change_temperature: float
-    sensible_capacity: float
+    latent_heat: float  # J
+    phase_change_temperature: float  # C
+    sensible_capacity: float  # J / K
     transfer_power: float
     specific_heat_capacity_charge: float
     specific_heat_capacity_discharge: float
