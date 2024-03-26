@@ -14,10 +14,10 @@ class ChillerState(ApplianceState):
 
 
 class ChillerPort(Port):
-    CHILLED_IN = "CHILLED_IN"
-    CHILLED_OUT = "CHILLED_OUT"
-    COOLING_IN = "COOLING_IN"
-    COOLING_OUT = "COOLING_OUT"
+    CHILLED_IN = "chilled_in"
+    CHILLED_OUT = "chilled_out"
+    COOLING_IN = "cooling_in"
+    COOLING_OUT = "cooling_out"
 
 
 @dataclass(frozen=True, eq=True)

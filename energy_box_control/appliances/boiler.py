@@ -14,10 +14,10 @@ class BoilerState(ApplianceState):
 
 
 class BoilerPort(Port):
-    HEAT_EXCHANGE_IN = "HEAT_EXCHANGE_IN"
-    HEAT_EXCHANGE_OUT = "HEAT_EXCHANGE_OUT"
-    FILL_IN = "FILL_IN"
-    FILL_OUT = "FILL_OUT"
+    HEAT_EXCHANGE_IN = "heat_exchange_in"
+    HEAT_EXCHANGE_OUT = "heat_exchange_out"
+    FILL_IN = "fill_in"
+    FILL_OUT = "fill_out"
 
 
 @dataclass(frozen=True, eq=True)

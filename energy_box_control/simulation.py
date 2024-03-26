@@ -1,19 +1,42 @@
 import time
+from energy_box_control.appliances.base import (
+    Appliance,
+    ApplianceState,
+    ConnectionState,
+    Port,
+)
 from mqtt import create_and_connect_client, publish_mqtt
-import json
-import dataclasses
+from paho.mqtt import client as mqtt_client
 from typing import Any
 
 from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
+from dataclasses import fields
 
 
-# from https://stackoverflow.com/a/51286749
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o: Any):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
+MQTT_TOPIC_BASE = "power_hub"
+
+
+def publish_appliance_states(
+    power_hub: PowerHub,
+    appliance_states: dict[Appliance[Any, Any, Any], ApplianceState],
+    mqtt_client: mqtt_client.Client,
+):
+    for appliance, appliance_state in appliance_states.items():
+        for field in fields(appliance_state):
+            topic = f"{MQTT_TOPIC_BASE}/appliances/{power_hub.find_appliance_name_by_id(appliance.id)}/{field.name}"
+            publish_mqtt(mqtt_client, topic, getattr(appliance_state, field.name))
+
+
+def publish_connection_states(
+    power_hub: PowerHub,
+    connection_states: dict[tuple[Appliance[Any, Any, Any], Port], ConnectionState],
+    mqtt_client: mqtt_client.Client,
+):
+    for (appliance, port), connection_state in connection_states.items():
+        for field in fields(connection_state):
+            topic = f"{MQTT_TOPIC_BASE}/connections/{power_hub.find_appliance_name_by_id(appliance.id)}/{port.value}/{field.name}"
+            publish_mqtt(mqtt_client, topic, getattr(connection_state, field.name))
 
 
 def run():
@@ -21,24 +44,17 @@ def run():
     state = power_hub.example_initial_state(power_hub)
     control_state = ControlState(50)
     mqtt_client = create_and_connect_client()
-    mqtt_topic = "power_hub/simulation"
 
     while True:
         new_control_state, control_values = power_hub.regulate(control_state)
         new_state = power_hub.simulate(state, control_values)
         control_state = new_control_state
         state = new_state
-
-        dict_to_return = {
-            power_hub.find_appliance_name_by_id(key.id): value
-            for (key, value) in new_state.get_appliances_states().items()
-        } | {
-            f"{power_hub.find_appliance_name_by_id(key.id)}_{port}": value
-            for ((key, port), value) in new_state.get_connections_states().items()
-        }
-
-        publish_mqtt(
-            mqtt_client, mqtt_topic, json.dumps(dict_to_return, cls=EnhancedJSONEncoder)
+        publish_appliance_states(
+            power_hub, new_state.get_appliances_states(), mqtt_client
+        )
+        publish_connection_states(
+            power_hub, new_state.get_connections_states(), mqtt_client
         )
         time.sleep(1)
 
