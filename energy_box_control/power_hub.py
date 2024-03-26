@@ -107,9 +107,10 @@ class PowerHub(Network[PowerHubSensors]):
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),
             pcm=Pcm(
-                latent_heat=242000 * 600,  # 600 kg at 242 kJ/kg
+                latent_heat=242000 * 610,  # 610 kg at 242 kJ/kg
                 phase_change_temperature=78,
-                sensible_capacity=1590,  # in liquid state @82C
+                sensible_capacity=1590
+                * 610,  # 610 kg at 1.59 kJ/kg K in liquid state @82C
                 transfer_power=10000,  # incorrect
                 specific_heat_capacity_charge=WATER_SPECIFIC_HEAT,
                 specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,

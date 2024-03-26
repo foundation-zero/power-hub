@@ -29,7 +29,7 @@ class PcmPort(Port):
 class Pcm(Appliance[PcmState, None, PcmPort]):
     latent_heat: float  # J
     phase_change_temperature: float  # C
-    sensible_capacity: float  # J / kg K
+    sensible_capacity: float  # J / K
     transfer_power: float
     specific_heat_capacity_charge: float
     specific_heat_capacity_discharge: float
