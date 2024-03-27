@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Self
-import uuid
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -235,12 +234,6 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(outboard)
             .build()
         )
-
-    # use fields
-    def find_appliance_name_by_id(self, id: uuid.UUID):
-        for name, appliance in self.__dict__.items():
-            if appliance.id == id:
-                return name
 
     def _pcm_circuit(self):
         # fmt: off
