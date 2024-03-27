@@ -48,7 +48,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     @staticmethod
     def pipes_pcm_circuit() -> "PipesPcmNetwork":
         return PipesPcmNetwork(
-            heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
+            heat_pipes=HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_pump=SwitchPump(15 / 60),
             heat_pipes_mix=Mix(),

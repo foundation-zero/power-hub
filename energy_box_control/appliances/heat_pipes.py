@@ -38,11 +38,11 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
 
         dT = previous_state.mean_temperature - previous_state.ambient_temperature
 
-        power = (
+        power = self.absorber_area * (
             previous_state.global_irradiance * self.optical_efficiency
             - self.first_order_loss_coefficient * dT
             - self.second_order_loss_coefficient * dT**2
-        ) / 100
+        )
 
         temp_out = (
             input.temperature + power / (input.flow * self.specific_heat_medium)

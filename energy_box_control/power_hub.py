@@ -98,7 +98,7 @@ class PowerHub(Network[PowerHubSensors]):
     @staticmethod
     def example_power_hub() -> "PowerHub":
         return PowerHub(
-            heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
+            heat_pipes=HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             heat_pipes_pump=SwitchPump(15 / 60),
