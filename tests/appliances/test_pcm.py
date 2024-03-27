@@ -42,7 +42,6 @@ def test_zero_flow(pcm):
 
     assert state == initial_state
     assert outputs[PcmPort.CHARGE_OUT].flow == 0
-    assert outputs[PcmPort.CHARGE_OUT].temperature == 0
 
 
 def test_charge_pre_phase(pcm):

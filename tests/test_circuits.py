@@ -33,7 +33,7 @@ def run_pipes_pcm_simulation():
             state = pipes_pcm_circuit.simulate(state, controls, min_max_temperature)
         except Exception as e:
             return SimulationFailure(e, i)
-        return SimulationSuccess()
+    return SimulationSuccess()
                 
 def test_pcm_max_temperatures():
     assert run_pipes_pcm_simulation() == SimulationSuccess()

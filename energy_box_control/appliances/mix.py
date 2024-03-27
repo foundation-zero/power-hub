@@ -26,7 +26,7 @@ class Mix(Appliance[ApplianceState, None, MixPort]):
         b = inputs[MixPort.B]
 
         mix_temp = (
-            a.temperature * a.flow + b.temperature * b.flow / (a.flow + b.flow)
+            (a.temperature * a.flow + b.temperature * b.flow) / (a.flow + b.flow)
             if (a.flow + b.flow) > 0
             else (a.temperature + b.temperature)/2
         )
