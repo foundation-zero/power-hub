@@ -14,6 +14,7 @@ from typing import (
     TypeVarTuple,
     cast,
 )
+import uuid
 
 from energy_box_control.appliances import (
     Appliance,
@@ -524,16 +525,26 @@ class Network[Sensors](ABC):
 
         return inputs
 
+    def find_appliance_name_by_id(self, id: uuid.UUID) -> str | None:
+        for name, appliance in self.__dict__.items():
+            if appliance.id == id:
+                return name
+
     @staticmethod
     def check_temperatures(
-        min_max_temperature: tuple[int, int], connection_state: ConnectionState
+        min_max_temperature: tuple[int, int],
+        connection_state: ConnectionState,
+        appliance_name: str | None,
+        port: Port,
     ):
         (
             min_temperature,
             max_temperature,
         ) = min_max_temperature
         if not min_temperature < connection_state.temperature < max_temperature:
-            raise Exception(f"{connection_state} is exceeding {max_temperature}")
+            raise Exception(
+                f"{connection_state} is exceeding {max_temperature}, at appliance {appliance_name} and port {port.value}"
+            )
 
     def simulate(
         self,
@@ -557,7 +568,12 @@ class Network[Sensors](ABC):
             for port, connection_state in outputs.items():
                 connection_states[(appliance, port)] = connection_state
                 if min_max_temperature is not None:
-                    self.check_temperatures(min_max_temperature, connection_state)
+                    self.check_temperatures(
+                        min_max_temperature,
+                        connection_state,
+                        self.find_appliance_name_by_id(appliance.id),
+                        port,
+                    )
                 to = self._port_mapping.get((appliance, port), None)
                 if to is not None:
                     to_app, to_port = to
