@@ -19,3 +19,17 @@ def test_mix():
     )
 
     assert output[MixPort.AB] == ConnectionState(4, 25)
+
+def test_zero_flow_mix():
+    mix = Mix()
+
+    _, output = mix.simulate(
+        {
+            MixPort.A: ConnectionState(0, 0),
+            MixPort.B: ConnectionState(0, 100),
+        },
+        ApplianceState(),
+        None,
+    )
+
+    assert output[MixPort.AB] == ConnectionState(0, 0)

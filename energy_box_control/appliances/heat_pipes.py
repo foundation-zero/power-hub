@@ -33,22 +33,28 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
         previous_state: HeatPipesState,
         control: None,
     ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
+        
+        
         input = inputs[HeatPipesPort.IN]
 
-        dT = previous_state.mean_temperature - previous_state.ambient_temperature
+        if input.flow > 0:
+            dT = previous_state.mean_temperature - previous_state.ambient_temperature
 
-        efficiency = (
-            self.optical_efficiency
-            - (
-                self.first_order_loss_coefficient * dT
-                + self.second_order_loss_coefficient * dT**2
+            efficiency = (
+                self.optical_efficiency
+                - (
+                    self.first_order_loss_coefficient * dT
+                    + self.second_order_loss_coefficient * dT**2
+                )
+                / previous_state.global_irradiance
             )
-            / previous_state.global_irradiance
-        )
 
-        power = previous_state.global_irradiance * efficiency / 100
+            power = previous_state.global_irradiance * efficiency / 100
 
-        temp_out = input.temperature + power / (input.flow * self.specific_heat_medium)
+            temp_out = input.temperature + power / (input.flow * self.specific_heat_medium)
+
+        else: 
+            temp_out = 0
 
         new_state = HeatPipesState(
             (temp_out + input.temperature) / 2,

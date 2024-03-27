@@ -25,7 +25,11 @@ class Mix(Appliance[ApplianceState, None, MixPort]):
         a = inputs[MixPort.A]
         b = inputs[MixPort.B]
 
-        mix_temp = a.temperature * a.flow + b.temperature * b.flow / (a.flow + b.flow)
+        mix_temp = (
+            a.temperature * a.flow + b.temperature * b.flow / (a.flow + b.flow)
+            if (a.flow + b.flow) > 0
+            else 0
+        )
 
         return ApplianceState(), {
             MixPort.AB: ConnectionState(a.flow + b.flow, mix_temp)
