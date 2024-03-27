@@ -33,19 +33,14 @@ def test_differential_temp(heat_pipes):
     assert new_state.mean_temperature == 10.2
 
 
-GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
-AMBIENT_TEMPERATURE = 20
-GLOBAL_IRRADIANCE = 1000
-
-
 @fixture
 def hub_heat_pipes():
-    return HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT)
+    return HeatPipes(76.7, 1.649, 0.006, 16.3, 3840 * 0.993)
 
 
 def test_hub_stagnation_temp(hub_heat_pipes):
     inputs = {HeatPipesPort.IN: ConnectionState(1, 10)}
-    pipes_state = HeatPipesState(10, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
+    pipes_state = HeatPipesState(10, 20, 1000)
     for _ in range(1000):
         pipes_state, outputs = hub_heat_pipes.simulate(
             inputs,

@@ -20,7 +20,6 @@ from energy_box_control.appliances import (
     ValveState,
 )
 
-AMBIENT_TEMP = 20
 
 
 def test_network():
@@ -39,7 +38,7 @@ def test_network():
                 .define_state(self.valve)
                 .value(ValveState(0.5))
                 .define_state(self.boiler)
-                .value(BoilerState(50, AMBIENT_TEMP))
+                .value(BoilerState(50, 20))
                 .build()
             )
 
@@ -78,7 +77,7 @@ def test_circular_network():
         def initial_state(self) -> NetworkState[Self]:
             return (
                 self.define_state(self.boiler)
-                .value(BoilerState(100, AMBIENT_TEMP))
+                .value(BoilerState(100, 20))
                 .build()
             )
 
