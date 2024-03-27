@@ -47,7 +47,7 @@ from energy_box_control.networks import ControlState
 
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT = 3747 * 1.016  # J / l K, 40% glycol at 40 C
+GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
 SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
 SEAWATER_TEMP = 24
 AMBIENT_TEMPERATURE = 20
