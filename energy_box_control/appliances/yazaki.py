@@ -116,7 +116,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 chilled_in.flow * self.specific_heat_capacity_chilled
             )
 
-            efficiency = heat_input / cooling_capacity
+            efficiency = cooling_capacity / heat_input
 
         return YazakiState(efficiency), {
             YazakiPort.HOT_OUT: ConnectionState(
