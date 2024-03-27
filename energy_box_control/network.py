@@ -557,6 +557,12 @@ class Network[Sensors](ABC):
         )
         appliance_states: dict[SpecificAppliance, ApplianceState] = {}
         connection_states: dict[tuple[SpecificAppliance, Port], ConnectionState] = {}
+
+        # copy feedback into connection states
+        for appliance, mapping in port_inputs.items():
+            for port, connection_state in mapping.items():
+                connection_states[(appliance, port)] = connection_state
+
         for appliance in self._execution_order:
             appliance_state = state.appliance(appliance).get()
             new_appliance_state, outputs = appliance.simulate(

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Self
+import uuid
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -44,6 +45,12 @@ from energy_box_control.network import (
     NetworkControl,
 )
 from energy_box_control.networks import ControlState
+from energy_box_control.power_hub.sensors import (
+    HeatPipesSensors,
+    Loop,
+    PowerHubSensors,
+    WeatherSensors,
+)
 
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
@@ -52,11 +59,6 @@ SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
 SEAWATER_TEMP = 24
 AMBIENT_TEMPERATURE = 20
 GLOBAL_IRRADIANCE = 800
-
-
-@dataclass
-class PowerHubSensors:
-    pass
 
 
 @dataclass
@@ -150,18 +152,17 @@ class PowerHub(Network[PowerHubSensors]):
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(50, AMBIENT_TEMPERATURE)
-        initial_cold_reservoir_state = BoilerState(10, AMBIENT_TEMPERATURE)
+        initial_boiler_state = BoilerState(20, 20)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes_valve)
-            .value(ValveState(0))
+            .value(initial_valve_state)
             .define_state(power_hub.heat_pipes_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.hot_reservoir)
             .value(initial_boiler_state)
             .define_state(power_hub.hot_reservoir_pcm_valve)
-            .value(ValveState(0))
+            .value(initial_valve_state)
             .define_state(power_hub.pcm)
             .value(PcmState(0, 20))
             .define_state(power_hub.chiller_switch_valve)
@@ -175,7 +176,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.yazaki_bypass_mix)
             .value(ApplianceState())
             .define_state(power_hub.cold_reservoir)
-            .value(initial_cold_reservoir_state)
+            .value(initial_boiler_state)
             .define_state(power_hub.chilled_loop_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.yazaki_waste_bypass_valve)
@@ -294,10 +295,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(PcmPort.DISCHARGE_OUT)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.B)
+
             .connect(self.yazaki_bypass_mix)
             .at(MixPort.AB)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
+
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.yazaki_bypass_valve)
@@ -434,37 +437,37 @@ class PowerHub(Network[PowerHubSensors]):
             .at(SwitchPumpPort.OUT)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(15/60, 70))
+            .initial_state(ConnectionState(1, 0))
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.A)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
-            .initial_state(ConnectionState(72/60/2, 50))
+            .initial_state(ConnectionState(1, 0))
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.B)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(72/60/2,50))
+            .initial_state(ConnectionState(1,0))
 
             .feedback(self.chill_mix)
             .at(MixPort.AB)
             .to(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
-            .initial_state(ConnectionState(70/60, 10))
+            .initial_state(ConnectionState(1, 0))
 
             .feedback(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
-            .initial_state(ConnectionState(100/60, 30))
+            .initial_state(ConnectionState(1, 0))
 
             .feedback(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(72/60, 70))
+            .initial_state(ConnectionState(1, 0))
 
             .build()
         )
@@ -486,7 +489,17 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
-        return PowerHubSensors()
+        with PowerHubSensors.context(
+            WeatherSensors(ambient_temperature=0, global_irradiance=0)
+        ) as context:
+            with context.loop(
+                Loop(flow=state.connection(self.heat_pipes, HeatPipesPort.OUT).flow)
+            ):
+                context.from_state(
+                    state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
+                )
+
+                return context.result()
 
     def regulate(
         self, control_state: ControlState
