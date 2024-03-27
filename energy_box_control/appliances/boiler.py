@@ -11,6 +11,7 @@ from energy_box_control.appliances.base import (
 @dataclass(frozen=True, eq=True)
 class BoilerState(ApplianceState):
     temperature: float
+    ambient_temperature: float
 
 
 class BoilerPort(Port):
@@ -70,7 +71,14 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             fill_heat = 0
 
         equilibrium_temperature = (
-            element_heat + tank_heat + exchange_heat + fill_heat - self.heat_loss
+            element_heat
+            + tank_heat
+            + exchange_heat
+            + fill_heat
+            - (
+                self.heat_loss
+                * (previous_state.temperature > previous_state.ambient_temperature)
+            )
         ) / (tank_capacity + exchange_capacity + fill_capacity)
 
         connection_states = {
@@ -98,6 +106,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         return (
             BoilerState(
                 temperature=equilibrium_temperature,
+                ambient_temperature=previous_state.ambient_temperature,
             ),
             connection_states,
         )

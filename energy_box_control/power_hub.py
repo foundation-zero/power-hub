@@ -150,7 +150,7 @@ class PowerHub(Network[PowerHubSensors]):
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(20)
+        initial_boiler_state = BoilerState(20, AMBIENT_TEMPERATURE)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes_valve)
