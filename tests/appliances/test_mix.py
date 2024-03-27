@@ -20,6 +20,7 @@ def test_mix():
 
     assert output[MixPort.AB] == ConnectionState(6, 20)
 
+
 def test_zero_flow_mix():
     mix = Mix()
 

@@ -1,4 +1,3 @@
-
 from energy_box_control.appliances.boiler import Boiler, BoilerPort, BoilerState
 from energy_box_control.appliances.source import Source
 from energy_box_control.appliances.valve import ValveState
@@ -12,7 +11,7 @@ def test_valve():
         BoilerState(0, 20),
         ValveState(0.5),
     )
-    
+
     control = network.heater_on()
     state_1 = network.simulate(network.initial_state(), control)
     assert state_1.connection(network.boiler, BoilerPort.HEAT_EXCHANGE_IN).flow == 1.0

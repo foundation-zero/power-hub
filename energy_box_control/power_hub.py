@@ -145,7 +145,7 @@ class PowerHub(Network[PowerHubSensors]):
             chiller_waste_bypass_valve=Valve(),
             chiller_waste_mix=Mix(),
             fresh_water_source=Source(0, SEAWATER_TEMP),
-            outboard_source=Source(300/60, SEAWATER_TEMP),
+            outboard_source=Source(300 / 60, SEAWATER_TEMP),
         )
 
     @staticmethod

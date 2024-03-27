@@ -21,7 +21,6 @@ from energy_box_control.appliances import (
 )
 
 
-
 def test_network():
     class MyNetwork(Network[None]):
         exchange_source = Source(0, 1)
@@ -75,11 +74,7 @@ def test_circular_network():
         boiler = Boiler(99, 100, 0, 1, 1)
 
         def initial_state(self) -> NetworkState[Self]:
-            return (
-                self.define_state(self.boiler)
-                .value(BoilerState(100, 20))
-                .build()
-            )
+            return self.define_state(self.boiler).value(BoilerState(100, 20)).build()
 
         def connections(self) -> NetworkConnections[Self]:
             return NetworkConnections([])

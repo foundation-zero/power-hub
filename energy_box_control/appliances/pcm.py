@@ -111,7 +111,11 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
                 {
                     PcmPort.CHARGE_OUT: ConnectionState(
                         inputs[PcmPort.CHARGE_IN].flow,
-                        (charge_heat - charge_power) / charge_capacity if charge_capacity > 0 else inputs[PcmPort.CHARGE_IN].temperature,
+                        (
+                            (charge_heat - charge_power) / charge_capacity
+                            if charge_capacity > 0
+                            else inputs[PcmPort.CHARGE_IN].temperature
+                        ),
                     )
                 }
                 if PcmPort.CHARGE_IN in inputs
@@ -121,7 +125,11 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
                 {
                     PcmPort.DISCHARGE_OUT: ConnectionState(
                         inputs[PcmPort.DISCHARGE_IN].flow,
-                        (discharge_heat - discharge_power) / discharge_capacity if discharge_capacity > 0 else inputs[PcmPort.DISCHARGE_IN].temperature,
+                        (
+                            (discharge_heat - discharge_power) / discharge_capacity
+                            if discharge_capacity > 0
+                            else inputs[PcmPort.DISCHARGE_IN].temperature
+                        ),
                     )
                 }
                 if PcmPort.DISCHARGE_IN in inputs

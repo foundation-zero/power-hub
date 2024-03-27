@@ -34,6 +34,7 @@ def test_nothing(pcm):
     assert state == initial_state
     assert outputs == {}
 
+
 def test_zero_flow(pcm):
     initial_state = PcmState(0, 10)
     state, outputs = pcm.simulate(
