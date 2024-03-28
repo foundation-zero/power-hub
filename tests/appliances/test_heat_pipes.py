@@ -41,6 +41,8 @@ def hub_heat_pipes():
 def test_hub_stagnation_temp(hub_heat_pipes):
     inputs = {HeatPipesPort.IN: ConnectionState(1, 100)}
     pipes_state = HeatPipesState(100, 20, 1000)
+
+    temp_diff = None
     for _ in range(1000):
         pipes_state, outputs = hub_heat_pipes.simulate(
             inputs,
