@@ -1,0 +1,6 @@
+from typing import Callable
+from .quantity import *
+
+class UnitRegistry:
+    def __getattr__(self, i: str) -> Quantity: ...
+    def check[T](self, *args: * tuple[str, ...]) -> Callable[[T], T]: ...

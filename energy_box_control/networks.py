@@ -20,11 +20,13 @@ from energy_box_control.appliances import (
     ValvePort,
     ValveState,
 )
+from energy_box_control.appliances.base import ureg
+from pint import Quantity
 
 
 @dataclass
 class BoilerSensors:
-    boiler_temperature: float
+    boiler_temperature: float | Quantity
 
 
 @dataclass
@@ -69,7 +71,9 @@ class BoilerNetwork(Network[BoilerSensors]):
     def regulate(
         self, control_state: ControlState, sensors: BoilerSensors
     ) -> tuple[(ControlState, NetworkControl[Self])]:
-        heater_on = sensors.boiler_temperature < control_state.boiler_setpoint
+        heater_on = (
+            sensors.boiler_temperature < control_state.boiler_setpoint * ureg.kelvin
+        )
 
         return (
             control_state,

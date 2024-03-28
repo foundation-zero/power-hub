@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
+from pint import UnitRegistry
+from energy_box_control.appliances.units import *
+
+ureg = UnitRegistry()
 
 
 @dataclass(frozen=True, eq=True)

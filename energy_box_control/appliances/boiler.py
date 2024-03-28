@@ -5,12 +5,21 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    ureg,
 )
+from energy_box_control.appliances.units import *
+from pint import Quantity
+
+"""
+from typing import Callable, Any
+import functools
+from inspect import signature
+"""
 
 
 @dataclass(frozen=True, eq=True)
 class BoilerState(ApplianceState):
-    temperature: float
+    temperature: Quantity
 
 
 class BoilerPort(Port):
@@ -22,16 +31,49 @@ class BoilerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class BoilerControl(ApplianceControl):
-    heater_on: bool
+    heater_on: bool | Quantity
 
 
+"""
+def ureg_check[T](*dimensions: str) -> Callable[[type[T]], type[T]]:
+    def _decorator(cls: type[T]) -> type[T]:
+        orig_init = cls.__init__
+
+        @functools.wraps(cls.__init__)
+        def __init__(self: T, *args: Any, **kwargs: Any):
+            @functools.wraps(orig_init)
+            def _blabla(*args: Any, **kwargs: Any):
+                pass
+
+            sig = signature(orig_init)
+            params = sig.parameters.copy()
+            del params["self"]
+            sig.parameters = sig.replace()
+            _blabla.__signature__ = sig  # type: ignore
+            ureg.check(*dimensions)(_blabla)()
+            orig_init(self, *args, **kwargs)
+
+        cls.__init__ = __init__
+        return cls
+
+    return _decorator
+"""
+
+
+@ureg.check(
+    "liter",
+    "watt",
+    "watt",
+    "joule / (liter * kelvin)",
+    "joule / (liter * kelvin)",
+)
 @dataclass(frozen=True, eq=True)
 class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
-    volume: float  # l
-    heater_power: float  # W
-    heat_loss: float  # W
-    specific_heat_capacity_exchange: float  # J / l K
-    specific_heat_capacity_fill: float  # J / l K
+    volume: Quantity | Liter
+    heater_power: Quantity | Watt
+    heat_loss: Quantity | Watt
+    specific_heat_capacity_exchange: Quantity | JoulesPerLiterKelvin
+    specific_heat_capacity_fill: Quantity | JoulesPerLiterKelvin
 
     def simulate(
         self,
@@ -44,41 +86,61 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
         tank_capacity = self.volume * self.specific_heat_capacity_fill
 
-        element_heat = self.heater_power * control.heater_on
+        element_heat = (self.heater_power * (1 if control.heater_on else 0)) * (
+            1 * ureg.second
+        )
         tank_heat = tank_capacity * previous_state.temperature
 
         if BoilerPort.HEAT_EXCHANGE_IN in inputs:
             exchange_capacity = (
-                inputs[BoilerPort.HEAT_EXCHANGE_IN].flow
-                * self.specific_heat_capacity_exchange
+                (
+                    (
+                        inputs[BoilerPort.HEAT_EXCHANGE_IN].flow
+                        * (ureg.liter / ureg.second)
+                        * self.specific_heat_capacity_exchange
+                    )
+                )
+                * 1
+                * ureg.second
             )
-            exchange_heat = (
-                exchange_capacity * inputs[BoilerPort.HEAT_EXCHANGE_IN].temperature
+            exchange_heat = exchange_capacity * (
+                inputs[BoilerPort.HEAT_EXCHANGE_IN].temperature * ureg.kelvin
             )
         else:
-            exchange_capacity = 0
-            exchange_heat = 0
+            exchange_capacity = 0 * (ureg.joule / ureg.kelvin)
+            exchange_heat = 0 * ureg.joule
 
         if BoilerPort.FILL_IN in inputs:
             fill_capacity = (
-                inputs[BoilerPort.FILL_IN].flow * self.specific_heat_capacity_fill
+                (
+                    (inputs[BoilerPort.FILL_IN].flow * (ureg.liter / ureg.second))
+                    * self.specific_heat_capacity_fill
+                )
+                * 1
+                * ureg.second
             )
-            fill_heat = fill_capacity * inputs[BoilerPort.FILL_IN].temperature
+            fill_heat = fill_capacity * (
+                inputs[BoilerPort.FILL_IN].temperature * ureg.kelvin
+            )
 
         else:
-            fill_capacity = 0
-            fill_heat = 0
+            fill_capacity = 0 * (ureg.joule / ureg.kelvin)
+            fill_heat = 0 * ureg.joule
 
         equilibrium_temperature = (
-            element_heat + tank_heat + exchange_heat + fill_heat - self.heat_loss
-        ) / (tank_capacity + exchange_capacity + fill_capacity)
+            element_heat
+            + tank_heat
+            + exchange_heat
+            + fill_heat
+            - (self.heat_loss * 1 * ureg.second)
+        ).to_base_units() / (tank_capacity + exchange_capacity + fill_capacity)
 
         connection_states = {
             **(
                 {
                     BoilerPort.HEAT_EXCHANGE_OUT: ConnectionState(
                         inputs[BoilerPort.HEAT_EXCHANGE_IN].flow,
-                        equilibrium_temperature,
+                        equilibrium_temperature.magnitude,
                     )
                 }
                 if BoilerPort.HEAT_EXCHANGE_IN in inputs
@@ -87,7 +149,8 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             **(
                 {
                     BoilerPort.FILL_OUT: ConnectionState(
-                        inputs[BoilerPort.FILL_IN].flow, equilibrium_temperature
+                        inputs[BoilerPort.FILL_IN].flow,
+                        equilibrium_temperature.magnitude,
                     )
                 }
                 if BoilerPort.FILL_IN in inputs

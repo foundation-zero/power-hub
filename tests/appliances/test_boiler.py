@@ -1,13 +1,15 @@
 from hypothesis import assume, example, given, reproduce_failure
 from hypothesis.strategies import floats
 from pytest import approx
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ConnectionState, ureg
 from energy_box_control.appliances.boiler import (
     Boiler,
     BoilerControl,
     BoilerPort,
     BoilerState,
 )
+from pint.testing import assert_allclose
+
 
 volume_strat = floats(1, 1e3, allow_nan=False)
 temp_strat = floats(0, 150, allow_nan=False)
@@ -35,20 +37,25 @@ def test_boiler_heating(
 ):
 
     boiler = Boiler(
-        volume,
-        heater_power,
-        heat_loss,
-        specific_heat_capacity_exchange,
-        specific_heat_capacity_fill,
+        volume * ureg.liter,
+        heater_power * ureg.watt,
+        heat_loss * ureg.watt,
+        specific_heat_capacity_exchange * (ureg.joule / (ureg.liter * ureg.kelvin)),
+        specific_heat_capacity_fill * (ureg.joule / (ureg.liter * ureg.kelvin)),
     )
     state, _ = boiler.simulate(
-        {}, BoilerState(boiler_temp), BoilerControl(heater_on=True)
+        {}, BoilerState(boiler_temp * ureg.kelvin), BoilerControl(heater_on=True)
     )
 
-    assert state.temperature == approx(
-        boiler_temp
-        + (heater_power - heat_loss) / (volume * specific_heat_capacity_fill),
-        abs=1e-6,
+    assert_allclose(
+        state.temperature.to_base_units(),
+        boiler_temp * ureg.kelvin
+        + ((heater_power * ureg.watt - heat_loss * ureg.watt) * 1 * ureg.second)
+        / (
+            (volume * ureg.liter)
+            * (specific_heat_capacity_fill * (ureg.joule / (ureg.liter * ureg.kelvin)))
+        ),
+        atol=1e-6,
     )
 
 
@@ -69,11 +76,11 @@ def test_boiler_exchange(
 ):
 
     boiler = Boiler(
-        volume,
-        0,
-        0,
-        specific_heat_capacity_exchange,
-        specific_heat_capacity_fill,
+        volume * ureg.liter,
+        0 * ureg.watt,
+        0 * ureg.watt,
+        specific_heat_capacity_exchange * (ureg.joule / (ureg.liter * ureg.kelvin)),
+        specific_heat_capacity_fill * (ureg.joule / (ureg.liter * ureg.kelvin)),
     )
     exchange_in_flow = (
         volume * specific_heat_capacity_fill / specific_heat_capacity_exchange
@@ -81,13 +88,18 @@ def test_boiler_exchange(
     state, _ = boiler.simulate(
         {
             BoilerPort.HEAT_EXCHANGE_IN: ConnectionState(
-                exchange_in_flow, exchange_in_temp
+                exchange_in_flow,
+                exchange_in_temp,
             )
         },
-        BoilerState(boiler_temp),
+        BoilerState(boiler_temp * ureg.kelvin),
         BoilerControl(heater_on=False),
     )
-    assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2, abs=1e-6)
+
+    assert_allclose(
+        state.temperature.to_base_units(),
+        (boiler_temp * ureg.kelvin + exchange_in_temp * ureg.kelvin) / 2,
+    )
 
 
 @given(heat_capacity_strat, heat_capacity_strat, temp_strat, flow_strat, temp_strat)
@@ -102,15 +114,19 @@ def test_boiler_fill(
     assume(fill_in_flow > 0.5)
 
     boiler = Boiler(
-        fill_in_flow,
-        0,
-        0,
-        specific_heat_capacity_exchange,
-        specific_heat_capacity_fill,
+        fill_in_flow * ureg.liter,
+        0 * ureg.watt,
+        0 * ureg.watt,
+        specific_heat_capacity_exchange * (ureg.joule / (ureg.liter * ureg.kelvin)),
+        specific_heat_capacity_fill * (ureg.joule / (ureg.liter * ureg.kelvin)),
     )
     state, _ = boiler.simulate(
         {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
-        BoilerState(boiler_temp),
+        BoilerState(boiler_temp * ureg.kelvin),
         BoilerControl(heater_on=False),
     )
-    assert state.temperature == approx((boiler_temp + fill_in_temp) / 2, abs=1e-6)
+    assert_allclose(
+        state.temperature,
+        (boiler_temp * ureg.kelvin + fill_in_temp * ureg.kelvin) / 2,
+        atol=1e-6,
+    )

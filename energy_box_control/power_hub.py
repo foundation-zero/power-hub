@@ -44,6 +44,7 @@ from energy_box_control.network import (
     NetworkControl,
 )
 from energy_box_control.networks import ControlState
+from energy_box_control.appliances.base import ureg
 
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
@@ -102,7 +103,13 @@ class PowerHub(Network[PowerHubSensors]):
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             heat_pipes_pump=SwitchPump(15 / 60),
-            hot_reservoir=Boiler(130, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT),
+            hot_reservoir=Boiler(
+                130 * ureg.liter,
+                6 * ureg.watt,
+                40 * ureg.watt,
+                GLYCOL_SPECIFIC_HEAT * (ureg.joule / (ureg.liter * ureg.kelvin)),
+                WATER_SPECIFIC_HEAT * (ureg.joule / (ureg.liter * ureg.kelvin)),
+            ),
             hot_reservoir_pcm_valve=Valve(),
             hot_mix=Mix(),
             pcm=Pcm(
@@ -127,14 +134,24 @@ class PowerHub(Network[PowerHubSensors]):
                 WATER_SPECIFIC_HEAT,  # 2.5-18.7 kW cooling capacity
             ),
             chill_mix=Mix(),
-            cold_reservoir=Boiler(800, 0, 0, 0, WATER_SPECIFIC_HEAT),
+            cold_reservoir=Boiler(
+                800 * ureg.liter,
+                0 * ureg.watt,
+                0 * ureg.watt,
+                0 * (ureg.joule / (ureg.liter * ureg.kelvin)),
+                WATER_SPECIFIC_HEAT * (ureg.joule / (ureg.liter * ureg.kelvin)),
+            ),
             chilled_loop_pump=SwitchPump(70 / 60),  # 42 - 100 l/min
             yazaki_waste_bypass_valve=Valve(),
             yazaki_waste_mix=Mix(),
             waste_mix=Mix(),
             preheat_bypass_valve=Valve(),
             preheat_reservoir=Boiler(
-                100, 0, 36, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
+                100 * ureg.liter,
+                0 * ureg.watt,
+                36 * ureg.watt,
+                WATER_SPECIFIC_HEAT * (ureg.joule / (ureg.liter * ureg.kelvin)),
+                WATER_SPECIFIC_HEAT * (ureg.joule / (ureg.liter * ureg.kelvin)),
             ),
             preheat_mix=Mix(),
             outboard_exchange=HeatExchanger(
@@ -150,7 +167,7 @@ class PowerHub(Network[PowerHubSensors]):
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(20)
+        initial_boiler_state = BoilerState(20 * ureg.kelvin)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes_valve)
