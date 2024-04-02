@@ -35,6 +35,16 @@ def test_nothing(pcm):
     assert outputs == {}
 
 
+def test_zero_flow(pcm):
+    initial_state = PcmState(0, 10)
+    state, outputs = pcm.simulate(
+        {PcmPort.CHARGE_IN: ConnectionState(0, 10)}, initial_state, None
+    )
+
+    assert state == initial_state
+    assert outputs[PcmPort.CHARGE_OUT].flow == 0
+
+
 def test_charge_pre_phase(pcm):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(

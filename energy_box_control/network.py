@@ -543,7 +543,7 @@ class Network[Sensors](ABC):
         ) = min_max_temperature
         if not min_temperature < connection_state.temperature < max_temperature:
             raise Exception(
-                f"{connection_state} is exceeding {max_temperature}, at appliance {appliance_name} and port {port.value}"
+                f"{connection_state} is not within {min_temperature} and {max_temperature}, at appliance {appliance_name} and port {port.value}"
             )
 
     def simulate(
