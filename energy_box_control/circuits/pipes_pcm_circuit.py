@@ -63,28 +63,6 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             ),
         )
 
-    @staticmethod
-    def simple_initial_state(
-        pipes_pcm_circuit: "PipesPcmNetwork",
-    ) -> NetworkState["PipesPcmNetwork"]:
-        return (
-            pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
-            .value(
-                HeatPipesState(
-                    AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE
-                )
-            )
-            .define_state(pipes_pcm_circuit.heat_pipes_valve)
-            .value(ValveState(0))
-            .define_state(pipes_pcm_circuit.heat_pipes_pump)
-            .value(SwitchPumpState())
-            .define_state(pipes_pcm_circuit.heat_pipes_mix)
-            .value(ApplianceState())
-            .define_state(pipes_pcm_circuit.pcm)
-            .value(PcmState(0, AMBIENT_TEMPERATURE))
-            .build()
-        )
-
     def connections(self) -> NetworkConnections[Self]:
         # fmt: off
         return (
