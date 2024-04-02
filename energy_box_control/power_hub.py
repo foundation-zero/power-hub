@@ -47,7 +47,7 @@ from energy_box_control.networks import ControlState
 
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT = 3747 * 1.016  # J / l K, 40% glycol at 40 C
+GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
 SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
 SEAWATER_TEMP = 24
 AMBIENT_TEMPERATURE = 20
@@ -98,7 +98,7 @@ class PowerHub(Network[PowerHubSensors]):
     @staticmethod
     def example_power_hub() -> "PowerHub":
         return PowerHub(
-            heat_pipes=HeatPipes(76.7, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
+            heat_pipes=HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
             heat_pipes_valve=Valve(),
             heat_pipes_mix=Mix(),
             heat_pipes_pump=SwitchPump(15 / 60),
@@ -111,7 +111,7 @@ class PowerHub(Network[PowerHubSensors]):
                 sensible_capacity=1590
                 * 610,  # 610 kg at 1.59 kJ/kg K in liquid state @82C
                 transfer_power=10000,  # incorrect
-                specific_heat_capacity_charge=WATER_SPECIFIC_HEAT,
+                specific_heat_capacity_charge=GLYCOL_SPECIFIC_HEAT,
                 specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,
             ),
             chiller_switch_valve=Valve(),
@@ -145,22 +145,23 @@ class PowerHub(Network[PowerHubSensors]):
             chiller_waste_bypass_valve=Valve(),
             chiller_waste_mix=Mix(),
             fresh_water_source=Source(0, SEAWATER_TEMP),
-            outboard_source=Source(0, SEAWATER_TEMP),
+            outboard_source=Source(300 / 60, SEAWATER_TEMP),
         )
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(20)
+        initial_boiler_state = BoilerState(50, AMBIENT_TEMPERATURE)
+        initial_cold_reservoir_state = BoilerState(10, AMBIENT_TEMPERATURE)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes_valve)
-            .value(initial_valve_state)
+            .value(ValveState(0))
             .define_state(power_hub.heat_pipes_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.hot_reservoir)
             .value(initial_boiler_state)
             .define_state(power_hub.hot_reservoir_pcm_valve)
-            .value(initial_valve_state)
+            .value(ValveState(0))
             .define_state(power_hub.pcm)
             .value(PcmState(0, 20))
             .define_state(power_hub.chiller_switch_valve)
@@ -174,7 +175,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.yazaki_bypass_mix)
             .value(ApplianceState())
             .define_state(power_hub.cold_reservoir)
-            .value(initial_boiler_state)
+            .value(initial_cold_reservoir_state)
             .define_state(power_hub.chilled_loop_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.yazaki_waste_bypass_valve)
@@ -433,37 +434,37 @@ class PowerHub(Network[PowerHubSensors]):
             .at(SwitchPumpPort.OUT)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(1, 0))
+            .initial_state(ConnectionState(15/60, 70))
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.A)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
-            .initial_state(ConnectionState(1, 0))
+            .initial_state(ConnectionState(72/60/2, 50))
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.B)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(1,0))
+            .initial_state(ConnectionState(72/60/2,50))
 
             .feedback(self.chill_mix)
             .at(MixPort.AB)
             .to(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
-            .initial_state(ConnectionState(1, 0))
+            .initial_state(ConnectionState(70/60, 10))
 
             .feedback(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
-            .initial_state(ConnectionState(1, 0))
+            .initial_state(ConnectionState(100/60, 30))
 
             .feedback(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(1, 0))
+            .initial_state(ConnectionState(72/60, 70))
 
             .build()
         )
