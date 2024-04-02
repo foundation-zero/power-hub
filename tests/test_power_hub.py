@@ -56,6 +56,5 @@ def run_simulation():
     return SimulationSuccess()
 
 
-# @pytest.mark.skip
 def test_max_temperatures():
     assert run_simulation() == SimulationSuccess()
