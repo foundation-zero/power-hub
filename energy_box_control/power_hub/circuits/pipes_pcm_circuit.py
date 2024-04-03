@@ -103,7 +103,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .initial_state(ConnectionState(0, AMBIENT_TEMPERATURE))
 
             .build()
+            
         )
+        # fmt: on
 
     def regulate(
         self, control_state: PipesPcmControlState, sensors: PipesPcmSensors

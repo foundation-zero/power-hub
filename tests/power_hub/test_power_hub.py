@@ -1,3 +1,4 @@
+from pytest import fixture
 from energy_box_control.appliances import (
     BoilerControl,
     SwitchPumpControl,
@@ -6,6 +7,17 @@ from energy_box_control.appliances import (
 from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
+
+
+@fixture
+def power_hub() -> PowerHub:
+    return PowerHub.power_hub()
+
+
+@fixture
+def initial_simple_state(power_hub):
+    # initial state with no hot reservoir usage, no electric chiller, and no preheating
+    return
 
 
 def power_hub_control(power_hub):

@@ -58,4 +58,5 @@ waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
 chiller_waste_bypass_valve = Valve()
 chiller_waste_mix = Mix()
 fresh_water_source = Source(0, SEAWATER_TEMP)
-outboard_source = Source(300 / 60, SEAWATER_TEMP)
+outboard_pump = SwitchPump(300 / 60)
+outboard_source = Source(0, SEAWATER_TEMP)
