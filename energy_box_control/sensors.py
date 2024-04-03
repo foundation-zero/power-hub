@@ -13,28 +13,10 @@ from collections import deque
 from energy_box_control.network import NetworkState
 
 
-@dataclass(frozen=True, eq=True)
-class Loop:
-    flow: float
-
-
 @dataclass()
 class WeatherSensors:
     ambient_temperature: float
     global_irradiance: float
-
-
-class LoopContext:
-
-    def __init__(self, context: "SensorContext[Any]", loop: Loop) -> None:
-        self._context = context
-        self._loop = loop
-
-    def __enter__(self):
-        self._context.active_loop = self._loop
-
-    def __exit__(self, _type: None, _value: None, _traceback: None):
-        self._context.active_loop = None
 
 
 class FromState(Protocol):
@@ -50,16 +32,12 @@ class FromState(Protocol):
 
 
 class SensorContext[T]:
-    active_loop: "Loop | None"
 
     def __init__(self, cls: type[T], weather: "WeatherSensors") -> None:
         self._cls = cls
         self._weather = weather
         self._accessed: Deque[str] = deque()
         self._sensors: dict[str, Any] = {}
-
-    def loop(self, loop: "Loop") -> LoopContext:
-        return LoopContext(self, loop)
 
     @property
     def subject(self) -> T:
@@ -101,10 +79,10 @@ class SensorContext[T]:
 
 @dataclass(eq=True, frozen=True)
 class Sensor:
-    from_loop: bool = False
     from_weather: bool = False
     from_port: Port | None = None
     temperature: bool = False
+    flow: bool = False
 
 
 def sensor(*args: Any, **kwargs: Any) -> Any:
@@ -126,8 +104,6 @@ def sensors[T: type]() -> Callable[[T], T]:
                     continue
                 if isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
-                elif value == Sensor(from_loop=True):
-                    setattr(self, name, getattr(context.active_loop, name))
                 elif value == Sensor(from_weather=True):
                     setattr(self, name, getattr(context.weather, name))
                 else:
@@ -144,15 +120,24 @@ def sensors[T: type]() -> Callable[[T], T]:
                 for name in get_annotations(klass).keys()
                 if hasattr(appliance_state, name)
             }
-            port_sensors = {
-                name: state.connection(appliance, description.from_port).temperature
+            port_sensors = [
+                (name, state.connection(appliance, description.from_port), description)
                 for name in get_annotations(klass).keys()
                 if (description := getattr(klass, name, None))
                 and isinstance(description, Sensor)
                 and description.from_port is not None
-                and description.temperature
+            ]
+            temperature_sensors = {
+                name: state.temperature
+                for name, state, description in port_sensors
+                if description.temperature
             }
-            return klass(context, appliance, **appliance_sensors, **port_sensors)  # type: ignore
+            flow_sensors = {
+                name: state.flow
+                for name, state, description in port_sensors
+                if description.flow
+            }
+            return klass(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
 
         klass.__init__ = _init  # type: ignore
         klass.from_state = _from_state  # type: ignore

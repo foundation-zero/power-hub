@@ -46,7 +46,6 @@ from energy_box_control.network import (
 
 from energy_box_control.power_hub.sensors import (
     HeatPipesSensors,
-    Loop,
     PowerHubSensors,
     WeatherSensors,
 )
@@ -590,14 +589,12 @@ class PowerHub(Network[PowerHubSensors]):
         with PowerHubSensors.context(
             WeatherSensors(ambient_temperature=0, global_irradiance=0)
         ) as context:
-            with context.loop(
-                Loop(flow=state.connection(self.heat_pipes, HeatPipesPort.OUT).flow)
-            ):
-                context.from_state(
-                    state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
-                )
 
-                return context.result()
+            context.from_state(
+                state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
+            )
+
+            return context.result()
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on

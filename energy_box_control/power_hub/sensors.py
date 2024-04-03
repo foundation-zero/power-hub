@@ -6,14 +6,13 @@ from energy_box_control.sensors import (
     WeatherSensors,
     sensor,
     sensors,
-    Loop, # type: ignore because we're re-exporting it
 )
 
 
 @sensors()
 class HeatPipesSensors(FromState):
     spec: HeatPipes
-    flow: float = sensor(from_loop=True)
+    flow: float = sensor(flow=True, from_port=HeatPipesPort.IN)
     ambient_temperature: float = sensor(from_weather=True)
     global_irradiance: float = sensor(from_weather=True)
     input_temperature: float = sensor(temperature=True, from_port=HeatPipesPort.IN)
