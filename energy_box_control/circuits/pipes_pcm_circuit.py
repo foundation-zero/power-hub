@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Self
 
 from energy_box_control.appliances.base import ConnectionState
+
 from energy_box_control.appliances.heat_pipes import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
@@ -14,6 +15,7 @@ from energy_box_control.appliances.valve import (
     Valve,
     ValveControl,
     ValvePort,
+    dummy_bypass_valve_temperature_control,
 )
 from energy_box_control.network import (
     Network,
@@ -23,11 +25,14 @@ from energy_box_control.network import (
     NetworkState,
 )
 
-
-WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
-AMBIENT_TEMPERATURE = 20
-GLOBAL_IRRADIANCE = 800
+from energy_box_control.powerhub_components import (
+    AMBIENT_TEMPERATURE,
+    heat_pipes,
+    heat_pipes_pump,
+    heat_pipes_mix,
+    heat_pipes_valve,
+    pcm,
+)
 
 
 @dataclass
@@ -56,19 +61,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     @staticmethod
     def pipes_pcm_circuit() -> "PipesPcmNetwork":
         return PipesPcmNetwork(
-            heat_pipes=HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT),
-            heat_pipes_valve=Valve(),
-            heat_pipes_pump=SwitchPump(15 / 60),
-            heat_pipes_mix=Mix(),
-            pcm=Pcm(
-                latent_heat=242000 * 610,  # 610 kg at 242 kJ/kg
-                phase_change_temperature=78,
-                sensible_capacity=1590
-                * 610,  # 610 kg at 1.59 kJ/kg K in liquid state @82C
-                transfer_power=40000,  # incorrect
-                specific_heat_capacity_charge=GLYCOL_SPECIFIC_HEAT,
-                specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,
-            ),
+            heat_pipes, heat_pipes_valve, heat_pipes_pump, heat_pipes_mix, pcm
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -117,12 +110,12 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         self, control_state: PipesPcmControlState, sensors: PipesPcmSensors
     ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
-        new_valve_position = sensors.heat_pipes_valve_position
-
-        if sensors.heat_pipes_out_temperature < control_state.hot_loop_setpoint:
-            new_valve_position = min(sensors.heat_pipes_valve_position + 0.1, 1)
-        elif sensors.heat_pipes_out_temperature > control_state.hot_loop_setpoint:
-            new_valve_position = max(sensors.heat_pipes_valve_position - 0.1, 0)
+        new_valve_position = dummy_bypass_valve_temperature_control(
+            sensors.heat_pipes_valve_position,
+            control_state.hot_loop_setpoint,
+            sensors.heat_pipes_out_temperature,
+            reversed=False,
+        )
 
         return (
             control_state,

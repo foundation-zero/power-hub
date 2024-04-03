@@ -10,7 +10,12 @@ from energy_box_control.appliances.switch_pump import (
     SwitchPumpControl,
     SwitchPumpPort,
 )
-from energy_box_control.appliances.valve import Valve, ValveControl, ValvePort
+from energy_box_control.appliances.valve import (
+    Valve,
+    ValveControl,
+    ValvePort,
+    dummy_bypass_valve_temperature_control,
+)
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.network import (
     Network,
@@ -20,9 +25,14 @@ from energy_box_control.network import (
     NetworkState,
 )
 
-WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
-AMBIENT_TEMPERATURE = 20
+
+from energy_box_control.powerhub_components import (
+    pcm,
+    yazaki_bypass_mix,
+    pcm_to_yazaki_pump,
+    yazaki,
+    yazaki_bypass_valve,
+)
 
 
 @dataclass
@@ -54,23 +64,13 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     @staticmethod
     def pcm_yazaki_circuit() -> "PcmYazakiNetwork":
         return PcmYazakiNetwork(
-            pcm=Pcm(
-                latent_heat=242000 * 610,  # 610 kg at 242 kJ/kg
-                phase_change_temperature=78,
-                sensible_capacity=1590
-                * 610,  # 610 kg at 1.59 kJ/kg K in liquid state @82C
-                transfer_power=40000,  # incorrect
-                specific_heat_capacity_charge=GLYCOL_SPECIFIC_HEAT,
-                specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,
-            ),
-            yazaki=Yazaki(
-                WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
-            ),
-            pcm_to_yazaki_pump=SwitchPump(72 / 60),
-            yazaki_bypass_valve=Valve(),
-            yazaki_bypass_mix=Mix(),
-            cooling_source=Source(2.55, 31),
-            chilled_source=Source(0.77, 17.6),
+            pcm,
+            yazaki_bypass_mix,
+            pcm_to_yazaki_pump,
+            yazaki,
+            yazaki_bypass_valve,
+            Source(2.55, 31),
+            Source(0.77, 17.6),
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -129,12 +129,12 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         self, control_state: PcmYazakiControlState, sensors: PcmYazakiSensors
     ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
 
-        new_valve_position = sensors.yazaki_bypass_valve_position
-
-        if sensors.yazaki_hot_in_temperature > control_state.yazaki_hot_in_setpoint:
-            new_valve_position = min(sensors.yazaki_bypass_valve_position + 0.1, 1)
-        elif sensors.yazaki_hot_in_temperature < control_state.yazaki_hot_in_setpoint:
-            new_valve_position = max(sensors.yazaki_bypass_valve_position - 0.1, 0)
+        new_valve_position = dummy_bypass_valve_temperature_control(
+            sensors.yazaki_bypass_valve_position,
+            control_state.yazaki_hot_in_setpoint,
+            sensors.yazaki_hot_in_temperature,
+            reversed=True,
+        )
 
         return (
             control_state,

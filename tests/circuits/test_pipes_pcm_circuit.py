@@ -8,12 +8,14 @@ from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
 from energy_box_control.appliances.valve import ValveState
 from energy_box_control.circuits.pipes_pcm_circuit import (
-    AMBIENT_TEMPERATURE,
-    GLOBAL_IRRADIANCE,
     PipesPcmControlState,
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
+from energy_box_control.powerhub_components import (
+    AMBIENT_TEMPERATURE,
+    GLOBAL_IRRADIANCE,
+)
 
 
 @dataclass(frozen=True, eq=True)
@@ -28,29 +30,35 @@ class SimulationFailure:
 
 
 @fixture
-def initial_state_pipes_to_pcm(
-    pipes_pcm_circuit: "PipesPcmNetwork",
-) -> NetworkState["PipesPcmNetwork"]:
+def initial_state_without_valve(pipes_pcm_circuit):
     return (
         pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
         .value(
             HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
         )
-        .define_state(pipes_pcm_circuit.heat_pipes_valve)
-        .value(ValveState(0))
         .define_state(pipes_pcm_circuit.heat_pipes_pump)
         .value(SwitchPumpState())
         .define_state(pipes_pcm_circuit.heat_pipes_mix)
         .value(ApplianceState())
         .define_state(pipes_pcm_circuit.pcm)
         .value(PcmState(0, AMBIENT_TEMPERATURE))
+    )
+
+
+@fixture
+def initial_state_pipes_to_pcm(
+    pipes_pcm_circuit, initial_state_without_valve
+) -> NetworkState["PipesPcmNetwork"]:
+    return (
+        initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
+        .value(ValveState(0))
         .build()
     )
 
 
 @fixture
 def initial_state_pipes_to_pcm_warm(
-    pipes_pcm_circuit: "PipesPcmNetwork",
+    pipes_pcm_circuit,
 ) -> NetworkState["PipesPcmNetwork"]:
     return (
         pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
@@ -69,42 +77,22 @@ def initial_state_pipes_to_pcm_warm(
 
 @fixture
 def initial_state_pipes_to_pipes(
-    pipes_pcm_circuit: "PipesPcmNetwork",
+    pipes_pcm_circuit, initial_state_without_valve
 ) -> NetworkState["PipesPcmNetwork"]:
     return (
-        pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
-        .value(
-            HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
-        )
-        .define_state(pipes_pcm_circuit.heat_pipes_valve)
+        initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(1))
-        .define_state(pipes_pcm_circuit.heat_pipes_pump)
-        .value(SwitchPumpState())
-        .define_state(pipes_pcm_circuit.heat_pipes_mix)
-        .value(ApplianceState())
-        .define_state(pipes_pcm_circuit.pcm)
-        .value(PcmState(0, AMBIENT_TEMPERATURE))
         .build()
     )
 
 
 @fixture
 def initial_state_half_valve(
-    pipes_pcm_circuit: "PipesPcmNetwork",
+    pipes_pcm_circuit, initial_state_without_valve
 ) -> NetworkState["PipesPcmNetwork"]:
     return (
-        pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
-        .value(
-            HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
-        )
-        .define_state(pipes_pcm_circuit.heat_pipes_valve)
+        initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(0.5))
-        .define_state(pipes_pcm_circuit.heat_pipes_pump)
-        .value(SwitchPumpState())
-        .define_state(pipes_pcm_circuit.heat_pipes_mix)
-        .value(ApplianceState())
-        .define_state(pipes_pcm_circuit.pcm)
-        .value(PcmState(0, AMBIENT_TEMPERATURE))
         .build()
     )
 

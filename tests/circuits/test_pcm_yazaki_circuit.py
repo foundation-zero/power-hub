@@ -6,22 +6,18 @@ from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchP
 from energy_box_control.appliances.valve import ValvePort, ValveState
 from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
 from energy_box_control.circuits.pcm_yazaki_circuit import (
-    AMBIENT_TEMPERATURE,
     PcmYazakiControlState,
     PcmYazakiNetwork,
 )
+
 from energy_box_control.network import NetworkState
 
 
 @fixture
-def initial_state_pcm_to_yazaki(
-    pcm_yazaki_circuit: "PcmYazakiNetwork",
-) -> NetworkState["PcmYazakiNetwork"]:
+def initial_state_without_valve(pcm_yazaki_circuit):
     return (
         pcm_yazaki_circuit.define_state(pcm_yazaki_circuit.pcm)
         .value(PcmState(1, 78))
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
-        .value(ValveState(0))
         .define_state(pcm_yazaki_circuit.pcm_to_yazaki_pump)
         .value(SwitchPumpState())
         .define_state(pcm_yazaki_circuit.yazaki)
@@ -32,52 +28,38 @@ def initial_state_pcm_to_yazaki(
         .value(SourceState())
         .define_state(pcm_yazaki_circuit.chilled_source)
         .value(SourceState())
+    )
+
+
+@fixture
+def initial_state_pcm_to_yazaki(
+    pcm_yazaki_circuit, initial_state_without_valve
+) -> NetworkState["PcmYazakiNetwork"]:
+    return (
+        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        .value(ValveState(0))
         .build()
     )
 
 
 @fixture
 def initial_state_yazaki_to_yazaki(
-    pcm_yazaki_circuit: "PcmYazakiNetwork",
+    pcm_yazaki_circuit, initial_state_without_valve
 ) -> NetworkState["PcmYazakiNetwork"]:
     return (
-        pcm_yazaki_circuit.define_state(pcm_yazaki_circuit.pcm)
-        .value(PcmState(1, 78))
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
         .value(ValveState(1))
-        .define_state(pcm_yazaki_circuit.pcm_to_yazaki_pump)
-        .value(SwitchPumpState())
-        .define_state(pcm_yazaki_circuit.yazaki)
-        .value(YazakiState())
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_mix)
-        .value(ApplianceState())
-        .define_state(pcm_yazaki_circuit.cooling_source)
-        .value(SourceState())
-        .define_state(pcm_yazaki_circuit.chilled_source)
-        .value(SourceState())
         .build()
     )
 
 
 @fixture
 def initial_state_half_valve(
-    pcm_yazaki_circuit: "PcmYazakiNetwork",
+    pcm_yazaki_circuit, initial_state_without_valve
 ) -> NetworkState["PcmYazakiNetwork"]:
     return (
-        pcm_yazaki_circuit.define_state(pcm_yazaki_circuit.pcm)
-        .value(PcmState(1, 78))
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
         .value(ValveState(0.5))
-        .define_state(pcm_yazaki_circuit.pcm_to_yazaki_pump)
-        .value(SwitchPumpState())
-        .define_state(pcm_yazaki_circuit.yazaki)
-        .value(YazakiState())
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_mix)
-        .value(ApplianceState())
-        .define_state(pcm_yazaki_circuit.cooling_source)
-        .value(SourceState())
-        .define_state(pcm_yazaki_circuit.chilled_source)
-        .value(SourceState())
         .build()
     )
 

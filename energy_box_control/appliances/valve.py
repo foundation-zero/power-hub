@@ -31,7 +31,7 @@ class Valve(Appliance[ValveState, ValveControl, ValvePort]):
         self,
         inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
-        control: ValveControl,
+        control: ValveControl | None,
     ) -> tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
         input = inputs[ValvePort.AB]
@@ -45,3 +45,19 @@ class Valve(Appliance[ValveState, ValveControl, ValvePort]):
             ),
             ValvePort.B: ConnectionState(position * input.flow, input.temperature),
         }
+
+
+def dummy_bypass_valve_temperature_control(
+    position: float,
+    setpoint_temperature: float,
+    sensor_temperature: float,
+    reversed: bool = False,
+) -> float:
+
+    # reversed means that increasing position lowers the temperature
+    if sensor_temperature < setpoint_temperature:
+        return min(position + 0.1, 1) if not reversed else max(position - 0.1, 0)
+    elif sensor_temperature > setpoint_temperature:
+        return max(position - 0.1, 0) if not reversed else min(position + 0.1, 1)
+    else:
+        return position
