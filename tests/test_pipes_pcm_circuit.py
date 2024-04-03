@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 
-from pytest import fixture
+from pytest import approx, fixture
 from energy_box_control.appliances.base import ApplianceState
-from energy_box_control.appliances.heat_pipes import HeatPipesState
+from energy_box_control.appliances.heat_pipes import HeatPipesPort, HeatPipesState
+from energy_box_control.appliances.mix import MixPort
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
 from energy_box_control.appliances.valve import ValveState
 from energy_box_control.circuits.pipes_pcm_circuit import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
+    PipesPcmControlState,
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
@@ -87,6 +89,27 @@ def initial_state_pipes_to_pipes(
 
 
 @fixture
+def initial_state_half_valve(
+    pipes_pcm_circuit: "PipesPcmNetwork",
+) -> NetworkState["PipesPcmNetwork"]:
+    return (
+        pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
+        .value(
+            HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
+        )
+        .define_state(pipes_pcm_circuit.heat_pipes_valve)
+        .value(ValveState(0.5))
+        .define_state(pipes_pcm_circuit.heat_pipes_pump)
+        .value(SwitchPumpState())
+        .define_state(pipes_pcm_circuit.heat_pipes_mix)
+        .value(ApplianceState())
+        .define_state(pipes_pcm_circuit.pcm)
+        .value(PcmState(0, AMBIENT_TEMPERATURE))
+        .build()
+    )
+
+
+@fixture
 def pipes_pcm_circuit() -> PipesPcmNetwork:
     return PipesPcmNetwork.pipes_pcm_circuit()
 
@@ -109,9 +132,24 @@ def test_pipes_to_pcm_simulation(
     for i in range(0, 500):
         state = pipes_pcm_circuit.simulate(state, controls, min_max_temperature)
 
+    assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 15 / 60
+
+
+def test_half_valve(pipes_pcm_circuit, initial_state_half_valve, min_max_temperature):
+    state = initial_state_half_valve
+    controls = (
+        pipes_pcm_circuit.control(pipes_pcm_circuit.heat_pipes_pump)
+        .value(SwitchPumpControl(on=True))
+        .build()
+    )
+
+    for i in range(0, 500):
+        state = pipes_pcm_circuit.simulate(state, controls, min_max_temperature)
+
+    assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 15 / 120
+
     assert (
-        state.get_connections_states()[(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN)].flow
-        == 15 / 60
+        state.connection(pipes_pcm_circuit.heat_pipes_mix, MixPort.AB).flow == 15 / 60
     )
 
 
@@ -129,7 +167,7 @@ def test_pcm_charge(
     for i in range(0, 500):
         state = pipes_pcm_circuit.simulate(state, controls, min_max_temperature)
 
-    assert state.get_appliances_states()[pipes_pcm_circuit.pcm].state_of_charge > 0
+    assert state.appliance(pipes_pcm_circuit.pcm).get().state_of_charge > 0
 
 
 def test_pipes_to_pipes(pipes_pcm_circuit, initial_state_pipes_to_pipes):
@@ -143,10 +181,7 @@ def test_pipes_to_pipes(pipes_pcm_circuit, initial_state_pipes_to_pipes):
 
     state = pipes_pcm_circuit.simulate(initial_state_pipes_to_pipes, controls)
 
-    assert (
-        state.get_connections_states()[(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN)].flow
-        == 0
-    )
+    assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 0
 
 
 def run_pipes_pcm_simulation(pipes_pcm_circuit, initial_state_pipes_to_pcm):
@@ -171,3 +206,27 @@ def test_pcm_max_temperatures(pipes_pcm_circuit, initial_state_pipes_to_pcm):
         run_pipes_pcm_simulation(pipes_pcm_circuit, initial_state_pipes_to_pcm)
         == SimulationSuccess()
     )
+
+
+def test_simple_control(pipes_pcm_circuit, initial_state_pipes_to_pcm_warm):
+
+    state = initial_state_pipes_to_pcm_warm
+    control_values = (
+        pipes_pcm_circuit.control(pipes_pcm_circuit.heat_pipes_pump)
+        .value(SwitchPumpControl(on=True))
+        .build()
+    )
+    control_state = PipesPcmControlState(85)
+
+    min_max_temperature = (0, 300)
+    for i in range(0, 500):
+
+        state = pipes_pcm_circuit.simulate(state, control_values, min_max_temperature)
+        sensors = pipes_pcm_circuit.sensors(state)
+        control_state, control_values = pipes_pcm_circuit.regulate(
+            control_state, sensors
+        )
+
+    assert state.connection(
+        pipes_pcm_circuit.heat_pipes, HeatPipesPort.OUT
+    ).temperature == approx(85, abs=5)

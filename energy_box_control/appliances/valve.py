@@ -13,6 +13,11 @@ class ValveState(ApplianceState):
     position: float
 
 
+@dataclass(frozen=True, eq=True)
+class ValveControl(ApplianceControl):
+    position: float
+
+
 class ValvePort(Port):
     A = "a"
     B = "b"
@@ -20,24 +25,23 @@ class ValvePort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Valve(Appliance[ValveState, ApplianceControl, ValvePort]):
+class Valve(Appliance[ValveState, ValveControl, ValvePort]):
 
     def simulate(
         self,
         inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
-        control: ApplianceControl,
+        control: ValveControl,
     ) -> tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
         input = inputs[ValvePort.AB]
+        position = control.position if control else previous_state.position
 
         return ValveState(
-            previous_state.position,
+            position,
         ), {
             ValvePort.A: ConnectionState(
-                (1 - previous_state.position) * input.flow, input.temperature
+                (1 - position) * input.flow, input.temperature
             ),
-            ValvePort.B: ConnectionState(
-                previous_state.position * input.flow, input.temperature
-            ),
+            ValvePort.B: ConnectionState(position * input.flow, input.temperature),
         }

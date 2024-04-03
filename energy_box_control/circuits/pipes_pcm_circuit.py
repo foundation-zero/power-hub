@@ -1,23 +1,24 @@
 from dataclasses import dataclass
 from typing import Self
 
-from energy_box_control.appliances.base import ApplianceState, ConnectionState
-from energy_box_control.appliances.heat_pipes import (
-    HeatPipes,
-    HeatPipesPort,
-    HeatPipesState,
-)
+from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.heat_pipes import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.mix import Mix, MixPort
-from energy_box_control.appliances.pcm import Pcm, PcmPort, PcmState
+from energy_box_control.appliances.pcm import Pcm, PcmPort
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
+    SwitchPumpControl,
     SwitchPumpPort,
-    SwitchPumpState,
 )
-from energy_box_control.appliances.valve import Valve, ValvePort, ValveState
+from energy_box_control.appliances.valve import (
+    Valve,
+    ValveControl,
+    ValvePort,
+)
 from energy_box_control.network import (
     Network,
     NetworkConnections,
+    NetworkControl,
     NetworkFeedbacks,
     NetworkState,
 )
@@ -31,7 +32,14 @@ GLOBAL_IRRADIANCE = 800
 
 @dataclass
 class PipesPcmSensors:
+    heat_pipes_out_temperature: float
+    heat_pipes_valve_position: float
     pass
+
+
+@dataclass
+class PipesPcmControlState:
+    hot_loop_setpoint: float
 
 
 @dataclass
@@ -105,5 +113,33 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .build()
         )
 
+    def regulate(
+        self, control_state: PipesPcmControlState, sensors: PipesPcmSensors
+    ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
+
+        new_valve_position = sensors.heat_pipes_valve_position
+
+        if sensors.heat_pipes_out_temperature < control_state.hot_loop_setpoint:
+            new_valve_position = min(sensors.heat_pipes_valve_position + 0.1, 1)
+        elif sensors.heat_pipes_out_temperature > control_state.hot_loop_setpoint:
+            new_valve_position = max(sensors.heat_pipes_valve_position - 0.1, 0)
+
+        return (
+            control_state,
+            self.control(self.heat_pipes_pump)
+            .value(SwitchPumpControl(on=True))
+            .control(self.heat_pipes_valve)
+            .value(ValveControl(position=new_valve_position))
+            .build(),
+        )
+
     def sensors(self, state: NetworkState[Self]) -> PipesPcmSensors:
-        return PipesPcmSensors()
+
+        return PipesPcmSensors(
+            heat_pipes_out_temperature=state.connection(
+                self.heat_pipes, HeatPipesPort.OUT
+            ).temperature,
+            heat_pipes_valve_position=state.appliance(self.heat_pipes_valve)
+            .get()
+            .position,
+        )
