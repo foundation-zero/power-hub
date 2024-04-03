@@ -16,6 +16,7 @@ from energy_box_control.power_hub.powerhub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
+from tests.simulation import run_simulation
 
 
 @dataclass(frozen=True, eq=True)
@@ -114,28 +115,6 @@ def control_pump_on(pipes_pcm_circuit):
         .value(SwitchPumpControl(on=True))
         .build()
     )
-
-
-def run_simulation(
-    network,
-    initial_state,
-    initial_control_values,
-    initial_control_state,
-    control_function,
-    min_max_temperature,
-):
-    state = initial_state
-    control_values = initial_control_values
-    control_state = initial_control_state
-
-    for i in range(500):
-        state = network.simulate(state, control_values, min_max_temperature)
-        sensors = network.sensors(state)
-
-        if control_function:
-            control_state, control_values = control_function(control_state, sensors)
-
-    return state
 
 
 def test_pipes_to_pcm_simulation(

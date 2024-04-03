@@ -39,13 +39,11 @@ from energy_box_control.power_hub.powerhub_components import (
 class PcmYazakiSensors:
     yazaki_hot_in_temperature: float
     yazaki_bypass_valve_position: float
-    pass
 
 
 @dataclass
 class PcmYazakiControlState:
     yazaki_hot_in_setpoint: float
-    pass
 
 
 @dataclass

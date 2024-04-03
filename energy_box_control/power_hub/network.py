@@ -51,40 +51,7 @@ from energy_box_control.power_hub.sensors import (
     WeatherSensors,
 )
 
-from energy_box_control.power_hub.powerhub_components import (
-    AMBIENT_TEMPERATURE,
-    GLOBAL_IRRADIANCE,
-    heat_pipes,
-    heat_pipes_mix,
-    heat_pipes_pump,
-    heat_pipes_valve,
-    pcm,
-    pcm_to_yazaki_pump,
-    yazaki,
-    yazaki_bypass_mix,
-    yazaki_bypass_valve,
-    hot_mix,
-    hot_reservoir_pcm_valve,
-    chill_mix,
-    chilled_loop_pump,
-    chiller,
-    chiller_switch_valve,
-    chiller_waste_bypass_valve,
-    chiller_waste_mix,
-    cold_reservoir,
-    waste_mix,
-    waste_pump,
-    waste_switch_valve,
-    yazaki_waste_bypass_valve,
-    yazaki_waste_mix,
-    preheat_bypass_valve,
-    preheat_mix,
-    preheat_reservoir,
-    outboard_exchange,
-    outboard_source,
-    hot_reservoir,
-    fresh_water_source,
-)
+import energy_box_control.power_hub.powerhub_components as phc
 
 
 @dataclass
@@ -126,42 +93,42 @@ class PowerHub(Network[PowerHubSensors]):
     @staticmethod
     def example_power_hub() -> "PowerHub":
         return PowerHub(
-            heat_pipes,
-            heat_pipes_valve,
-            heat_pipes_pump,
-            heat_pipes_mix,
-            hot_reservoir,
-            hot_reservoir_pcm_valve,
-            hot_mix,
-            pcm,
-            chiller_switch_valve,
-            yazaki,
-            pcm_to_yazaki_pump,
-            yazaki_bypass_valve,
-            yazaki_bypass_mix,
-            chiller,
-            chill_mix,
-            cold_reservoir,
-            chilled_loop_pump,
-            yazaki_waste_bypass_valve,
-            yazaki_waste_mix,
-            waste_mix,
-            preheat_bypass_valve,
-            preheat_reservoir,
-            preheat_mix,
-            outboard_exchange,
-            waste_switch_valve,
-            waste_pump,
-            chiller_waste_bypass_valve,
-            chiller_waste_mix,
-            fresh_water_source,
-            outboard_source,
+            phc.heat_pipes,
+            phc.heat_pipes_valve,
+            phc.heat_pipes_pump,
+            phc.heat_pipes_mix,
+            phc.hot_reservoir,
+            phc.hot_reservoir_pcm_valve,
+            phc.hot_mix,
+            phc.pcm,
+            phc.chiller_switch_valve,
+            phc.yazaki,
+            phc.pcm_to_yazaki_pump,
+            phc.yazaki_bypass_valve,
+            phc.yazaki_bypass_mix,
+            phc.chiller,
+            phc.chill_mix,
+            phc.cold_reservoir,
+            phc.chilled_loop_pump,
+            phc.yazaki_waste_bypass_valve,
+            phc.yazaki_waste_mix,
+            phc.waste_mix,
+            phc.preheat_bypass_valve,
+            phc.preheat_reservoir,
+            phc.preheat_mix,
+            phc.outboard_exchange,
+            phc.waste_switch_valve,
+            phc.waste_pump,
+            phc.chiller_waste_bypass_valve,
+            phc.chiller_waste_mix,
+            phc.fresh_water_source,
+            phc.outboard_source,
         )
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(50, AMBIENT_TEMPERATURE)
-        initial_cold_reservoir_state = BoilerState(10, AMBIENT_TEMPERATURE)
+        initial_boiler_state = BoilerState(50, phc.AMBIENT_TEMPERATURE)
+        initial_cold_reservoir_state = BoilerState(10, phc.AMBIENT_TEMPERATURE)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes_valve)
@@ -221,7 +188,9 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.heat_pipes)
             .value(
                 HeatPipesState(
-                    AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE
+                    phc.AMBIENT_TEMPERATURE,
+                    phc.AMBIENT_TEMPERATURE,
+                    phc.GLOBAL_IRRADIANCE,
                 )
             )
             .define_state(power_hub.outboard_source)

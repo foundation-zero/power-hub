@@ -39,7 +39,6 @@ from energy_box_control.power_hub.powerhub_components import (
 class PipesPcmSensors:
     heat_pipes_out_temperature: float
     heat_pipes_valve_position: float
-    pass
 
 
 @dataclass
