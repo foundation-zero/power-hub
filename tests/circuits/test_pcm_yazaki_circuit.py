@@ -5,7 +5,7 @@ from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
 from energy_box_control.appliances.valve import ValvePort, ValveState
 from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
-from energy_box_control.circuits.pcm_yazaki_circuit import (
+from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
     PcmYazakiControlState,
     PcmYazakiNetwork,
 )

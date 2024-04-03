@@ -7,12 +7,12 @@ from energy_box_control.appliances.mix import MixPort
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
 from energy_box_control.appliances.valve import ValveState
-from energy_box_control.circuits.pipes_pcm_circuit import (
+from energy_box_control.power_hub.circuits.pipes_pcm_circuit import (
     PipesPcmControlState,
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
-from energy_box_control.powerhub_components import (
+from energy_box_control.power_hub.powerhub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )

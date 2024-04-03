@@ -26,7 +26,7 @@ from energy_box_control.network import (
 )
 
 
-from energy_box_control.powerhub_components import (
+from energy_box_control.power_hub.powerhub_components import (
     pcm,
     yazaki_bypass_mix,
     pcm_to_yazaki_pump,
