@@ -34,7 +34,7 @@ def test_yazaki():
 
 def test_yazaki_outside_ref_values(caplog):
     yazaki = Yazaki(4184, 4184, 4184)
-    initial_yazaki_state = YazakiState(efficiency=1)
+    initial_yazaki_state = YazakiState()
     yazaki_control = YazakiControl()
     hot_in = 15
     chilled_in = 0

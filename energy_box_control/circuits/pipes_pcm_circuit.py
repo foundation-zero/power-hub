@@ -65,7 +65,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
                 phase_change_temperature=78,
                 sensible_capacity=1590
                 * 610,  # 610 kg at 1.59 kJ/kg K in liquid state @82C
-                transfer_power=10000,  # incorrect
+                transfer_power=40000,  # incorrect
                 specific_heat_capacity_charge=GLYCOL_SPECIFIC_HEAT,
                 specific_heat_capacity_discharge=WATER_SPECIFIC_HEAT,
             ),

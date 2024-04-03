@@ -168,7 +168,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.chiller_switch_valve)
             .value(initial_valve_state)
             .define_state(power_hub.yazaki)
-            .value(YazakiState(0.7))
+            .value(YazakiState())
             .define_state(power_hub.chiller)
             .value(ChillerState())
             .define_state(power_hub.yazaki_bypass_valve)
@@ -462,12 +462,6 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
             .initial_state(ConnectionState(100/60, 30))
-
-            .feedback(self.yazaki)
-            .at(YazakiPort.HOT_OUT)
-            .to(self.pcm)
-            .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(72/60, 70))
 
             .build()
         )
