@@ -83,16 +83,43 @@ def control_pump_on(pcm_yazaki_circuit):
     )
 
 
+def run_simulation(
+    network,
+    initial_state,
+    initial_control_values,
+    initial_control_state,
+    control_function,
+    min_max_temperature,
+):
+    state = initial_state
+    control_values = initial_control_values
+    control_state = initial_control_state
+
+    for i in range(500):
+        state = network.simulate(state, control_values, min_max_temperature)
+        sensors = network.sensors(state)
+
+        if control_function:
+            control_state, control_values = control_function(control_state, sensors)
+
+    return state
+
+
 def test_pcm_yazaki_simulation(
     pcm_yazaki_circuit,
     initial_state_pcm_to_yazaki,
-    min_max_temperature,
     control_pump_on,
+    min_max_temperature,
 ):
-    state = initial_state_pcm_to_yazaki
 
-    for i in range(0, 500):
-        state = pcm_yazaki_circuit.simulate(state, control_pump_on, min_max_temperature)
+    state = run_simulation(
+        pcm_yazaki_circuit,
+        initial_state_pcm_to_yazaki,
+        control_pump_on,
+        None,
+        None,
+        min_max_temperature,
+    )
 
     assert (
         state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 72 / 60
@@ -115,10 +142,15 @@ def test_yazaki_yazaki_simulation(
     min_max_temperature,
     control_pump_on,
 ):
-    state = initial_state_yazaki_to_yazaki
 
-    for i in range(0, 500):
-        state = pcm_yazaki_circuit.simulate(state, control_pump_on, min_max_temperature)
+    state = run_simulation(
+        pcm_yazaki_circuit,
+        initial_state_yazaki_to_yazaki,
+        control_pump_on,
+        None,
+        None,
+        min_max_temperature,
+    )
 
     assert state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 0
     assert (
@@ -138,8 +170,14 @@ def test_half_valve(
 ):
     state = initial_state_half_valve
 
-    for i in range(0, 500):
-        state = pcm_yazaki_circuit.simulate(state, control_pump_on, min_max_temperature)
+    state = run_simulation(
+        pcm_yazaki_circuit,
+        initial_state_half_valve,
+        control_pump_on,
+        None,
+        None,
+        min_max_temperature,
+    )
 
     assert (
         state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
@@ -165,17 +203,14 @@ def test_simple_control(
     control_pump_on,
 ):
 
-    state = initial_state_pcm_to_yazaki
-    control_values = control_pump_on
-    control_state = PcmYazakiControlState(75)
-
-    for i in range(0, 500):
-
-        state = pcm_yazaki_circuit.simulate(state, control_values, min_max_temperature)
-        sensors = pcm_yazaki_circuit.sensors(state)
-        control_state, control_values = pcm_yazaki_circuit.regulate(
-            control_state, sensors
-        )
+    state = run_simulation(
+        pcm_yazaki_circuit,
+        initial_state_pcm_to_yazaki,
+        control_pump_on,
+        PcmYazakiControlState(75),
+        pcm_yazaki_circuit.regulate,
+        min_max_temperature,
+    )
 
     assert state.connection(
         pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN
