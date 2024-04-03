@@ -46,8 +46,11 @@ from energy_box_control.network import (
 
 from energy_box_control.power_hub.sensors import (
     HeatPipesSensors,
+    PcmSensors,
     PowerHubSensors,
     WeatherSensors,
+    YazakiSensors,
+    BoilerSensors,
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
@@ -592,6 +595,13 @@ class PowerHub(Network[PowerHubSensors]):
 
             context.from_state(
                 state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
+            )
+            context.from_state(
+                state, BoilerSensors, context.subject.hot_reservoir, self.hot_reservoir
+            )
+            context.from_state(state, PcmSensors, context.subject.pcm, self.pcm)
+            context.from_state(
+                state, YazakiSensors, context.subject.yazaki, self.yazaki
             )
 
             return context.result()
