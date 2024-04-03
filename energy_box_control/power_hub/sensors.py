@@ -15,21 +15,6 @@ from energy_box_control.network import Network, NetworkState
 
 
 @dataclass(frozen=True, eq=True)
-class ValveSensors:
-    position: float
-
-
-@dataclass(frozen=True, eq=True)
-class BoilerSensors:
-    temperatue: float
-
-
-@dataclass(frozen=True, eq=True)
-class PcmSensors:
-    temperature: float
-
-
-@dataclass(frozen=True, eq=True)
 class Loop:
     flow: float
 
