@@ -141,7 +141,7 @@ class YazakiNetwork(Network[None]):
             .define_state(self.cooling_source)
             .value(SourceState())
             .define_state(self.yazaki)
-            .value(YazakiState(0))
+            .value(YazakiState())
             .build()
         )
 

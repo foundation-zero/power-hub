@@ -24,7 +24,7 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    efficiency: float
+    pass
 
 
 @dataclass(frozen=True, eq=True)
@@ -93,7 +93,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
             hot_temp_out = hot_in.temperature
             cooling_temp_out = cooling_in.temperature
             chilled_temp_out = chilled_in.temperature
-            efficiency = 0
+
         else:
             cooling_capacity = 1000 * float(
                 _cooling_capacity_interpolator(
@@ -116,9 +116,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 chilled_in.flow * self.specific_heat_capacity_chilled
             )
 
-            efficiency = cooling_capacity / heat_input
-
-        return YazakiState(efficiency), {
+        return YazakiState(), {
             YazakiPort.HOT_OUT: ConnectionState(
                 inputs[YazakiPort.HOT_IN].flow, hot_temp_out
             ),
