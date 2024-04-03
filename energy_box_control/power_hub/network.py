@@ -44,6 +44,12 @@ from energy_box_control.network import (
     NetworkControl,
 )
 from energy_box_control.networks import ControlState
+from energy_box_control.power_hub.sensors import (
+    HeatPipesSensors,
+    Loop,
+    PowerHubSensors,
+    WeatherSensors,
+)
 
 
 WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
@@ -52,11 +58,6 @@ SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
 SEAWATER_TEMP = 24
 AMBIENT_TEMPERATURE = 20
 GLOBAL_IRRADIANCE = 800
-
-
-@dataclass
-class PowerHubSensors:
-    pass
 
 
 @dataclass
@@ -294,10 +295,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(PcmPort.DISCHARGE_OUT)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.B)
+
             .connect(self.yazaki_bypass_mix)
             .at(MixPort.AB)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
+
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.yazaki_bypass_valve)
@@ -486,7 +489,17 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
-        return PowerHubSensors()
+        with PowerHubSensors.context(
+            WeatherSensors(ambient_temperature=0, global_irradiance=0)
+        ) as context:
+            with context.loop(
+                Loop(flow=state.connection(self.heat_pipes, HeatPipesPort.OUT).flow)
+            ):
+                context.from_state(
+                    state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
+                )
+
+                return context.result()
 
     def regulate(
         self, control_state: ControlState

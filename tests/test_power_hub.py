@@ -1,16 +1,15 @@
-import pytest
-from energy_box_control.appliances import BoilerControl
-from energy_box_control.appliances.switch_pump import SwitchPumpControl
+from energy_box_control.appliances import (
+    BoilerControl,
+    SwitchPumpControl,
+    HeatPipesPort,
+)
 from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
 
-def test_power_hub_simulation():
-    power_hub = PowerHub.example_power_hub()
-    initial_state = PowerHub.example_initial_state(power_hub)
-    power_hub.simulate(
-        initial_state,
+def power_hub_control(power_hub):
+    return (
         power_hub.control(power_hub.hot_reservoir)
         .value(BoilerControl(heater_on=False))
         .control(power_hub.preheat_reservoir)
@@ -25,7 +24,30 @@ def test_power_hub_simulation():
         .value(SwitchPumpControl(on=True))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
-        .build(),
+        .build()
+    )
+
+
+def test_power_hub_simulation():
+    power_hub = PowerHub.example_power_hub()
+    initial_state = PowerHub.example_initial_state(power_hub)
+    power_hub.simulate(
+        initial_state,
+        power_hub_control(power_hub),
+    )
+
+
+def test_power_hub_sensors():
+    power_hub = PowerHub.example_power_hub()
+    initial_state = PowerHub.example_initial_state(power_hub)
+    next_state = power_hub.simulate(
+        initial_state,
+        power_hub_control(power_hub),
+    )
+    sensors = power_hub.sensors(next_state)
+    assert (
+        sensors.heat_pipes.output_temperature
+        == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
     )
 
 
