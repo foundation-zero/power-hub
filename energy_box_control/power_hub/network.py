@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Self
-import uuid
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,

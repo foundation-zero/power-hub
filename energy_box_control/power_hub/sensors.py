@@ -196,49 +196,9 @@ class HeatPipesSensors(FromState):
 
 @dataclass
 class PowerHubSensors:
-    """sensors mostly based on rev A"""
 
     @staticmethod
     def context[T: Network[Any]](weather: WeatherSensors) -> SensorContext:
         return SensorContext(weather)
 
     heat_pipes: HeatPipesSensors
-
-    # heat_pipes_temperature: float
-    # heat_pipes_in_temperature: float
-    # heat_pipes_out_temperature: float
-
-    # heat_pipes_valve_position: float
-
-    # hot_reservoir_pcm_valve_position: float
-
-    # hot_reservoir_temperature: float
-    # hot_reservoir_heat_exchange_in_temperature: float
-    # hot_reservoir_heat_exchange_out_temperature: float
-    # hot_reservoir_fill_in_temperature: float
-    # hot_reservoir_fill_out_temperature: float
-
-    # pcm_temperature: float
-    # pcm_in_temperature: float
-    # pcm_out_temperature: float
-
-    # pcm_circuit_flow: float
-    # pcm_circuit_pressure: float
-
-    # yazaki_hot_in_temperature: float
-    # yazaki_hot_out_temperature: float
-    # yazaki_hot_flow: float
-    # yazaki_pcm_valve_position: float
-
-    # pcm_out_temperature: float  # discussed to be added
-    # pcm_flow: float
-
-    # chiller_in_temperature: float
-    # chiller_out_temperature: float
-    # chiller_flow: float
-    # chiller_valve_position: float
-
-    # yazaki_waste_in_temperature: float
-
-    # ambient_temperature: float
-    # global_irradiance: float
