@@ -2,6 +2,7 @@ from asyncio import Future
 from unittest.mock import MagicMock
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import pytest
+from quart import Response
 from energy_box_control.api.api import (
     app,
     build_query_range,
@@ -15,6 +16,8 @@ from datetime import datetime, timezone, timedelta
 from freezegun import freeze_time
 import fluxy
 import os
+import pandas as pd
+import json
 
 
 HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
@@ -23,11 +26,8 @@ HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
 @pytest.fixture(autouse=True)
 async def mock_influx(mocker):
     app.influx = mocker.patch.object(InfluxDBClientAsync, "query_api")  # type: ignore
-
-    result_mock = MagicMock()
-    result_mock.to_csv.return_value = b"_,_,_"
     fut = Future()
-    fut.set_result(result_mock)
+    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
 
     app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
 
@@ -60,35 +60,45 @@ async def test_get_all_appliance_names():
     assert len(response_data["appliances"]) > 0
 
 
+async def assert_row_response(response: Response):
+    result = json.loads(await response.get_data())
+    assert type(result) == list
+    assert len(result) == 3
+
+
 async def test_get_last_values_for_appliance():
-    response = await app.test_client().get(
-        f"/appliances/chiller_switch_valve/position/last_values", headers=HEADERS
+    await assert_row_response(
+        await app.test_client().get(
+            f"/appliances/chiller_switch_valve/position/last_values", headers=HEADERS
+        )
     )
-    assert await response.get_data() == b"_,_,_"
 
 
 async def test_get_last_values_for_appliance_minutes_back():
-    response = await app.test_client().get(
-        f"/appliances/chiller_switch_valve/position/last_values?minutes_back=60",
-        headers=HEADERS,
+    await assert_row_response(
+        await app.test_client().get(
+            f"/appliances/chiller_switch_valve/position/last_values?minutes_back=60",
+            headers=HEADERS,
+        )
     )
-    assert await response.get_data() == b"_,_,_"
 
 
 async def test_get_last_values_for_connection():
-    response = await app.test_client().get(
-        f"/appliances/chiller_switch_valve/connections/{ValvePort.A.value}/position/last_values",
-        headers=HEADERS,
+    await assert_row_response(
+        await app.test_client().get(
+            f"/appliances/chiller_switch_valve/connections/{ValvePort.A.value}/position/last_values",
+            headers=HEADERS,
+        )
     )
-    assert await response.get_data() == b"_,_,_"
 
 
 async def test_get_last_values_for_connection_minutes_back():
-    response = await app.test_client().get(
-        f"/appliances/chiller_switch_valve/connections/position/{ValvePort.A.value}/last_values?minutes_back=60",
-        headers=HEADERS,
+    await assert_row_response(
+        await app.test_client().get(
+            f"/appliances/chiller_switch_valve/connections/position/{ValvePort.A.value}/last_values?minutes_back=60",
+            headers=HEADERS,
+        )
     )
-    assert await response.get_data() == b"_,_,_"
 
 
 @freeze_time("2012-01-01")

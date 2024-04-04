@@ -11,7 +11,7 @@ from energy_box_control.appliances.base import (
     Port,
     ApplianceState,
 )
-from typing import Any, get_args, get_origin, TypedDict, Literal
+from typing import Any, Callable, get_args, get_origin, TypedDict, Literal
 from types import get_original_bases
 from dataclasses import fields
 import fluxy  # type: ignore
@@ -172,6 +172,25 @@ def token_required(f):
     return decorator
 
 
+@no_type_check
+def response_csv_to_tuple(time_column: str, value_column: str):
+    @no_type_check
+    def _response_csv_to_tuple[T: type](fn: T) -> Callable[[T], T]:
+        wraps(fn)
+
+        @no_type_check
+        async def decorator(*args: list[Any], **kwargs: dict[str, Any]) -> str:
+            response: df = await fn(*args, **kwargs)
+            if type(response) == df and len(response) > 0:
+                return list(zip(response[time_column], response[value_column]))
+            return []
+
+        decorator.__name__ = fn.__name__
+        return decorator
+
+    return _response_csv_to_tuple
+
+
 @app.while_serving
 async def influx_client():
     url = os.environ["DOCKER_INFLUXDB_URL"]
@@ -230,41 +249,39 @@ async def get_all_appliance_names() -> dict[
 @app.route("/appliances/<appliance_name>/<field_name>/last_values")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
+@response_csv_to_tuple(time_column="_time", value_column="_value")
 async def get_last_values_for_appliances(
     appliance_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceFieldValue]]:
-    return (
-        await execute_influx_query(
-            app.influx,  # type: ignore
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                None,
-                field_name,
-            ),
-        )
-    ).to_csv()
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        build_get_values_query(
+            query_args.minutes_back,
+            appliance_name,
+            None,
+            field_name,
+        ),
+    )
 
 
 @app.route(
     "/appliances/<appliance_name>/connections/<connection_name>/<field_name>/last_values"
 )
 @token_required
+@response_csv_to_tuple(time_column="_time", value_column="_value")
 @validate_querystring(ValuesQuery)  # type: ignore
 async def get_last_values_for_connections(
     appliance_name: str, connection_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ConnectionFieldValue]]:
-    return (
-        await execute_influx_query(
-            app.influx,  # type: ignore
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                connection_name,
-                field_name,
-            ),
-        )
-    ).to_csv()
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        build_get_values_query(
+            query_args.minutes_back,
+            appliance_name,
+            connection_name,
+            field_name,
+        ),
+    )
 
 
 def create_fluxy_for_power_over_time(
@@ -307,6 +324,7 @@ def create_fluxy_for_power_over_time(
 
 @app.route("/appliances/heat_pipes/power/last_values")
 @token_required
+@response_csv_to_tuple(time_column="_time", value_column="power")
 @validate_querystring(ComputedValuesQuery)  # type: ignore
 async def get_heat_pipes_power_over_time(
     query_args: ComputedValuesQuery,
@@ -318,15 +336,13 @@ async def get_heat_pipes_power_over_time(
             f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
             HTTPStatus.UNPROCESSABLE_ENTITY,
         )
-    result = await execute_influx_query(
+    return await execute_influx_query(
         app.influx,  # type: ignore
         query=create_fluxy_for_power_over_time(
             query_args.minutes_back,
             query_args.interval_seconds,
         ),
     )
-
-    return result.to_csv()  # type: ignore
 
 
 @app.route("/appliances/heat_pipes/power/total")
