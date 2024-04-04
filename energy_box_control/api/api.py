@@ -297,7 +297,7 @@ def create_fluxy_for_power_over_time(
     )
 
 
-@app.route("/appliances/heat_pipes/power")
+@app.route("/appliances/heat_pipes/power/last_values")
 @token_required
 async def get_heat_pipes_power_over_time() -> (
     str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]
