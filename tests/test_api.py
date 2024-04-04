@@ -61,6 +61,7 @@ async def test_get_all_appliance_names():
 
 
 async def assert_row_response(response: Response):
+    assert response.content_type == "application/json"
     result = json.loads(await response.get_data())
     assert type(result) == list
     assert len(result) == 3

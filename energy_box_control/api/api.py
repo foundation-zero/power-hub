@@ -176,8 +176,8 @@ def token_required(f):
 def serialize_dataframe(columns: list[str]):
     @no_type_check
     def _serialize_dataframe[T: type](fn: T) -> Callable[[T], T]:
-        wraps(fn)
 
+        @wraps(fn)
         @no_type_check
         async def decorator(
             *args: list[Any], **kwargs: dict[str, Any]
@@ -187,12 +187,11 @@ def serialize_dataframe(columns: list[str]):
                 raise Exception("serialize_dataframe requires a dataframe")
             if response.empty:
                 return []
-            return await make_response(
+            return Response(
                 response.loc[:, columns].to_json(orient="records"),
-                {"content-type": "application/json"},
+                mimetype="application/json",
             )
 
-        decorator.__name__ = fn.__name__
         return decorator
 
     return _serialize_dataframe
