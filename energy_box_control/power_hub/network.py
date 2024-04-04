@@ -92,7 +92,7 @@ class PowerHub(Network[PowerHubSensors]):
         super().__init__()
 
     @staticmethod
-    def power_hub() -> "PowerHub":
+    def powerhub() -> "PowerHub":
         return PowerHub(
             phc.heat_pipes,
             phc.heat_pipes_valve,
