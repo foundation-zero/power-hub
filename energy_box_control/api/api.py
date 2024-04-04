@@ -2,7 +2,7 @@ import os
 from quart import Quart, request, make_response
 from dataclasses import dataclass
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
-from quart_schema import QuartSchema, validate_response  # type: ignore
+from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
 from dotenv import load_dotenv
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.appliances.base import (
@@ -68,6 +68,16 @@ class ReturnedAppliance:
 @dataclass
 class ReturnedAppliances:
     appliances: dict[ApplianceName, ReturnedAppliance]
+
+
+@dataclass
+class ValuesQuery:
+    minutes_back: int = DEFAULT_MINUTES_BACK
+
+
+@dataclass
+class ComputedValuesQuery(ValuesQuery):
+    interval_seconds: int = DEFAULT_POWER_INTERVAL_SECONDS
 
 
 def build_query_range(minutes_back: int) -> tuple[datetime, datetime]:
@@ -219,16 +229,15 @@ async def get_all_appliance_names() -> dict[
 
 @app.route("/appliances/<appliance_name>/<field_name>/last_values")
 @token_required
+@validate_querystring(ValuesQuery)  # type: ignore
 async def get_last_values_for_appliances(
-    appliance_name: str, field_name: str
+    appliance_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceFieldValue]]:
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             build_get_values_query(
-                request.args.get(
-                    "minutes_back", type=int, default=DEFAULT_MINUTES_BACK
-                ),
+                query_args.minutes_back,
                 appliance_name,
                 None,
                 field_name,
@@ -241,16 +250,15 @@ async def get_last_values_for_appliances(
     "/appliances/<appliance_name>/connections/<connection_name>/<field_name>/last_values"
 )
 @token_required
+@validate_querystring(ValuesQuery)  # type: ignore
 async def get_last_values_for_connections(
-    appliance_name: str, connection_name: str, field_name: str
+    appliance_name: str, connection_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ConnectionFieldValue]]:
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             build_get_values_query(
-                request.args.get(
-                    "minutes_back", type=int, default=DEFAULT_MINUTES_BACK
-                ),
+                query_args.minutes_back,
                 appliance_name,
                 connection_name,
                 field_name,
@@ -299,13 +307,12 @@ def create_fluxy_for_power_over_time(
 
 @app.route("/appliances/heat_pipes/power/last_values")
 @token_required
-async def get_heat_pipes_power_over_time() -> (
-    str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]
-):
+@validate_querystring(ComputedValuesQuery)  # type: ignore
+async def get_heat_pipes_power_over_time(
+    query_args: ComputedValuesQuery,
+) -> str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]:
     if (
-        request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK) * 60
-    ) / request.args.get(
-        "interval", type=int, default=DEFAULT_POWER_INTERVAL_SECONDS
+        (query_args.minutes_back * 60) / query_args.interval_seconds
     ) > MAX_POWER_SAMPLES:
         return (
             f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
@@ -314,10 +321,8 @@ async def get_heat_pipes_power_over_time() -> (
     result = await execute_influx_query(
         app.influx,  # type: ignore
         query=create_fluxy_for_power_over_time(
-            request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK),
-            request.args.get(
-                "interval", type=int, default=DEFAULT_POWER_INTERVAL_SECONDS
-            ),
+            query_args.minutes_back,
+            query_args.interval_seconds,
         ),
     )
 
@@ -326,16 +331,15 @@ async def get_heat_pipes_power_over_time() -> (
 
 @app.route("/appliances/heat_pipes/power/total")
 @token_required
-async def get_heat_pipes_total_power_over_time() -> dict[str, float]:
+@validate_querystring(ValuesQuery)  # type: ignore
+async def get_heat_pipes_total_power_over_time(
+    query_args: ComputedValuesQuery,
+) -> dict[str, float]:
     query_result = await execute_influx_query(
         app.influx,  # type: ignore
         query=fluxy.pipe(
             create_fluxy_for_power_over_time(
-                request.args.get(
-                    "minutes_back",
-                    type=int,
-                    default=DEFAULT_MINUTES_BACK,
-                ),
+                query_args.minutes_back,
                 1,
             ),
             fluxy.sum("power"),
