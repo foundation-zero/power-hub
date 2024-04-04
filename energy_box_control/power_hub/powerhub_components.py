@@ -39,9 +39,9 @@ pcm_to_yazaki_pump = SwitchPump(72 / 60)
 yazaki_bypass_valve = Valve()
 yazaki_bypass_mix = Mix()
 chiller = Chiller(
-    10000,
+    10000, # 2.5-18.7 kW cooling capacity
     WATER_SPECIFIC_HEAT,
-    WATER_SPECIFIC_HEAT,  # 2.5-18.7 kW cooling capacity
+    WATER_SPECIFIC_HEAT,  
 )
 chill_mix = Mix()
 cold_reservoir = Boiler(800, 0, 0, 0, WATER_SPECIFIC_HEAT)

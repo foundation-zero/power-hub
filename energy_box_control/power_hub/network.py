@@ -79,14 +79,14 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_bypass_valve: Valve  # CV-1003
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
-    outboard_exchange: HeatExchanger  # W-1007
     waste_switch_valve: Valve  # CV-1007
     waste_pump: SwitchPump  # P-1004
     chiller_waste_bypass_valve: Valve  # CV-1009
     chiller_waste_mix: Mix
-    fresh_water_source: Source
+    outboard_exchange: HeatExchanger  # W-1007
     outboard_pump: SwitchPump
     outboard_source: Source
+    fresh_water_source: Source
 
     def __post_init__(self):
         super().__init__()
@@ -117,14 +117,14 @@ class PowerHub(Network[PowerHubSensors]):
             phc.preheat_bypass_valve,
             phc.preheat_reservoir,
             phc.preheat_mix,
-            phc.outboard_exchange,
             phc.waste_switch_valve,
             phc.waste_pump,
             phc.chiller_waste_bypass_valve,
             phc.chiller_waste_mix,
-            phc.fresh_water_source,
+            phc.outboard_exchange,
             phc.outboard_pump,
             phc.outboard_source,
+            phc.fresh_water_source,
         )
 
     @staticmethod
@@ -133,61 +133,7 @@ class PowerHub(Network[PowerHubSensors]):
         initial_cold_reservoir_state = BoilerState(10, phc.AMBIENT_TEMPERATURE)
         initial_valve_state = ValveState(0.5)
         return (
-            power_hub.define_state(power_hub.heat_pipes_valve)
-            .value(ValveState(0))
-            .define_state(power_hub.heat_pipes_pump)
-            .value(SwitchPumpState())
-            .define_state(power_hub.hot_reservoir)
-            .value(initial_boiler_state)
-            .define_state(power_hub.hot_reservoir_pcm_valve)
-            .value(ValveState(0))
-            .define_state(power_hub.pcm)
-            .value(PcmState(0, 20))
-            .define_state(power_hub.chiller_switch_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.yazaki)
-            .value(YazakiState())
-            .define_state(power_hub.chiller)
-            .value(ChillerState())
-            .define_state(power_hub.yazaki_bypass_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.yazaki_bypass_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.cold_reservoir)
-            .value(initial_cold_reservoir_state)
-            .define_state(power_hub.chilled_loop_pump)
-            .value(SwitchPumpState())
-            .define_state(power_hub.yazaki_waste_bypass_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.preheat_bypass_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.preheat_reservoir)
-            .value(initial_boiler_state)
-            .define_state(power_hub.waste_switch_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.chiller_waste_bypass_valve)
-            .value(initial_valve_state)
-            .define_state(power_hub.waste_pump)
-            .value(SwitchPumpState())
-            .define_state(power_hub.fresh_water_source)
-            .value(SourceState())
-            .define_state(power_hub.chiller_waste_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.hot_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.heat_pipes_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.preheat_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.yazaki_waste_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.chill_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.waste_mix)
-            .value(ApplianceState())
-            .define_state(power_hub.outboard_exchange)
-            .value(ApplianceState())
-            .define_state(power_hub.heat_pipes)
+            power_hub.define_state(power_hub.heat_pipes)
             .value(
                 HeatPipesState(
                     phc.AMBIENT_TEMPERATURE,
@@ -195,7 +141,65 @@ class PowerHub(Network[PowerHubSensors]):
                     phc.GLOBAL_IRRADIANCE,
                 )
             )
+            .define_state(power_hub.heat_pipes_valve)
+            .value(ValveState(0))
+            .define_state(power_hub.heat_pipes_pump)
+            .value(SwitchPumpState())
+            .define_state(power_hub.heat_pipes_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.hot_reservoir)
+            .value(initial_boiler_state)
+            .define_state(power_hub.hot_reservoir_pcm_valve)
+            .value(ValveState(0))
+            .define_state(power_hub.hot_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.pcm)
+            .value(PcmState(0, 20))
+            .define_state(power_hub.chiller_switch_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.yazaki)
+            .value(YazakiState())
+            .define_state(power_hub.pcm_to_yazaki_pump)
+            .value(SwitchPumpState())
+            .define_state(power_hub.yazaki_bypass_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.yazaki_bypass_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.chiller)
+            .value(ChillerState())
+            .define_state(power_hub.chill_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.cold_reservoir)
+            .value(initial_cold_reservoir_state)
+            .define_state(power_hub.chilled_loop_pump)
+            .value(SwitchPumpState())
+            .define_state(power_hub.yazaki_waste_bypass_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.yazaki_waste_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.waste_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.preheat_bypass_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.preheat_reservoir)
+            .value(initial_boiler_state)
+            .define_state(power_hub.preheat_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.waste_switch_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.waste_pump)
+            .value(SwitchPumpState())
+            .define_state(power_hub.chiller_waste_bypass_valve)
+            .value(initial_valve_state)
+            .define_state(power_hub.chiller_waste_mix)
+            .value(ApplianceState())
+            .define_state(power_hub.outboard_exchange)
+            .value(ApplianceState())
+            .define_state(power_hub.outboard_pump)
+            .value(SwitchPumpState())
             .define_state(power_hub.outboard_source)
+            .value(SourceState())
+            .define_state(power_hub.fresh_water_source)
             .value(SourceState())
             .build()
         )
@@ -218,41 +222,17 @@ class PowerHub(Network[PowerHubSensors]):
         )
 
     def feedback(self) -> NetworkFeedbacks[Self]:
-        # fmt: off
+        pipes_pcm = self._pipes_pcm_feedback()
+        pcm_yazaki = self._pcm_yazaki_feedback()
+        chilled_side = self._chilled_side_feedback()
+        waste_side = self._waste_side_feedback()
+
         return (
-            self.define_feedback(self.heat_pipes_pump)
-            .at(SwitchPumpPort.OUT)
-            .to(self.heat_pipes)
-            .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(15/60, 70))
-
-            .feedback(self.yazaki_bypass_valve)
-            .at(ValvePort.A)
-            .to(self.yazaki_bypass_mix)
-            .at(MixPort.A)
-            .initial_state(ConnectionState(72/60/2, 50))
-
-            .feedback(self.yazaki_bypass_valve)
-            .at(ValvePort.B)
-            .to(self.pcm)
-            .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(72/60/2,50))
-
-            .feedback(self.chill_mix)
-            .at(MixPort.AB)
-            .to(self.cold_reservoir)
-            .at(BoilerPort.HEAT_EXCHANGE_IN)
-            .initial_state(ConnectionState(70/60, 10))
-
-            .feedback(self.outboard_exchange)
-            .at(HeatExchangerPort.A_OUT)
-            .to(self.waste_switch_valve)
-            .at(ValvePort.AB)
-            .initial_state(ConnectionState(100/60, 30))
-
+            pipes_pcm.combine(pcm_yazaki)
+            .combine(chilled_side)
+            .combine(waste_side)
             .build()
         )
-        # fmt: on
 
     def _pipes_pcm_connections(self):
         # fmt: off
@@ -494,6 +474,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
+            .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
         )
 
     def _outboard_connections(self):
