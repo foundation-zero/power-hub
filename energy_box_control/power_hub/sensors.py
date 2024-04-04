@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
+from energy_box_control.appliances.chiller import Chiller, ChillerPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
+from energy_box_control.appliances.valve import Valve
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
@@ -113,14 +115,50 @@ class BoilerSensors(FromState):
     )
 
 
+@sensors()
+class ChillerSensors(FromState):
+    spec: Chiller
+    cooling_flow: float = sensor(flow=True, from_port=ChillerPort.COOLING_IN)
+    cooling_input_temperature: float = sensor(
+        temperature=True, from_port=ChillerPort.COOLING_IN
+    )
+    cooling_output_temperature: float = sensor(
+        temperature=True, from_port=ChillerPort.COOLING_OUT
+    )
+
+    chilled_flow: float = sensor(flow=True, from_port=ChillerPort.CHILLED_IN)
+    chilled_input_temperature: float = sensor(
+        temperature=True, from_port=ChillerPort.CHILLED_IN
+    )
+    chilled_output_temperature: float = sensor(
+        temperature=True, from_port=ChillerPort.CHILLED_OUT
+    )
+
+
+@sensors()
+class ValveSensors(FromState):
+    spec: Valve
+    position: float
+
+
 @dataclass
 class PowerHubSensors:
+    heat_pipes: HeatPipesSensors
+    heat_pipes_valve: ValveSensors
+    hot_reservoir_pcm_valve: ValveSensors
+    hot_reservoir: BoilerSensors
+    pcm: PcmSensors
+    yazaki_hot_bypass_valve: ValveSensors
+    yazaki: YazakiSensors
+    chiller: ChillerSensors
+    chiller_switch_valve: ValveSensors
+    cold_reservoir: BoilerSensors
+    yazaki_waste_bypass_valve: ValveSensors
+    preheat_bypass_valve: ValveSensors
+    preheat_reservoir: BoilerSensors
+    waste_switch_valve: ValveSensors
+    chiller_waste_bypass_valve: ValveSensors
 
     @staticmethod
     def context(weather: WeatherSensors) -> "SensorContext[PowerHubSensors]":
         return SensorContext(PowerHubSensors, weather)
-
-    heat_pipes: HeatPipesSensors
-    hot_reservoir: BoilerSensors
-    pcm: PcmSensors
-    yazaki: YazakiSensors
