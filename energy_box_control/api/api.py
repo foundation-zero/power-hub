@@ -28,7 +28,15 @@ TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
 
 app = Quart(__name__)
-QuartSchema(app, conversion_preference="pydantic")
+QuartSchema(
+    app,
+    security=[{"power_hub_api": []}],
+    security_schemes={
+        "power_hub_api": {"type": "apiKey", "name": "Authorization", "in_": "header"}
+    },
+    conversion_preference="pydantic",
+)
+
 
 ConnectionName = str
 ConnectionFieldName = str
