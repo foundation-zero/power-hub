@@ -28,7 +28,7 @@ load_dotenv(dotenv_path)
 
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
-DEFAULT_POWER_INTERVAL_SECONDS = 1
+DEFAULT_POWER_INTERVAL_SECONDS = 10
 MAX_POWER_SAMPLES = 2000
 
 app = Quart(__name__)
@@ -256,7 +256,7 @@ def create_fluxy_for_power_over_time(
 ) -> fluxy.Query:
     in_temperature_topic = "power_hub/connections/heat_pipes/in/temperature"
     out_temperature_topic = "power_hub/connections/heat_pipes/out/temperature"
-    in_flow_topic = "power_hub/connections/heat_pipes/in/flow"
+    flow_topic = "power_hub/connections/heat_pipes/in/flow"
 
     return fluxy.pipe(
         fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
@@ -266,7 +266,7 @@ def create_fluxy_for_power_over_time(
         fluxy.filter(
             lambda r: (r.topic == in_temperature_topic)
             | (r.topic == out_temperature_topic)
-            | (r.topic == in_flow_topic)
+            | (r.topic == flow_topic)
         ),
         fluxy.aggregate_window(
             every=timedelta(seconds=interval_seconds),
@@ -279,11 +279,11 @@ def create_fluxy_for_power_over_time(
                 "_time",
                 in_temperature_topic,
                 out_temperature_topic,
-                in_flow_topic,
+                flow_topic,
             ]
         ),
         fluxy.map(
-            f'(r) => ({{ r with power: (r["{in_flow_topic}"] * {PowerHub.example_power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
+            f'(r) => ({{ r with power: (r["{flow_topic}"] * {PowerHub.example_power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
         ),
         fluxy.keep(["_time", "power"]),
     )
@@ -292,8 +292,17 @@ def create_fluxy_for_power_over_time(
 @app.route("/appliances/heat_pipes/power")
 @token_required
 async def get_heat_pipes_power_over_time() -> (
-    str | tuple[str, Literal[HTTPStatus.REQUEST_ENTITY_TOO_LARGE]]
+    str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]
 ):
+    if (
+        request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK) * 60
+    ) / request.args.get(
+        "interval", type=int, default=DEFAULT_POWER_INTERVAL_SECONDS
+    ) > MAX_POWER_SAMPLES:
+        return (
+            f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+        )
     result = await execute_influx_query(
         app.influx,  # type: ignore
         query=create_fluxy_for_power_over_time(
@@ -303,11 +312,7 @@ async def get_heat_pipes_power_over_time() -> (
             ),
         ),
     )
-    if len(result) > MAX_POWER_SAMPLES:
-        return (
-            f"Samples exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
-            HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
-        )
+
     return result.to_csv()  # type: ignore
 
 
