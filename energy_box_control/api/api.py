@@ -1,9 +1,8 @@
-# type: ignore
 import os
 from quart import Quart, request, make_response
 from dataclasses import dataclass
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
-from quart_schema import QuartSchema, validate_response
+from quart_schema import QuartSchema, validate_response  # type: ignore
 from dotenv import load_dotenv
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.appliances.base import (
@@ -12,12 +11,15 @@ from energy_box_control.appliances.base import (
     Port,
     ApplianceState,
 )
-from typing import get_args, get_origin, TypedDict, Literal
+from typing import Any, get_args, get_origin, TypedDict, Literal
 from types import get_original_bases
 from dataclasses import fields
-import fluxy
+import fluxy  # type: ignore
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+from http import HTTPStatus
+from typing import no_type_check
+from pandas import DataFrame as df  # type: ignore
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
@@ -26,6 +28,8 @@ load_dotenv(dotenv_path)
 
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
+DEFAULT_POWER_INTERVAL_SECONDS = 10
+MAX_POWER_SAMPLES = 2000
 
 app = Quart(__name__)
 QuartSchema(
@@ -38,7 +42,6 @@ QuartSchema(
 )
 
 
-ConnectionName = str
 ConnectionFieldName = str
 ApplianceFieldName = str
 ConnectionName = str
@@ -46,7 +49,6 @@ ApplianceName = str
 ApplianceFieldValue = str
 ConnectionFieldValue = str
 ApplianceTypeName = str
-PortTypeName = str
 ConnectionTypeName = str
 
 
@@ -93,22 +95,19 @@ def build_get_values_query(
     )
 
 
-async def execute_influx_query(
-    client: InfluxDBClientAsync, query: fluxy.Query
-) -> list[list[str]]:
-    df = await client.query_api().query_data_frame(query.to_flux())
-    return df.to_csv()
+async def execute_influx_query(client: InfluxDBClientAsync, query: fluxy.Query) -> df:
+    return await client.query_api().query_data_frame(query.to_flux())  # type: ignore
 
 
 def get_original_bases_element(
-    base: type[Appliance, Port],
-) -> type[Appliance, Port]:
+    base: type[Appliance[Any, Any, Any] | Port],
+) -> type[Appliance[Any, Any, Any] | Port]:
     original_bases, *_ = get_original_bases(base)
     return original_bases
 
 
 def get_port_types_by_appliance_type(
-    appliance_type: type[Appliance],
+    appliance_type: type[Appliance[Any, Any, Any]],
 ) -> list[type[Port]]:
     return [
         port
@@ -121,8 +120,8 @@ def get_port_types_by_appliance_type(
 
 
 def get_connections_dict_by_appliance_type(
-    appliance_type: type[Appliance],
-) -> dict[ConnectionName, Connection]:
+    appliance_type: type[Appliance[Any, Any, Any]],
+) -> dict[property, Connection]:
     return {
         port.value: {
             "fields": [field.name for field in fields(ConnectionState)],
@@ -133,7 +132,7 @@ def get_connections_dict_by_appliance_type(
 
 
 def get_appliance_state_class_from_appliance_type(
-    appliance_type: type[Appliance],
+    appliance_type: type[Appliance[Any, Any, Any]],
 ) -> type[ApplianceState]:
     gen_args = get_args(
         next(
@@ -146,14 +145,18 @@ def get_appliance_state_class_from_appliance_type(
     return state_type
 
 
+@no_type_check
 def token_required(f):
     @wraps(f)
+    @no_type_check
     async def decorator(*args, **kwargs):
         if (
             "Authorization" not in request.headers
             or request.headers["Authorization"] != f"Bearer {TOKEN}"
         ):
-            return await make_response("A valid token is missing!", 401)
+            return await make_response(
+                "A valid token is missing!", HTTPStatus.UNAUTHORIZED
+            )
         return await f(*args, **kwargs)
 
     return decorator
@@ -166,7 +169,7 @@ async def influx_client():
     org = os.environ["DOCKER_INFLUXDB_INIT_ORG"]
     try:
         async with InfluxDBClientAsync(url, token, org=org) as client:
-            app.influx = client
+            app.influx = client  # type: ignore
             yield
     except Exception as e:
         print(e)
@@ -177,12 +180,18 @@ async def hello_world() -> str:
     return "Hello World!"
 
 
-@app.route("/appliances")
-@validate_response(ReturnedAppliances)
+@app.route("/appliances")  # type: ignore
+@validate_response(ReturnedAppliances)  # type: ignore
 @token_required
 async def get_all_appliance_names() -> dict[
     Literal["appliances"],
-    ReturnedAppliances,
+    dict[
+        ApplianceName,
+        dict[
+            Literal["fields", "connections", "type"],
+            list[ApplianceFieldName] | dict[property, Connection] | Any,
+        ],
+    ],
 ]:
 
     example_power_hub = PowerHub.example_power_hub()
@@ -213,15 +222,19 @@ async def get_all_appliance_names() -> dict[
 async def get_last_values_for_appliances(
     appliance_name: str, field_name: str
 ) -> list[list[ApplianceFieldValue]]:
-    return await execute_influx_query(
-        app.influx,
-        build_get_values_query(
-            request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK),
-            appliance_name,
-            None,
-            field_name,
-        ),
-    )
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            build_get_values_query(
+                request.args.get(
+                    "minutes_back", type=int, default=DEFAULT_MINUTES_BACK
+                ),
+                appliance_name,
+                None,
+                field_name,
+            ),
+        )
+    ).to_csv()
 
 
 @app.route(
@@ -231,15 +244,107 @@ async def get_last_values_for_appliances(
 async def get_last_values_for_connections(
     appliance_name: str, connection_name: str, field_name: str
 ) -> list[list[ConnectionFieldValue]]:
-    return await execute_influx_query(
-        app.influx,
-        build_get_values_query(
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            build_get_values_query(
+                request.args.get(
+                    "minutes_back", type=int, default=DEFAULT_MINUTES_BACK
+                ),
+                appliance_name,
+                connection_name,
+                field_name,
+            ),
+        )
+    ).to_csv()
+
+
+def create_fluxy_for_power_over_time(
+    minutes_back: int, interval_seconds: int
+) -> fluxy.Query:
+    in_temperature_topic = "power_hub/connections/heat_pipes/in/temperature"
+    out_temperature_topic = "power_hub/connections/heat_pipes/out/temperature"
+    flow_topic = "power_hub/connections/heat_pipes/in/flow"
+
+    return fluxy.pipe(
+        fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
+        fluxy.range(*build_query_range(minutes_back)),
+        fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
+        fluxy.filter(lambda r: r._field == "value"),
+        fluxy.filter(
+            lambda r: (r.topic == in_temperature_topic)
+            | (r.topic == out_temperature_topic)
+            | (r.topic == flow_topic)
+        ),
+        fluxy.aggregate_window(
+            every=timedelta(seconds=interval_seconds),
+            fn=fluxy.WindowOperation.MEAN,
+            create_empty=False,
+        ),
+        fluxy.pivot(row_key=["_time"], column_key=["topic"], value_column="_value"),
+        fluxy.keep(
+            [
+                "_time",
+                in_temperature_topic,
+                out_temperature_topic,
+                flow_topic,
+            ]
+        ),
+        fluxy.map(
+            f'(r) => ({{ r with power: (r["{flow_topic}"] * {PowerHub.example_power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
+        ),
+        fluxy.keep(["_time", "power"]),
+    )
+
+
+@app.route("/appliances/heat_pipes/power")
+@token_required
+async def get_heat_pipes_power_over_time() -> (
+    str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]
+):
+    if (
+        request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK) * 60
+    ) / request.args.get(
+        "interval", type=int, default=DEFAULT_POWER_INTERVAL_SECONDS
+    ) > MAX_POWER_SAMPLES:
+        return (
+            f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+        )
+    result = await execute_influx_query(
+        app.influx,  # type: ignore
+        query=create_fluxy_for_power_over_time(
             request.args.get("minutes_back", type=int, default=DEFAULT_MINUTES_BACK),
-            appliance_name,
-            connection_name,
-            field_name,
+            request.args.get(
+                "interval", type=int, default=DEFAULT_POWER_INTERVAL_SECONDS
+            ),
         ),
     )
+
+    return result.to_csv()  # type: ignore
+
+
+@app.route("/appliances/heat_pipes/power/total")
+@token_required
+async def get_heat_pipes_total_power_over_time() -> dict[str, float]:
+    query_result = await execute_influx_query(
+        app.influx,  # type: ignore
+        query=fluxy.pipe(
+            create_fluxy_for_power_over_time(
+                request.args.get(
+                    "minutes_back",
+                    type=int,
+                    default=DEFAULT_MINUTES_BACK,
+                ),
+                1,
+            ),
+            fluxy.sum("power"),
+        ),
+    )
+    if len(query_result) > 0:
+        return {"total_power": query_result.iloc[0]["power"]}
+    else:
+        return {"total_power": 0.0}
 
 
 def run() -> None:
