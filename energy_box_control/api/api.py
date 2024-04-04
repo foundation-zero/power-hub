@@ -1,5 +1,5 @@
 import os
-from quart import Quart, request, make_response
+from quart import Quart, request, make_response, Response
 from dataclasses import dataclass
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
@@ -11,7 +11,7 @@ from energy_box_control.appliances.base import (
     Port,
     ApplianceState,
 )
-from typing import Any, get_args, get_origin, TypedDict, Literal
+from typing import Any, Callable, get_args, get_origin, TypedDict, Literal
 from types import get_original_bases
 from dataclasses import fields
 import fluxy  # type: ignore
@@ -172,6 +172,31 @@ def token_required(f):
     return decorator
 
 
+@no_type_check
+def serialize_dataframe(columns: list[str]):
+    @no_type_check
+    def _serialize_dataframe[T: type](fn: T) -> Callable[[T], T]:
+
+        @wraps(fn)
+        @no_type_check
+        async def decorator(
+            *args: list[Any], **kwargs: dict[str, Any]
+        ) -> list[Any] | Response:
+            response: df = await fn(*args, **kwargs)
+            if not isinstance(response, df):
+                raise Exception("serialize_dataframe requires a dataframe")
+            if response.empty:
+                return []
+            return Response(
+                response.loc[:, columns].to_json(orient="records"),
+                mimetype="application/json",
+            )
+
+        return decorator
+
+    return _serialize_dataframe
+
+
 @app.while_serving
 async def influx_client():
     url = os.environ["DOCKER_INFLUXDB_URL"]
@@ -230,6 +255,7 @@ async def get_all_appliance_names() -> dict[
 @app.route("/appliances/<appliance_name>/<field_name>/last_values")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
+@serialize_dataframe(["time", "value"])
 async def get_last_values_for_appliances(
     appliance_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceFieldValue]]:
@@ -243,13 +269,14 @@ async def get_last_values_for_appliances(
                 field_name,
             ),
         )
-    ).to_csv()
+    ).rename(columns={"_value": "value", "_time": "time"})
 
 
 @app.route(
     "/appliances/<appliance_name>/connections/<connection_name>/<field_name>/last_values"
 )
 @token_required
+@serialize_dataframe(["time", "value"])
 @validate_querystring(ValuesQuery)  # type: ignore
 async def get_last_values_for_connections(
     appliance_name: str, connection_name: str, field_name: str, query_args: ValuesQuery
@@ -264,7 +291,7 @@ async def get_last_values_for_connections(
                 field_name,
             ),
         )
-    ).to_csv()
+    ).rename(columns={"_time": "time", "_value": "value"})
 
 
 def create_fluxy_for_power_over_time(
@@ -307,6 +334,7 @@ def create_fluxy_for_power_over_time(
 
 @app.route("/appliances/heat_pipes/power/last_values")
 @token_required
+@serialize_dataframe(["time", "value"])
 @validate_querystring(ComputedValuesQuery)  # type: ignore
 async def get_heat_pipes_power_over_time(
     query_args: ComputedValuesQuery,
@@ -318,15 +346,15 @@ async def get_heat_pipes_power_over_time(
             f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
             HTTPStatus.UNPROCESSABLE_ENTITY,
         )
-    result = await execute_influx_query(
-        app.influx,  # type: ignore
-        query=create_fluxy_for_power_over_time(
-            query_args.minutes_back,
-            query_args.interval_seconds,
-        ),
-    )
-
-    return result.to_csv()  # type: ignore
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            query=create_fluxy_for_power_over_time(
+                query_args.minutes_back,
+                query_args.interval_seconds,
+            ),
+        )
+    ).rename(columns={"power": "value", "_time": "time"})
 
 
 @app.route("/appliances/heat_pipes/power/total")
