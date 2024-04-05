@@ -5,11 +5,11 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
+from energy_box_control.power_hub.network import PowerHubControlState
 from mqtt import create_and_connect_client, publish_mqtt
 from paho.mqtt import client as mqtt_client
 from typing import Any
 
-from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
 from dataclasses import fields
 
@@ -40,21 +40,22 @@ def publish_connection_states(
 
 
 def run():
-    power_hub = PowerHub.example_power_hub()
-    state = power_hub.example_initial_state(power_hub)
-    control_state = ControlState(50)
+    powerhub = PowerHub.powerhub()
+    state = powerhub.simple_initial_state()
+    control_state = PowerHubControlState()
+    sensors = powerhub.sensors(state)
     mqtt_client = create_and_connect_client()
 
     while True:
-        new_control_state, control_values = power_hub.regulate(control_state)
-        new_state = power_hub.simulate(state, control_values)
+        new_control_state, control_values = powerhub.regulate(control_state, sensors)
+        new_state = powerhub.simulate(state, control_values)
         control_state = new_control_state
         state = new_state
         publish_appliance_states(
-            power_hub, new_state.get_appliances_states(), mqtt_client
+            powerhub, new_state.get_appliances_states(), mqtt_client
         )
         publish_connection_states(
-            power_hub, new_state.get_connections_states(), mqtt_client
+            powerhub, new_state.get_connections_states(), mqtt_client
         )
         time.sleep(1)
 

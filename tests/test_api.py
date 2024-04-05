@@ -153,7 +153,7 @@ async def test_build_get_connection_values_query():
 
 
 async def test_get_connections_dict_by_appliance_type():
-    power_hub = PowerHub.power_hub()
+    power_hub = PowerHub.powerhub()
     example_appliance = power_hub.chiller_switch_valve
     connections_dict = get_connections_dict_by_appliance_type(type(example_appliance))
     assert ValvePort.A.value in connections_dict
