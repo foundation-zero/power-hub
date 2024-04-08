@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from enum import Enum
 import uuid
 
@@ -49,3 +50,16 @@ class Port(Enum):
 class ConnectionState:
     flow: float
     temperature: float
+
+@dataclass
+class SimulationTime:
+    step_size: timedelta
+    step: int 
+    start: datetime
+
+    @property
+    def timestamp(self) -> datetime:
+        return self.start + timedelta(seconds = self.step * self.step_size.total_seconds())
+    
+
+
