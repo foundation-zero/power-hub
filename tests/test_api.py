@@ -1,16 +1,8 @@
 from asyncio import Future
-from unittest.mock import MagicMock
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import pytest
 from quart import Response
-from energy_box_control.api.api import (
-    app,
-    build_query_range,
-    build_get_values_query,
-    get_connections_dict_by_appliance_type,
-)
-from energy_box_control.power_hub import PowerHub
-from energy_box_control.appliances import ValvePort
+from energy_box_control.api.api import app, build_query_range, build_get_values_query
 import json
 from datetime import datetime, timezone, timedelta
 from freezegun import freeze_time
@@ -70,7 +62,8 @@ async def assert_row_response(response: Response):
 async def test_get_last_values_for_appliance():
     await assert_row_response(
         await app.test_client().get(
-            f"/appliances/chiller_switch_valve/position/last_values", headers=HEADERS
+            f"/appliance_sensors/chiller_switch_valve/position/last_values",
+            headers=HEADERS,
         )
     )
 
@@ -78,25 +71,7 @@ async def test_get_last_values_for_appliance():
 async def test_get_last_values_for_appliance_minutes_back():
     await assert_row_response(
         await app.test_client().get(
-            f"/appliances/chiller_switch_valve/position/last_values?minutes_back=60",
-            headers=HEADERS,
-        )
-    )
-
-
-async def test_get_last_values_for_connection():
-    await assert_row_response(
-        await app.test_client().get(
-            f"/appliances/chiller_switch_valve/connections/{ValvePort.A.value}/position/last_values",
-            headers=HEADERS,
-        )
-    )
-
-
-async def test_get_last_values_for_connection_minutes_back():
-    await assert_row_response(
-        await app.test_client().get(
-            f"/appliances/chiller_switch_valve/connections/position/{ValvePort.A.value}/last_values?minutes_back=60",
+            f"/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=60",
             headers=HEADERS,
         )
     )
@@ -111,7 +86,7 @@ async def test_build_query_range():
 
 @freeze_time("2012-01-01")
 async def test_build_get_appliance_values_query():
-    query = build_get_values_query(60, "chiller_switch_valve", None, "position")
+    query = build_get_values_query(60, "chiller_switch_valve", "position")
     assert (
         len(
             [
@@ -126,46 +101,10 @@ async def test_build_get_appliance_values_query():
     assert (
         fluxy.filter(
             lambda query: query.topic
-            == f"power_hub/appliances/chiller_switch_valve/position"
+            == f"power_hub/appliance_sensors/chiller_switch_valve/position"
         )
         in query.operations
     )
     assert query.range == fluxy.range(
         datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
     )
-
-
-@freeze_time("2012-01-01")
-async def test_build_get_connection_values_query():
-    connection = ValvePort.A.value
-    query = build_get_values_query(
-        60, "chiller_switch_valve", connection, "temperature"
-    )
-    assert (
-        len(
-            [
-                operation
-                for operation in query.operations
-                if type(operation) == fluxy.Filter
-            ]
-        )
-        == 3
-    )
-    assert (
-        fluxy.filter(
-            lambda query: query.topic
-            == f"power_hub/connections/chiller_switch_valve/{connection}/temperature"
-        )
-        in query.operations
-    )
-    assert query.range == fluxy.range(
-        datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
-    )
-
-
-async def test_get_connections_dict_by_appliance_type():
-    power_hub = PowerHub.power_hub()
-    example_appliance = power_hub.chiller_switch_valve
-    connections_dict = get_connections_dict_by_appliance_type(type(example_appliance))
-    assert ValvePort.A.value in connections_dict
-    assert len(connections_dict[ValvePort.A.value]["fields"]) > 0
