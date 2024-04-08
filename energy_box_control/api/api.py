@@ -326,7 +326,7 @@ def create_fluxy_for_power_over_time(
             ]
         ),
         fluxy.map(
-            f'(r) => ({{ r with power: (r["{flow_topic}"] * {PowerHub.example_power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
+            f'(r) => ({{ r with power: (r["{flow_topic}"] * {PowerHub.power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
         ),
         fluxy.keep(["_time", "power"]),
     )
