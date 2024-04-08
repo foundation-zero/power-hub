@@ -40,22 +40,23 @@ def publish_connection_states(
 
 
 def run():
-    powerhub = PowerHub.powerhub()
-    state = powerhub.simulate(powerhub.simple_initial_state(), powerhub.no_control())
+    power_hub = PowerHub.power_hub()
+    state = power_hub.simulate(power_hub.simple_initial_state(), power_hub.no_control())
     control_state = PowerHubControlState()
-    sensors = powerhub.sensors(state)
+    sensors = power_hub.sensors(state)
     mqtt_client = create_and_connect_client()
+    control_values = power_hub.no_control()
 
     while True:
-        new_control_state, control_values = powerhub.regulate(control_state, sensors)
-        new_state = powerhub.simulate(state, control_values)
+        new_control_state, control_values = power_hub.regulate(control_state, sensors)
+        new_state = power_hub.simulate(state, control_values)
         control_state = new_control_state
         state = new_state
         publish_appliance_states(
-            powerhub, new_state.get_appliances_states(), mqtt_client
+            power_hub, new_state.get_appliances_states(), mqtt_client
         )
         publish_connection_states(
-            powerhub, new_state.get_connections_states(), mqtt_client
+            power_hub, new_state.get_connections_states(), mqtt_client
         )
         time.sleep(1)
 

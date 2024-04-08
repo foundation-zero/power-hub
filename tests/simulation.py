@@ -6,7 +6,6 @@ from energy_box_control.network import NetworkState
 @dataclass(frozen=True, eq=True)
 class SimulationSuccess:
     state: NetworkState
-    pass
 
 
 @dataclass(frozen=True, eq=True)

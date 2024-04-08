@@ -19,22 +19,13 @@ from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
 from energy_box_control.power_hub.network import PowerHubControlState
-import energy_box_control.power_hub.powerhub_components as phc
+import energy_box_control.power_hub.power_hub_components as phc
 from tests.simulation import SimulationSuccess, run_simulation
 
 
 @fixture
-def powerhub() -> PowerHub:
-    return PowerHub.powerhub()
-
-
-# @fixture
-# def simple_initial_state(powerhub):
-#     return powerhub.simple_initial_state()
-
-# @fixture
-# def no_control(powerhub):
-#     return powerhub.no_control()
+def power_hub() -> PowerHub:
+    return PowerHub.power_hub()
 
 
 @fixture
@@ -42,35 +33,35 @@ def min_max_temperature():
     return (0, 300)
 
 
-def test_powerhub_step(powerhub):
-    powerhub.simulate(
-        powerhub.simple_initial_state(),
-        powerhub.no_control(),
+def test_power_hub_step(power_hub):
+    power_hub.simulate(
+        power_hub.simple_initial_state(),
+        power_hub.no_control(),
     )
 
 
-def test_powerhub_sensors(powerhub):
+def test_power_hub_sensors(power_hub):
 
-    next_state = powerhub.simulate(
-        powerhub.simple_initial_state(), powerhub.no_control()
+    next_state = power_hub.simulate(
+        power_hub.simple_initial_state(), power_hub.no_control()
     )
 
-    sensors = powerhub.sensors(next_state)
+    sensors = power_hub.sensors(next_state)
     assert (
         sensors.heat_pipes.output_temperature
-        == next_state.connection(powerhub.heat_pipes, HeatPipesPort.OUT).temperature
+        == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
     )
 
 
-def test_powerhub_simulation_no_control(powerhub, min_max_temperature):
+def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
 
     result = run_simulation(
-        powerhub,
-        powerhub.simple_initial_state(),
-        powerhub.no_control(),
+        power_hub,
+        power_hub.simple_initial_state(),
+        power_hub.no_control(),
         PowerHubControlState(),
         None,
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)

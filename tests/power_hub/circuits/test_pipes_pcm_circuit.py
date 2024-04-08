@@ -12,7 +12,7 @@ from energy_box_control.power_hub.circuits.pipes_pcm_circuit import (
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
-from energy_box_control.power_hub.powerhub_components import (
+from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
@@ -119,7 +119,7 @@ def test_pipes_to_pcm_simulation(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert (
         result.state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow
         == 15 / 60
@@ -138,7 +138,7 @@ def test_half_valve(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert (
         result.state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow
         == 15 / 120
@@ -167,7 +167,7 @@ def test_pcm_charge(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert result.state.appliance(pipes_pcm_circuit.pcm).get().state_of_charge > 0
 
 
@@ -195,7 +195,7 @@ def test_simple_control(
         pipes_pcm_circuit.regulate,
         min_max_temperature,
     )
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert result.state.connection(
         pipes_pcm_circuit.heat_pipes, HeatPipesPort.OUT
     ).temperature == approx(85, abs=5)

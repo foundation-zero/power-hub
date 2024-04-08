@@ -26,7 +26,7 @@ from energy_box_control.network import (
 )
 
 
-from energy_box_control.power_hub.powerhub_components import (
+from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     pcm,
     yazaki_bypass_mix,

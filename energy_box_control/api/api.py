@@ -177,7 +177,7 @@ async def get_all_appliance_names() -> dict[
     ReturnedAppliances,
 ]:
 
-    powerhub = PowerHub.powerhub()
+    power_hub = PowerHub.power_hub()
 
     return {
         "appliances": {
@@ -195,7 +195,7 @@ async def get_all_appliance_names() -> dict[
                 ),
                 "type": appliance_field.type.__name__,
             }
-            for appliance_field in fields(powerhub)
+            for appliance_field in fields(power_hub)
         }
     }
 

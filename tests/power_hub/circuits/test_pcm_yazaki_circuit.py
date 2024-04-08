@@ -100,7 +100,7 @@ def test_pcm_yazaki_simulation(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert (
         result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
         == 72 / 60
@@ -139,7 +139,7 @@ def test_yazaki_yazaki_simulation(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert (
         result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 0
     )
@@ -175,7 +175,7 @@ def test_half_valve(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert (
         result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
         == 72 / 60 / 2
@@ -214,7 +214,7 @@ def test_simple_control(
         min_max_temperature,
     )
 
-    assert type(result) == SimulationSuccess
+    assert isinstance(result, SimulationSuccess)
     assert result.state.connection(
         pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN
     ).temperature == approx(75, abs=2)
