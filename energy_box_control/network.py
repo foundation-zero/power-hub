@@ -478,12 +478,6 @@ class NetworkFeedbacks[Net: "Network[Any]"]:
     ):
         self._feedbacks = feedbacks
 
-    # def initial_states(self) -> dict[tuple[AnyAppliance, Port], ConnectionState]:
-    #     return {
-    #         (connection.from_app, connection.from_port): state
-    #         for state, connection in self._feedbacksa--
-    #     }
-
     def enrich_execution_order(
         self, execution_order: list[SpecificAppliance]
     ) -> list[SpecificAppliance]:
