@@ -9,7 +9,7 @@ from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
     PcmYazakiControlState,
     PcmYazakiNetwork,
 )
-
+import energy_box_control.power_hub.power_hub_components as phc
 from energy_box_control.network import NetworkState
 from tests.simulation import SimulationSuccess, run_simulation
 
