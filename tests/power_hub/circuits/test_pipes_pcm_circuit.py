@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ApplianceState
+from energy_box_control.appliances.base import ApplianceState, ConnectionState
 from energy_box_control.appliances.heat_pipes import HeatPipesPort, HeatPipesState
 from energy_box_control.appliances.mix import MixPort
 from energy_box_control.appliances.pcm import PcmPort, PcmState
-from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
+from energy_box_control.appliances.switch_pump import (
+    SwitchPumpControl,
+    SwitchPumpPort,
+    SwitchPumpState,
+)
 from energy_box_control.appliances.valve import ValveState
 from energy_box_control.power_hub.circuits.pipes_pcm_circuit import (
     PipesPcmControlState,
@@ -32,6 +36,9 @@ def initial_state_without_valve(pipes_pcm_circuit):
         .value(ApplianceState())
         .define_state(pipes_pcm_circuit.pcm)
         .value(PcmState(0, AMBIENT_TEMPERATURE))
+        .define_state(pipes_pcm_circuit.heat_pipes_pump)
+        .at(SwitchPumpPort.OUT)
+        .value(ConnectionState(0, AMBIENT_TEMPERATURE))
     )
 
 
@@ -61,6 +68,9 @@ def initial_state_pipes_to_pcm_warm(
         .value(ApplianceState())
         .define_state(pipes_pcm_circuit.pcm)
         .value(PcmState(0, 75))
+        .define_state(pipes_pcm_circuit.heat_pipes_pump)
+        .at(SwitchPumpPort.OUT)
+        .value(ConnectionState(0, AMBIENT_TEMPERATURE))
         .build()
     )
 

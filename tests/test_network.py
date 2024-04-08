@@ -74,7 +74,14 @@ def test_circular_network():
         boiler = Boiler(99, 100, 0, 1, 1)
 
         def initial_state(self) -> NetworkState[Self]:
-            return self.define_state(self.boiler).value(BoilerState(100, 20)).build()
+            return (
+                self.define_state(self.boiler)
+                .value(BoilerState(100, 20))
+                .define_state(self.boiler)
+                .at(BoilerPort.HEAT_EXCHANGE_OUT)
+                .value(ConnectionState(1, 100))
+                .build()
+            )
 
         def connections(self) -> NetworkConnections[Self]:
             return NetworkConnections([])
@@ -85,7 +92,6 @@ def test_circular_network():
                 .at(BoilerPort.HEAT_EXCHANGE_OUT)
                 .to(self.boiler)
                 .at(BoilerPort.HEAT_EXCHANGE_IN)
-                .initial_state(ConnectionState(1, 100))
                 .build()
             )
 

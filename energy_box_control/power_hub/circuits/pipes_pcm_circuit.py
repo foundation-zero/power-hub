@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Self
 
-from energy_box_control.appliances.base import ConnectionState
-
 from energy_box_control.appliances.heat_pipes import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
@@ -26,7 +24,6 @@ from energy_box_control.network import (
 )
 
 from energy_box_control.power_hub.power_hub_components import (
-    AMBIENT_TEMPERATURE,
     heat_pipes,
     heat_pipes_pump,
     heat_pipes_mix,
@@ -94,16 +91,12 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         # fmt: on
 
     def feedback(self) -> NetworkFeedbacks[Self]:
-        # fmt: off
         return (
             self.define_feedback(self.heat_pipes_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(0, AMBIENT_TEMPERATURE))
-
             .build()
-            
         )
         # fmt: on
 

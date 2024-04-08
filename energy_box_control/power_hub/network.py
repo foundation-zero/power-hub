@@ -206,6 +206,21 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SourceState())
             .define_state(power_hub.fresh_water_source)
             .value(SourceState())
+            .define_state(power_hub.heat_pipes_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.yazaki_bypass_valve)
+            .at(ValvePort.B)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.yazaki_bypass_valve)
+            .at(ValvePort.A)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.chill_mix)
+            .at(MixPort.AB)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.outboard_exchange)
+            .at(HeatExchangerPort.A_OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .build()
         )
 
@@ -280,6 +295,21 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SourceState())
             .define_state(self.fresh_water_source)
             .value(SourceState())
+            .define_state(self.heat_pipes_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.yazaki_bypass_valve)
+            .at(ValvePort.B)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.yazaki_bypass_valve)
+            .at(ValvePort.A)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.chill_mix)
+            .at(MixPort.AB)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.outboard_exchange)
+            .at(HeatExchangerPort.A_OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .build()
         )
 
@@ -370,7 +400,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(SwitchPumpPort.OUT)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
-            .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
         )
         # fmt: on
 
@@ -406,13 +435,11 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.B)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
-            .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(0,phc.AMBIENT_TEMPERATURE))
         )
         # fmt: on
 
@@ -458,7 +485,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.AB)
             .to(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
-            .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
         )
 
     def _waste_side_connections(self):
@@ -553,7 +579,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(HeatExchangerPort.A_OUT)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
-            .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
         )
 
     def _outboard_connections(self):

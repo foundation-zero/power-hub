@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Self
 
-from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
 from energy_box_control.appliances.source import Source, SourcePort
@@ -27,7 +26,6 @@ from energy_box_control.network import (
 
 
 from energy_box_control.power_hub.power_hub_components import (
-    AMBIENT_TEMPERATURE,
     pcm,
     yazaki_bypass_mix,
     pcm_to_yazaki_pump,
@@ -114,13 +112,11 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .at(ValvePort.B)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
-            .initial_state(ConnectionState(0, AMBIENT_TEMPERATURE))  #this is tricky - should be defined in initial state?
 
             .feedback(self.yazaki_bypass_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
-            .initial_state(ConnectionState(0,AMBIENT_TEMPERATURE)) #this is tricky - should be defined in initial state?
         ).build()
         # fmt: on
 

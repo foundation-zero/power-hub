@@ -1,5 +1,5 @@
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ApplianceState
+from energy_box_control.appliances.base import ApplianceState, ConnectionState
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
@@ -9,7 +9,7 @@ from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
     PcmYazakiControlState,
     PcmYazakiNetwork,
 )
-
+import energy_box_control.power_hub.power_hub_components as phc
 from energy_box_control.network import NetworkState
 from tests.simulation import SimulationSuccess, run_simulation
 
@@ -29,6 +29,12 @@ def initial_state_without_valve(pcm_yazaki_circuit):
         .value(SourceState())
         .define_state(pcm_yazaki_circuit.chilled_source)
         .value(SourceState())
+        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        .at(ValvePort.B)
+        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        .at(ValvePort.A)
+        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
     )
 
 
