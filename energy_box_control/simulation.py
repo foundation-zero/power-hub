@@ -41,7 +41,7 @@ def publish_connection_states(
 
 def run():
     powerhub = PowerHub.powerhub()
-    state = powerhub.simple_initial_state()
+    state = powerhub.simulate(powerhub.simple_initial_state(), powerhub.no_control())
     control_state = PowerHubControlState()
     sensors = powerhub.sensors(state)
     mqtt_client = create_and_connect_client()
