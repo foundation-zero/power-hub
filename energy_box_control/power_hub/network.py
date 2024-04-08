@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -45,8 +45,6 @@ from energy_box_control.network import (
 )
 
 from energy_box_control.power_hub.sensors import (
-    HeatPipesSensors,
-    Loop,
     PowerHubSensors,
     WeatherSensors,
 )
@@ -72,7 +70,7 @@ class PowerHub(Network[PowerHubSensors]):
     chiller_switch_valve: Valve  # CV-1008
     yazaki: Yazaki  # W-1005
     pcm_to_yazaki_pump: SwitchPump  # P-1003
-    yazaki_bypass_valve: Valve  # CV-1010
+    yazaki_hot_bypass_valve: Valve  # CV-1010
     yazaki_bypass_mix: Mix
     chiller: Chiller  # W-1009
     chill_mix: Mix
@@ -166,7 +164,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(YazakiState())
             .define_state(power_hub.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
-            .define_state(power_hub.yazaki_bypass_valve)
+            .define_state(power_hub.yazaki_hot_bypass_valve)
             .value(initial_valve_state)
             .define_state(power_hub.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -255,7 +253,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(YazakiState())
             .define_state(self.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
-            .define_state(self.yazaki_bypass_valve)
+            .define_state(self.yazaki_hot_bypass_valve)
             .value(ValveState(0))  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -423,7 +421,7 @@ class PowerHub(Network[PowerHubSensors]):
 
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
-            .to(self.yazaki_bypass_valve)
+            .to(self.yazaki_hot_bypass_valve)
             .at(ValvePort.AB)
         )
         # fmt: on
@@ -431,12 +429,12 @@ class PowerHub(Network[PowerHubSensors]):
     def _pcm_yazaki_feedback(self):
         # fmt: off
         return (
-            self.define_feedback(self.yazaki_bypass_valve)
+            self.define_feedback(self.yazaki_hot_bypass_valve)
             .at(ValvePort.B)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
 
-            .feedback(self.yazaki_bypass_valve)
+            .feedback(self.yazaki_hot_bypass_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
@@ -615,14 +613,15 @@ class PowerHub(Network[PowerHubSensors]):
         with PowerHubSensors.context(
             WeatherSensors(ambient_temperature=0, global_irradiance=0)
         ) as context:
-            with context.loop(
-                Loop(flow=state.connection(self.heat_pipes, HeatPipesPort.OUT).flow)
-            ):
+            for field in fields(PowerHubSensors):
                 context.from_state(
-                    state, HeatPipesSensors, context.subject.heat_pipes, self.heat_pipes
+                    state,
+                    field.type,
+                    getattr(context.subject, field.name),
+                    getattr(self, field.name),
                 )
 
-                return context.result()
+            return context.result()
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on
