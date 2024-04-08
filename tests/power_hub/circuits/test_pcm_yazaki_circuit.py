@@ -31,10 +31,10 @@ def initial_state_without_valve(pcm_yazaki_circuit):
         .value(SourceState())
         .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
         .at(ValvePort.B)
-        .value(ConnectionState(0, 78))
+        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
         .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
         .at(ValvePort.A)
-        .value(ConnectionState(0, 78))
+        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
     )
 
 
