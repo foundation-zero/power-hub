@@ -164,7 +164,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(YazakiState())
             .define_state(power_hub.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
-            .define_state(power_hub.yazaki_waste_bypass_valve)
+            .define_state(power_hub.yazaki_hot_bypass_valve)
             .value(initial_valve_state)
             .define_state(power_hub.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -238,7 +238,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(YazakiState())
             .define_state(self.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
-            .define_state(self.yazaki_waste_bypass_valve)
+            .define_state(self.yazaki_hot_bypass_valve)
             .value(ValveState(0))  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -400,13 +400,13 @@ class PowerHub(Network[PowerHubSensors]):
     def _pcm_yazaki_feedback(self):
         # fmt: off
         return (
-            self.define_feedback(self.yazaki_waste_bypass_valve)
+            self.define_feedback(self.yazaki_hot_bypass_valve)
             .at(ValvePort.B)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
             .initial_state(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
 
-            .feedback(self.yazaki_waste_bypass_valve)
+            .feedback(self.yazaki_hot_bypass_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)

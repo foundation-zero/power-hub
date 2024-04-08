@@ -119,7 +119,9 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
             state.keys()
         )
         if missing_appliances:
-            raise Exception(f"missing states for {missing_appliances}")
+            raise Exception(
+                f"missing states for {[self._network.find_appliance_name_by_id(missing.id) for missing in missing_appliances]}"
+            )
 
         return NetworkState(state, self._network.feedback().initial_states())
 
