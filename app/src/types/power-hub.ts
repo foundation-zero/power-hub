@@ -6,7 +6,7 @@ export interface Reservoir {
   temperature: number;
 }
 
-export interface PortSensor {
+export interface Port {
   flow: number;
   temperature: number;
 }
@@ -16,155 +16,148 @@ export interface Yazaki {
 }
 
 export interface PCM {
-  state_of_charge: number;
+  stateOfCharge: number;
   temperature: number;
 }
 
 export interface AppliancesTree {
-  chiller_switch_valve: Valve;
-  chiller_waste_bypass_valve: Valve;
-  cold_reservoir: Reservoir;
-  heat_pipes_valve: Valve;
-  hot_reservoir: Reservoir;
-  hot_reservoir_pcm_valve: Valve;
+  chillerSwitchValve: Valve;
+  chillerWasteBypassValve: Valve;
+  coldReservoir: Reservoir;
+  heatPipesValve: Valve;
+  hotReservoir: Reservoir;
+  hotReservoirPcmValve: Valve;
   pcm: PCM;
-  preheat_bypass_valve: Valve;
-  preheat_reservoir: Reservoir;
-  waste_switch_valve: Valve;
+  preheatBypassValve: Valve;
+  preheatReservoir: Reservoir;
+  wasteSwitchValve: Valve;
   yazaki: Yazaki;
-  yazaki_waste_bypass_valve: Valve;
+  yazakiWasteBypassValve: Valve;
 }
 
 export interface ConnectionsTree {
-  chill_mix: {
-    A: PortSensor;
-    B: PortSensor;
+  chillMix: {
+    a: Port;
+    b: Port;
   };
   chiller: {
-    CHILLED_IN: PortSensor;
-    CHILLED_OUT: PortSensor;
-    COOLING_IN: PortSensor;
-    COOLING_OUT: PortSensor;
+    chilledIn: Port;
+    chilledOut: Port;
+    coolingIn: Port;
+    coolingOut: Port;
   };
-  chiller_switch_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  chillerSwitchValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  chiller_waste_bypass_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  chillerWasteBypassValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  chiller_waste_mix: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  chillerWasteMix: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  cold_reservoir: {
-    HEAT_EXCHANGE_OUT: PortSensor;
+  coldReservoir: {
+    heatExchangeOut: Port;
   };
-  fresh_water_source: {
-    OUTPUT: PortSensor;
+  freshWaterSource: {
+    output: Port;
   };
-  heat_pipes: {
-    OUT: PortSensor;
+  heatPipes: {
+    out: Port;
   };
-  heat_pipes_mix: {
-    A: PortSensor;
-    B: PortSensor;
+  heatPipesMix: {
+    a: Port;
+    b: Port;
   };
-  heat_pipes_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  heatPipesValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  hot_mix: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  hotMix: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  hot_reservoir: {
-    FILL_IN: PortSensor;
-    HEAT_EXCHANGE_IN: PortSensor;
-    HEAT_EXCHANGE_OUT: PortSensor;
+  hotReservoir: {
+    fillIn: Port;
+    heatExchangeIn: Port;
+    heatExchangeOut: Port;
   };
-  hot_reservoir_pcm_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  hotReservoirPcmValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
   outboard_exchange: {
-    A_IN: PortSensor;
-    B_IN: PortSensor;
+    aIn: Port;
+    bIn: Port;
   };
-  outboard_source: {
-    OUTPUT: PortSensor;
+  outboardSource: {
+    output: Port;
   };
   pcm: {
-    CHARGE_IN: PortSensor;
-    CHARGE_OUT: PortSensor;
-    DISCHARGE_OUT: PortSensor;
+    chargeIn: Port;
+    chargeOut: Port;
+    dischargeOut: Port;
   };
-  preheat_bypass_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  preheatBypassValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  preheat_mix: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  preheatMix: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  preheat_reservoir: {
-    FILL_IN: PortSensor;
-    FILL_OUT: PortSensor;
-    HEAT_EXCHANGE_IN: PortSensor;
-    HEAT_EXCHANGE_OUT: PortSensor;
+  preheatReservoir: {
+    fillIn: Port;
+    fillOut: Port;
+    heatExchangeIn: Port;
+    heatExchangeOut: Port;
   };
-  waste_mix: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  wasteMix: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  waste_switch_valve: {
-    A: PortSensor;
-    B: PortSensor;
+  wasteSwitchValve: {
+    a: Port;
+    b: Port;
   };
   yazaki: {
-    CHILLED_IN: PortSensor;
-    CHILLED_OUT: PortSensor;
-    COOLING_IN: PortSensor;
-    COOLING_OUT: PortSensor;
-    HOT_IN: PortSensor;
+    chilledIn: Port;
+    chilledOut: Port;
+    coolingIn: Port;
+    coolingOut: Port;
+    hotIn: Port;
   };
-  yazaki_waste_bypass_valve: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  yazakiWasteBypassValve: {
+    a: Port;
+    ab: Port;
+    b: Port;
   };
-  yazaki_waste_mix: {
-    A: PortSensor;
-    AB: PortSensor;
-    B: PortSensor;
+  yazakiWasteMix: {
+    a: Port;
+    ab: Port;
+    b: Port;
+  };
+}
+
+export interface ComputedTree {
+  heatPipes: {
+    power: number;
   };
 }
 
 export interface Tree {
   connections: ConnectionsTree;
   appliances: AppliancesTree;
-}
-
-export interface Port {
-  in: PortSensor;
-  out: PortSensor;
-}
-
-export interface Chiller {
-  chilled: Port;
-  cooling: Port;
-}
-
-export interface PowerHub {
-  chiller: Chiller;
+  computed: ComputedTree;
 }
