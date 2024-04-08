@@ -98,7 +98,6 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .at(HeatPipesPort.IN)
             .build()
         )
-        # fmt: on
 
     def regulate(
         self, control_state: PipesPcmControlState, sensors: PipesPcmSensors
