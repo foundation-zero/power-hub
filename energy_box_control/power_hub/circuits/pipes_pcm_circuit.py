@@ -25,7 +25,7 @@ from energy_box_control.network import (
     NetworkState,
 )
 
-from energy_box_control.power_hub.powerhub_components import (
+from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     heat_pipes,
     heat_pipes_pump,
@@ -103,7 +103,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .initial_state(ConnectionState(0, AMBIENT_TEMPERATURE))
 
             .build()
+            
         )
+        # fmt: on
 
     def regulate(
         self, control_state: PipesPcmControlState, sensors: PipesPcmSensors
