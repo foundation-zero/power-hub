@@ -2,7 +2,11 @@ from pytest import approx, fixture
 from energy_box_control.appliances.base import ApplianceState, ConnectionState
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
-from energy_box_control.appliances.switch_pump import SwitchPumpControl, SwitchPumpState
+from energy_box_control.appliances.switch_pump import (
+    SwitchPumpControl,
+    SwitchPumpPort,
+    SwitchPumpState,
+)
 from energy_box_control.appliances.valve import ValvePort, ValveState
 from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
 from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
@@ -29,11 +33,8 @@ def initial_state_without_valve(pcm_yazaki_circuit):
         .value(SourceState())
         .define_state(pcm_yazaki_circuit.chilled_source)
         .value(SourceState())
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
-        .at(ValvePort.B)
-        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-        .define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
-        .at(ValvePort.A)
+        .define_state(pcm_yazaki_circuit.pcm_to_yazaki_pump)
+        .at(SwitchPumpPort.OUT)
         .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
     )
 
@@ -43,7 +44,9 @@ def initial_state_pcm_to_yazaki(
     pcm_yazaki_circuit, initial_state_without_valve
 ) -> NetworkState["PcmYazakiNetwork"]:
     return (
-        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        initial_state_without_valve.define_state(
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve
+        )
         .value(ValveState(0))
         .build()
     )
@@ -54,7 +57,9 @@ def initial_state_yazaki_to_yazaki(
     pcm_yazaki_circuit, initial_state_without_valve
 ) -> NetworkState["PcmYazakiNetwork"]:
     return (
-        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        initial_state_without_valve.define_state(
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve
+        )
         .value(ValveState(1))
         .build()
     )
@@ -65,7 +70,9 @@ def initial_state_half_valve(
     pcm_yazaki_circuit, initial_state_without_valve
 ) -> NetworkState["PcmYazakiNetwork"]:
     return (
-        initial_state_without_valve.define_state(pcm_yazaki_circuit.yazaki_bypass_valve)
+        initial_state_without_valve.define_state(
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve
+        )
         .value(ValveState(0.5))
         .build()
     )
@@ -117,13 +124,13 @@ def test_pcm_yazaki_simulation(
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.A
         ).flow
         == 72 / 60
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.B
         ).flow
         == 0
     )
@@ -155,13 +162,13 @@ def test_yazaki_yazaki_simulation(
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.A
         ).flow
         == 0
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.B
         ).flow
         == 72 / 60
     )
@@ -192,13 +199,13 @@ def test_half_valve(
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.A
         ).flow
         == 72 / 60 / 2
     )
     assert (
         result.state.connection(
-            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+            pcm_yazaki_circuit.yazaki_hot_bypass_valve, ValvePort.B
         ).flow
         == 72 / 60 / 2
     )
@@ -230,9 +237,11 @@ def test_simple_control(
     ).temperature == approx(78, abs=1e-6)
 
     assert (
-        result.state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve).get().position
+        result.state.appliance(pcm_yazaki_circuit.yazaki_hot_bypass_valve)
+        .get()
+        .position
         < 1
-        and result.state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve)
+        and result.state.appliance(pcm_yazaki_circuit.yazaki_hot_bypass_valve)
         .get()
         .position
         > 0
