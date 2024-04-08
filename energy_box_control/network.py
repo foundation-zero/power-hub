@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     TypeVarTuple,
     cast,
+    overload,
 )
 import uuid
 
@@ -74,7 +75,25 @@ class NetworkState(Generic[Net]):
     def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
-    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState:
+    def has_connection(self, appliance: AnyAppliance, port: Port) -> bool:
+        return (appliance, port) in self._connection_state
+
+    @overload
+    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState: ...
+
+    @overload
+    def connection[
+        T
+    ](self, appliance: AnyAppliance, port: Port, default: T) -> ConnectionState | T: ...
+
+    def connection[
+        T
+    ](self, appliance: AnyAppliance, port: Port, default: T | None = None) -> (
+        ConnectionState | T
+    ):
+        if default:
+            return self._connection_state.get((appliance, port), default)
+
         return self._connection_state[(appliance, port)]
 
 
@@ -121,7 +140,9 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
             appliance_state.keys()
         )
         if missing_appliances:
-            raise Exception(f"missing states for {missing_appliances}")
+            raise Exception(
+                f"missing states for {[self._network.find_appliance_name_by_id(missing.id) for missing in missing_appliances]}"
+            )
 
         connections = [entry for entry in state if len(entry) == 3]
         feedbacks = dict(((app, port), state) for app, port, state in connections)
