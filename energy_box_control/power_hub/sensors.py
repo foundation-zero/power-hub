@@ -8,6 +8,7 @@ from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
     SensorContext,
+    SensorType,
     WeatherSensors,
     sensor,
     sensors,
@@ -17,11 +18,15 @@ from energy_box_control.sensors import (
 @sensors()
 class HeatPipesSensors(FromState):
     spec: HeatPipes
-    flow: float = sensor(flow=True, from_port=HeatPipesPort.IN)
+    flow: float = sensor(type=SensorType.FLOW, from_port=HeatPipesPort.IN)
     ambient_temperature: float = sensor(from_weather=True)
     global_irradiance: float = sensor(from_weather=True)
-    input_temperature: float = sensor(temperature=True, from_port=HeatPipesPort.IN)
-    output_temperature: float = sensor(temperature=True, from_port=HeatPipesPort.OUT)
+    input_temperature: float = sensor(
+        type=SensorType.TEMPERATURE, from_port=HeatPipesPort.IN
+    )
+    output_temperature: float = sensor(
+        type=SensorType.TEMPERATURE, from_port=HeatPipesPort.OUT
+    )
 
     @property
     def power(self):
@@ -35,19 +40,19 @@ class HeatPipesSensors(FromState):
 @sensors()
 class PcmSensors(FromState):
     spec: Pcm
-    charge_flow: float = sensor(flow=True, from_port=PcmPort.CHARGE_IN)
+    charge_flow: float = sensor(type=SensorType.FLOW, from_port=PcmPort.CHARGE_IN)
     charge_input_temperature: float = sensor(
-        temperature=True, from_port=PcmPort.CHARGE_IN
+        type=SensorType.TEMPERATURE, from_port=PcmPort.CHARGE_IN
     )
     charge_output_temperature: float = sensor(
-        temperature=True, from_port=PcmPort.CHARGE_OUT
+        type=SensorType.TEMPERATURE, from_port=PcmPort.CHARGE_OUT
     )
-    discharge_flow: float = sensor(flow=True, from_port=PcmPort.DISCHARGE_IN)
+    discharge_flow: float = sensor(type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN)
     discharge_input_temperature: float = sensor(
-        temperature=True, from_port=PcmPort.DISCHARGE_IN
+        type=SensorType.TEMPERATURE, from_port=PcmPort.DISCHARGE_IN
     )
     discharge_output_temperature: float = sensor(
-        temperature=True, from_port=PcmPort.DISCHARGE_OUT
+        type=SensorType.TEMPERATURE, from_port=PcmPort.DISCHARGE_OUT
     )
     temperature: float
 
@@ -59,26 +64,28 @@ class PcmSensors(FromState):
 @sensors()
 class YazakiSensors(FromState):
     spec: Yazaki
-    hot_flow: float = sensor(flow=True, from_port=YazakiPort.HOT_IN)
-    hot_input_temperature: float = sensor(temperature=True, from_port=YazakiPort.HOT_IN)
+    hot_flow: float = sensor(type=SensorType.FLOW, from_port=YazakiPort.HOT_IN)
+    hot_input_temperature: float = sensor(
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.HOT_IN
+    )
     hot_output_temperature: float = sensor(
-        temperature=True, from_port=YazakiPort.HOT_OUT
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.HOT_OUT
     )
 
-    cooling_flow: float = sensor(flow=True, from_port=YazakiPort.COOLING_IN)
+    cooling_flow: float = sensor(type=SensorType.FLOW, from_port=YazakiPort.COOLING_IN)
     cooling_input_temperature: float = sensor(
-        temperature=True, from_port=YazakiPort.COOLING_IN
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.COOLING_IN
     )
     cooling_output_temperature: float = sensor(
-        temperature=True, from_port=YazakiPort.COOLING_OUT
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.COOLING_OUT
     )
 
-    chilled_flow: float = sensor(flow=True, from_port=YazakiPort.CHILLED_IN)
+    chilled_flow: float = sensor(type=SensorType.FLOW, from_port=YazakiPort.CHILLED_IN)
     chilled_input_temperature: float = sensor(
-        temperature=True, from_port=YazakiPort.CHILLED_IN
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.CHILLED_IN
     )
     chilled_output_temperature: float = sensor(
-        temperature=True, from_port=YazakiPort.CHILLED_OUT
+        type=SensorType.TEMPERATURE, from_port=YazakiPort.CHILLED_OUT
     )
 
     @property
@@ -98,40 +105,42 @@ class YazakiSensors(FromState):
 class BoilerSensors(FromState):
     spec: Boiler
     temperature: float
-    heat_exchange_flow: float = sensor(flow=True, from_port=BoilerPort.HEAT_EXCHANGE_IN)
+    heat_exchange_flow: float = sensor(
+        type=SensorType.FLOW, from_port=BoilerPort.HEAT_EXCHANGE_IN
+    )
     heat_exchange_in_temperature: float = sensor(
-        temperature=True, from_port=BoilerPort.HEAT_EXCHANGE_IN
+        type=SensorType.TEMPERATURE, from_port=BoilerPort.HEAT_EXCHANGE_IN
     )
     heat_exchange_out_temperature: float = sensor(
-        temperature=True, from_port=BoilerPort.HEAT_EXCHANGE_OUT
+        type=SensorType.TEMPERATURE, from_port=BoilerPort.HEAT_EXCHANGE_OUT
     )
 
-    fill_flow: float = sensor(flow=True, from_port=BoilerPort.HEAT_EXCHANGE_IN)
+    fill_flow: float = sensor(type=SensorType.FLOW, from_port=BoilerPort.FILL_IN)
     fill_in_temperature: float = sensor(
-        temperature=True, from_port=BoilerPort.HEAT_EXCHANGE_IN
+        type=SensorType.TEMPERATURE, from_port=BoilerPort.FILL_IN
     )
     fill_out_temperature: float = sensor(
-        temperature=True, from_port=BoilerPort.HEAT_EXCHANGE_OUT
+        type=SensorType.TEMPERATURE, from_port=BoilerPort.FILL_OUT
     )
 
 
 @sensors()
 class ChillerSensors(FromState):
     spec: Chiller
-    cooling_flow: float = sensor(flow=True, from_port=ChillerPort.COOLING_IN)
+    cooling_flow: float = sensor(type=SensorType.FLOW, from_port=ChillerPort.COOLING_IN)
     cooling_input_temperature: float = sensor(
-        temperature=True, from_port=ChillerPort.COOLING_IN
+        type=SensorType.TEMPERATURE, from_port=ChillerPort.COOLING_IN
     )
     cooling_output_temperature: float = sensor(
-        temperature=True, from_port=ChillerPort.COOLING_OUT
+        type=SensorType.TEMPERATURE, from_port=ChillerPort.COOLING_OUT
     )
 
-    chilled_flow: float = sensor(flow=True, from_port=ChillerPort.CHILLED_IN)
+    chilled_flow: float = sensor(type=SensorType.FLOW, from_port=ChillerPort.CHILLED_IN)
     chilled_input_temperature: float = sensor(
-        temperature=True, from_port=ChillerPort.CHILLED_IN
+        type=SensorType.TEMPERATURE, from_port=ChillerPort.CHILLED_IN
     )
     chilled_output_temperature: float = sensor(
-        temperature=True, from_port=ChillerPort.CHILLED_OUT
+        type=SensorType.TEMPERATURE, from_port=ChillerPort.CHILLED_OUT
     )
 
 

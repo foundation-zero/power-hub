@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+from enum import Enum
+from math import nan
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
     ApplianceState,
+    ConnectionState,
     Port,
 )
 from typing import Any, Callable, Deque, Protocol, cast
@@ -77,12 +80,16 @@ class SensorContext[T]:
         pass
 
 
+class SensorType(Enum):
+    FLOW = "flow"
+    TEMPERATURE = "temperature"
+
+
 @dataclass(eq=True, frozen=True)
 class Sensor:
     from_weather: bool = False
     from_port: Port | None = None
-    temperature: bool = False
-    flow: bool = False
+    type: SensorType | None = None
 
 
 def sensor(*args: Any, **kwargs: Any) -> Any:
@@ -121,7 +128,13 @@ def sensors[T: type]() -> Callable[[T], T]:
                 if hasattr(appliance_state, name)
             }
             port_sensors = [
-                (name, state.connection(appliance, description.from_port), description)
+                (
+                    name,
+                    state.connection(
+                        appliance, description.from_port, ConnectionState(nan, nan)
+                    ),
+                    description,
+                )
                 for name in get_annotations(klass).keys()
                 if (description := getattr(klass, name, None))
                 and isinstance(description, Sensor)
@@ -130,12 +143,12 @@ def sensors[T: type]() -> Callable[[T], T]:
             temperature_sensors = {
                 name: state.temperature
                 for name, state, description in port_sensors
-                if description.temperature
+                if description.type == SensorType.TEMPERATURE
             }
             flow_sensors = {
                 name: state.flow
                 for name, state, description in port_sensors
-                if description.flow
+                if description.type == SensorType.FLOW
             }
             return klass(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
 

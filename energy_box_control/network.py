@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     TypeVarTuple,
     cast,
+    overload,
 )
 import uuid
 
@@ -69,7 +70,25 @@ class NetworkState(Generic[Net]):
     def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
-    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState:
+    def has_connection(self, appliance: AnyAppliance, port: Port) -> bool:
+        return (appliance, port) in self._connection_state
+
+    @overload
+    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState: ...
+
+    @overload
+    def connection[
+        T
+    ](self, appliance: AnyAppliance, port: Port, default: T) -> ConnectionState | T: ...
+
+    def connection[
+        T
+    ](self, appliance: AnyAppliance, port: Port, default: T | None = None) -> (
+        ConnectionState | T
+    ):
+        if default:
+            return self._connection_state.get((appliance, port), default)
+
         return self._connection_state[(appliance, port)]
 
 
