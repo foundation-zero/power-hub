@@ -48,4 +48,4 @@ def test_simulationtime():
     simulationtime = SimulationTime(step_size, step, start)
 
     assert simulationtime.timestamp == datetime(2023, 1, 11, 0, 0, 0) 
-
+    

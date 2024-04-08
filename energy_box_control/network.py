@@ -2,7 +2,7 @@
 # Disable single use of type vars, which is actually required to get the type checker to pass
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import (
     Any,
     Callable,
@@ -24,6 +24,7 @@ from energy_box_control.appliances import (
     ConnectionState,
     Port,
 )
+from energy_box_control.appliances.base import SimulationTime
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
 AnyAppliance = Appliance[Any, Any, Any]
@@ -56,6 +57,7 @@ class StateGetter[App: AnyAppliance]:
 class NetworkState(Generic[Net]):
     def __init__(
         self,
+        time: SimulationTime,
         appliance_state: dict[Appliance[Any, Any, Any], ApplianceState],
         connection_state: dict[
             tuple[Appliance[Any, Any, Any], Port], ConnectionState
@@ -63,6 +65,7 @@ class NetworkState(Generic[Net]):
     ):
         self._appliance_state = appliance_state
         self._connection_state = connection_state
+        self._time = time
 
     def get_appliances_states(self) -> dict[Appliance[Any, Any, Any], ApplianceState]:
         return self._appliance_state
@@ -96,6 +99,10 @@ class NetworkState(Generic[Net]):
 
         return self._connection_state[(appliance, port)]
 
+    @property
+    def time(self) -> SimulationTime:
+        return self._time
+
 
 class NetworkStateConnectionBuilder(Generic[Net, App, ToPort, *Prev]):
     def __init__(self, network: Net, connection: tuple[App, ToPort], *prev: *Prev):
@@ -121,7 +128,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
     ](self, app: App) -> "NetworkStateValueBuilder[Net, App, *Prev]":
         return NetworkStateValueBuilder(self._network, app, *self._prev)
 
-    def build(self) -> NetworkState[Net]:
+    def build(self, time: SimulationTime) -> NetworkState[Net]:
         state = list(
             cast(
                 Iterable[
@@ -152,7 +159,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
         if missing_feedbacks:
             raise Exception(f"missing feedback states for {missing_feedbacks}")
 
-        return NetworkState(appliance_state, feedbacks)
+        return NetworkState(time, appliance_state, feedbacks)
 
 
 class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
@@ -616,7 +623,12 @@ class Network[Sensors](ABC):
                     to_mapping[to_port] = connection_state
                     port_inputs[to_app] = to_mapping
                     connection_states[(to_app, to_port)] = connection_state
-        return NetworkState(appliance_states, connection_states)
+
+        return NetworkState(
+            replace(state.time, step=state.time.step + 1),
+            appliance_states,
+            connection_states,
+        )
 
     def define_state[
         App: AnyAppliance
