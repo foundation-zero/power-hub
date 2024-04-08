@@ -12,22 +12,11 @@ from energy_box_control.power_hub.circuits.pipes_pcm_circuit import (
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
-from energy_box_control.power_hub.powerhub_components import (
+from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
-from tests.simulation import run_simulation
-
-
-@dataclass(frozen=True, eq=True)
-class SimulationSuccess:
-    pass
-
-
-@dataclass(frozen=True, eq=True)
-class SimulationFailure:
-    exception: Exception
-    step: int
+from tests.simulation import SimulationSuccess, run_simulation
 
 
 @fixture
@@ -121,7 +110,7 @@ def test_pipes_to_pcm_simulation(
     pipes_pcm_circuit, initial_state_pipes_to_pcm, control_pump_on, min_max_temperature
 ):
 
-    state = run_simulation(
+    result = run_simulation(
         pipes_pcm_circuit,
         initial_state_pipes_to_pcm,
         control_pump_on,
@@ -130,13 +119,17 @@ def test_pipes_to_pcm_simulation(
         min_max_temperature,
     )
 
-    assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 15 / 60
+    assert isinstance(result, SimulationSuccess)
+    assert (
+        result.state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow
+        == 15 / 60
+    )
 
 
 def test_half_valve(
     pipes_pcm_circuit, initial_state_half_valve, control_pump_on, min_max_temperature
 ):
-    state = run_simulation(
+    result = run_simulation(
         pipes_pcm_circuit,
         initial_state_half_valve,
         control_pump_on,
@@ -145,10 +138,15 @@ def test_half_valve(
         min_max_temperature,
     )
 
-    assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 15 / 120
+    assert isinstance(result, SimulationSuccess)
+    assert (
+        result.state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow
+        == 15 / 120
+    )
 
     assert (
-        state.connection(pipes_pcm_circuit.heat_pipes_mix, MixPort.AB).flow == 15 / 60
+        result.state.connection(pipes_pcm_circuit.heat_pipes_mix, MixPort.AB).flow
+        == 15 / 60
     )
 
 
@@ -160,7 +158,7 @@ def test_pcm_charge(
 ):
     state = initial_state_pipes_to_pcm_warm
 
-    state = run_simulation(
+    result = run_simulation(
         pipes_pcm_circuit,
         initial_state_pipes_to_pcm_warm,
         control_pump_on,
@@ -169,7 +167,8 @@ def test_pcm_charge(
         min_max_temperature,
     )
 
-    assert state.appliance(pipes_pcm_circuit.pcm).get().state_of_charge > 0
+    assert isinstance(result, SimulationSuccess)
+    assert result.state.appliance(pipes_pcm_circuit.pcm).get().state_of_charge > 0
 
 
 def test_pipes_to_pipes(
@@ -181,35 +180,6 @@ def test_pipes_to_pipes(
     assert state.connection(pipes_pcm_circuit.pcm, PcmPort.CHARGE_IN).flow == 0
 
 
-def run_pipes_pcm_simulation(
-    pipes_pcm_circuit, initial_state_pipes_to_pcm, min_max_temperature, control_pump_on
-):
-    state = initial_state_pipes_to_pcm
-
-    for i in range(0, 500):
-        try:
-            state = pipes_pcm_circuit.simulate(
-                state, control_pump_on, min_max_temperature
-            )
-        except Exception as e:
-            return SimulationFailure(e, i)
-    return SimulationSuccess()
-
-
-def test_pcm_max_temperatures(
-    pipes_pcm_circuit, initial_state_pipes_to_pcm, min_max_temperature, control_pump_on
-):
-    assert (
-        run_pipes_pcm_simulation(
-            pipes_pcm_circuit,
-            initial_state_pipes_to_pcm,
-            min_max_temperature,
-            control_pump_on,
-        )
-        == SimulationSuccess()
-    )
-
-
 def test_simple_control(
     pipes_pcm_circuit,
     initial_state_pipes_to_pcm_warm,
@@ -217,7 +187,7 @@ def test_simple_control(
     control_pump_on,
 ):
 
-    state = run_simulation(
+    result = run_simulation(
         pipes_pcm_circuit,
         initial_state_pipes_to_pcm_warm,
         control_pump_on,
@@ -225,7 +195,7 @@ def test_simple_control(
         pipes_pcm_circuit.regulate,
         min_max_temperature,
     )
-
-    assert state.connection(
+    assert isinstance(result, SimulationSuccess)
+    assert result.state.connection(
         pipes_pcm_circuit.heat_pipes, HeatPipesPort.OUT
     ).temperature == approx(85, abs=5)

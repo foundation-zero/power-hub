@@ -22,7 +22,7 @@ class ChillerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class Chiller(Appliance[ChillerState, None, ChillerPort]):
-    cooling_capacity: float
+    cooling_capacity: float  # W
     specific_heat_capacity_chilled: float  # J / l K
     specific_heat_capacity_cooling: float  # J / l K
 
@@ -33,15 +33,26 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
         control: None,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
 
-        chilled_out_temp = inputs[
-            ChillerPort.CHILLED_IN
-        ].temperature - self.cooling_capacity / (
-            self.specific_heat_capacity_chilled * inputs[ChillerPort.CHILLED_IN].flow
+        chilled_out_temp = (
+            inputs[ChillerPort.CHILLED_IN].temperature
+            - self.cooling_capacity
+            / (
+                self.specific_heat_capacity_chilled
+                * inputs[ChillerPort.CHILLED_IN].flow
+            )
+            if inputs[ChillerPort.CHILLED_IN].flow > 0
+            else inputs[ChillerPort.CHILLED_IN].temperature
         )
-        cooling_out_temp = inputs[
-            ChillerPort.COOLING_IN
-        ].temperature + self.cooling_capacity / (
-            self.specific_heat_capacity_cooling * inputs[ChillerPort.COOLING_IN].flow
+
+        cooling_out_temp = (
+            inputs[ChillerPort.COOLING_IN].temperature
+            + self.cooling_capacity
+            / (
+                self.specific_heat_capacity_cooling
+                * inputs[ChillerPort.COOLING_IN].flow
+            )
+            if inputs[ChillerPort.COOLING_IN].flow > 0
+            else inputs[ChillerPort.COOLING_IN].temperature
         )
 
         return (

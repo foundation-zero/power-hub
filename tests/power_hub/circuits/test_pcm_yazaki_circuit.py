@@ -11,7 +11,7 @@ from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
 )
 
 from energy_box_control.network import NetworkState
-from tests.simulation import run_simulation
+from tests.simulation import SimulationSuccess, run_simulation
 
 
 @fixture
@@ -91,7 +91,7 @@ def test_pcm_yazaki_simulation(
     min_max_temperature,
 ):
 
-    state = run_simulation(
+    result = run_simulation(
         pcm_yazaki_circuit,
         initial_state_pcm_to_yazaki,
         control_pump_on,
@@ -100,18 +100,26 @@ def test_pcm_yazaki_simulation(
         min_max_temperature,
     )
 
+    assert isinstance(result, SimulationSuccess)
     assert (
-        state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 72 / 60
-    )
-    assert (
-        state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow == 72 / 60
-    )
-    assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A).flow
+        result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
         == 72 / 60
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B).flow == 0
+        result.state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow
+        == 72 / 60
+    )
+    assert (
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+        ).flow
+        == 72 / 60
+    )
+    assert (
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+        ).flow
+        == 0
     )
 
 
@@ -122,7 +130,7 @@ def test_yazaki_yazaki_simulation(
     control_pump_on,
 ):
 
-    state = run_simulation(
+    result = run_simulation(
         pcm_yazaki_circuit,
         initial_state_yazaki_to_yazaki,
         control_pump_on,
@@ -131,15 +139,24 @@ def test_yazaki_yazaki_simulation(
         min_max_temperature,
     )
 
-    assert state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 0
+    assert isinstance(result, SimulationSuccess)
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow == 72 / 60
+        result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow == 0
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A).flow == 0
+        result.state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow
+        == 72 / 60
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B).flow
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+        ).flow
+        == 0
+    )
+    assert (
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+        ).flow
         == 72 / 60
     )
 
@@ -149,7 +166,7 @@ def test_half_valve(
 ):
     state = initial_state_half_valve
 
-    state = run_simulation(
+    result = run_simulation(
         pcm_yazaki_circuit,
         initial_state_half_valve,
         control_pump_on,
@@ -158,19 +175,25 @@ def test_half_valve(
         min_max_temperature,
     )
 
+    assert isinstance(result, SimulationSuccess)
     assert (
-        state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
+        result.state.connection(pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT).flow
         == 72 / 60 / 2
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow == 72 / 60
+        result.state.connection(pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN).flow
+        == 72 / 60
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A).flow
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.A
+        ).flow
         == 72 / 60 / 2
     )
     assert (
-        state.connection(pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B).flow
+        result.state.connection(
+            pcm_yazaki_circuit.yazaki_bypass_valve, ValvePort.B
+        ).flow
         == 72 / 60 / 2
     )
 
@@ -182,7 +205,7 @@ def test_simple_control(
     control_pump_on,
 ):
 
-    state = run_simulation(
+    result = run_simulation(
         pcm_yazaki_circuit,
         initial_state_pcm_to_yazaki,
         control_pump_on,
@@ -191,15 +214,20 @@ def test_simple_control(
         min_max_temperature,
     )
 
-    assert state.connection(
+    assert isinstance(result, SimulationSuccess)
+    assert result.state.connection(
         pcm_yazaki_circuit.yazaki, YazakiPort.HOT_IN
     ).temperature == approx(75, abs=2)
 
-    assert state.connection(
+    assert result.state.connection(
         pcm_yazaki_circuit.pcm, PcmPort.DISCHARGE_OUT
     ).temperature == approx(78, abs=1e-6)
 
     assert (
-        state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve).get().position < 1
-        and state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve).get().position > 0
+        result.state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve).get().position
+        < 1
+        and result.state.appliance(pcm_yazaki_circuit.yazaki_bypass_valve)
+        .get()
+        .position
+        > 0
     )
