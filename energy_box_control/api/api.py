@@ -373,10 +373,7 @@ async def get_heat_pipes_total_power_over_time(
             fluxy.sum("power"),
         ),
     )
-    if len(query_result) > 0:
-        return {"total_power": query_result.iloc[0]["power"]}
-    else:
-        return {"total_power": 0.0}
+    return Response(query_result.iloc[0]["power"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
 
 
 def run() -> None:
