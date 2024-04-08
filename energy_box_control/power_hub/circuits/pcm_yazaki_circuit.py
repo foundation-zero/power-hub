@@ -111,14 +111,12 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         # fmt: on
 
     def feedback(self) -> NetworkFeedbacks[Self]:
-        # fmt: off
         return (
-            self.define_feedback( self.pcm_to_yazaki_pump)
+            self.define_feedback(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
         ).build()
-        # fmt: on
 
     def regulate(
         self, control_state: PcmYazakiControlState, sensors: PcmYazakiSensors
@@ -146,7 +144,9 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             yazaki_hot_in_temperature=state.connection(
                 self.yazaki, YazakiPort.HOT_IN
             ).temperature,
-            yazaki_hot_bypass_valve_position=state.appliance(self.yazaki_hot_bypass_valve)
+            yazaki_hot_bypass_valve_position=state.appliance(
+                self.yazaki_hot_bypass_valve
+            )
             .get()
             .position,
         )

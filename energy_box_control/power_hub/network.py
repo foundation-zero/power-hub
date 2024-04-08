@@ -207,11 +207,8 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.heat_pipes_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.yazaki_hot_bypass_valve)
-            .at(ValvePort.B)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.yazaki_hot_bypass_valve)
-            .at(ValvePort.A)
+            .define_state(power_hub.pcm_to_yazaki_pump)
+            .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.chill_mix)
             .at(MixPort.AB)
@@ -296,11 +293,8 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.heat_pipes_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.B)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.A)
+            .define_state(self.pcm_to_yazaki_pump)
+            .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.chill_mix)
             .at(MixPort.AB)
@@ -399,7 +393,6 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
         )
-        # fmt: on
 
     def _pcm_yazaki_connections(self):
         # fmt: off
@@ -432,14 +425,12 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def _pcm_yazaki_feedback(self):
-        # fmt: off
         return (
-            self.define_feedback( self.pcm_to_yazaki_pump)
+            self.define_feedback(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.yazaki)
             .at(YazakiPort.HOT_IN)
         )
-        # fmt: on
 
     def _chilled_side_connections(self):
         # fmt: off
