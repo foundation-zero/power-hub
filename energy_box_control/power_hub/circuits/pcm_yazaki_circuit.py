@@ -30,14 +30,14 @@ from energy_box_control.power_hub.power_hub_components import (
     yazaki_bypass_mix,
     pcm_to_yazaki_pump,
     yazaki,
-    yazaki_bypass_valve,
+    yazaki_hot_bypass_valve,
 )
 
 
 @dataclass
 class PcmYazakiSensors:
     yazaki_hot_in_temperature: float
-    yazaki_bypass_valve_position: float
+    yazaki_hot_bypass_valve_position: float
 
 
 @dataclass
@@ -51,7 +51,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     yazaki_bypass_mix: Mix
     pcm_to_yazaki_pump: SwitchPump  # P-1003
     yazaki: Yazaki  # W-1005
-    yazaki_bypass_valve: Valve  # CV-1010
+    yazaki_hot_bypass_valve: Valve  # CV-1010
     cooling_source: Source
     chilled_source: Source
 
@@ -65,7 +65,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             yazaki_bypass_mix,
             pcm_to_yazaki_pump,
             yazaki,
-            yazaki_bypass_valve,
+            yazaki_hot_bypass_valve,
             Source(2.55, 31),
             Source(0.77, 17.6),
         )
@@ -83,15 +83,20 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .to(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.IN)
 
-            .connect(self.pcm_to_yazaki_pump)
-            .at(SwitchPumpPort.OUT)
-            .to(self.yazaki)
-            .at(YazakiPort.HOT_IN)
-
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
-            .to(self.yazaki_bypass_valve)
+            .to(self.yazaki_hot_bypass_valve)
             .at(ValvePort.AB)
+
+            .connect(self.yazaki_hot_bypass_valve)
+            .at(ValvePort.B)
+            .to(self.yazaki_bypass_mix)
+            .at(MixPort.A)
+
+            .connect(self.yazaki_hot_bypass_valve)
+            .at(ValvePort.A)
+            .to(self.pcm)
+            .at(PcmPort.DISCHARGE_IN)
 
             .connect(self.cooling_source)
             .at(SourcePort.OUTPUT)
@@ -108,15 +113,10 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     def feedback(self) -> NetworkFeedbacks[Self]:
         # fmt: off
         return (
-            self.define_feedback(self.yazaki_bypass_valve)
-            .at(ValvePort.B)
-            .to(self.yazaki_bypass_mix)
-            .at(MixPort.A)
-
-            .feedback(self.yazaki_bypass_valve)
-            .at(ValvePort.A)
-            .to(self.pcm)
-            .at(PcmPort.DISCHARGE_IN)
+            self.define_feedback( self.pcm_to_yazaki_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.yazaki)
+            .at(YazakiPort.HOT_IN)
         ).build()
         # fmt: on
 
@@ -125,7 +125,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.yazaki_bypass_valve_position,
+            sensors.yazaki_hot_bypass_valve_position,
             control_state.yazaki_hot_in_setpoint,
             sensors.yazaki_hot_in_temperature,
             reversed=True,
@@ -135,7 +135,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             control_state,
             self.control(self.pcm_to_yazaki_pump)
             .value(SwitchPumpControl(on=True))
-            .control(self.yazaki_bypass_valve)
+            .control(self.yazaki_hot_bypass_valve)
             .value(ValveControl(position=new_valve_position))
             .build(),
         )
@@ -146,7 +146,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             yazaki_hot_in_temperature=state.connection(
                 self.yazaki, YazakiPort.HOT_IN
             ).temperature,
-            yazaki_bypass_valve_position=state.appliance(self.yazaki_bypass_valve)
+            yazaki_hot_bypass_valve_position=state.appliance(self.yazaki_hot_bypass_valve)
             .get()
             .position,
         )

@@ -36,7 +36,7 @@ pcm = Pcm(
 chiller_switch_valve = Valve()
 yazaki = Yazaki(WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 pcm_to_yazaki_pump = SwitchPump(72 / 60)
-yazaki_bypass_valve = Valve()
+yazaki_hot_bypass_valve = Valve()
 yazaki_bypass_mix = Mix()
 chiller = Chiller(
     10000,  # 2.5-18.7 kW cooling capacity

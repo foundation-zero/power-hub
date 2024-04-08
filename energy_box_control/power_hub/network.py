@@ -108,7 +108,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.chiller_switch_valve,
             phc.yazaki,
             phc.pcm_to_yazaki_pump,
-            phc.yazaki_bypass_valve,
+            phc.yazaki_hot_bypass_valve,
             phc.yazaki_bypass_mix,
             phc.chiller,
             phc.chill_mix,
@@ -414,30 +414,30 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.IN)
 
-            .connect(self.pcm_to_yazaki_pump)
-            .at(SwitchPumpPort.OUT)
-            .to(self.yazaki)
-            .at(YazakiPort.HOT_IN)
-
             .connect(self.yazaki)
             .at(YazakiPort.HOT_OUT)
             .to(self.yazaki_hot_bypass_valve)
             .at(ValvePort.AB)
+
+            .connect(self.yazaki_hot_bypass_valve)
+            .at(ValvePort.B)
+            .to(self.yazaki_bypass_mix)
+            .at(MixPort.A)
+
+            .connect(self.yazaki_hot_bypass_valve)
+            .at(ValvePort.A)
+            .to(self.pcm)
+            .at(PcmPort.DISCHARGE_IN)
         )
         # fmt: on
 
     def _pcm_yazaki_feedback(self):
         # fmt: off
         return (
-            self.define_feedback(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.B)
-            .to(self.yazaki_bypass_mix)
-            .at(MixPort.A)
-
-            .feedback(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.A)
-            .to(self.pcm)
-            .at(PcmPort.DISCHARGE_IN)
+            self.define_feedback( self.pcm_to_yazaki_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.yazaki)
+            .at(YazakiPort.HOT_IN)
         )
         # fmt: on
 
