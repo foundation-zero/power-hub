@@ -1,6 +1,6 @@
 import time
-from energy_box_control.appliances.base import Appliance
 from energy_box_control.power_hub.network import PowerHubControlState
+from energy_box_control.power_hub.sensors import get_sensor_values
 from mqtt import create_and_connect_client, publish_mqtt
 from paho.mqtt import client as mqtt_client
 
@@ -39,13 +39,7 @@ def run():
         for sensor_field in fields(power_hub_sensors):
             publish_sensor_states(
                 sensor_field.name,
-                {
-                    sensor_item_name: sensor_item_value
-                    for sensor_item_name, sensor_item_value in getattr(
-                        power_hub_sensors, sensor_field.name
-                    ).__dict__.items()
-                    if not issubclass(sensor_item_value.__class__, Appliance)
-                },
+                get_sensor_values(sensor_field.name, power_hub_sensors),
                 mqtt_client,
             )
         time.sleep(1)

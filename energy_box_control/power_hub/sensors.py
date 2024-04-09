@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort
+from energy_box_control.appliances.base import Appliance
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
 from energy_box_control.appliances.chiller import Chiller, ChillerPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
@@ -171,3 +172,19 @@ class PowerHubSensors:
     @staticmethod
     def context(weather: WeatherSensors) -> "SensorContext[PowerHubSensors]":
         return SensorContext(PowerHubSensors, weather)
+
+
+SensorName = str
+SensorValue = float
+
+
+def get_sensor_values(
+    sensor_name: SensorName, sensors: PowerHubSensors
+) -> dict[SensorName, SensorValue]:
+    return {
+        sensor_item_name: sensor_item_value
+        for sensor_item_name, sensor_item_value in getattr(
+            sensors, sensor_name
+        ).__dict__.items()
+        if not issubclass(sensor_item_value.__class__, Appliance)
+    }
