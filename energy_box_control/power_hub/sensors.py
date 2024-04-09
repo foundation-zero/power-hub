@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort
-from energy_box_control.appliances.base import Appliance
 from energy_box_control.units import (
     Celsius,
     LiterPerSecond,
@@ -101,6 +100,8 @@ class YazakiSensors(FromState):
 
     @property
     def efficiency(self) -> float:
+        if self.chilled_input_temperature - self.chilled_output_temperature == 0:
+            return 0
         return (
             self.hot_flow
             * (self.hot_input_temperature - self.hot_output_temperature)
@@ -193,10 +194,10 @@ SensorValue = float | Celsius | LiterPerSecond | WattPerMeterSquared
 def get_sensor_values(
     sensor_name: SensorName, sensors: PowerHubSensors
 ) -> dict[SensorName, SensorValue]:
+    attr = getattr(sensors, sensor_name)
+
     return {
-        sensor_item_name: sensor_item_value
-        for sensor_item_name, sensor_item_value in getattr(
-            sensors, sensor_name
-        ).__dict__.items()
-        if not issubclass(sensor_item_value.__class__, Appliance)
+        field: getattr(attr, field)
+        for field in dir(attr)
+        if field[0] != "_" and (type(getattr(attr, field)) in [float, int, bool])
     }
