@@ -1,69 +1,59 @@
 import { MqttClient } from "@/mqtt";
 import type { NestedPath, PathValue, HistoricalData } from "@/types";
-import type { AppliancesTree, ComputedTree, ConnectionsTree, Tree } from "@/types/power-hub";
+import type { SensorsTree, ComputedTree, Tree } from "@/types/power-hub";
 import { parseValue, pick } from "@/utils";
 import { defineStore } from "pinia";
 import { map, repeat } from "rxjs";
 import { ajax } from "rxjs/ajax";
+import type { SnakeCase } from "type-fest";
 
 const DEFAULT_POLLING_INTERVAL = 60 * 1000;
 
 let client: MqttClient;
 
 type PathFn = (path: string) => string;
-const defaultPathFn: PathFn = (path) => path;
 
 const useTotals =
-  <T>(endpointFn: PathFn = defaultPathFn) =>
+  <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>, V = PathValue<T, K>>(
     topic: K,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .getJSON<V>(`/api/appliances/${endpointFn(topic)}/total`)
-      .pipe(repeat({ delay: pollingInterval }));
+    ajax.getJSON<V>(`/api/${endpointFn(topic)}/total`).pipe(repeat({ delay: pollingInterval }));
 
 const useHistory =
-  <T>(endpointFn: PathFn = defaultPathFn) =>
+  <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>, V = PathValue<T, K>>(
     topic: K,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .getJSON<HistoricalData<string, V>[]>(`/api/appliances/${endpointFn(topic)}/last_values`)
-      .pipe(
-        repeat({ delay: pollingInterval }),
-        map((data) =>
-          data.map(
-            ({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>,
-          ),
-        ),
-      );
+    ajax.getJSON<HistoricalData<string, V>[]>(`/api/${endpointFn(topic)}/last_values`).pipe(
+      repeat({ delay: pollingInterval }),
+      map((data) =>
+        data.map(({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>),
+      ),
+    );
 
 const useMqtt =
-  <T>(topicPath: keyof Tree) =>
+  <K extends keyof Tree, T = Tree[K]>(topicPath: SnakeCase<K>) =>
   <K extends NestedPath<T>, V = PathValue<T, K>>(topic: K) =>
     client.topic(`power_hub/${topicPath}/${topic}`).pipe(map(parseValue<V>));
 
 export const usePowerHubStore = defineStore("powerHub", () => {
-  const connectionsPathFn: PathFn = (
-    path,
-    [applianceName, connectionName, fieldName] = path.split("/"),
-  ) => [applianceName, "connections", connectionName, fieldName].join("/");
+  const sensorsPathFn: PathFn = (path, [applianceName, fieldName] = path.split("/")) =>
+    ["appliance_sensors", applianceName, fieldName].join("/");
 
-  const appliances = {
-    useHistory: useHistory<AppliancesTree>(),
-    useMqtt: useMqtt<AppliancesTree>("appliances"),
-  };
+  const computedPathFn: PathFn = (path, [applianceName, fieldName] = path.split("/")) =>
+    ["appliances", applianceName, fieldName].join("/");
 
-  const connections = {
-    useHistory: useHistory<ConnectionsTree>(connectionsPathFn),
-    useMqtt: useMqtt<ConnectionsTree>("connections"),
+  const sensors = {
+    useHistory: useHistory<SensorsTree>(sensorsPathFn),
+    useMqtt: useMqtt("appliance_sensors"),
   };
 
   const computed = {
-    useHistory: useHistory<ComputedTree>(),
-    useTotals: useTotals<ComputedTree>(),
+    useHistory: useHistory<ComputedTree>(computedPathFn),
+    useTotals: useTotals<ComputedTree>(computedPathFn),
   };
 
   const connect = async () => {
@@ -71,16 +61,14 @@ export const usePowerHubStore = defineStore("powerHub", () => {
 
     return {
       computed,
-      appliances,
-      connections,
+      sensors,
     };
   };
 
   return {
     connect,
     computed,
-    connections: pick(connections, "useHistory"),
-    appliances: pick(appliances, "useHistory"),
+    sensors: pick(sensors, "useHistory"),
   };
 });
 

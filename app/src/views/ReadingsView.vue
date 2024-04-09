@@ -14,7 +14,7 @@ import { usePowerHubStore } from "@/stores/power-hub";
 import { useObservable } from "@vueuse/rxjs";
 
 const store = usePowerHubStore();
-const { connections } = await store.connect();
+const { sensors } = await store.connect();
 
 const tables: DataTable[] = [
   {
@@ -22,14 +22,13 @@ const tables: DataTable[] = [
     rows: [
       [
         "Chilled (in) - Temperature",
-        useObservable(connections.useMqtt("chiller/chilled_in/temperature")),
+        useObservable(sensors.useMqtt("chiller/chilled_input_temperature")),
       ],
-      ["Chilled (in) - Flow", useObservable(connections.useMqtt("chiller/chilled_in/flow"))],
+      ["Chilled - Flow", useObservable(sensors.useMqtt("chiller/chilled_flow"))],
       [
         "Chilled (out) - Temperature",
-        useObservable(connections.useMqtt("chiller/chilled_out/temperature")),
+        useObservable(sensors.useMqtt("chiller/chilled_output_temperature")),
       ],
-      ["Chilled (out) - Flow", useObservable(connections.useMqtt("chiller/chilled_out/flow"))],
     ],
   },
 ];

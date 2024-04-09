@@ -19,18 +19,18 @@ describe("PowerHubStore", async () => {
     store = await usePowerHubStore().connect();
   });
 
-  describe("appliances", () => {
+  describe("sensors", () => {
     describe("MQTT", () => {
-      const mockAndCall = (path: Parameters<typeof store.appliances.useMqtt>[0], value = "5") => {
+      const mockAndCall = (path: Parameters<typeof store.sensors.useMqtt>[0], value = "5") => {
         client.topic.mockReturnValue(of(value));
-        return useObservable(store.appliances.useMqtt(path));
+        return useObservable(store.sensors.useMqtt(path));
       };
 
       it("creates an observable for each appliance", () => {
         mockAndCall("chiller_switch_valve/position");
         expect(vi.mocked(client).topic).toHaveBeenCalledOnce();
         expect(vi.mocked(client).topic).toHaveBeenCalledWith(
-          "power_hub/appliances/chiller_switch_valve/position",
+          "power_hub/appliance_sensors/chiller_switch_valve/position",
         );
       });
 
@@ -42,12 +42,12 @@ describe("PowerHubStore", async () => {
 
     describe("historical data", () => {
       const mockAndCall = (
-        path: Parameters<typeof store.appliances.useHistory>[0],
+        path: Parameters<typeof store.sensors.useHistory>[0],
         time: string = new Date().toString(),
         value = 5,
       ) => {
         vi.spyOn(ajax, "getJSON").mockReturnValue(of([{ time, value }]));
-        return useObservable(store.appliances.useHistory(path));
+        return useObservable(store.sensors.useHistory(path));
       };
 
       it("parses the time value to Date object", () => {
@@ -59,52 +59,7 @@ describe("PowerHubStore", async () => {
         mockAndCall("chiller_switch_valve/position");
         expect(ajax.getJSON).toBeCalledTimes(1);
         expect(ajax.getJSON).toBeCalledWith(
-          "/api/appliances/chiller_switch_valve/position/last_values",
-        );
-      });
-    });
-  });
-
-  describe("connections", () => {
-    describe("MQTT", () => {
-      beforeEach(() => {
-        client.topic.mockReturnValue(of("5"));
-      });
-
-      it("creates an observable for each connection", () => {
-        store.connections.useMqtt("chill_mix/a/temperature");
-        expect(vi.mocked(client).topic).toHaveBeenCalledOnce();
-        expect(vi.mocked(client).topic).toHaveBeenCalledWith(
-          "power_hub/connections/chill_mix/a/temperature",
-        );
-      });
-
-      it("returns the value untouched", () => {
-        const connection = useObservable(store.connections.useMqtt("chill_mix/a/temperature"));
-        expect(connection.value).toBe(5);
-      });
-    });
-
-    describe("historical data", () => {
-      const mockAndCall = (
-        path: Parameters<typeof store.connections.useHistory>[0],
-        time: string = new Date().toString(),
-        value = 5,
-      ) => {
-        vi.spyOn(ajax, "getJSON").mockReturnValue(of([{ time, value }]));
-        return useObservable(store.connections.useHistory(path));
-      };
-
-      it("parses the time value to Date object", () => {
-        const observable = mockAndCall("chill_mix/a/temperature");
-        expect(observable.value?.[0].time).toBeInstanceOf(Date);
-      });
-
-      it("calls the correct endpoint", () => {
-        mockAndCall("chill_mix/a/temperature");
-        expect(ajax.getJSON).toBeCalledTimes(1);
-        expect(ajax.getJSON).toBeCalledWith(
-          "/api/appliances/chill_mix/connections/a/temperature/last_values",
+          "/api/appliance_sensors/chiller_switch_valve/position/last_values",
         );
       });
     });
