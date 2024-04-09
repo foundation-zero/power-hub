@@ -4,11 +4,9 @@ from energy_box_control.appliances.base import (
     Appliance,
     ApplianceState,
     ConnectionState,
-    JoulesPerLiterKelvin,
     Port,
-    Seconds,
-    Watts,
 )
+from energy_box_control.units import JoulePerLiterKelvin, Second, Watt
 
 
 @dataclass(frozen=True, eq=True)
@@ -25,16 +23,16 @@ class ChillerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class Chiller(Appliance[ChillerState, None, ChillerPort]):
-    cooling_capacity: Watts
-    specific_heat_capacity_chilled: JoulesPerLiterKelvin
-    specific_heat_capacity_cooling: JoulesPerLiterKelvin
+    cooling_capacity: Watt
+    specific_heat_capacity_chilled: JoulePerLiterKelvin
+    specific_heat_capacity_cooling: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
         control: None,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
 
         chilled_out_temp = (

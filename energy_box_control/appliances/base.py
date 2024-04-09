@@ -4,17 +4,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 import uuid
 
-Liters = float
-Watts = float
-JoulesPerLiterKelvin = float
-Seconds = float
-LitersPerSecond = float
-Celsius = float
-MetersSquared = float
-WattsPerMeterSquared = float
-Joules = float
-JoulesPerKelvin = float
-KiloWatts = float
+from energy_box_control.units import Celsius, LiterPerSecond, Second
 
 
 @dataclass(frozen=True, eq=True)
@@ -45,7 +35,7 @@ class Simulatable[
         inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
         control: TControl,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
@@ -61,7 +51,7 @@ class Port(Enum):
 
 @dataclass(frozen=True, eq=True)
 class ConnectionState:
-    flow: LitersPerSecond
+    flow: LiterPerSecond
     temperature: Celsius
 
 

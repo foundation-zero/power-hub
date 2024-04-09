@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort
-from energy_box_control.appliances.base import (
-    Appliance,
+from energy_box_control.appliances.base import Appliance
+from energy_box_control.units import (
     Celsius,
-    LitersPerSecond,
-    Watts,
-    WattsPerMeterSquared,
+    LiterPerSecond,
+    Watt,
+    WattPerMeterSquared,
 )
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
 from energy_box_control.appliances.chiller import Chiller, ChillerPort
@@ -25,9 +25,9 @@ from energy_box_control.sensors import (
 @sensors()
 class HeatPipesSensors(FromState):
     spec: HeatPipes
-    flow: LitersPerSecond = sensor(type=SensorType.FLOW, from_port=HeatPipesPort.IN)
+    flow: LiterPerSecond = sensor(type=SensorType.FLOW, from_port=HeatPipesPort.IN)
     ambient_temperature: Celsius = sensor(from_weather=True)
-    global_irradiance: WattsPerMeterSquared = sensor(from_weather=True)
+    global_irradiance: WattPerMeterSquared = sensor(from_weather=True)
     input_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=HeatPipesPort.IN
     )
@@ -36,7 +36,7 @@ class HeatPipesSensors(FromState):
     )
 
     @property
-    def power(self) -> Watts:
+    def power(self) -> Watt:
         return (
             self.flow
             * (self.output_temperature - self.input_temperature)
@@ -47,7 +47,7 @@ class HeatPipesSensors(FromState):
 @sensors()
 class PcmSensors(FromState):
     spec: Pcm
-    charge_flow: LitersPerSecond = sensor(
+    charge_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=PcmPort.CHARGE_IN
     )
     charge_input_temperature: Celsius = sensor(
@@ -56,7 +56,7 @@ class PcmSensors(FromState):
     charge_output_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=PcmPort.CHARGE_OUT
     )
-    discharge_flow: LitersPerSecond = sensor(
+    discharge_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN
     )
     discharge_input_temperature: Celsius = sensor(
@@ -75,9 +75,7 @@ class PcmSensors(FromState):
 @sensors()
 class YazakiSensors(FromState):
     spec: Yazaki
-    hot_flow: LitersPerSecond = sensor(
-        type=SensorType.FLOW, from_port=YazakiPort.HOT_IN
-    )
+    hot_flow: LiterPerSecond = sensor(type=SensorType.FLOW, from_port=YazakiPort.HOT_IN)
     hot_input_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=YazakiPort.HOT_IN
     )
@@ -85,7 +83,7 @@ class YazakiSensors(FromState):
         type=SensorType.TEMPERATURE, from_port=YazakiPort.HOT_OUT
     )
 
-    cooling_flow: LitersPerSecond = sensor(
+    cooling_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=YazakiPort.COOLING_IN
     )
     cooling_input_temperature: Celsius = sensor(
@@ -95,7 +93,7 @@ class YazakiSensors(FromState):
         type=SensorType.TEMPERATURE, from_port=YazakiPort.COOLING_OUT
     )
 
-    chilled_flow: LitersPerSecond = sensor(
+    chilled_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=YazakiPort.CHILLED_IN
     )
     chilled_input_temperature: Celsius = sensor(
@@ -122,7 +120,7 @@ class YazakiSensors(FromState):
 class BoilerSensors(FromState):
     spec: Boiler
     temperature: Celsius
-    heat_exchange_flow: LitersPerSecond = sensor(
+    heat_exchange_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=BoilerPort.HEAT_EXCHANGE_IN
     )
     heat_exchange_in_temperature: Celsius = sensor(
@@ -132,7 +130,7 @@ class BoilerSensors(FromState):
         type=SensorType.TEMPERATURE, from_port=BoilerPort.HEAT_EXCHANGE_OUT
     )
 
-    fill_flow: LitersPerSecond = sensor(
+    fill_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=BoilerPort.FILL_IN
     )
     fill_in_temperature: Celsius = sensor(
@@ -146,7 +144,7 @@ class BoilerSensors(FromState):
 @sensors()
 class ChillerSensors(FromState):
     spec: Chiller
-    cooling_flow: LitersPerSecond = sensor(
+    cooling_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=ChillerPort.COOLING_IN
     )
     cooling_input_temperature: Celsius = sensor(
@@ -156,7 +154,7 @@ class ChillerSensors(FromState):
         type=SensorType.TEMPERATURE, from_port=ChillerPort.COOLING_OUT
     )
 
-    chilled_flow: LitersPerSecond = sensor(
+    chilled_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=ChillerPort.CHILLED_IN
     )
     chilled_input_temperature: Celsius = sensor(
@@ -197,7 +195,7 @@ class PowerHubSensors:
 
 
 SensorName = str
-SensorValue = float | Celsius | LitersPerSecond | WattsPerMeterSquared
+SensorValue = float | Celsius | LiterPerSecond | WattPerMeterSquared
 
 
 def get_sensor_values(

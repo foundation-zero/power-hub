@@ -1,7 +1,7 @@
-from energy_box_control.appliances.base import (
+from energy_box_control.units import (
     Celsius,
-    JoulesPerLiterKelvin,
-    WattsPerMeterSquared,
+    JoulePerLiterKelvin,
+    WattPerMeterSquared,
 )
 from energy_box_control.appliances.boiler import Boiler
 from energy_box_control.appliances.chiller import Chiller
@@ -14,12 +14,12 @@ from energy_box_control.appliances.switch_pump import SwitchPump
 from energy_box_control.appliances.valve import Valve
 from energy_box_control.appliances.yazaki import Yazaki
 
-WATER_SPECIFIC_HEAT: JoulesPerLiterKelvin = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT: JoulesPerLiterKelvin = 3840 * 0.993  # J / l K, Tyfocor LS @80C
-SEAWATER_SPECIFIC_HEAT: JoulesPerLiterKelvin = 4007 * 1.025
+WATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4186 * 0.997
+GLYCOL_SPECIFIC_HEAT: JoulePerLiterKelvin = 3840 * 0.993  # Tyfocor LS @80C
+SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
 SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
-GLOBAL_IRRADIANCE: WattsPerMeterSquared = 800
+GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 
 heat_pipes = HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT)
 heat_pipes_valve = Valve()
@@ -49,7 +49,7 @@ chiller = Chiller(
     WATER_SPECIFIC_HEAT,
 )
 chill_mix = Mix()
-cold_reservoir = Boiler(800, 0, 0, 0, WATER_SPECIFIC_HEAT)
+cold_reservoir = Boiler(800, 0, 0, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 chilled_loop_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
 yazaki_waste_bypass_valve = Valve()
 yazaki_waste_mix = Mix()
@@ -65,3 +65,4 @@ chiller_waste_mix = Mix()
 fresh_water_source = Source(0, SEAWATER_TEMP)
 outboard_pump = SwitchPump(300 / 60)
 outboard_source = Source(0, SEAWATER_TEMP)
+cooling_demand = Source(1, 40)

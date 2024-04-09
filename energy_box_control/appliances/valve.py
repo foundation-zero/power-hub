@@ -5,8 +5,8 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    Seconds,
 )
+from energy_box_control.units import Second
 
 
 @dataclass(frozen=True, eq=True)
@@ -33,7 +33,7 @@ class Valve(Appliance[ValveState, ValveControl, ValvePort]):
         inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
         control: ValveControl | None,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
         input = inputs[ValvePort.AB]

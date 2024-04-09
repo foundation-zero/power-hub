@@ -4,11 +4,13 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     Celsius,
     ConnectionState,
-    JoulesPerLiterKelvin,
-    MetersSquared,
     Port,
-    Seconds,
-    WattsPerMeterSquared,
+)
+from energy_box_control.units import (
+    JoulePerLiterKelvin,
+    MeterSquared,
+    Second,
+    WattPerMeterSquared,
 )
 
 
@@ -16,7 +18,7 @@ from energy_box_control.appliances.base import (
 class HeatPipesState(ApplianceState):
     mean_temperature: Celsius
     ambient_temperature: Celsius
-    global_irradiance: WattsPerMeterSquared
+    global_irradiance: WattPerMeterSquared
 
 
 class HeatPipesPort(Port):
@@ -29,15 +31,15 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
     optical_efficiency: float
     first_order_loss_coefficient: float
     second_order_loss_coefficient: float
-    absorber_area: MetersSquared
-    specific_heat_medium: JoulesPerLiterKelvin
+    absorber_area: MeterSquared
+    specific_heat_medium: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[HeatPipesPort, ConnectionState],
         previous_state: HeatPipesState,
         control: None,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
 
         input = inputs[HeatPipesPort.IN]

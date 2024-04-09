@@ -1,0 +1,11 @@
+Liter = float
+Watt = float
+JoulePerLiterKelvin = float
+Second = float
+LiterPerSecond = float
+Celsius = float
+MeterSquared = float
+WattPerMeterSquared = float
+Joule = float
+JoulePerKelvin = float
+KiloWatt = float

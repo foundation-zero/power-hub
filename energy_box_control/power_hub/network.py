@@ -96,6 +96,7 @@ class PowerHub(Network[PowerHubSensors]):
     outboard_pump: SwitchPump
     outboard_source: Source
     fresh_water_source: Source
+    cooling_demand: Source
 
     def __post_init__(self):
         super().__init__()
@@ -134,6 +135,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_pump,
             phc.outboard_source,
             phc.fresh_water_source,
+            cooling_demand=phc.cooling_demand,
         )
 
     @staticmethod
@@ -222,6 +224,8 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.cooling_demand)
+            .value(SourceState())
             .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
@@ -304,12 +308,14 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(self.chill_mix)
-            .at(MixPort.AB)
+            .define_state(self.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.cooling_demand)
+            .value(SourceState())
             .build(SimulationTime(timedelta(seconds=1), 0, start_time))
         )
 
@@ -454,15 +460,20 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.chill_mix)
             .at(MixPort.B)
 
+            .connect(self.chill_mix)
+            .at(MixPort.AB)
+            .to(self.cold_reservoir)
+            .at(BoilerPort.HEAT_EXCHANGE_IN)
+
             .connect(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_OUT)
             .to(self.chilled_loop_pump)
             .at(SwitchPumpPort.IN)
 
-            .connect(self.chilled_loop_pump)
-            .at(SwitchPumpPort.OUT)
-            .to(self.chiller_switch_valve)
-            .at(ValvePort.AB)
+            .connect(self.cooling_demand)
+            .at(SourcePort.OUTPUT)
+            .to(self.cold_reservoir)
+            .at(BoilerPort.FILL_IN)
 
             .connect(self.chiller_switch_valve)
             .at(ValvePort.A)
@@ -478,10 +489,10 @@ class PowerHub(Network[PowerHubSensors]):
 
     def _chilled_side_feedback(self):
         return (
-            self.define_feedback(self.chill_mix)
-            .at(MixPort.AB)
-            .to(self.cold_reservoir)
-            .at(BoilerPort.HEAT_EXCHANGE_IN)
+            self.define_feedback(self.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.chiller_switch_valve)
+            .at(ValvePort.AB)
         )
 
     def _waste_side_connections(self):

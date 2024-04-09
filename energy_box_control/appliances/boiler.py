@@ -1,21 +1,19 @@
 from dataclasses import dataclass
+
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
     ApplianceState,
     ConnectionState,
-    JoulesPerLiterKelvin,
-    Liters,
     Port,
-    Seconds,
-    Watts,
 )
+from energy_box_control.units import Celsius, JoulePerLiterKelvin, Liter, Second, Watt
 
 
 @dataclass(frozen=True, eq=True)
 class BoilerState(ApplianceState):
-    temperature: float
-    ambient_temperature: float
+    temperature: Celsius
+    ambient_temperature: Celsius
 
 
 class BoilerPort(Port):
@@ -32,18 +30,18 @@ class BoilerControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
-    volume: Liters
-    heater_power: Watts
-    heat_loss: Watts
-    specific_heat_capacity_exchange: JoulesPerLiterKelvin
-    specific_heat_capacity_fill: JoulesPerLiterKelvin
+    volume: Liter
+    heater_power: Watt
+    heat_loss: Watt
+    specific_heat_capacity_exchange: JoulePerLiterKelvin
+    specific_heat_capacity_fill: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges

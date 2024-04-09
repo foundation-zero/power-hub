@@ -5,12 +5,14 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     Celsius,
     ConnectionState,
-    Joules,
-    JoulesPerKelvin,
-    JoulesPerLiterKelvin,
     Port,
-    Seconds,
-    Watts,
+)
+from energy_box_control.units import (
+    Joule,
+    JoulePerKelvin,
+    JoulePerLiterKelvin,
+    Second,
+    Watt,
 )
 
 
@@ -33,18 +35,18 @@ class PcmPort(Port):
 
 @dataclass(eq=True, frozen=True)
 class Pcm(Appliance[PcmState, None, PcmPort]):
-    latent_heat: Joules
+    latent_heat: Joule
     phase_change_temperature: Celsius
-    sensible_capacity: JoulesPerKelvin
-    transfer_power: Watts
-    specific_heat_capacity_charge: JoulesPerLiterKelvin
-    specific_heat_capacity_discharge: JoulesPerLiterKelvin
+    sensible_capacity: JoulePerKelvin
+    transfer_power: Watt
+    specific_heat_capacity_charge: JoulePerLiterKelvin
+    specific_heat_capacity_discharge: JoulePerLiterKelvin
 
     def _heat_to_temp_soc(
         self,
-        total_heat: Joules,
-        charge_capacity: JoulesPerKelvin,
-        discharge_capacity: JoulesPerKelvin,
+        total_heat: Joule,
+        charge_capacity: JoulePerKelvin,
+        discharge_capacity: JoulePerKelvin,
     ) -> tuple[Celsius, float]:
         sensible_capacity = (
             self.sensible_capacity + charge_capacity + discharge_capacity
@@ -63,7 +65,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         inputs: dict[PcmPort, ConnectionState],
         previous_state: PcmState,
         control: None,
-        step_size: Seconds,
+        step_size: Second,
     ) -> tuple[PcmState, dict[PcmPort, ConnectionState]]:
         pcm_heat = (
             self.sensible_capacity * previous_state.temperature
