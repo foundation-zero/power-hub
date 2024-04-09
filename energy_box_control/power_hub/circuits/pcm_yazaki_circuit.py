@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
 
+from energy_box_control.appliances.base import Celsius
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
 from energy_box_control.appliances.source import Source, SourcePort
@@ -36,13 +37,13 @@ from energy_box_control.power_hub.power_hub_components import (
 
 @dataclass
 class PcmYazakiSensors:
-    yazaki_hot_in_temperature: float
+    yazaki_hot_in_temperature: Celsius
     yazaki_hot_bypass_valve_position: float
 
 
 @dataclass
 class PcmYazakiControlState:
-    yazaki_hot_in_setpoint: float
+    yazaki_hot_in_setpoint: Celsius
 
 
 @dataclass

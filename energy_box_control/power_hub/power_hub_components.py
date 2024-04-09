@@ -1,3 +1,8 @@
+from energy_box_control.appliances.base import (
+    Celsius,
+    JoulesPerLiterKelvin,
+    WattsPerMeterSquared,
+)
 from energy_box_control.appliances.boiler import Boiler
 from energy_box_control.appliances.chiller import Chiller
 from energy_box_control.appliances.heat_exchanger import HeatExchanger
@@ -9,12 +14,12 @@ from energy_box_control.appliances.switch_pump import SwitchPump
 from energy_box_control.appliances.valve import Valve
 from energy_box_control.appliances.yazaki import Yazaki
 
-WATER_SPECIFIC_HEAT = 4186 * 0.997  # J / l K
-GLYCOL_SPECIFIC_HEAT = 3840 * 0.993  # J / l K, Tyfocor LS @80C
-SEAWATER_SPECIFIC_HEAT = 4007 * 1.025
-SEAWATER_TEMP = 24
-AMBIENT_TEMPERATURE = 20
-GLOBAL_IRRADIANCE = 800
+WATER_SPECIFIC_HEAT: JoulesPerLiterKelvin = 4186 * 0.997  # J / l K
+GLYCOL_SPECIFIC_HEAT: JoulesPerLiterKelvin = 3840 * 0.993  # J / l K, Tyfocor LS @80C
+SEAWATER_SPECIFIC_HEAT: JoulesPerLiterKelvin = 4007 * 1.025
+SEAWATER_TEMP: Celsius = 24
+AMBIENT_TEMPERATURE: Celsius = 20
+GLOBAL_IRRADIANCE: WattsPerMeterSquared = 800
 
 heat_pipes = HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT)
 heat_pipes_valve = Valve()

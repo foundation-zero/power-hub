@@ -59,7 +59,7 @@ def test_charge_pre_phase(pcm):
 def test_charge_transfer_limit(pcm):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 40)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 40)}, initial_state, None, 1
     )
 
     assert state.temperature == 10
@@ -73,6 +73,7 @@ def test_charge_phase(pcm):
         {PcmPort.CHARGE_IN: ConnectionState(1, pcm.phase_change_temperature + 10)},
         initial_state,
         None,
+        1,
     )
 
     assert state.temperature == 50
@@ -84,7 +85,7 @@ def test_charge_phase(pcm):
 def test_charge_post_phase(pcm):
     initial_state = PcmState(1, 50)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 60)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 60)}, initial_state, None, 1
     )
 
     assert state.temperature == 55
@@ -95,7 +96,7 @@ def test_charge_post_phase(pcm):
 def test_charge_through_phase(high_transfer_pcm):
     initial_state = PcmState(0, 0)
     state, outputs = high_transfer_pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 300)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 300)}, initial_state, None, 1
     )
     # 300 degrees at beginning
     # give 50 degrees to get to phase
@@ -111,7 +112,7 @@ def test_charge_through_phase(high_transfer_pcm):
 def test_discharge_pre_phase(pcm):
     initial_state = PcmState(0, 50)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 40)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 40)}, initial_state, None, 1
     )
 
     assert state.temperature == 45
@@ -122,7 +123,7 @@ def test_discharge_pre_phase(pcm):
 def test_discharge_phase(high_transfer_pcm):
     initial_state = PcmState(1, 50)
     state, outputs = high_transfer_pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(10, 40)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(10, 40)}, initial_state, None, 1
     )
 
     assert state.state_of_charge == 0.0
@@ -134,7 +135,7 @@ def test_discharge_phase(high_transfer_pcm):
 def test_discharge_post_phase(pcm):
     initial_state = PcmState(1, 70)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 60)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 60)}, initial_state, None, 1
     )
 
     assert state.temperature == 65
@@ -151,6 +152,7 @@ def test_charge_and_discharge(pcm):
         },
         initial_state,
         None,
+        1,
     )
 
     assert state.temperature == 50
@@ -170,6 +172,7 @@ def test_limited_charge_and_discharge(pcm):
         },
         initial_state,
         None,
+        1,
     )
 
     assert state.temperature == 50

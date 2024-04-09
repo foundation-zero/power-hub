@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
 
+from energy_box_control.appliances.base import Celsius
 from energy_box_control.appliances.heat_pipes import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
@@ -34,13 +35,13 @@ from energy_box_control.power_hub.power_hub_components import (
 
 @dataclass
 class PipesPcmSensors:
-    heat_pipes_out_temperature: float
+    heat_pipes_out_temperature: Celsius
     heat_pipes_valve_position: float
 
 
 @dataclass
 class PipesPcmControlState:
-    hot_loop_setpoint: float
+    hot_loop_setpoint: Celsius
 
 
 @dataclass

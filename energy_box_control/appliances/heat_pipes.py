@@ -8,7 +8,7 @@ from energy_box_control.appliances.base import (
     MetersSquared,
     Port,
     Seconds,
-    WattsPerMetersSquared,
+    WattsPerMeterSquared,
 )
 
 
@@ -16,7 +16,7 @@ from energy_box_control.appliances.base import (
 class HeatPipesState(ApplianceState):
     mean_temperature: Celsius
     ambient_temperature: Celsius
-    global_irradiance: WattsPerMetersSquared
+    global_irradiance: WattsPerMeterSquared
 
 
 class HeatPipesPort(Port):

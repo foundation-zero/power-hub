@@ -1,4 +1,5 @@
 from dataclasses import dataclass, fields
+from datetime import datetime, timedelta
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -21,7 +22,11 @@ from energy_box_control.appliances import (
     SourcePort,
     BoilerControl,
 )
-from energy_box_control.appliances.base import ApplianceState, ConnectionState
+from energy_box_control.appliances.base import (
+    ApplianceState,
+    ConnectionState,
+    SimulationTime,
+)
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.heat_pipes import HeatPipesState
@@ -216,7 +221,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .build()
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def simple_initial_state(self) -> NetworkState[Self]:
@@ -302,7 +307,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .build()
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:

@@ -144,6 +144,6 @@ def test_boiler_heat_loss(boiler):
     state = BoilerState(50, 20)
 
     for _ in range(100):
-        state, _ = boiler.simulate({}, state, BoilerControl(heater_on=False))
+        state, _ = boiler.simulate({}, state, BoilerControl(heater_on=False), 1)
 
     assert state.temperature == approx(20)
