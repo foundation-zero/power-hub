@@ -55,6 +55,7 @@ from energy_box_control.power_hub.sensors import (
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
+from datetime import datetime, timedelta
 
 
 @dataclass
@@ -224,7 +225,9 @@ class PowerHub(Network[PowerHubSensors]):
             .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
-    def simple_initial_state(self) -> NetworkState[Self]:
+    def simple_initial_state(
+        self, start_time: datetime = datetime.now()
+    ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
         return (
             self.define_state(self.heat_pipes)
@@ -307,7 +310,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+            .build(SimulationTime(timedelta(seconds=1), 0, start_time))
         )
 
     def connections(self) -> NetworkConnections[Self]:

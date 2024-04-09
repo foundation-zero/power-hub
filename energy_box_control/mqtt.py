@@ -2,6 +2,9 @@ from typing import Dict
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
 import random
+from datetime import datetime
+import json
+import time
 
 
 HOST = "mosquitto"
@@ -26,9 +29,18 @@ def create_and_connect_client() -> mqtt_client.Client:
     return client
 
 
-def publish_mqtt(client: mqtt_client.Client, topic: str, value: float):
-    result = client.publish(topic, value)
+def publish_mqtt(
+    client: mqtt_client.Client, topic: str, value: float, custom_datetime: datetime
+):
+    result = client.publish(
+        topic,
+        json.dumps(
+            {"value": value, "timestamp": time.mktime(custom_datetime.timetuple())}
+        ),
+    )
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        print(f"Send `{value}` to topic `{topic}`")
+        print(
+            f"Send `{value}` to topic `{topic}` at timestamp {custom_datetime.strftime('%d-%m-%YT%H:%M:%SZ')}"
+        )
     else:
         print(f"Failed to send message to topic {topic}")
