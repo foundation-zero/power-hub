@@ -5,14 +5,8 @@ from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
 from dotenv import load_dotenv
 from energy_box_control.power_hub import PowerHub
-from energy_box_control.appliances.base import (
-    Appliance,
-    ConnectionState,
-    Port,
-    ApplianceState,
-)
-from typing import Any, Callable, get_args, get_origin, TypedDict, Literal
-from types import get_original_bases
+from energy_box_control.appliances.base import Appliance
+from typing import Any, Callable, Literal
 from dataclasses import fields
 import fluxy  # type: ignore
 from datetime import datetime, timezone, timedelta
@@ -20,6 +14,8 @@ from functools import wraps
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
+
+from energy_box_control.power_hub.sensors import PowerHubSensors
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
@@ -42,27 +38,16 @@ QuartSchema(
 )
 
 
-ConnectionFieldName = str
-ApplianceFieldName = str
-ConnectionName = str
 ApplianceName = str
-ApplianceFieldValue = str
-ConnectionFieldValue = str
-ApplianceTypeName = str
-ConnectionTypeName = str
-
-
-@dataclass
-class Connection(TypedDict):
-    fields: list[ConnectionFieldName]
-    type: ConnectionTypeName
+ApplianceSensorTypeName = str
+SensorName = str
+ApplianceSensorFieldValue = float
 
 
 @dataclass
 class ReturnedAppliance:
-    fields: list[ApplianceFieldName]
-    connections: dict[ConnectionName, Connection]
-    type: ApplianceTypeName
+    sensors: list[SensorName]
+    sensors_type: ApplianceSensorTypeName
 
 
 @dataclass
@@ -88,12 +73,9 @@ def build_query_range(minutes_back: int) -> tuple[datetime, datetime]:
 
 
 def build_get_values_query(
-    minutes_back: int, appliance_name: str, connection_name: str | None, field_name: str
+    minutes_back: int, appliance_name: str, field_name: str
 ) -> fluxy.Query:
-    if connection_name is None:
-        topic = f"power_hub/appliances/{appliance_name}/{field_name}"
-    else:
-        topic = f"power_hub/connections/{appliance_name}/{connection_name}/{field_name}"
+    topic = f"power_hub/appliance_sensors/{appliance_name}/{field_name}"
 
     return fluxy.pipe(
         fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
@@ -107,52 +89,6 @@ def build_get_values_query(
 
 async def execute_influx_query(client: InfluxDBClientAsync, query: fluxy.Query) -> df:
     return await client.query_api().query_data_frame(query.to_flux())  # type: ignore
-
-
-def get_original_bases_element(
-    base: type[Appliance[Any, Any, Any] | Port],
-) -> type[Appliance[Any, Any, Any] | Port]:
-    original_bases, *_ = get_original_bases(base)
-    return original_bases
-
-
-def get_port_types_by_appliance_type(
-    appliance_type: type[Appliance[Any, Any, Any]],
-) -> list[type[Port]]:
-    return [
-        port
-        for port in next(
-            base
-            for base in get_args(get_original_bases_element(appliance_type))
-            if get_original_bases_element(base) == Port
-        )
-    ]
-
-
-def get_connections_dict_by_appliance_type(
-    appliance_type: type[Appliance[Any, Any, Any]],
-) -> dict[property, Connection]:
-    return {
-        port.value: {
-            "fields": [field.name for field in fields(ConnectionState)],
-            "type": port.__class__.__name__,
-        }
-        for port in get_port_types_by_appliance_type(appliance_type)
-    }
-
-
-def get_appliance_state_class_from_appliance_type(
-    appliance_type: type[Appliance[Any, Any, Any]],
-) -> type[ApplianceState]:
-    gen_args = get_args(
-        next(
-            base
-            for base in get_original_bases(appliance_type)
-            if get_origin(base) == Appliance
-        )
-    )
-    state_type, *_ = gen_args
-    return state_type
 
 
 @no_type_check
@@ -220,86 +156,48 @@ async def hello_world() -> str:
 @token_required
 async def get_all_appliance_names() -> dict[
     Literal["appliances"],
-    dict[
-        ApplianceName,
-        dict[
-            Literal["fields", "connections", "type"],
-            list[ApplianceFieldName] | dict[property, Connection] | Any,
-        ],
-    ],
+    dict[ApplianceName, dict[Literal["sensors", "sensors_type"], list[SensorName]]],
 ]:
-
-    power_hub = PowerHub.power_hub()
-
     return {
         "appliances": {
             appliance_field.name: {
-                "fields": [
-                    field.name
-                    for field in fields(
-                        get_appliance_state_class_from_appliance_type(
-                            appliance_field.type
-                        )
-                    )
+                "sensors": [
+                    sensor_item_name
+                    for sensor_item_name, sensor_item_value in appliance_field.type.__annotations__.items()
+                    if not issubclass(sensor_item_value, Appliance)
                 ],
-                "connections": get_connections_dict_by_appliance_type(
-                    appliance_field.type
-                ),
-                "type": appliance_field.type.__name__,
+                "sensors_type": appliance_field.type.__name__,
             }
-            for appliance_field in fields(power_hub)
+            for appliance_field in fields(PowerHubSensors)
         }
     }
 
 
-@app.route("/appliances/<appliance_name>/<field_name>/last_values")
+@app.route("/appliance_sensors/<appliance_name>/<field_name>/last_values")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
 @serialize_dataframe(["time", "value"])
-async def get_last_values_for_appliances(
+async def get_last_values_for_appliance_sensor(
     appliance_name: str, field_name: str, query_args: ValuesQuery
-) -> list[list[ApplianceFieldValue]]:
+) -> list[list[ApplianceSensorFieldValue]]:
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             build_get_values_query(
                 query_args.minutes_back,
                 appliance_name,
-                None,
                 field_name,
             ),
         )
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
-@app.route(
-    "/appliances/<appliance_name>/connections/<connection_name>/<field_name>/last_values"
-)
-@token_required
-@serialize_dataframe(["time", "value"])
-@validate_querystring(ValuesQuery)  # type: ignore
-async def get_last_values_for_connections(
-    appliance_name: str, connection_name: str, field_name: str, query_args: ValuesQuery
-) -> list[list[ConnectionFieldValue]]:
-    return (
-        await execute_influx_query(
-            app.influx,  # type: ignore
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                connection_name,
-                field_name,
-            ),
-        )
-    ).rename(columns={"_time": "time", "_value": "value"})
-
-
 def create_fluxy_for_power_over_time(
     minutes_back: int, interval_seconds: int
 ) -> fluxy.Query:
-    in_temperature_topic = "power_hub/connections/heat_pipes/in/temperature"
-    out_temperature_topic = "power_hub/connections/heat_pipes/out/temperature"
-    flow_topic = "power_hub/connections/heat_pipes/in/flow"
+    in_temperature_topic = "power_hub/appliance_sensors/heat_pipes/input_temperature"
+    out_temperature_topic = "power_hub/appliance_sensors/heat_pipes/output_temperature"
+    flow_topic = "power_hub/appliance_sensors/heat_pipes/flow"
 
     return fluxy.pipe(
         fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
