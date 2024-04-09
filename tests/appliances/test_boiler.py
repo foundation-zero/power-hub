@@ -47,6 +47,7 @@ def test_boiler_heating(
         {},
         BoilerState(boiler_temp, ambient_temperature=ambient_temp),
         BoilerControl(heater_on=True),
+        1,
     )
 
     assert state.temperature == approx(
@@ -93,6 +94,7 @@ def test_boiler_exchange(
         },
         BoilerState(boiler_temp, ambient_temp),
         BoilerControl(heater_on=False),
+        1,
     )
     assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2, abs=1e-6)
 
@@ -127,6 +129,7 @@ def test_boiler_fill(
         {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
         BoilerState(boiler_temp, ambient_temp),
         BoilerControl(heater_on=False),
+        1,
     )
     assert state.temperature == approx((boiler_temp + fill_in_temp) / 2, abs=1e-6)
 

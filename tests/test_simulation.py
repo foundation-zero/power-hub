@@ -41,11 +41,10 @@ def run_simulation(
 
 
 def test_simulationtime():
-    
+
     start = datetime(2023, 1, 1, 0, 0, 0)
-    step_size = timedelta(days = 1)
+    step_size = timedelta(days=1)
     step = 10
     simulationtime = SimulationTime(step_size, step, start)
 
-    assert simulationtime.timestamp == datetime(2023, 1, 11, 0, 0, 0) 
-    
+    assert simulationtime.timestamp == datetime(2023, 1, 11, 0, 0, 0)

@@ -45,7 +45,7 @@ def test_yazaki_outside_ref_values(caplog):
         YazakiPort.COOLING_IN: ConnectionState(1, cooling_in),
     }
 
-    _, outputs = yazaki.simulate(connections, initial_yazaki_state, yazaki_control)
+    _, outputs = yazaki.simulate(connections, initial_yazaki_state, yazaki_control, 1)
     caplog.set_level(logging.WARNING)
     assert (
         f"Hot in temperature of {hot_in} outside of hot reference temperatures. All values are passed through without change"

@@ -3,8 +3,14 @@ from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceState,
+    Celsius,
     ConnectionState,
+    Joules,
+    JoulesPerKelvin,
+    JoulesPerLiterKelvin,
     Port,
+    Seconds,
+    Watts,
 )
 
 
@@ -15,7 +21,7 @@ def clamp(val: float, min_val: float, max_val: float) -> float:
 @dataclass(eq=True, frozen=True)
 class PcmState(ApplianceState):
     state_of_charge: float
-    temperature: float
+    temperature: Celsius
 
 
 class PcmPort(Port):
@@ -27,16 +33,19 @@ class PcmPort(Port):
 
 @dataclass(eq=True, frozen=True)
 class Pcm(Appliance[PcmState, None, PcmPort]):
-    latent_heat: float  # J
-    phase_change_temperature: float  # C
-    sensible_capacity: float  # J / K
-    transfer_power: float
-    specific_heat_capacity_charge: float
-    specific_heat_capacity_discharge: float
+    latent_heat: Joules
+    phase_change_temperature: Celsius
+    sensible_capacity: JoulesPerKelvin
+    transfer_power: Watts
+    specific_heat_capacity_charge: JoulesPerLiterKelvin
+    specific_heat_capacity_discharge: JoulesPerLiterKelvin
 
     def _heat_to_temp_soc(
-        self, total_heat: float, charge_capacity: float, discharge_capacity: float
-    ) -> tuple[float, float]:
+        self,
+        total_heat: Joules,
+        charge_capacity: JoulesPerKelvin,
+        discharge_capacity: JoulesPerKelvin,
+    ) -> tuple[Celsius, float]:
         sensible_capacity = (
             self.sensible_capacity + charge_capacity + discharge_capacity
         )
@@ -54,6 +63,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         inputs: dict[PcmPort, ConnectionState],
         previous_state: PcmState,
         control: None,
+        step_size: Seconds,
     ) -> tuple[PcmState, dict[PcmPort, ConnectionState]]:
         pcm_heat = (
             self.sensible_capacity * previous_state.temperature
@@ -61,7 +71,9 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         )
         if PcmPort.CHARGE_IN in inputs:
             charge_capacity = (
-                inputs[PcmPort.CHARGE_IN].flow * self.specific_heat_capacity_charge
+                inputs[PcmPort.CHARGE_IN].flow
+                * step_size
+                * self.specific_heat_capacity_charge
             )
             charge_heat = inputs[PcmPort.CHARGE_IN].temperature * charge_capacity
         else:
@@ -69,7 +81,9 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
             charge_heat = 0
         if PcmPort.DISCHARGE_IN in inputs:
             discharge_capacity = (
-                inputs[PcmPort.DISCHARGE_IN].flow * self.specific_heat_capacity_charge
+                inputs[PcmPort.DISCHARGE_IN].flow
+                * step_size
+                * self.specific_heat_capacity_charge
             )
             discharge_heat = (
                 discharge_capacity * inputs[PcmPort.DISCHARGE_IN].temperature
@@ -84,26 +98,26 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         )
 
         if PcmPort.CHARGE_IN in inputs:
-            charge_power = clamp(
+            transferred_charge_heat = clamp(
                 (inputs[PcmPort.CHARGE_IN].temperature - ideal_temp) * charge_capacity,
-                -self.transfer_power,
-                self.transfer_power,
+                -self.transfer_power * step_size,
+                self.transfer_power * step_size,
             )
         else:
-            charge_power = 0
+            transferred_charge_heat = 0
 
         if PcmPort.DISCHARGE_IN in inputs:
-            discharge_power = clamp(
+            transferred_discharge_heat = clamp(
                 (inputs[PcmPort.DISCHARGE_IN].temperature - ideal_temp)
                 * discharge_capacity,
-                -self.transfer_power,
-                self.transfer_power,
+                -self.transfer_power * step_size,
+                self.transfer_power * step_size,
             )
         else:
-            discharge_power = 0
+            transferred_discharge_heat = 0
 
         actual_temp, actual_soc = self._heat_to_temp_soc(
-            pcm_heat + charge_power + discharge_power, 0, 0
+            pcm_heat + (transferred_charge_heat + transferred_discharge_heat), 0, 0
         )
 
         return PcmState(actual_soc, actual_temp), {
@@ -112,7 +126,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
                     PcmPort.CHARGE_OUT: ConnectionState(
                         inputs[PcmPort.CHARGE_IN].flow,
                         (
-                            (charge_heat - charge_power) / charge_capacity
+                            (charge_heat - transferred_charge_heat) / charge_capacity
                             if charge_capacity > 0
                             else inputs[PcmPort.CHARGE_IN].temperature
                         ),
@@ -126,7 +140,8 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
                     PcmPort.DISCHARGE_OUT: ConnectionState(
                         inputs[PcmPort.DISCHARGE_IN].flow,
                         (
-                            (discharge_heat - discharge_power) / discharge_capacity
+                            (discharge_heat - transferred_discharge_heat)
+                            / discharge_capacity
                             if discharge_capacity > 0
                             else inputs[PcmPort.DISCHARGE_IN].temperature
                         ),

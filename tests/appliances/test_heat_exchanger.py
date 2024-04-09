@@ -18,6 +18,7 @@ def test_heat_exchanger_equal_flow():
         },
         ApplianceState(),
         None,
+        1,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(1, 30)
@@ -34,6 +35,7 @@ def test_heat_exchanger_equal_capacity():
         },
         ApplianceState(),
         None,
+        1,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(3, 25)

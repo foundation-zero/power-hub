@@ -19,6 +19,7 @@ def test_switch_pump_off(switch_pump):
         {SwitchPumpPort.IN: ConnectionState(1, 50)},
         SwitchPumpState(),
         SwitchPumpControl(False),
+        1,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 0
 
@@ -28,6 +29,7 @@ def test_switch_pump_on(switch_pump):
         {SwitchPumpPort.IN: ConnectionState(0, 50)},
         SwitchPumpState(),
         SwitchPumpControl(True),
+        1,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 1
     assert outputs[SwitchPumpPort.OUT].temperature == 50

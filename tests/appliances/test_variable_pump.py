@@ -19,6 +19,7 @@ def test_variable_pump_off(variable_pump):
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(False, 5),
+        1,
     )
     assert outputs[VariablePumpPort.OUT].flow == 0
     assert outputs[VariablePumpPort.OUT].temperature == 50
@@ -29,6 +30,7 @@ def test_variable_pump_minimum(variable_pump):
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure),
+        1,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.min_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
@@ -39,6 +41,7 @@ def test_variable_pump_maximum(variable_pump):
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure),
+        1,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.max_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
@@ -49,6 +52,7 @@ def test_variable_pump_over_maximum(variable_pump):
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure + 10),
+        1,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.max_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
@@ -59,6 +63,7 @@ def test_variable_pump_under_minimum(variable_pump):
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure - 10),
+        1,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.min_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50

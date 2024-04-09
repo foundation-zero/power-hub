@@ -4,6 +4,18 @@ from datetime import datetime, timedelta
 from enum import Enum
 import uuid
 
+Liters = float
+Watts = float
+JoulesPerLiterKelvin = float
+Seconds = float
+LitersPerSecond = float
+Celsius = float
+MetersSquared = float
+WattsPerMetersSquared = float
+Joules = float
+JoulesPerKelvin = float
+KiloWatts = float
+
 
 @dataclass(frozen=True, eq=True)
 class ApplianceState:
@@ -33,6 +45,7 @@ class Simulatable[
         inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
         control: TControl,
+        step_size: Seconds,
     ) -> tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
@@ -48,18 +61,18 @@ class Port(Enum):
 
 @dataclass(frozen=True, eq=True)
 class ConnectionState:
-    flow: float
-    temperature: float
+    flow: LitersPerSecond
+    temperature: Celsius
+
 
 @dataclass
 class SimulationTime:
     step_size: timedelta
-    step: int 
+    step: int
     start: datetime
 
     @property
     def timestamp(self) -> datetime:
-        return self.start + timedelta(seconds = self.step * self.step_size.total_seconds())
-    
-
-
+        return self.start + timedelta(
+            seconds=self.step * self.step_size.total_seconds()
+        )

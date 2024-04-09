@@ -601,6 +601,7 @@ class Network[Sensors](ABC):
                 port_inputs.get(appliance, {}),
                 appliance_state,
                 controls.appliance(appliance).get(),
+                state.time.step_size.total_seconds(),
             )
             appliance_states[appliance] = new_appliance_state
             for port, connection_state in outputs.items():

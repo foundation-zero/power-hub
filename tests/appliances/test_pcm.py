@@ -30,7 +30,7 @@ def high_transfer_pcm():
 
 def test_nothing(pcm):
     initial_state = PcmState(0, 10)
-    state, outputs = pcm.simulate({}, initial_state, None)
+    state, outputs = pcm.simulate({}, initial_state, None, 1)
     assert state == initial_state
     assert outputs == {}
 
@@ -38,7 +38,7 @@ def test_nothing(pcm):
 def test_zero_flow(pcm):
     initial_state = PcmState(0, 10)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(0, 10)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(0, 10)}, initial_state, None, 1
     )
 
     assert state == initial_state
@@ -48,7 +48,7 @@ def test_zero_flow(pcm):
 def test_charge_pre_phase(pcm):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 10)}, initial_state, None
+        {PcmPort.CHARGE_IN: ConnectionState(1, 10)}, initial_state, None, 1
     )
 
     assert state.temperature == 5

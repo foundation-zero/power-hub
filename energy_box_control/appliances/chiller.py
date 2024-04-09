@@ -4,7 +4,10 @@ from energy_box_control.appliances.base import (
     Appliance,
     ApplianceState,
     ConnectionState,
+    JoulesPerLiterKelvin,
     Port,
+    Seconds,
+    Watts,
 )
 
 
@@ -22,15 +25,16 @@ class ChillerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class Chiller(Appliance[ChillerState, None, ChillerPort]):
-    cooling_capacity: float  # W
-    specific_heat_capacity_chilled: float  # J / l K
-    specific_heat_capacity_cooling: float  # J / l K
+    cooling_capacity: Watts
+    specific_heat_capacity_chilled: JoulesPerLiterKelvin
+    specific_heat_capacity_cooling: JoulesPerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
         control: None,
+        step_size: Seconds,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
 
         chilled_out_temp = (
@@ -39,6 +43,7 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             / (
                 self.specific_heat_capacity_chilled
                 * inputs[ChillerPort.CHILLED_IN].flow
+                * step_size
             )
             if inputs[ChillerPort.CHILLED_IN].flow > 0
             else inputs[ChillerPort.CHILLED_IN].temperature
@@ -50,6 +55,7 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             / (
                 self.specific_heat_capacity_cooling
                 * inputs[ChillerPort.COOLING_IN].flow
+                * step_size
             )
             if inputs[ChillerPort.COOLING_IN].flow > 0
             else inputs[ChillerPort.COOLING_IN].temperature
@@ -59,10 +65,10 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             ChillerState(),
             {
                 ChillerPort.CHILLED_OUT: ConnectionState(
-                    inputs[ChillerPort.CHILLED_IN].flow, chilled_out_temp
+                    inputs[ChillerPort.CHILLED_IN].flow * step_size, chilled_out_temp
                 ),
                 ChillerPort.COOLING_OUT: ConnectionState(
-                    inputs[ChillerPort.COOLING_IN].flow, cooling_out_temp
+                    inputs[ChillerPort.COOLING_IN].flow * step_size, cooling_out_temp
                 ),
             },
         )

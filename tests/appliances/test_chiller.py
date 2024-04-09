@@ -20,6 +20,7 @@ def test_chiller(chiller):
         },
         ChillerState(),
         None,
+        1,
     )
     assert outputs[ChillerPort.CHILLED_OUT].temperature == 9
 

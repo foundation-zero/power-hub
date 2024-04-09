@@ -4,7 +4,11 @@ from energy_box_control.appliances.base import (
     ApplianceControl,
     ApplianceState,
     ConnectionState,
+    JoulesPerLiterKelvin,
+    Liters,
     Port,
+    Seconds,
+    Watts,
 )
 
 
@@ -28,29 +32,31 @@ class BoilerControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
-    volume: float  # l
-    heater_power: float  # W
-    heat_loss: float  # W
-    specific_heat_capacity_exchange: float  # J / l K
-    specific_heat_capacity_fill: float  # J / l K
+    volume: Liters
+    heater_power: Watts
+    heat_loss: Watts
+    specific_heat_capacity_exchange: JoulesPerLiterKelvin
+    specific_heat_capacity_fill: JoulesPerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
+        step_size: Seconds,
     ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
         tank_capacity = self.volume * self.specific_heat_capacity_fill
 
-        element_heat = self.heater_power * control.heater_on
+        element_heat = self.heater_power * step_size * control.heater_on
         tank_heat = tank_capacity * previous_state.temperature
 
         if BoilerPort.HEAT_EXCHANGE_IN in inputs:
             exchange_capacity = (
                 inputs[BoilerPort.HEAT_EXCHANGE_IN].flow
+                * step_size
                 * self.specific_heat_capacity_exchange
             )
             exchange_heat = (
@@ -62,7 +68,9 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
 
         if BoilerPort.FILL_IN in inputs:
             fill_capacity = (
-                inputs[BoilerPort.FILL_IN].flow * self.specific_heat_capacity_fill
+                inputs[BoilerPort.FILL_IN].flow
+                * step_size
+                * self.specific_heat_capacity_fill
             )
             fill_heat = fill_capacity * inputs[BoilerPort.FILL_IN].temperature
 

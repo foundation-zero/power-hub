@@ -16,6 +16,7 @@ def test_mix():
         },
         ApplianceState(),
         None,
+        1,
     )
 
     assert output[MixPort.AB] == ConnectionState(6, 20)
@@ -31,6 +32,7 @@ def test_zero_flow_mix():
         },
         ApplianceState(),
         None,
+        1,
     )
 
     assert output[MixPort.AB].flow == 0

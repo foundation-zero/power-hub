@@ -4,7 +4,9 @@ from energy_box_control.appliances.base import (
     ApplianceControl,
     ApplianceState,
     ConnectionState,
+    LitersPerSecond,
     Port,
+    Seconds,
 )
 
 
@@ -28,14 +30,15 @@ class VariablePumpControl(ApplianceControl):
 class VariablePump(Appliance[VariablePumpState, VariablePumpControl, VariablePumpPort]):
     min_pressure: float
     max_pressure: float
-    min_flow: float
-    max_flow: float
+    min_flow: LitersPerSecond
+    max_flow: LitersPerSecond
 
     def simulate(
         self,
         inputs: dict[VariablePumpPort, ConnectionState],
         previous_state: VariablePumpState,
         control: VariablePumpControl,
+        step_size: Seconds,
     ) -> tuple[VariablePumpState, dict[VariablePumpPort, ConnectionState]]:
         input = inputs[VariablePumpPort.IN]
 

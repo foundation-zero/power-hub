@@ -15,6 +15,7 @@ def test_equal_temps(heat_pipes):
         },
         HeatPipesState(10, 10, 1),
         None,
+        1,
     )
     assert outputs[HeatPipesPort.OUT].temperature == 10.5
     assert outputs[HeatPipesPort.OUT].flow == 1
@@ -27,6 +28,7 @@ def test_differential_temp(heat_pipes):
         },
         HeatPipesState(10, 9, 1),
         None,
+        1,
     )
     assert outputs[HeatPipesPort.OUT].temperature == 10.3
     assert outputs[HeatPipesPort.OUT].flow == 1
@@ -44,11 +46,7 @@ def test_hub_stagnation_temp(hub_heat_pipes):
 
     temp_diff = None
     for _ in range(1000):
-        pipes_state, outputs = hub_heat_pipes.simulate(
-            inputs,
-            pipes_state,
-            None,
-        )
+        pipes_state, outputs = hub_heat_pipes.simulate(inputs, pipes_state, None, 1)
         temp_diff = (
             outputs[HeatPipesPort.OUT].temperature
             - inputs[HeatPipesPort.IN].temperature
