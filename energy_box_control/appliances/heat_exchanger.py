@@ -4,8 +4,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
-from energy_box_control.units import JoulePerLiterKelvin, Second
+from energy_box_control.units import JoulePerLiterKelvin
 
 
 class HeatExchangerPort(Port):
@@ -26,7 +27,7 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
         inputs: dict[HeatExchangerPort, ConnectionState],
         previous_state: ApplianceState,
         control: None,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[ApplianceState, dict[HeatExchangerPort, ConnectionState]]:
 
         heat_A = (

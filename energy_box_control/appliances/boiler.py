@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cached_property
 
 from energy_box_control.appliances.base import (
     Appliance,
@@ -6,8 +7,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
-from energy_box_control.units import Celsius, JoulePerLiterKelvin, Liter, Second, Watt
+from energy_box_control.units import Celsius, JoulePerLiterKelvin, Liter, Watt
 
 
 @dataclass(frozen=True, eq=True)
@@ -36,25 +38,30 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
     specific_heat_capacity_exchange: JoulePerLiterKelvin
     specific_heat_capacity_fill: JoulePerLiterKelvin
 
+    @cached_property
+    def tank_capacity(self):
+        return self.volume * self.specific_heat_capacity_fill
+
     def simulate(
         self,
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
-        tank_capacity = self.volume * self.specific_heat_capacity_fill
 
-        element_heat = self.heater_power * step_size * control.heater_on
-        tank_heat = tank_capacity * previous_state.temperature
+        element_heat = (
+            self.heater_power * simulation_time.step_seconds * control.heater_on
+        )
+        tank_heat = self.tank_capacity * previous_state.temperature
 
         if BoilerPort.HEAT_EXCHANGE_IN in inputs:
             exchange_capacity = (
                 inputs[BoilerPort.HEAT_EXCHANGE_IN].flow
-                * step_size
+                * simulation_time.step_seconds
                 * self.specific_heat_capacity_exchange
             )
             exchange_heat = (
@@ -67,7 +74,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         if BoilerPort.FILL_IN in inputs:
             fill_capacity = (
                 inputs[BoilerPort.FILL_IN].flow
-                * step_size
+                * simulation_time.step_seconds
                 * self.specific_heat_capacity_fill
             )
             fill_heat = fill_capacity * inputs[BoilerPort.FILL_IN].temperature
@@ -83,10 +90,10 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             + fill_heat
             - (
                 self.heat_loss
-                * step_size
+                * simulation_time.step_seconds
                 * (previous_state.temperature > previous_state.ambient_temperature)
             )
-        ) / (tank_capacity + exchange_capacity + fill_capacity)
+        ) / (self.tank_capacity + exchange_capacity + fill_capacity)
 
         connection_states = {
             **(

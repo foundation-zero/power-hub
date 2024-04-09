@@ -40,7 +40,7 @@ def run_simulation(
     return SimulationSuccess(state)
 
 
-def test_simulationtime():
+def test_simulationtime_timestamp():
     start = datetime(2023, 1, 1, 0, 0, 0)
     step_size = timedelta(days=1)
     step = 10

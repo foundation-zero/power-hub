@@ -6,8 +6,8 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
-from energy_box_control.units import Second
 
 
 @dataclass(frozen=True, eq=True)
@@ -34,7 +34,7 @@ class SwitchPump(Appliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
         inputs: dict[SwitchPumpPort, ConnectionState],
         previous_state: SwitchPumpState,
         control: SwitchPumpControl,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ConnectionState]]:
         input = inputs[SwitchPumpPort.IN]
         return SwitchPumpState(), {

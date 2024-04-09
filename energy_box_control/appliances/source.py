@@ -4,8 +4,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
-from energy_box_control.units import Celsius, LiterPerSecond, Second
+from energy_box_control.units import Celsius, LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -27,6 +28,6 @@ class Source(Appliance[SourceState, None, SourcePort]):
         inputs: dict[SourcePort, "ConnectionState"],
         previous_state: SourceState,
         control: None,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
         return SourceState(), {SourcePort.OUTPUT: ConnectionState(self.flow, self.temp)}

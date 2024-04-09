@@ -6,12 +6,12 @@ from energy_box_control.appliances.base import (
     Celsius,
     ConnectionState,
     Port,
+    SimulationTime,
 )
 from energy_box_control.units import (
     Joule,
     JoulePerKelvin,
     JoulePerLiterKelvin,
-    Second,
     Watt,
 )
 
@@ -65,7 +65,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         inputs: dict[PcmPort, ConnectionState],
         previous_state: PcmState,
         control: None,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[PcmState, dict[PcmPort, ConnectionState]]:
         pcm_heat = (
             self.sensible_capacity * previous_state.temperature
@@ -74,7 +74,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         if PcmPort.CHARGE_IN in inputs:
             charge_capacity = (
                 inputs[PcmPort.CHARGE_IN].flow
-                * step_size
+                * simulation_time.step_seconds
                 * self.specific_heat_capacity_charge
             )
             charge_heat = inputs[PcmPort.CHARGE_IN].temperature * charge_capacity
@@ -84,7 +84,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         if PcmPort.DISCHARGE_IN in inputs:
             discharge_capacity = (
                 inputs[PcmPort.DISCHARGE_IN].flow
-                * step_size
+                * simulation_time.step_seconds
                 * self.specific_heat_capacity_charge
             )
             discharge_heat = (
@@ -102,8 +102,8 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         if PcmPort.CHARGE_IN in inputs:
             transferred_charge_heat = clamp(
                 (inputs[PcmPort.CHARGE_IN].temperature - ideal_temp) * charge_capacity,
-                -self.transfer_power * step_size,
-                self.transfer_power * step_size,
+                -self.transfer_power * simulation_time.step_seconds,
+                self.transfer_power * simulation_time.step_seconds,
             )
         else:
             transferred_charge_heat = 0
@@ -112,8 +112,8 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
             transferred_discharge_heat = clamp(
                 (inputs[PcmPort.DISCHARGE_IN].temperature - ideal_temp)
                 * discharge_capacity,
-                -self.transfer_power * step_size,
-                self.transfer_power * step_size,
+                -self.transfer_power * simulation_time.step_seconds,
+                self.transfer_power * simulation_time.step_seconds,
             )
         else:
             transferred_discharge_heat = 0

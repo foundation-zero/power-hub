@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+from functools import cached_property
 import uuid
 
 from energy_box_control.units import Celsius, LiterPerSecond, Second
@@ -15,6 +16,23 @@ class ApplianceState:
 @dataclass(frozen=True, eq=True)
 class ApplianceControl:
     pass
+
+
+@dataclass
+class SimulationTime:
+    step_size: timedelta
+    step: int
+    start: datetime
+
+    @cached_property
+    def timestamp(self) -> datetime:
+        return self.start + timedelta(
+            seconds=self.step * self.step_size.total_seconds()
+        )
+
+    @cached_property
+    def step_seconds(self) -> Second:
+        return self.step_size.total_seconds()
 
 
 @dataclass(frozen=True, eq=True)
@@ -35,7 +53,7 @@ class Simulatable[
         inputs: dict[TPort, "ConnectionState"],
         previous_state: TState,
         control: TControl,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[TState, dict[TPort, "ConnectionState"]]: ...
 
 
@@ -53,16 +71,3 @@ class Port(Enum):
 class ConnectionState:
     flow: LiterPerSecond
     temperature: Celsius
-
-
-@dataclass
-class SimulationTime:
-    step_size: timedelta
-    step: int
-    start: datetime
-
-    @property
-    def timestamp(self) -> datetime:
-        return self.start + timedelta(
-            seconds=self.step * self.step_size.total_seconds()
-        )

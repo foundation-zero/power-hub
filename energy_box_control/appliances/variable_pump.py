@@ -5,8 +5,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
-from energy_box_control.units import LiterPerSecond, Second
+from energy_box_control.units import LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -37,7 +38,7 @@ class VariablePump(Appliance[VariablePumpState, VariablePumpControl, VariablePum
         inputs: dict[VariablePumpPort, ConnectionState],
         previous_state: VariablePumpState,
         control: VariablePumpControl,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[VariablePumpState, dict[VariablePumpPort, ConnectionState]]:
         input = inputs[VariablePumpPort.IN]
 

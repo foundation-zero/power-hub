@@ -5,6 +5,7 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
 
 from scipy.interpolate import RegularGridInterpolator
@@ -14,7 +15,6 @@ from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
     KiloWatt,
-    Second,
     Watt,
 )
 
@@ -82,7 +82,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         inputs: dict[YazakiPort, ConnectionState],
         previous_state: YazakiState,
         control: YazakiControl,
-        step_size: Second,
+        simulation_time: SimulationTime,
     ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
 
         hot_in = inputs[YazakiPort.HOT_IN]
