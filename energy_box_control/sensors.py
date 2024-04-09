@@ -8,8 +8,8 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
-from typing import Any, Callable, Deque, Protocol, cast, Self
-from inspect import get_annotations, isclass
+from typing import Any, Callable, Deque, Protocol, Self, cast
+from inspect import get_annotations, getmembers, isclass
 import functools
 from collections import deque
 
@@ -181,3 +181,18 @@ def sensors[T: type]() -> Callable[[T], T]:
         return klass
 
     return _decorator
+
+
+def get_sensor_class_properties(sensor_cls: Any) -> set[str]:
+    return set(
+        [
+            field_name
+            for field_name, field_value in get_annotations(sensor_cls).items()
+            if field_value.__name__ == "float" or field_value.__name__ == "int"
+        ]
+        + [
+            field_name
+            for field_name, field_value in getmembers(sensor_cls)
+            if type(field_value) == property or type(field_value) == Sensor
+        ]
+    )
