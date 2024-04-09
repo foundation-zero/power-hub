@@ -147,3 +147,14 @@ def test_boiler_heat_loss(boiler):
         state, _ = boiler.simulate({}, state, BoilerControl(heater_on=False), 1)
 
     assert state.temperature == approx(20)
+
+
+def test_boiler_double_step(boiler):
+    state = BoilerState(50, 20)
+
+    first_state, _ = boiler.simulate({}, state, BoilerControl(heater_on=True), 1)
+    second_state, _ = boiler.simulate({}, first_state, BoilerControl(heater_on=True), 1)
+
+    double_step_state, _ = boiler.simulate({}, state, BoilerControl(heater_on=True), 2)
+
+    assert double_step_state == second_state

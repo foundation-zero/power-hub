@@ -82,6 +82,21 @@ def test_charge_phase(pcm):
     assert outputs[PcmPort.CHARGE_OUT].temperature == 50
 
 
+def test_charge_phase_double_step(pcm):
+    initial_state = PcmState(0, pcm.phase_change_temperature)
+    state, outputs = pcm.simulate(
+        {PcmPort.CHARGE_IN: ConnectionState(1, pcm.phase_change_temperature + 10)},
+        initial_state,
+        None,
+        2,
+    )
+
+    assert state.temperature == 50
+    assert state.state_of_charge == 0.2
+    assert outputs[PcmPort.CHARGE_OUT].flow == 1
+    assert outputs[PcmPort.CHARGE_OUT].temperature == 50
+
+
 def test_charge_post_phase(pcm):
     initial_state = PcmState(1, 50)
     state, outputs = pcm.simulate(
@@ -91,6 +106,17 @@ def test_charge_post_phase(pcm):
     assert state.temperature == 55
     assert outputs[PcmPort.CHARGE_OUT].flow == 1
     assert outputs[PcmPort.CHARGE_OUT].temperature == 55
+
+
+def test_charge_post_phase_double_step(pcm):
+    initial_state = PcmState(1, 50)
+    state, outputs = pcm.simulate(
+        {PcmPort.CHARGE_IN: ConnectionState(1, 80)}, initial_state, None, 2
+    )
+
+    assert state.temperature == 70
+    assert outputs[PcmPort.CHARGE_OUT].flow == 1
+    assert outputs[PcmPort.CHARGE_OUT].temperature == 70
 
 
 def test_charge_through_phase(high_transfer_pcm):

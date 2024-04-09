@@ -111,15 +111,15 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
             )
 
             hot_temp_out = hot_in.temperature - heat_input / (
-                hot_in.flow * step_size * self.specific_heat_capacity_hot
+                hot_in.flow * self.specific_heat_capacity_hot
             )
 
             cooling_temp_out = cooling_in.temperature + (
                 heat_input + cooling_capacity
-            ) / (cooling_in.flow * step_size * self.specific_heat_capacity_cooling)
+            ) / (cooling_in.flow * self.specific_heat_capacity_cooling)
 
             chilled_temp_out = chilled_in.temperature - cooling_capacity / (
-                chilled_in.flow * step_size * self.specific_heat_capacity_chilled
+                chilled_in.flow * self.specific_heat_capacity_chilled
             )
 
         return YazakiState(), {

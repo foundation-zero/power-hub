@@ -32,24 +32,18 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
 
         heat_A = (
             inputs[HeatExchangerPort.A_IN].flow
-            * step_size
             * inputs[HeatExchangerPort.A_IN].temperature
             * self.specific_heat_capacity_A
         )
         heat_B = (
             inputs[HeatExchangerPort.B_IN].flow
-            * step_size
             * inputs[HeatExchangerPort.B_IN].temperature
             * self.specific_heat_capacity_B
         )
 
         equilibrium_temperature = (heat_A + heat_B) / (
-            inputs[HeatExchangerPort.A_IN].flow
-            * step_size
-            * self.specific_heat_capacity_A
-            + inputs[HeatExchangerPort.B_IN].flow
-            * step_size
-            * self.specific_heat_capacity_B
+            inputs[HeatExchangerPort.A_IN].flow * self.specific_heat_capacity_A
+            + inputs[HeatExchangerPort.B_IN].flow * self.specific_heat_capacity_B
         )
 
         return ApplianceState(), {

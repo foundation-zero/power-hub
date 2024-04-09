@@ -43,9 +43,9 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             / (
                 self.specific_heat_capacity_chilled
                 * inputs[ChillerPort.CHILLED_IN].flow
-                * step_size
             )
             if inputs[ChillerPort.CHILLED_IN].flow > 0
+            and inputs[ChillerPort.COOLING_IN].flow > 0
             else inputs[ChillerPort.CHILLED_IN].temperature
         )
 
@@ -55,9 +55,9 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             / (
                 self.specific_heat_capacity_cooling
                 * inputs[ChillerPort.COOLING_IN].flow
-                * step_size
             )
-            if inputs[ChillerPort.COOLING_IN].flow > 0
+            if inputs[ChillerPort.CHILLED_IN].flow > 0
+            and inputs[ChillerPort.COOLING_IN].flow > 0
             else inputs[ChillerPort.COOLING_IN].temperature
         )
 
@@ -65,10 +65,10 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
             ChillerState(),
             {
                 ChillerPort.CHILLED_OUT: ConnectionState(
-                    inputs[ChillerPort.CHILLED_IN].flow * step_size, chilled_out_temp
+                    inputs[ChillerPort.CHILLED_IN].flow, chilled_out_temp
                 ),
                 ChillerPort.COOLING_OUT: ConnectionState(
-                    inputs[ChillerPort.COOLING_IN].flow * step_size, cooling_out_temp
+                    inputs[ChillerPort.COOLING_IN].flow, cooling_out_temp
                 ),
             },
         )

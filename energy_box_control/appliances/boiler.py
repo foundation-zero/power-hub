@@ -85,6 +85,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             + fill_heat
             - (
                 self.heat_loss
+                * step_size
                 * (previous_state.temperature > previous_state.ambient_temperature)
             )
         ) / (tank_capacity + exchange_capacity + fill_capacity)
