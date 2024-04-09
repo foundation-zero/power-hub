@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
 from dotenv import load_dotenv
-from energy_box_control.power_hub import PowerHub
-from energy_box_control.appliances.base import Appliance
 from typing import Any, Callable, Literal
 from dataclasses import fields
 import fluxy  # type: ignore
@@ -16,6 +14,7 @@ from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.sensors import get_sensor_class_properties
 from energy_box_control.api.open_weather import create_weather_manager
 
 dotenv_path = os.path.normpath(
@@ -164,16 +163,13 @@ async def hello_world() -> str:
 @token_required
 async def get_all_appliance_names() -> dict[
     Literal["appliances"],
-    dict[ApplianceName, dict[Literal["sensors", "sensors_type"], list[SensorName]]],
+    dict[ApplianceName, dict[Literal["sensors", "sensors_type"], set[SensorName]]],
 ]:
+
     return {
         "appliances": {
             appliance_field.name: {
-                "sensors": [
-                    sensor_item_name
-                    for sensor_item_name, sensor_item_value in appliance_field.type.__annotations__.items()
-                    if not issubclass(sensor_item_value, Appliance)
-                ],
+                "sensors": get_sensor_class_properties(appliance_field.type),
                 "sensors_type": appliance_field.type.__name__,
             }
             for appliance_field in fields(PowerHubSensors)
@@ -200,86 +196,26 @@ async def get_last_values_for_appliance_sensor(
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
-def create_fluxy_for_power_over_time(
-    minutes_back: int, interval_seconds: int
-) -> fluxy.Query:
-    in_temperature_topic = "power_hub/appliance_sensors/heat_pipes/input_temperature"
-    out_temperature_topic = "power_hub/appliance_sensors/heat_pipes/output_temperature"
-    flow_topic = "power_hub/appliance_sensors/heat_pipes/flow"
-
-    return fluxy.pipe(
-        fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
-        fluxy.range(*build_query_range(minutes_back)),
-        fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
-        fluxy.filter(lambda r: r._field == "value"),
-        fluxy.filter(
-            lambda r: (r.topic == in_temperature_topic)
-            | (r.topic == out_temperature_topic)
-            | (r.topic == flow_topic)
-        ),
-        fluxy.aggregate_window(
-            every=timedelta(seconds=interval_seconds),
-            fn=fluxy.WindowOperation.MEAN,
-            create_empty=False,
-        ),
-        fluxy.pivot(row_key=["_time"], column_key=["topic"], value_column="_value"),
-        fluxy.keep(
-            [
-                "_time",
-                in_temperature_topic,
-                out_temperature_topic,
-                flow_topic,
-            ]
-        ),
-        fluxy.map(
-            f'(r) => ({{ r with power: (r["{flow_topic}"] * {PowerHub.power_hub().heat_pipes.specific_heat_medium}) * (r["{out_temperature_topic}"] - r["{in_temperature_topic}"]) }})'
-        ),
-        fluxy.keep(["_time", "power"]),
-    )
-
-
-@app.route("/appliances/heat_pipes/power/last_values")
-@token_required
-@serialize_dataframe(["time", "value"])
-@validate_querystring(ComputedValuesQuery)  # type: ignore
-async def get_heat_pipes_power_over_time(
-    query_args: ComputedValuesQuery,
-) -> str | tuple[str, Literal[HTTPStatus.UNPROCESSABLE_ENTITY]]:
-    if (
-        (query_args.minutes_back * 60) / query_args.interval_seconds
-    ) > MAX_POWER_SAMPLES:
-        return (
-            f"Number of samples will exceeded {MAX_POWER_SAMPLES}, please choose a bigger interval or less minutes back.",
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-        )
-    return (
-        await execute_influx_query(
-            app.influx,  # type: ignore
-            query=create_fluxy_for_power_over_time(
-                query_args.minutes_back,
-                query_args.interval_seconds,
-            ),
-        )
-    ).rename(columns={"power": "value", "_time": "time"})
-
-
-@app.route("/appliances/heat_pipes/power/total")
+@app.route("/appliance_sensors/<appliance_name>/<field_name>/total")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-async def get_heat_pipes_total_power_over_time(
-    query_args: ComputedValuesQuery,
-) -> dict[str, float]:
+async def get_values_total(
+    appliance_name: str,
+    field_name: str,
+    query_args: ValuesQuery,
+) -> str:
     query_result = await execute_influx_query(
         app.influx,  # type: ignore
         query=fluxy.pipe(
-            create_fluxy_for_power_over_time(
+            build_get_values_query(
                 query_args.minutes_back,
-                1,
+                appliance_name,
+                field_name,
             ),
-            fluxy.sum("power"),
+            fluxy.sum("_value"),
         ),
     )
-    return Response(query_result.iloc[0]["power"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
+    return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
 
 
 WeatherProperty = str
