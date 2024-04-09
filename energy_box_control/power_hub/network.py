@@ -607,7 +607,10 @@ class PowerHub(Network[PowerHubSensors]):
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
         with PowerHubSensors.context(
-            WeatherSensors(ambient_temperature=0, global_irradiance=0)
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            )
         ) as context:
             for field in fields(PowerHubSensors):
                 context.from_state(

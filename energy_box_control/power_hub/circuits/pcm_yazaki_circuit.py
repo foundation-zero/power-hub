@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Self
 
 from energy_box_control.appliances.base import Celsius
@@ -33,12 +33,21 @@ from energy_box_control.power_hub.power_hub_components import (
     yazaki,
     yazaki_hot_bypass_valve,
 )
+from energy_box_control.power_hub.sensors import PcmSensors, ValveSensors, YazakiSensors
+from energy_box_control.sensors import SensorContext, WeatherSensors
+
+import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass
 class PcmYazakiSensors:
-    yazaki_hot_in_temperature: Celsius
-    yazaki_hot_bypass_valve_position: float
+    pcm: PcmSensors
+    yazaki_hot_bypass_valve: ValveSensors
+    yazaki: YazakiSensors
+
+    @staticmethod
+    def context(weather: WeatherSensors) -> "SensorContext[PcmYazakiSensors]":
+        return SensorContext(PcmYazakiSensors, weather)
 
 
 @dataclass
@@ -124,9 +133,9 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.yazaki_hot_bypass_valve_position,
+            sensors.yazaki_hot_bypass_valve.position,
             control_state.yazaki_hot_in_setpoint,
-            sensors.yazaki_hot_in_temperature,
+            sensors.yazaki.hot_input_temperature,
             reversed=True,
         )
 
@@ -141,13 +150,18 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
 
     def sensors(self, state: NetworkState[Self]) -> PcmYazakiSensors:
 
-        return PcmYazakiSensors(
-            yazaki_hot_in_temperature=state.connection(
-                self.yazaki, YazakiPort.HOT_IN
-            ).temperature,
-            yazaki_hot_bypass_valve_position=state.appliance(
-                self.yazaki_hot_bypass_valve
+        with PcmYazakiSensors.context(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
             )
-            .get()
-            .position,
-        )
+        ) as context:
+            for field in fields(PcmYazakiSensors):
+                context.from_state(
+                    state,
+                    field.type,
+                    getattr(context.subject, field.name),
+                    getattr(self, field.name),
+                )
+
+            return context.result()

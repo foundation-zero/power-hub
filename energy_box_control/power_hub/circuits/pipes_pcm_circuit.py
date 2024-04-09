@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Self
 
 from energy_box_control.appliances.base import Celsius
@@ -32,11 +32,25 @@ from energy_box_control.power_hub.power_hub_components import (
     pcm,
 )
 
+from energy_box_control.power_hub.sensors import (
+    HeatPipesSensors,
+    PcmSensors,
+    ValveSensors,
+)
+from energy_box_control.sensors import SensorContext, WeatherSensors
+
+import energy_box_control.power_hub.power_hub_components as phc
+
 
 @dataclass
 class PipesPcmSensors:
-    heat_pipes_out_temperature: Celsius
-    heat_pipes_valve_position: float
+    heat_pipes: HeatPipesSensors
+    heat_pipes_valve: ValveSensors
+    pcm: PcmSensors
+
+    @staticmethod
+    def context(weather: WeatherSensors) -> "SensorContext[PipesPcmSensors]":
+        return SensorContext(PipesPcmSensors, weather)
 
 
 @dataclass
@@ -105,9 +119,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.heat_pipes_valve_position,
+            sensors.heat_pipes_valve.position,
             control_state.hot_loop_setpoint,
-            sensors.heat_pipes_out_temperature,
+            sensors.heat_pipes.output_temperature,
             reversed=False,
         )
 
@@ -121,12 +135,18 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         )
 
     def sensors(self, state: NetworkState[Self]) -> PipesPcmSensors:
+        with PipesPcmSensors.context(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            )
+        ) as context:
+            for field in fields(PipesPcmSensors):
+                context.from_state(
+                    state,
+                    field.type,
+                    getattr(context.subject, field.name),
+                    getattr(self, field.name),
+                )
 
-        return PipesPcmSensors(
-            heat_pipes_out_temperature=state.connection(
-                self.heat_pipes, HeatPipesPort.OUT
-            ).temperature,
-            heat_pipes_valve_position=state.appliance(self.heat_pipes_valve)
-            .get()
-            .position,
-        )
+            return context.result()
