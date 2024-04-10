@@ -4,6 +4,7 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
 
 
@@ -21,6 +22,7 @@ class Mix(Appliance[ApplianceState, None, MixPort]):
         inputs: dict[MixPort, ConnectionState],
         previous_state: ApplianceState,
         control: None,
+        simulation_time: SimulationTime,
     ) -> tuple[ApplianceState, dict[MixPort, ConnectionState]]:
         a = inputs[MixPort.A]
         b = inputs[MixPort.B]

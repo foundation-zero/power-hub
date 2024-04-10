@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 from energy_box_control.power_hub.network import PowerHubControlState
 import energy_box_control.power_hub.power_hub_components as phc
-from tests.simulation import SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationSuccess, run_simulation
 
 
 @fixture

@@ -1,4 +1,5 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -21,7 +22,11 @@ from energy_box_control.appliances import (
     SourcePort,
     BoilerControl,
 )
-from energy_box_control.appliances.base import ApplianceState, ConnectionState
+from energy_box_control.appliances.base import (
+    ApplianceState,
+    ConnectionState,
+    SimulationTime,
+)
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.heat_pipes import HeatPipesState
@@ -46,10 +51,12 @@ from energy_box_control.network import (
 
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
-    WeatherSensors,
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
+from datetime import datetime, timedelta
+
+from energy_box_control.sensors import WeatherSensors
 
 
 @dataclass
@@ -90,6 +97,7 @@ class PowerHub(Network[PowerHubSensors]):
     outboard_pump: SwitchPump
     outboard_source: Source
     fresh_water_source: Source
+    cooling_demand: Source
 
     def __post_init__(self):
         super().__init__()
@@ -128,6 +136,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_pump,
             phc.outboard_source,
             phc.fresh_water_source,
+            cooling_demand=phc.cooling_demand,
         )
 
     @staticmethod
@@ -216,10 +225,14 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .build()
+            .define_state(power_hub.cooling_demand)
+            .value(SourceState())
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
-    def simple_initial_state(self) -> NetworkState[Self]:
+    def simple_initial_state(
+        self, start_time: datetime = datetime.now()
+    ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
         return (
             self.define_state(self.heat_pipes)
@@ -296,13 +309,15 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(self.chill_mix)
-            .at(MixPort.AB)
+            .define_state(self.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .build()
+            .define_state(self.cooling_demand)
+            .value(SourceState())
+            .build(SimulationTime(timedelta(seconds=1), 0, start_time))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -446,15 +461,20 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.chill_mix)
             .at(MixPort.B)
 
+            .connect(self.chill_mix)
+            .at(MixPort.AB)
+            .to(self.cold_reservoir)
+            .at(BoilerPort.HEAT_EXCHANGE_IN)
+
             .connect(self.cold_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_OUT)
             .to(self.chilled_loop_pump)
             .at(SwitchPumpPort.IN)
 
-            .connect(self.chilled_loop_pump)
-            .at(SwitchPumpPort.OUT)
-            .to(self.chiller_switch_valve)
-            .at(ValvePort.AB)
+            .connect(self.cooling_demand)
+            .at(SourcePort.OUTPUT)
+            .to(self.cold_reservoir)
+            .at(BoilerPort.FILL_IN)
 
             .connect(self.chiller_switch_valve)
             .at(ValvePort.A)
@@ -470,10 +490,10 @@ class PowerHub(Network[PowerHubSensors]):
 
     def _chilled_side_feedback(self):
         return (
-            self.define_feedback(self.chill_mix)
-            .at(MixPort.AB)
-            .to(self.cold_reservoir)
-            .at(BoilerPort.HEAT_EXCHANGE_IN)
+            self.define_feedback(self.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.chiller_switch_valve)
+            .at(ValvePort.AB)
         )
 
     def _waste_side_connections(self):
@@ -601,18 +621,14 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
-        with PowerHubSensors.context(
-            WeatherSensors(ambient_temperature=0, global_irradiance=0)
-        ) as context:
-            for field in fields(PowerHubSensors):
-                context.from_state(
-                    state,
-                    field.type,
-                    getattr(context.subject, field.name),
-                    getattr(self, field.name),
-                )
-
-            return context.result()
+        return PowerHubSensors.resolve_for_network(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            ),
+            state,
+            self,
+        )
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on

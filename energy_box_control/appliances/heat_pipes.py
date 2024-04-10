@@ -2,16 +2,23 @@ from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceState,
+    Celsius,
     ConnectionState,
     Port,
+    SimulationTime,
+)
+from energy_box_control.units import (
+    JoulePerLiterKelvin,
+    MeterSquared,
+    WattPerMeterSquared,
 )
 
 
 @dataclass(frozen=True, eq=True)
 class HeatPipesState(ApplianceState):
-    mean_temperature: float  # C
-    ambient_temperature: float  # C
-    global_irradiance: float  # W/m2
+    mean_temperature: Celsius
+    ambient_temperature: Celsius
+    global_irradiance: WattPerMeterSquared
 
 
 class HeatPipesPort(Port):
@@ -21,17 +28,18 @@ class HeatPipesPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
-    optical_efficiency: float  #
-    first_order_loss_coefficient: float  # W/m2K
-    second_order_loss_coefficient: float  #  W/m2K2
-    absorber_area: float  # m2
-    specific_heat_medium: float  # J/lK
+    optical_efficiency: float
+    first_order_loss_coefficient: float
+    second_order_loss_coefficient: float
+    absorber_area: MeterSquared
+    specific_heat_medium: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[HeatPipesPort, ConnectionState],
         previous_state: HeatPipesState,
         control: None,
+        simulation_time: SimulationTime,
     ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
 
         input = inputs[HeatPipesPort.IN]

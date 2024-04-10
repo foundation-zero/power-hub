@@ -1,12 +1,20 @@
+from datetime import datetime, timedelta
+from pytest import fixture
 from energy_box_control.appliances import (
     Mix,
     MixPort,
     ConnectionState,
     ApplianceState,
 )
+from energy_box_control.appliances.base import SimulationTime
 
 
-def test_mix():
+@fixture
+def simulation_time():
+    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+
+
+def test_mix(simulation_time):
     mix = Mix()
 
     _, output = mix.simulate(
@@ -16,12 +24,13 @@ def test_mix():
         },
         ApplianceState(),
         None,
+        simulation_time,
     )
 
     assert output[MixPort.AB] == ConnectionState(6, 20)
 
 
-def test_zero_flow_mix():
+def test_zero_flow_mix(simulation_time):
     mix = Mix()
 
     _, output = mix.simulate(
@@ -31,6 +40,7 @@ def test_zero_flow_mix():
         },
         ApplianceState(),
         None,
+        simulation_time,
     )
 
     assert output[MixPort.AB].flow == 0

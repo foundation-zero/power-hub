@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from pytest import fixture
 
 from energy_box_control.appliances import (
@@ -6,7 +7,7 @@ from energy_box_control.appliances import (
     SwitchPumpState,
     SwitchPumpControl,
 )
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ConnectionState, SimulationTime
 
 
 @fixture
@@ -14,20 +15,27 @@ def switch_pump():
     return SwitchPump(1)
 
 
-def test_switch_pump_off(switch_pump):
+@fixture
+def simulation_time():
+    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+
+
+def test_switch_pump_off(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
         {SwitchPumpPort.IN: ConnectionState(1, 50)},
         SwitchPumpState(),
         SwitchPumpControl(False),
+        simulation_time,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 0
 
 
-def test_switch_pump_on(switch_pump):
+def test_switch_pump_on(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
         {SwitchPumpPort.IN: ConnectionState(0, 50)},
         SwitchPumpState(),
         SwitchPumpControl(True),
+        simulation_time,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 1
     assert outputs[SwitchPumpPort.OUT].temperature == 50

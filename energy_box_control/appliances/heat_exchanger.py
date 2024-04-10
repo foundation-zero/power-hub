@@ -4,7 +4,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
+from energy_box_control.units import JoulePerLiterKelvin
 
 
 class HeatExchangerPort(Port):
@@ -16,8 +18,8 @@ class HeatExchangerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
-    specific_heat_capacity_A: float
-    specific_heat_capacity_B: float
+    specific_heat_capacity_A: JoulePerLiterKelvin
+    specific_heat_capacity_B: JoulePerLiterKelvin
 
     # assuming a perfect heat exchange, reaching thermal equilibrium in every time step
     def simulate(
@@ -25,6 +27,7 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
         inputs: dict[HeatExchangerPort, ConnectionState],
         previous_state: ApplianceState,
         control: None,
+        simulation_time: SimulationTime,
     ) -> tuple[ApplianceState, dict[HeatExchangerPort, ConnectionState]]:
 
         heat_A = (
