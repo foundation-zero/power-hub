@@ -16,6 +16,7 @@ from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.api.open_weather import create_weather_manager
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
@@ -63,6 +64,13 @@ class ValuesQuery:
 @dataclass
 class ComputedValuesQuery(ValuesQuery):
     interval_seconds: int = DEFAULT_POWER_INTERVAL_SECONDS
+
+
+@dataclass
+class CurrentWeatherQuery:
+    lat: float
+    lon: float
+    temp_unit: str = "celsius"
 
 
 def build_query_range(minutes_back: int) -> tuple[datetime, datetime]:
@@ -272,6 +280,33 @@ async def get_heat_pipes_total_power_over_time(
         ),
     )
     return Response(query_result.iloc[0]["power"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
+
+
+WeatherProperty = str
+
+
+@app.route("/weather/current")
+@no_type_check
+@token_required
+@validate_querystring(CurrentWeatherQuery)  # type: ignore
+async def get_current_weather(
+    query_args: CurrentWeatherQuery,
+) -> dict[WeatherProperty, float | str]:
+    mgr = create_weather_manager()
+    observation = mgr.weather_at_coords(query_args.lat, query_args.lon)
+    return {
+        "weather": observation.weather.detailed_status,
+        "temp_unit": query_args.temp_unit,
+        "temp": observation.weather.temperature(query_args.temp_unit)["temp"],
+        "temp_feels_like": observation.weather.temperature(query_args.temp_unit)[
+            "feels_like"
+        ],
+        "humidity": observation.weather.humidity,
+        "pressure": observation.weather.pressure["press"],
+        "wind_speed": observation.weather.wind()["speed"],
+        "location_name": observation.location.name,
+        "country": observation.location.country,
+    }
 
 
 def run() -> None:
