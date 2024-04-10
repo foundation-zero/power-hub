@@ -17,6 +17,7 @@ fluxy = { git = "https://github.com/foundation-zero/fluxy.git", branch = "main" 
 python-dotenv = "^1.0.1"
 quart-schema = { extras = ["pydantic"], git = "https://github.com/pgjones/quart-schema.git", branch = "main" }
 pandas = "^2.2.1"
+pyowm = "^3.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
