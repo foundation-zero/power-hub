@@ -1,7 +1,12 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ApplianceState, ConnectionState
+from energy_box_control.appliances.base import (
+    ApplianceState,
+    ConnectionState,
+    SimulationTime,
+)
 from energy_box_control.appliances.heat_pipes import HeatPipesPort, HeatPipesState
 from energy_box_control.appliances.mix import MixPort
 from energy_box_control.appliances.pcm import PcmPort, PcmState
@@ -20,7 +25,7 @@ from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
-from tests.simulation import SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationSuccess, run_simulation
 
 
 @fixture
@@ -49,7 +54,7 @@ def initial_state_pipes_to_pcm(
     return (
         initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(0))
-        .build()
+        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 
@@ -71,7 +76,7 @@ def initial_state_pipes_to_pcm_warm(
         .define_state(pipes_pcm_circuit.heat_pipes_pump)
         .at(SwitchPumpPort.OUT)
         .value(ConnectionState(0, AMBIENT_TEMPERATURE))
-        .build()
+        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 
@@ -82,7 +87,7 @@ def initial_state_pipes_to_pipes(
     return (
         initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(1))
-        .build()
+        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 
@@ -93,7 +98,7 @@ def initial_state_half_valve(
     return (
         initial_state_without_valve.define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(0.5))
-        .build()
+        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 

@@ -1,6 +1,9 @@
+from datetime import datetime, timedelta
+from pytest import fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
+    SimulationTime,
 )
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
@@ -8,7 +11,12 @@ from energy_box_control.appliances.heat_exchanger import (
 )
 
 
-def test_heat_exchanger_equal_flow():
+@fixture
+def simulation_time():
+    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+
+
+def test_heat_exchanger_equal_flow(simulation_time):
     exchanger = HeatExchanger(2, 1)
 
     _, output = exchanger.simulate(
@@ -18,13 +26,14 @@ def test_heat_exchanger_equal_flow():
         },
         ApplianceState(),
         None,
+        simulation_time,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(1, 30)
     assert output[HeatExchangerPort.B_OUT] == ConnectionState(1, 30)
 
 
-def test_heat_exchanger_equal_capacity():
+def test_heat_exchanger_equal_capacity(simulation_time):
     exchanger = HeatExchanger(1, 1)
 
     _, output = exchanger.simulate(
@@ -34,6 +43,7 @@ def test_heat_exchanger_equal_capacity():
         },
         ApplianceState(),
         None,
+        simulation_time,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(3, 25)

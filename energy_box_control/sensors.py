@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import Enum
 from math import nan
 from energy_box_control.appliances.base import (
@@ -8,18 +8,42 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
-from typing import Any, Callable, Deque, Protocol, cast
+from typing import Any, Callable, Deque, Protocol, cast, Self
 from inspect import get_annotations, isclass
 import functools
 from collections import deque
 
-from energy_box_control.network import NetworkState
+from energy_box_control.network import NetworkState, Network
+from energy_box_control.units import Celsius, WattPerMeterSquared
 
 
-@dataclass()
+@dataclass
 class WeatherSensors:
-    ambient_temperature: float
-    global_irradiance: float
+    ambient_temperature: Celsius
+    global_irradiance: WattPerMeterSquared
+
+
+@dataclass
+class NetworkSensors:
+
+    @classmethod
+    def context(cls, weather: WeatherSensors) -> "SensorContext[Self]":
+        return SensorContext(cls, weather)
+
+    @classmethod
+    def resolve_for_network[
+        Net: "Network[NetworkSensors]"
+    ](cls, weather: WeatherSensors, state: NetworkState[Net], network: Net):
+        with cls.context(weather) as context:
+            for field in fields(cls):
+                context.from_state(
+                    state,
+                    field.type,
+                    getattr(context.subject, field.name),
+                    getattr(network, field.name),
+                )
+
+            return context.result()
 
 
 class FromState(Protocol):
