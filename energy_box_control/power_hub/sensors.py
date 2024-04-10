@@ -14,11 +14,10 @@ from energy_box_control.appliances.valve import Valve
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
-    SensorContext,
     SensorType,
-    WeatherSensors,
     sensor,
     sensors,
+    NetworkSensors,
 )
 
 
@@ -65,11 +64,8 @@ class PcmSensors(FromState):
     discharge_output_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=PcmPort.DISCHARGE_OUT
     )
-    temperature: Celsius
 
-    @property
-    def state_of_charge(self) -> float:
-        return float(self.temperature > self.spec.phase_change_temperature)
+    temperature: Celsius
 
 
 @sensors()
@@ -172,7 +168,7 @@ class ValveSensors(FromState):
 
 
 @dataclass
-class PowerHubSensors:
+class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
     heat_pipes_valve: ValveSensors
     hot_reservoir_pcm_valve: ValveSensors
@@ -188,10 +184,6 @@ class PowerHubSensors:
     preheat_reservoir: BoilerSensors
     waste_switch_valve: ValveSensors
     chiller_waste_bypass_valve: ValveSensors
-
-    @staticmethod
-    def context(weather: WeatherSensors) -> "SensorContext[PowerHubSensors]":
-        return SensorContext(PowerHubSensors, weather)
 
 
 SensorName = str

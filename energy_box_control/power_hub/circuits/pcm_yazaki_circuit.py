@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from typing import Self
 
 from energy_box_control.appliances.base import Celsius
@@ -34,20 +34,16 @@ from energy_box_control.power_hub.power_hub_components import (
     yazaki_hot_bypass_valve,
 )
 from energy_box_control.power_hub.sensors import PcmSensors, ValveSensors, YazakiSensors
-from energy_box_control.sensors import SensorContext, WeatherSensors
+from energy_box_control.sensors import NetworkSensors, WeatherSensors
 
 import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass
-class PcmYazakiSensors:
+class PcmYazakiSensors(NetworkSensors):
     pcm: PcmSensors
     yazaki_hot_bypass_valve: ValveSensors
     yazaki: YazakiSensors
-
-    @staticmethod
-    def context(weather: WeatherSensors) -> "SensorContext[PcmYazakiSensors]":
-        return SensorContext(PcmYazakiSensors, weather)
 
 
 @dataclass
@@ -149,19 +145,11 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         )
 
     def sensors(self, state: NetworkState[Self]) -> PcmYazakiSensors:
-
-        with PcmYazakiSensors.context(
+        return PcmYazakiSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
                 global_irradiance=phc.GLOBAL_IRRADIANCE,
-            )
-        ) as context:
-            for field in fields(PcmYazakiSensors):
-                context.from_state(
-                    state,
-                    field.type,
-                    getattr(context.subject, field.name),
-                    getattr(self, field.name),
-                )
-
-            return context.result()
+            ),
+            state,
+            self,
+        )

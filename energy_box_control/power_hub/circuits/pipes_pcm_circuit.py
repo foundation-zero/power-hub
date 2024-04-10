@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from typing import Self
 
 from energy_box_control.appliances.base import Celsius
@@ -37,20 +37,16 @@ from energy_box_control.power_hub.sensors import (
     PcmSensors,
     ValveSensors,
 )
-from energy_box_control.sensors import SensorContext, WeatherSensors
+from energy_box_control.sensors import NetworkSensors, WeatherSensors
 
 import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass
-class PipesPcmSensors:
+class PipesPcmSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
     heat_pipes_valve: ValveSensors
     pcm: PcmSensors
-
-    @staticmethod
-    def context(weather: WeatherSensors) -> "SensorContext[PipesPcmSensors]":
-        return SensorContext(PipesPcmSensors, weather)
 
 
 @dataclass
@@ -135,18 +131,11 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         )
 
     def sensors(self, state: NetworkState[Self]) -> PipesPcmSensors:
-        with PipesPcmSensors.context(
+        return PipesPcmSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
                 global_irradiance=phc.GLOBAL_IRRADIANCE,
-            )
-        ) as context:
-            for field in fields(PipesPcmSensors):
-                context.from_state(
-                    state,
-                    field.type,
-                    getattr(context.subject, field.name),
-                    getattr(self, field.name),
-                )
-
-            return context.result()
+            ),
+            state,
+            self,
+        )

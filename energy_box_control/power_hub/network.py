@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Self
 from energy_box_control.appliances import (
@@ -51,11 +51,12 @@ from energy_box_control.network import (
 
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
-    WeatherSensors,
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
+
+from energy_box_control.sensors import WeatherSensors
 
 
 @dataclass
@@ -620,21 +621,14 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
-        with PowerHubSensors.context(
+        return PowerHubSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
                 global_irradiance=phc.GLOBAL_IRRADIANCE,
-            )
-        ) as context:
-            for field in fields(PowerHubSensors):
-                context.from_state(
-                    state,
-                    field.type,
-                    getattr(context.subject, field.name),
-                    getattr(self, field.name),
-                )
-
-            return context.result()
+            ),
+            state,
+            self,
+        )
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on
