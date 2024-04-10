@@ -54,6 +54,7 @@ def test_power_hub_sensors(power_hub):
     assert sensors.hot_reservoir.heat_exchange_flow == approx(
         next_state.connection(power_hub.hot_reservoir, BoilerPort.HEAT_EXCHANGE_IN).flow
     )
+    assert sensors.cold_reservoir is not None
 
 
 def test_power_hub_simulation_no_control(power_hub, min_max_temperature):

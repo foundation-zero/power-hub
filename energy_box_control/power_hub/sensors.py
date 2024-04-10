@@ -114,6 +114,7 @@ class YazakiSensors(FromState):
         )
 
 
+@sensors()
 class BoilerSensors(FromState):
     spec: Boiler
     temperature: Celsius
