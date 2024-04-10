@@ -1,6 +1,7 @@
 from dataclasses import dataclass, fields
 from enum import Enum
 from math import nan
+
 from energy_box_control.appliances.base import (
     Appliance,
     ApplianceControl,
@@ -8,8 +9,8 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
-from typing import Any, Callable, Deque, Protocol, Self, cast
-from inspect import get_annotations, getmembers, isclass
+from inspect import getmembers, isclass
+from typing import Any, Callable, Deque, Protocol, cast, Self, get_type_hints
 import functools
 from collections import deque
 
@@ -35,12 +36,28 @@ class NetworkSensors:
         Net: "Network[NetworkSensors]"
     ](cls, weather: WeatherSensors, state: NetworkState[Net], network: Net):
         with cls.context(weather) as context:
-            for field in fields(cls):
+            listed_sensors = set((field.name, field.type) for field in fields(cls))
+
+            def is_first_order_sensor(sensor_cls: Any):
+                return not any(
+                    (name, type)
+                    for name, type in get_type_hints(sensor_cls).items()
+                    if (name, type) in listed_sensors
+                )
+
+            sensors = set(fields(cls))
+
+            first_order_sensors = set(
+                sensor for sensor in sensors if is_first_order_sensor(sensor.type)
+            )
+            second_order_sensors = sensors - first_order_sensors
+
+            for sensor in [*first_order_sensors, *second_order_sensors]:
                 context.from_state(
                     state,
-                    field.type,
-                    getattr(context.subject, field.name),
-                    getattr(network, field.name),
+                    sensor.type,
+                    getattr(context.subject, sensor.name),
+                    getattr(network, sensor.name),
                 )
 
             return context.result()
@@ -90,6 +107,9 @@ class SensorContext[T]:
         instance = klass.from_state(self, appliance, state)
         self._sensors[key] = instance
 
+    def sensor(self, name: str) -> Any | None:
+        return self._sensors.get(name, None)
+
     def result(self) -> "T":
         return self._cls(**self._sensors)
 
@@ -121,22 +141,26 @@ def sensor(*args: Any, **kwargs: Any) -> Any:
 
 
 def sensors[T: type]() -> Callable[[T], T]:
-    def _decorator(klass: T) -> T:
-        @functools.wraps(klass.__init__)
+    def _decorator(cls: T) -> T:
+        @functools.wraps(cls.__init__)
         def _init(
             self: Any,
             context: SensorContext[Any],
             appliance: Appliance[Any, Any, Any],
             **kwargs: dict[str, Any],
         ):
-            for name, annotation in get_annotations(klass).items():
-                value = getattr(klass, name, None)
+            for name, annotation in get_type_hints(cls).items():
+                value = getattr(cls, name, None)
                 if name.startswith("_"):
                     continue
                 if isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
                 elif value == Sensor(from_weather=True):
                     setattr(self, name, getattr(context.weather, name))
+                elif (sub_sensor := context.sensor(name)) and type(
+                    sub_sensor
+                ) == annotation:
+                    setattr(self, name, sub_sensor)
                 else:
                     setattr(self, name, kwargs[name])
 
@@ -148,7 +172,7 @@ def sensors[T: type]() -> Callable[[T], T]:
             appliance_state = state.appliance(appliance).get()
             appliance_sensors = {
                 name: getattr(appliance_state, name)
-                for name in get_annotations(klass).keys()
+                for name in get_type_hints(cls).keys()
                 if hasattr(appliance_state, name)
             }
             port_sensors = [
@@ -159,8 +183,8 @@ def sensors[T: type]() -> Callable[[T], T]:
                     ),
                     description,
                 )
-                for name in get_annotations(klass).keys()
-                if (description := getattr(klass, name, None))
+                for name in get_type_hints(cls).keys()
+                if (description := getattr(cls, name, None))
                 and isinstance(description, Sensor)
                 and description.from_port is not None
             ]
@@ -174,11 +198,11 @@ def sensors[T: type]() -> Callable[[T], T]:
                 for name, state, description in port_sensors
                 if description.type == SensorType.FLOW
             }
-            return klass(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
+            return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
 
-        klass.__init__ = _init  # type: ignore
-        klass.from_state = _from_state  # type: ignore
-        return klass
+        cls.__init__ = _init  # type: ignore
+        cls.from_state = _from_state  # type: ignore
+        return cls
 
     return _decorator
 
@@ -187,8 +211,8 @@ def get_sensor_class_properties(sensor_cls: Any) -> set[str]:
     return set(
         [
             field_name
-            for field_name, field_value in get_annotations(sensor_cls).items()
-            if field_value.__name__ == "float" or field_value.__name__ == "int"
+            for field_name, field_value in get_type_hints(sensor_cls).items()
+            if field_value in [float, int]
         ]
         + [
             field_name
