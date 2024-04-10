@@ -10,11 +10,11 @@ from energy_box_control.appliances.base import SimulationTime
 
 
 @fixture
-def simulationtime():
+def simulation_time():
     return SimulationTime(timedelta(seconds=1), 0, datetime.now())
 
 
-def test_mix(simulationtime):
+def test_mix(simulation_time):
     mix = Mix()
 
     _, output = mix.simulate(
@@ -24,13 +24,13 @@ def test_mix(simulationtime):
         },
         ApplianceState(),
         None,
-        simulationtime,
+        simulation_time,
     )
 
     assert output[MixPort.AB] == ConnectionState(6, 20)
 
 
-def test_zero_flow_mix(simulationtime):
+def test_zero_flow_mix(simulation_time):
     mix = Mix()
 
     _, output = mix.simulate(
@@ -40,7 +40,7 @@ def test_zero_flow_mix(simulationtime):
         },
         ApplianceState(),
         None,
-        simulationtime,
+        simulation_time,
     )
 
     assert output[MixPort.AB].flow == 0

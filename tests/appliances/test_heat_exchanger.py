@@ -12,11 +12,11 @@ from energy_box_control.appliances.heat_exchanger import (
 
 
 @fixture
-def simulationtime():
+def simulation_time():
     return SimulationTime(timedelta(seconds=1), 0, datetime.now())
 
 
-def test_heat_exchanger_equal_flow(simulationtime):
+def test_heat_exchanger_equal_flow(simulation_time):
     exchanger = HeatExchanger(2, 1)
 
     _, output = exchanger.simulate(
@@ -26,14 +26,14 @@ def test_heat_exchanger_equal_flow(simulationtime):
         },
         ApplianceState(),
         None,
-        simulationtime,
+        simulation_time,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(1, 30)
     assert output[HeatExchangerPort.B_OUT] == ConnectionState(1, 30)
 
 
-def test_heat_exchanger_equal_capacity(simulationtime):
+def test_heat_exchanger_equal_capacity(simulation_time):
     exchanger = HeatExchanger(1, 1)
 
     _, output = exchanger.simulate(
@@ -43,7 +43,7 @@ def test_heat_exchanger_equal_capacity(simulationtime):
         },
         ApplianceState(),
         None,
-        simulationtime,
+        simulation_time,
     )
 
     assert output[HeatExchangerPort.A_OUT] == ConnectionState(3, 25)

@@ -16,60 +16,60 @@ def variable_pump():
 
 
 @fixture
-def simulationtime():
+def simulation_time():
     return SimulationTime(timedelta(seconds=1), 0, datetime.now())
 
 
-def test_variable_pump_off(variable_pump, simulationtime):
+def test_variable_pump_off(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(False, 5),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[VariablePumpPort.OUT].flow == 0
     assert outputs[VariablePumpPort.OUT].temperature == 50
 
 
-def test_variable_pump_minimum(variable_pump, simulationtime):
+def test_variable_pump_minimum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.min_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
 
 
-def test_variable_pump_maximum(variable_pump, simulationtime):
+def test_variable_pump_maximum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.max_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
 
 
-def test_variable_pump_over_maximum(variable_pump, simulationtime):
+def test_variable_pump_over_maximum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure + 10),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.max_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50
 
 
-def test_variable_pump_under_minimum(variable_pump, simulationtime):
+def test_variable_pump_under_minimum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
         {VariablePumpPort.IN: ConnectionState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure - 10),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[VariablePumpPort.OUT].flow == variable_pump.min_flow
     assert outputs[VariablePumpPort.OUT].temperature == 50

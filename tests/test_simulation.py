@@ -40,10 +40,10 @@ def run_simulation(
     return SimulationSuccess(state)
 
 
-def test_simulationtime_timestamp():
+def test_simulation_time_timestamp():
     start = datetime(2023, 1, 1, 0, 0, 0)
     step_size = timedelta(days=1)
     step = 10
-    simulationtime = SimulationTime(step_size, step, start)
+    simulation_time = SimulationTime(step_size, step, start)
 
-    assert simulationtime.timestamp == datetime(2023, 1, 11, 0, 0, 0)
+    assert simulation_time.timestamp == datetime(2023, 1, 11, 0, 0, 0)

@@ -141,27 +141,27 @@ def boiler():
 
 
 @fixture
-def simulationtime():
+def simulation_time():
     return SimulationTime(timedelta(seconds=1), 0, datetime.now())
 
 
-def test_boiler_heat_loss(boiler, simulationtime):
+def test_boiler_heat_loss(boiler, simulation_time):
 
     state = BoilerState(50, 20)
 
     for _ in range(100):
         state, _ = boiler.simulate(
-            {}, state, BoilerControl(heater_on=False), simulationtime
+            {}, state, BoilerControl(heater_on=False), simulation_time
         )
 
     assert state.temperature == approx(20)
 
 
-def test_boiler_double_step(boiler, simulationtime):
+def test_boiler_double_step(boiler, simulation_time):
     state = BoilerState(50, 20)
 
     first_state, _ = boiler.simulate(
-        {}, state, BoilerControl(heater_on=True), simulationtime
+        {}, state, BoilerControl(heater_on=True), simulation_time
     )
     second_state, _ = boiler.simulate(
         {},

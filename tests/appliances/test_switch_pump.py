@@ -16,26 +16,26 @@ def switch_pump():
 
 
 @fixture
-def simulationtime():
+def simulation_time():
     return SimulationTime(timedelta(seconds=1), 0, datetime.now())
 
 
-def test_switch_pump_off(switch_pump, simulationtime):
+def test_switch_pump_off(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
         {SwitchPumpPort.IN: ConnectionState(1, 50)},
         SwitchPumpState(),
         SwitchPumpControl(False),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 0
 
 
-def test_switch_pump_on(switch_pump, simulationtime):
+def test_switch_pump_on(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
         {SwitchPumpPort.IN: ConnectionState(0, 50)},
         SwitchPumpState(),
         SwitchPumpControl(True),
-        simulationtime,
+        simulation_time,
     )
     assert outputs[SwitchPumpPort.OUT].flow == 1
     assert outputs[SwitchPumpPort.OUT].temperature == 50
