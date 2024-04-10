@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
 
+from energy_box_control.appliances.base import Celsius
 from energy_box_control.appliances.heat_pipes import HeatPipes, HeatPipesPort
 from energy_box_control.appliances.mix import Mix, MixPort
 from energy_box_control.appliances.pcm import Pcm, PcmPort
@@ -31,16 +32,26 @@ from energy_box_control.power_hub.power_hub_components import (
     pcm,
 )
 
+from energy_box_control.power_hub.sensors import (
+    HeatPipesSensors,
+    PcmSensors,
+    ValveSensors,
+)
+from energy_box_control.sensors import NetworkSensors, WeatherSensors
+
+import energy_box_control.power_hub.power_hub_components as phc
+
 
 @dataclass
-class PipesPcmSensors:
-    heat_pipes_out_temperature: float
-    heat_pipes_valve_position: float
+class PipesPcmSensors(NetworkSensors):
+    heat_pipes: HeatPipesSensors
+    heat_pipes_valve: ValveSensors
+    pcm: PcmSensors
 
 
 @dataclass
 class PipesPcmControlState:
-    hot_loop_setpoint: float
+    hot_loop_setpoint: Celsius
 
 
 @dataclass
@@ -104,9 +115,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.heat_pipes_valve_position,
+            sensors.heat_pipes_valve.position,
             control_state.hot_loop_setpoint,
-            sensors.heat_pipes_out_temperature,
+            sensors.heat_pipes.output_temperature,
             reversed=False,
         )
 
@@ -120,12 +131,11 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         )
 
     def sensors(self, state: NetworkState[Self]) -> PipesPcmSensors:
-
-        return PipesPcmSensors(
-            heat_pipes_out_temperature=state.connection(
-                self.heat_pipes, HeatPipesPort.OUT
-            ).temperature,
-            heat_pipes_valve_position=state.appliance(self.heat_pipes_valve)
-            .get()
-            .position,
+        return PipesPcmSensors.resolve_for_network(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            ),
+            state,
+            self,
         )

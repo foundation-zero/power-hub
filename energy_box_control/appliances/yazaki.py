@@ -5,10 +5,18 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
 
 from scipy.interpolate import RegularGridInterpolator
 import logging
+
+from energy_box_control.units import (
+    Celsius,
+    JoulePerLiterKelvin,
+    KiloWatt,
+    Watt,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,31 +40,31 @@ class YazakiControl(ApplianceControl):
     pass
 
 
-_ref_temps_cooling: list[float] = [27, 29.5, 31, 32]
-_ref_temps_heat: list[float] = [70, 80, 87, 95]
-_cooling_capacity_values: list[list[float]] = [
+_ref_temps_cooling: list[Celsius] = [27, 29.5, 31, 32]
+_ref_temps_hot: list[Celsius] = [70, 80, 87, 95]
+_cooling_capacity_values: list[list[KiloWatt]] = [
     [10.0, 16.5, 21.0, 22.5],
     [7.0, 14.0, 18.0, 21],
     [6.0, 13.0, 17.5, 19.5],
     [4.0, 10.0, 15.0, 16],
 ]
 
-_heat_input_values: list[list[float]] = [
-    [12.5, 10, 9, 7],
-    [21, 18, 17, 14],
-    [30, 26, 25, 22.5],
-    [37, 34, 32, 27.5],
+_heat_input_values: list[list[KiloWatt]] = [
+    [12.5, 10.0, 9.0, 7.0],
+    [21.0, 18.0, 17.0, 14.0],
+    [30.0, 26.0, 25.0, 22.5],
+    [37.0, 34.0, 32.0, 27.5],
 ]
 
 _cooling_capacity_interpolator = RegularGridInterpolator(
-    (_ref_temps_cooling, _ref_temps_heat),
+    (_ref_temps_cooling, _ref_temps_hot),
     _cooling_capacity_values,
     bounds_error=False,
     fill_value=None,
 )
 
 _heat_input_interpolator = RegularGridInterpolator(
-    (_ref_temps_cooling, _ref_temps_heat),
+    (_ref_temps_cooling, _ref_temps_hot),
     _heat_input_values,
     bounds_error=False,
     fill_value=None,
@@ -65,15 +73,16 @@ _heat_input_interpolator = RegularGridInterpolator(
 
 @dataclass(frozen=True, eq=True)
 class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
-    specific_heat_capacity_hot: float
-    specific_heat_capacity_cooling: float
-    specific_heat_capacity_chilled: float
+    specific_heat_capacity_hot: JoulePerLiterKelvin
+    specific_heat_capacity_cooling: JoulePerLiterKelvin
+    specific_heat_capacity_chilled: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[YazakiPort, ConnectionState],
         previous_state: YazakiState,
         control: YazakiControl,
+        simulation_time: SimulationTime,
     ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
 
         hot_in = inputs[YazakiPort.HOT_IN]
@@ -86,7 +95,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
 
         # Here we will assume that the flows are close to optimal. We then use the lookup table (page 5,6 in https://drive.google.com/file/d/1-zn3pD88ZF3Z0rSOXOneaLs78x7psXdR/view?usp=sharing) to get cooling capacity from cooling water temp and hot water temp
 
-        if not min(_ref_temps_heat) < hot_in.temperature < max(_ref_temps_heat):
+        if not min(_ref_temps_hot) < hot_in.temperature < max(_ref_temps_hot):
             logging.warning(
                 f"Hot in temperature of {hot_in.temperature} outside of hot reference temperatures. All values are passed through without change"
             )
@@ -95,12 +104,12 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
             chilled_temp_out = chilled_in.temperature
 
         else:
-            cooling_capacity = 1000 * float(
+            cooling_capacity: Watt = 1000 * float(
                 _cooling_capacity_interpolator(
                     (cooling_in.temperature, hot_in.temperature)
                 )
             )
-            heat_input = 1000 * float(
+            heat_input: Watt = 1000 * float(
                 _heat_input_interpolator((cooling_in.temperature, hot_in.temperature))
             )
 

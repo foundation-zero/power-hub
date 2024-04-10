@@ -1,6 +1,8 @@
 # pyright: reportIncompatibleMethodOverride=true
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Self
+from energy_box_control.appliances.base import Celsius, SimulationTime
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort, YazakiState
 from energy_box_control.network import (
     Network,
@@ -24,12 +26,12 @@ from energy_box_control.appliances import (
 
 @dataclass
 class BoilerSensors:
-    boiler_temperature: float
+    boiler_temperature: Celsius
 
 
 @dataclass
 class ControlState:
-    boiler_setpoint: float
+    boiler_setpoint: Celsius
 
 
 class BoilerNetwork(Network[BoilerSensors]):
@@ -51,7 +53,7 @@ class BoilerNetwork(Network[BoilerSensors]):
             .value(SourceState())
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build()
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -97,7 +99,7 @@ class BoilerValveNetwork(BoilerNetwork):
             .value(self.valve_state)
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build()
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -142,7 +144,7 @@ class YazakiNetwork(Network[None]):
             .value(SourceState())
             .define_state(self.yazaki)
             .value(YazakiState())
-            .build()
+            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:

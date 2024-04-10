@@ -5,7 +5,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
+    SimulationTime,
 )
+from energy_box_control.units import JoulePerLiterKelvin, Watt
 
 
 @dataclass(frozen=True, eq=True)
@@ -22,15 +24,16 @@ class ChillerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class Chiller(Appliance[ChillerState, None, ChillerPort]):
-    cooling_capacity: float  # W
-    specific_heat_capacity_chilled: float  # J / l K
-    specific_heat_capacity_cooling: float  # J / l K
+    cooling_capacity: Watt
+    specific_heat_capacity_chilled: JoulePerLiterKelvin
+    specific_heat_capacity_cooling: JoulePerLiterKelvin
 
     def simulate(
         self,
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
         control: None,
+        simulation_time: SimulationTime,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
 
         chilled_out_temp = (
@@ -41,6 +44,7 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
                 * inputs[ChillerPort.CHILLED_IN].flow
             )
             if inputs[ChillerPort.CHILLED_IN].flow > 0
+            and inputs[ChillerPort.COOLING_IN].flow > 0
             else inputs[ChillerPort.CHILLED_IN].temperature
         )
 
@@ -51,7 +55,8 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
                 self.specific_heat_capacity_cooling
                 * inputs[ChillerPort.COOLING_IN].flow
             )
-            if inputs[ChillerPort.COOLING_IN].flow > 0
+            if inputs[ChillerPort.CHILLED_IN].flow > 0
+            and inputs[ChillerPort.COOLING_IN].flow > 0
             else inputs[ChillerPort.COOLING_IN].temperature
         )
 

@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
 from pytest import fixture
-from energy_box_control.appliances.base import ApplianceControl, ConnectionState
+from energy_box_control.appliances.base import ConnectionState, SimulationTime
 from energy_box_control.appliances import (
     Chiller,
     ChillerPort,
@@ -20,6 +21,7 @@ def test_chiller(chiller):
         },
         ChillerState(),
         None,
+        SimulationTime(timedelta(seconds=1), 0, datetime.now()),
     )
     assert outputs[ChillerPort.CHILLED_OUT].temperature == 9
 
