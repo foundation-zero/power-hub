@@ -1,11 +1,11 @@
-from pytest import fixture
+from pytest import approx, fixture
 from energy_box_control.appliances import (
     BoilerControl,
     SwitchPumpControl,
     HeatPipesPort,
 )
 from energy_box_control.appliances.base import ApplianceState
-from energy_box_control.appliances.boiler import BoilerState
+from energy_box_control.appliances.boiler import BoilerPort, BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
@@ -51,6 +51,10 @@ def test_power_hub_sensors(power_hub):
         sensors.heat_pipes.output_temperature
         == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
     )
+    assert sensors.hot_reservoir.heat_exchange_flow == approx(
+        next_state.connection(power_hub.hot_reservoir, BoilerPort.HEAT_EXCHANGE_IN).flow
+    )
+    assert sensors.cold_reservoir is not None
 
 
 def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
