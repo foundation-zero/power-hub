@@ -63,35 +63,11 @@ describe("PowerHubStore", async () => {
         );
       });
     });
-  });
-
-  describe("computed", () => {
-    describe("historical data", () => {
-      const mockAndCall = (
-        path: Parameters<typeof store.computed.useHistory>[0],
-        time: string = new Date().toString(),
-        value = 5,
-      ) => {
-        vi.spyOn(ajax, "getJSON").mockReturnValue(of([{ time, value }]));
-        return useObservable(store.computed.useHistory(path));
-      };
-
-      it("parses the time value to Date object", () => {
-        const observable = mockAndCall("heat_pipes/power");
-        expect(observable.value?.[0].time).toBeInstanceOf(Date);
-      });
-
-      it("calls the correct endpoint", () => {
-        mockAndCall("heat_pipes/power");
-        expect(ajax.getJSON).toBeCalledTimes(1);
-        expect(ajax.getJSON).toBeCalledWith("/api/appliances/heat_pipes/power/last_values");
-      });
-    });
 
     describe("totals", () => {
-      const mockAndCall = (path: Parameters<typeof store.computed.useTotals>[0], value = 5) => {
+      const mockAndCall = (path: Parameters<typeof store.sensors.useTotals>[0], value = 5) => {
         vi.spyOn(ajax, "getJSON").mockReturnValue(of(value));
-        return useObservable(store.computed.useTotals(path));
+        return useObservable(store.sensors.useTotals(path));
       };
 
       it("returns the value untouched", () => {
@@ -102,7 +78,7 @@ describe("PowerHubStore", async () => {
       it("calls the correct endpoint", () => {
         mockAndCall("heat_pipes/power");
         expect(ajax.getJSON).toBeCalledTimes(1);
-        expect(ajax.getJSON).toBeCalledWith("/api/appliances/heat_pipes/power/total");
+        expect(ajax.getJSON).toBeCalledWith("/api/appliance_sensors/heat_pipes/power/total");
       });
     });
   });
