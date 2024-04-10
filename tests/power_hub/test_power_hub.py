@@ -72,17 +72,21 @@ def test_derived_sensors(power_hub, min_max_temperature):
         PowerHubControlState(),
         None,
         min_max_temperature,
-        10,
+        100,
     )
 
     state = result.state
     sensors = power_hub.sensors(state)
 
+    assert sensors.pcm.discharge_input_temperature == approx(
+        state.connection(power_hub.pcm, PcmPort.DISCHARGE_IN).temperature, abs=1e-4
+    )
+
     assert sensors.pcm.charge_flow == approx(
-        state.connection(power_hub.pcm, PcmPort.CHARGE_IN).flow
+        state.connection(power_hub.pcm, PcmPort.CHARGE_IN).flow, abs=1e-4
     )
     assert sensors.pcm.discharge_output_temperature == approx(
-        state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-2
+        state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-4
     )
 
 
