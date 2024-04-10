@@ -1,6 +1,6 @@
 import { MqttClient } from "@/mqtt";
 import type { NestedPath, PathValue, HistoricalData } from "@/types";
-import type { SensorsTree, ComputedTree, Tree } from "@/types/power-hub";
+import type { SensorsTree, Tree } from "@/types/power-hub";
 import { parseValue, pick } from "@/utils";
 import { defineStore } from "pinia";
 import { map, repeat } from "rxjs";
@@ -43,32 +43,23 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   const sensorsPathFn: PathFn = (path, [applianceName, fieldName] = path.split("/")) =>
     ["appliance_sensors", applianceName, fieldName].join("/");
 
-  const computedPathFn: PathFn = (path, [applianceName, fieldName] = path.split("/")) =>
-    ["appliances", applianceName, fieldName].join("/");
-
   const sensors = {
     useHistory: useHistory<SensorsTree>(sensorsPathFn),
     useMqtt: useMqtt("appliance_sensors"),
-  };
-
-  const computed = {
-    useHistory: useHistory<ComputedTree>(computedPathFn),
-    useTotals: useTotals<ComputedTree>(computedPathFn),
+    useTotals: useTotals<SensorsTree>(sensorsPathFn),
   };
 
   const connect = async () => {
     client ??= await MqttClient.connect(`ws://${location.host}/ws`);
 
     return {
-      computed,
       sensors,
     };
   };
 
   return {
     connect,
-    computed,
-    sensors: pick(sensors, "useHistory"),
+    sensors: pick(sensors, "useHistory", "useTotals"),
   };
 });
 

@@ -25,6 +25,7 @@ export type Chiller = Port<"cooling"> & Port<"chilled">;
 export type HeatPipes = Port & {
   ambientTemperature: number;
   globalIrradiance: number;
+  power: number;
 };
 
 export type Reservoir = Port<"heat"> &
@@ -49,12 +50,6 @@ export interface SensorsTree {
   wasteSwitchValve: Valve;
   hotReservoirPcmValve: Valve;
   chillerWasteBypassValve: Valve;
-}
-
-export interface ComputedTree {
-  heatPipes: {
-    power: number;
-  };
 }
 
 export interface Tree {
