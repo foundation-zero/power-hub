@@ -4,7 +4,17 @@ from pytest import approx, fixture
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
-from energy_box_control.appliances.boiler import BoilerPort
+from energy_box_control.appliances.base import ApplianceState
+from energy_box_control.appliances.boiler import BoilerPort, BoilerState
+from energy_box_control.appliances.chiller import ChillerState
+from energy_box_control.appliances.heat_pipes import HeatPipesState
+from energy_box_control.appliances.pcm import PcmPort, PcmState
+from energy_box_control.appliances.source import SourceState
+from energy_box_control.appliances.switch_pump import SwitchPumpState
+from energy_box_control.appliances.valve import ValveState
+from energy_box_control.appliances.yazaki import YazakiState
+from energy_box_control.network import NetworkState
+from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
@@ -53,6 +63,29 @@ def test_power_hub_sensors(power_hub):
     assert sensors.cold_reservoir is not None
 
 
+def test_derived_sensors(power_hub, min_max_temperature):
+
+    result = run_simulation(
+        power_hub,
+        power_hub.simple_initial_state(),
+        power_hub.no_control(),
+        PowerHubControlState(),
+        None,
+        min_max_temperature,
+        10,
+    )
+
+    state = result.state
+    sensors = power_hub.sensors(state)
+
+    assert sensors.pcm.charge_flow == approx(
+        state.connection(power_hub.pcm, PcmPort.CHARGE_IN).flow
+    )
+    assert sensors.pcm.discharge_output_temperature == approx(
+        state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-2
+    )
+
+
 def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
 
     result = run_simulation(
@@ -62,6 +95,7 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
         initial_control_state(),
         None,
         min_max_temperature,
+        5000,
     )
 
     assert isinstance(result, SimulationSuccess)

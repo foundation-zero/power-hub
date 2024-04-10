@@ -24,14 +24,18 @@ from energy_box_control.sensors import (
 @sensors()
 class HeatPipesSensors(FromState):
     spec: HeatPipes
-    flow: LiterPerSecond = sensor(type=SensorType.FLOW, from_port=HeatPipesPort.IN)
+    flow: LiterPerSecond = sensor(
+        technical_name="FS1001", type=SensorType.FLOW, from_port=HeatPipesPort.IN
+    )
     ambient_temperature: Celsius = sensor(from_weather=True)
     global_irradiance: WattPerMeterSquared = sensor(from_weather=True)
     input_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=HeatPipesPort.IN
+        technical_name="TS1001", type=SensorType.TEMPERATURE, from_port=HeatPipesPort.IN
     )
     output_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=HeatPipesPort.OUT
+        technical_name="TS1002",
+        type=SensorType.TEMPERATURE,
+        from_port=HeatPipesPort.OUT,
     )
 
     @property
@@ -46,26 +50,67 @@ class HeatPipesSensors(FromState):
 @sensors()
 class PcmSensors(FromState):
     spec: Pcm
-    charge_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=PcmPort.CHARGE_IN
-    )
+    yazaki: "YazakiSensors"
+    heat_pipes: "HeatPipesSensors"
+    hot_reservoir_pcm_valve: "ValveSensors"
+    temperature: Celsius = sensor(technical_name="TS1007")
+
     charge_input_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=PcmPort.CHARGE_IN
+        technical_name="TS1005",
+        type=SensorType.TEMPERATURE,
+        from_port=PcmPort.CHARGE_IN,
     )
     charge_output_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=PcmPort.CHARGE_OUT
-    )
-    discharge_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN
-    )
-    discharge_input_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=PcmPort.DISCHARGE_IN
-    )
-    discharge_output_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=PcmPort.DISCHARGE_OUT
+        technical_name="TS1006",
+        type=SensorType.TEMPERATURE,
+        from_port=PcmPort.CHARGE_OUT,
     )
 
-    temperature: Celsius
+    discharge_flow: LiterPerSecond = sensor(
+        technical_name="FS1003", type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN
+    )
+
+    @property
+    def discharge_input_temperature(self) -> Celsius:
+        return self.yazaki.hot_output_temperature
+
+    @property
+    def discharge_power(
+        self,
+    ) -> (
+        Watt
+    ):  # this is problematic if we want to know losses / energy that goes into heating up circuit. Unless we can infer from the position of the bypass valve
+        return self.yazaki.used_heat
+
+    @property
+    def discharge_output_temperature(self) -> Celsius:
+        return (
+            self.discharge_power
+            / (self.spec.specific_heat_capacity_discharge * self.discharge_flow)
+        ) + self.discharge_input_temperature
+
+    @property
+    def charge_power(
+        self,
+    ) -> Watt:  # this is problematic if we want to know losses in the system
+        return (
+            self.heat_pipes.power if self.hot_reservoir_pcm_valve.position == 0 else 0
+        )
+
+    @property
+    def charge_flow(self) -> LiterPerSecond:
+        return self.charge_power / (
+            self.spec.specific_heat_capacity_charge
+            * (self.charge_input_temperature - self.charge_output_temperature)
+        )
+
+    @property
+    def net_charge(self) -> Watt:
+        return self.charge_power - self.discharge_power
+
+    @property
+    def charged(self) -> bool:
+        return self.temperature > self.spec.phase_change_temperature
 
     @property
     def state_of_charge(self):
@@ -117,6 +162,18 @@ class YazakiSensors(FromState):
             * self.spec.specific_heat_capacity_chilled
         )
 
+    @property
+    def cooling_power(self) -> Watt:
+        return 0
+
+    @property
+    def waste_heat(self) -> Watt:
+        return 0
+
+    @property
+    def used_heat(self) -> Watt:
+        return 0
+
 
 @sensors()
 class BoilerSensors(FromState):
@@ -155,7 +212,7 @@ def derive_flow(
 ) -> LiterPerSecond:
     if not valve.position == open_valve_state:
         return 0
-    return power / (abs(temperature_in - temperature_out) * specific_heat_capacity)
+    return power / ((temperature_in - temperature_out) * specific_heat_capacity)
 
 
 @sensors()
