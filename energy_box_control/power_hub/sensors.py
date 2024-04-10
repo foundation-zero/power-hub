@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort
 from energy_box_control.units import (
     Celsius,
+    JoulePerLiterKelvin,
     LiterPerSecond,
     Watt,
     WattPerMeterSquared,
@@ -113,22 +114,14 @@ class YazakiSensors(FromState):
         )
 
 
-@sensors()
 class BoilerSensors(FromState):
     spec: Boiler
     temperature: Celsius
-    heat_exchange_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=BoilerPort.HEAT_EXCHANGE_IN
-    )
     heat_exchange_in_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=BoilerPort.HEAT_EXCHANGE_IN
     )
     heat_exchange_out_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=BoilerPort.HEAT_EXCHANGE_OUT
-    )
-
-    fill_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=BoilerPort.FILL_IN
     )
     fill_in_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=BoilerPort.FILL_IN
@@ -136,6 +129,45 @@ class BoilerSensors(FromState):
     fill_out_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=BoilerPort.FILL_OUT
     )
+
+
+@sensors()
+class ValveSensors(FromState):
+    spec: Valve
+    position: float
+
+
+def derive_flow(
+    power: Watt,
+    valve: ValveSensors,
+    temperature_in: Celsius,
+    temperature_out: Celsius,
+    specific_heat_capacity: JoulePerLiterKelvin,
+    open_valve_state: float,
+) -> LiterPerSecond:
+    if not valve.position == open_valve_state:
+        return 0
+    return power / (abs(temperature_in - temperature_out) * specific_heat_capacity)
+
+
+@sensors()
+class HotReservoirSensors(BoilerSensors):
+    fill_flow: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=BoilerPort.FILL_IN
+    )
+    heat_pipes: HeatPipesSensors
+    hot_reservoir_pcm_valve: ValveSensors
+
+    @property
+    def heat_exchange_flow(self) -> LiterPerSecond:
+        return derive_flow(
+            self.heat_pipes.power,
+            self.hot_reservoir_pcm_valve,
+            self.heat_exchange_in_temperature,
+            self.heat_exchange_out_temperature,
+            self.spec.specific_heat_capacity_exchange,
+            1,
+        )
 
 
 @sensors()
@@ -162,18 +194,12 @@ class ChillerSensors(FromState):
     )
 
 
-@sensors()
-class ValveSensors(FromState):
-    spec: Valve
-    position: float
-
-
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
     heat_pipes_valve: ValveSensors
     hot_reservoir_pcm_valve: ValveSensors
-    hot_reservoir: BoilerSensors
+    hot_reservoir: HotReservoirSensors
     pcm: PcmSensors
     yazaki_hot_bypass_valve: ValveSensors
     yazaki: YazakiSensors
