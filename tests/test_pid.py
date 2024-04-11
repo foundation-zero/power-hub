@@ -81,30 +81,39 @@ def test_noisy_system():
     assert total / n == approx(10, abs=0.1)
 
 
-class SlowSystem:
-    acc: float
+class MotionSystem:
+    position: float
+    velocity: float
+    mass: float
 
-    def __init__(self, offset: float, ratio: float):
-        self.offset = offset
-        self.ratio = ratio
-        self.acc = offset
+    def __init__(self, mass: float):
+        self.mass = mass
+        self.position = 0
+        self.velocity = 0
 
     def control(self, value: float) -> float:
-        new_value = value + self.offset
-        self.acc = (self.acc * self.ratio) + new_value * (1 - self.ratio)
-        return self.acc
+        self.velocity += value / self.mass
+        self.position += self.velocity
+        return self.position
 
 
 def test_overshoot_limitation():
-    system = SlowSystem(-20, 0.9)
-    pid = Pid(
-        PidConfig(10, 0, 0.05, -4)
-    )  # ki calibrated to overshoot at 0 kd and tuned not to overshoot
-    control = 0.0
-    measures = []
-    for i in range(100000):
-        measure = system.control(control)
-        pid, control = pid.run(measure)
-        measures.append(measure)
+    system = MotionSystem(1)
 
-    assert max(measures) < 10.1
+    def run_control(pid):
+        control = 0.0
+        measures = []
+        for i in range(100000):
+            measure = system.control(control)
+            pid, control = pid.run(measure)
+            measures.append(measure)
+        return measures
+
+    kp = 0.01
+
+    without_overshoot_limitation = run_control(Pid(PidConfig(10, kp, 0, 0)))
+    assert max(without_overshoot_limitation) > 12
+
+    with_overshoot_limitation = run_control(Pid(PidConfig(10, kp, 0, 1)))
+
+    assert max(with_overshoot_limitation) < 11
