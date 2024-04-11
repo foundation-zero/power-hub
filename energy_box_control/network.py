@@ -9,7 +9,6 @@ from typing import (
     Generic,
     Iterable,
     Self,
-    Set,
     TypeVar,
     TypeVarTuple,
     cast,
@@ -25,6 +24,7 @@ from energy_box_control.appliances import (
     Port,
 )
 from energy_box_control.appliances.base import SimulationTime
+from energy_box_control.linearize import linearize
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
 AnyAppliance = Appliance[Any, Any, Any]
@@ -319,27 +319,11 @@ class NetworkConnections[Net: "Network[Any]"]:
             lambda connection: connection.from_app
         )
 
-        ordered: list[AnyAppliance] = []
-        found: Set[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]] = set()
-        while incoming_connections:
-            newly_found: list[AnyAppliance] = []
-            for appliance, connections in incoming_connections.items():
-                if not (set(connections) - found):
-                    found.update(outgoing_connections[appliance])
-                    newly_found.append(appliance)
-
-            if not newly_found:
-                raise Exception(
-                    "failed to sort connections for iteration, they mustn't be cyclical"
-                )
-
-            # can't remove inside iteration
-            for item in newly_found:
-                incoming_connections.pop(item)
-
-            ordered.extend(newly_found)
-
-        return ordered
+        return linearize(
+            incoming_connections.keys(),
+            lambda appliance: incoming_connections[appliance],
+            lambda appliance: outgoing_connections[appliance],
+        )
 
     def port_mapping(
         self,

@@ -14,6 +14,7 @@ from typing import Any, Callable, Deque, Protocol, cast, Self, get_type_hints
 import functools
 from collections import deque
 
+from energy_box_control.linearize import linearize
 from energy_box_control.network import NetworkState, Network
 from energy_box_control.units import Celsius, WattPerMeterSquared
 
@@ -38,21 +39,20 @@ class NetworkSensors:
         with cls.context(weather) as context:
             listed_sensors = set((field.name, field.type) for field in fields(cls))
 
-            def is_first_order_sensor(sensor_cls: Any):
-                return not any(
+            def get_sensor_dependencies(sensor_cls: Any):
+                return (
                     (name, type)
                     for name, type in get_type_hints(sensor_cls).items()
                     if (name, type) in listed_sensors
                 )
 
-            sensors = set(fields(cls))
-
-            first_order_sensors = set(
-                sensor for sensor in sensors if is_first_order_sensor(sensor.type)
+            sensors = linearize(
+                set(fields(cls)),
+                lambda sensor: get_sensor_dependencies(sensor.type),
+                lambda sensor: [(sensor.name, sensor.type)],
             )
-            second_order_sensors = sensors - first_order_sensors
 
-            for sensor in [*first_order_sensors, *second_order_sensors]:
+            for sensor in sensors:
                 context.from_state(
                     state,
                     sensor.type,
