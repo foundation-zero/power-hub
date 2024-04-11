@@ -59,7 +59,7 @@ def test_network():
                 .build()
             )
 
-        def sensors(self, state: NetworkState[Self]) -> None:
+        def sensors_from_state(self, state: NetworkState[Self]) -> None:
             return None
 
     my = MyNetwork()
@@ -96,7 +96,7 @@ def test_circular_network():
                 .build()
             )
 
-        def sensors(self, state: NetworkState[Self]) -> None:
+        def sensors_from_state(self, state: NetworkState[Self]) -> None:
             return None
 
     circle = CircularNetwork()

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import json
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -620,7 +621,7 @@ class PowerHub(Network[PowerHubSensors]):
         )
         # fmt: on
 
-    def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
+    def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         return PowerHubSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
@@ -629,6 +630,27 @@ class PowerHub(Network[PowerHubSensors]):
             state,
             self,
         )
+
+    def sensors_from_json(self, json_str: str):
+        json_object = json.loads(json_str)
+        init_order = PowerHubSensors.sensor_initialization_order()
+
+        context = PowerHubSensors.context(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            )
+        )
+
+        with context:
+            for sensor in init_order:
+                context.from_values(
+                    json_object[sensor.name],
+                    sensor.type,
+                    getattr(context.subject, sensor.name),
+                    getattr(self, sensor.name),
+                )
+            return context.result()
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on

@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
+import json
 from typing import (
     Any,
     Callable,
@@ -25,6 +26,8 @@ from energy_box_control.appliances import (
 )
 from energy_box_control.appliances.base import SimulationTime
 from energy_box_control.linearize import linearize
+from energy_box_control.appliances.boiler import BoilerControl
+from energy_box_control.appliances.switch_pump import SwitchPumpControl
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
 AnyAppliance = Appliance[Any, Any, Any]
@@ -364,6 +367,37 @@ class NetworkControl[Net: "Network[Any]"]:
     def appliance[App: AnyAppliance](self, app: App) -> ControlGetter[App]:
         return ControlGetter(app, self._controls.get(app, None))
 
+    @staticmethod
+    def from_json(json_str: str, net: Net) -> "NetworkControl[Net]":
+        control_object = json.loads(json_str)
+        return (
+            net.control(getattr(net, "hot_reservoir"))
+            .value(
+                BoilerControl(heater_on=control_object["hot_reservoir"]["heater_on"])
+            )
+            .control(getattr(net, "preheat_reservoir"))
+            .value(
+                BoilerControl(
+                    heater_on=control_object["preheat_reservoir"]["heater_on"]
+                )
+            )
+            .control(getattr(net, "cold_reservoir"))
+            .value(
+                BoilerControl(heater_on=control_object["cold_reservoir"]["heater_on"])
+            )
+            .control(getattr(net, "heat_pipes_pump"))
+            .value(SwitchPumpControl(on=control_object["heat_pipes_pump"]["on"]))
+            .control(getattr(net, "pcm_to_yazaki_pump"))
+            .value(SwitchPumpControl(on=control_object["pcm_to_yazaki_pump"]["on"]))
+            .control(getattr(net, "chilled_loop_pump"))
+            .value(SwitchPumpControl(on=control_object["chilled_loop_pump"]["on"]))
+            .control(getattr(net, "waste_pump"))
+            .value(SwitchPumpControl(on=control_object["waste_pump"]["on"]))
+            .control(getattr(net, "outboard_pump"))
+            .value(SwitchPumpControl(on=control_object["outboard_pump"]["on"]))
+            .build()
+        )
+
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:
     def __init__(self, *prev: *Prev):
@@ -637,4 +671,4 @@ class Network[Sensors](ABC):
         return ApplianceFeedback(app)
 
     @abstractmethod
-    def sensors(self, state: NetworkState[Self]) -> Sensors: ...
+    def sensors_from_state(self, state: NetworkState[Self]) -> Sensors: ...

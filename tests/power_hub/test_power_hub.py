@@ -1,20 +1,8 @@
 from pytest import approx, fixture
 from energy_box_control.appliances import (
-    BoilerControl,
-    SwitchPumpControl,
     HeatPipesPort,
 )
-from energy_box_control.appliances.base import ApplianceState
-from energy_box_control.appliances.boiler import BoilerPort, BoilerState
-from energy_box_control.appliances.chiller import ChillerState
-from energy_box_control.appliances.heat_pipes import HeatPipesState
-from energy_box_control.appliances.pcm import PcmState
-from energy_box_control.appliances.source import SourceState
-from energy_box_control.appliances.switch_pump import SwitchPumpState
-from energy_box_control.appliances.valve import ValveState
-from energy_box_control.appliances.yazaki import YazakiState
-from energy_box_control.network import NetworkState
-from energy_box_control.networks import ControlState
+from energy_box_control.appliances.boiler import BoilerPort
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
@@ -46,7 +34,7 @@ def test_power_hub_sensors(power_hub):
         power_hub.simple_initial_state(), power_hub.no_control()
     )
 
-    sensors = power_hub.sensors(next_state)
+    sensors = power_hub.sensors_from_state(next_state)
     assert (
         sensors.heat_pipes.output_temperature
         == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
