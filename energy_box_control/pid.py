@@ -7,6 +7,7 @@ class PidConfig:
     kp: float
     ki: float
     kd: float
+    bounds: tuple[float, float] | None = None
 
 
 class Pid:
@@ -26,8 +27,15 @@ class Pid:
         i = self._integral + self.config.ki * e
         d = self.config.kd * (e - self._e_prev)
 
-        control_value = p + i + d
+        raw_control_value = p + i + d
+
+        if self.config.bounds:
+            lower, upper = self.config.bounds
+            bounded_control_value = max(lower, min(raw_control_value, upper))
+        else:
+            bounded_control_value = raw_control_value
+
         pid = Pid(self.config)
         pid._integral = i
         pid._e_prev = e
-        return pid, control_value
+        return pid, bounded_control_value

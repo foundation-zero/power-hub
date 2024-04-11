@@ -117,3 +117,23 @@ def test_overshoot_limitation():
     with_overshoot_limitation = run_control(Pid(PidConfig(10, kp, 0, 1)))
 
     assert max(with_overshoot_limitation) < 11
+
+
+def test_upper_bound():
+    one_to_one = LinearSystem(1, 0, 0)
+
+    pid = Pid(PidConfig(100, 1, 0, 0, (0, 50)))
+
+    measure = one_to_one.control(0)
+    _, control = pid.run(measure)
+    assert control == 50
+
+
+def test_lower_bound():
+    one_to_one = LinearSystem(1, 0, 0)
+
+    pid = Pid(PidConfig(-100, 1, 0, 0, (0, 50)))
+
+    measure = one_to_one.control(0)
+    _, control = pid.run(measure)
+    assert control == 0
