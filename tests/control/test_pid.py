@@ -4,7 +4,7 @@ from itertools import pairwise
 from random import random
 from hypothesis import given
 from pytest import approx
-from energy_box_control.pid import Pid, PidConfig
+from energy_box_control.control.pid import Pid, PidConfig
 from hypothesis.strategies import floats, lists
 
 
