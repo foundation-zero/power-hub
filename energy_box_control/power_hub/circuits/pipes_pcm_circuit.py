@@ -130,7 +130,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .build(),
         )
 
-    def sensors(self, state: NetworkState[Self]) -> PipesPcmSensors:
+    def sensors_from_state(self, state: NetworkState[Self]) -> PipesPcmSensors:
         return PipesPcmSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
