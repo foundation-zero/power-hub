@@ -67,7 +67,7 @@ class PowerHub(Network[PowerHubSensors]):
     heat_pipes_pump: SwitchPump  # P-1001
     heat_pipes_mix: Mix
     hot_reservoir: Boiler  # W-1002
-    hot_reservoir_pcm_valve: Valve  # CV-1001
+    hot_switch_valve: Valve  # CV-1001
     hot_mix: Mix
     pcm: Pcm  # W-1003
     chiller_switch_valve: Valve  # CV-1008
@@ -104,7 +104,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.heat_pipes_pump,
             phc.heat_pipes_mix,
             phc.hot_reservoir,
-            phc.hot_reservoir_pcm_valve,
+            phc.hot_switch_valve,
             phc.hot_mix,
             phc.pcm,
             phc.chiller_switch_valve,
@@ -152,7 +152,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ApplianceState())
             .define_state(power_hub.hot_reservoir)
             .value(initial_boiler_state)
-            .define_state(power_hub.hot_reservoir_pcm_valve)
+            .define_state(power_hub.hot_switch_valve)
             .value(ValveState(0))
             .define_state(power_hub.hot_mix)
             .value(ApplianceState())
@@ -237,7 +237,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ApplianceState())
             .define_state(self.hot_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE, phc.AMBIENT_TEMPERATURE))
-            .define_state(self.hot_reservoir_pcm_valve)
+            .define_state(self.hot_switch_valve)
             .value(ValveState(0))  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
             .value(ApplianceState())
@@ -347,10 +347,10 @@ class PowerHub(Network[PowerHubSensors]):
 
             .connect(self.heat_pipes_valve)
             .at(ValvePort.A)
-            .to(self.hot_reservoir_pcm_valve)
+            .to(self.hot_switch_valve)
             .at(ValvePort.AB)
 
-            .connect(self.hot_reservoir_pcm_valve)
+            .connect(self.hot_switch_valve)
             .at(ValvePort.B)
             .to(self.hot_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
@@ -360,7 +360,7 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.hot_mix)
             .at(MixPort.B)
 
-            .connect(self.hot_reservoir_pcm_valve)
+            .connect(self.hot_switch_valve)
             .at(ValvePort.A)
             .to(self.pcm)
             .at(PcmPort.CHARGE_IN)

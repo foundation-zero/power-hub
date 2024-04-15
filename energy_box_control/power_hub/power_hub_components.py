@@ -35,7 +35,7 @@ heat_pipes_mix = Mix()
 hot_reservoir = hot_reservoir = Boiler(
     130, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
 )
-hot_reservoir_pcm_valve = Valve()
+hot_switch_valve = Valve()
 hot_mix = Mix()
 pcm = Pcm(
     latent_heat=242000 * 610,  # 610 kg at 242 kJ/kg
