@@ -364,7 +364,7 @@ class NetworkControl[Net: "Network[Any]"]:
     def appliance[App: AnyAppliance](self, app: App) -> ControlGetter[App]:
         return ControlGetter(app, self._controls.get(app, None))
 
-    def get_control_values_dict(self, network: Net) -> dict[str, GenericControl]:
+    def name_to_control_values_mapping(self, network: Net) -> dict[str, GenericControl]:
         return {
             network.find_appliance_name_by_id(item.id): value
             for item, value in self._controls.items()
@@ -551,7 +551,7 @@ class Network[Sensors](ABC):
         for name, appliance in self.__dict__.items():
             if appliance.id == id:
                 return name
-        return "Unknown"
+        raise ValueError(f"Name not found for appliance with id {id}")
 
     @staticmethod
     def check_temperatures(

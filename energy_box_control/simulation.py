@@ -2,20 +2,40 @@ import json
 import queue
 import time
 from typing import Any
+from uuid import UUID
 from energy_box_control.power_hub.network import PowerHubControlState
 from energy_box_control.power_hub.sensors import get_sensor_values
+from energy_box_control.power_hub import PowerHub
 from mqtt import (
     create_and_connect_client,
     publish_value_to_mqtt,
     publish_to_mqtt,
-    initialize_and_start_listener,
+    run_listener,
 )
 from paho.mqtt import client as mqtt_client
-
-from energy_box_control.power_hub import PowerHub
 from dataclasses import fields
 from datetime import datetime
-from uuid import UUID
+
+from functools import partial
+
+
+def _encoder(blacklist: set[str] = set()) -> type[json.JSONEncoder]:
+
+    class NestedEncoder(json.JSONEncoder):
+
+        def default(self, o: Any):
+            if hasattr(o, "__dict__"):
+                return {
+                    attr: value
+                    for attr, value in o.__dict__.items()
+                    if attr not in blacklist
+                }
+            if type(o) == UUID:
+                return o.hex
+            else:
+                return json.JSONEncoder.default(self, o)
+
+    return NestedEncoder
 
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -23,16 +43,6 @@ CONTROL_VALUES_TOPIC = "power_hub/control_values"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
 control_values_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
-
-
-class NestedObjectWithAppliancesEncoder(json.JSONEncoder):
-    def default(self, o: Any):
-        if hasattr(o, "__dict__"):
-            return {attr: value for attr, value in o.__dict__.items() if attr != "spec"}
-        if type(o) == UUID:
-            return o.hex
-        else:
-            return json.JSONEncoder.default(self, o)
 
 
 def publish_sensor_values(
@@ -46,26 +56,25 @@ def publish_sensor_values(
         publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
 
 
-def control_values_on_message(
-    client: mqtt_client.Client, userdata: str, message: mqtt_client.MQTTMessage
+def queue_on_message(
+    queue: queue.Queue[str],
+    client: mqtt_client.Client,
+    userdata: str,
+    message: mqtt_client.MQTTMessage,
 ):
     decoded_message = str(message.payload.decode("utf-8"))
     print("Received message:", decoded_message)
-    control_values_queue.put(decoded_message)
-
-
-def sensor_values_on_message(
-    client: mqtt_client.Client, userdata: str, message: mqtt_client.MQTTMessage
-):
-    decoded_message = str(message.payload.decode("utf-8"))
-    print("Received message:", decoded_message)
-    sensor_values_queue.put(decoded_message)
+    queue.put(decoded_message)
 
 
 def run():
     mqtt_client = create_and_connect_client()
-    initialize_and_start_listener(CONTROL_VALUES_TOPIC, control_values_on_message)
-    initialize_and_start_listener(SENSOR_VALUES_TOPIC, sensor_values_on_message)
+    run_listener(
+        CONTROL_VALUES_TOPIC, partial(queue_on_message, queue=control_values_queue)
+    )
+    run_listener(
+        SENSOR_VALUES_TOPIC, partial(queue_on_message, queue=sensor_values_queue)
+    )
     power_hub = PowerHub.power_hub()
 
     state = power_hub.simulate(
@@ -79,7 +88,7 @@ def run():
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=NestedObjectWithAppliancesEncoder),
+        json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
     )
     control_values = power_hub.no_control()
 
@@ -95,8 +104,8 @@ def run():
             mqtt_client,
             CONTROL_VALUES_TOPIC,
             json.dumps(
-                control_values.get_control_values_dict(power_hub),
-                cls=NestedObjectWithAppliancesEncoder,
+                control_values.name_to_control_values_mapping(power_hub),
+                cls=_encoder(),
             ),
         )
         control_values = power_hub.control_from_json(
@@ -110,7 +119,7 @@ def run():
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=NestedObjectWithAppliancesEncoder),
+            json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
         )
 
         for sensor_field in fields(power_hub_sensors):

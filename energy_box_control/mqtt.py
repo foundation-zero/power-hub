@@ -61,7 +61,7 @@ def publish_to_mqtt(
     return result
 
 
-def initialize_and_start_listener(
+def run_listener(
     topic: str,
     on_message: Callable[[mqtt_client.Client, str, mqtt_client.MQTTMessage], None],
 ):
