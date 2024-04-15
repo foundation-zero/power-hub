@@ -144,7 +144,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .build(),
         )
 
-    def sensors(self, state: NetworkState[Self]) -> PcmYazakiSensors:
+    def sensors_from_state(self, state: NetworkState[Self]) -> PcmYazakiSensors:
         return PcmYazakiSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,

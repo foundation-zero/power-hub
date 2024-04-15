@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import Field, dataclass, fields
 from enum import Enum
 from math import nan
 
@@ -33,24 +33,28 @@ class NetworkSensors:
         return SensorContext(cls, weather)
 
     @classmethod
+    def sensor_initialization_order(cls) -> list[Field[Any]]:
+        listed_sensors = set((field.name, field.type) for field in fields(cls))
+
+        def get_sensor_dependencies(sensor_cls: Any):
+            return (
+                (name, type)
+                for name, type in get_type_hints(sensor_cls).items()
+                if (name, type) in listed_sensors
+            )
+
+        return linearize(
+            set(fields(cls)),
+            lambda sensor: get_sensor_dependencies(sensor.type),
+            lambda sensor: [(sensor.name, sensor.type)],
+        )
+
+    @classmethod
     def resolve_for_network[
         Net: "Network[NetworkSensors]"
     ](cls, weather: WeatherSensors, state: NetworkState[Net], network: Net):
         with cls.context(weather) as context:
-            listed_sensors = set((field.name, field.type) for field in fields(cls))
-
-            def get_sensor_dependencies(sensor_cls: Any):
-                return (
-                    (name, type)
-                    for name, type in get_type_hints(sensor_cls).items()
-                    if (name, type) in listed_sensors
-                )
-
-            sensors = linearize(
-                set(fields(cls)),
-                lambda sensor: get_sensor_dependencies(sensor.type),
-                lambda sensor: [(sensor.name, sensor.type)],
-            )
+            sensors = cls.sensor_initialization_order()
 
             for sensor in sensors:
                 context.from_state(
@@ -105,6 +109,17 @@ class SensorContext[T]:
     ):
         key = self._accessed.pop()
         instance = klass.from_state(self, appliance, state)
+        self._sensors[key] = instance
+
+    def from_values(
+        self,
+        values: dict[str, float | int | bool],
+        cls: Any,
+        _location: Any,
+        appliance: Appliance[ApplianceState, ApplianceControl | None, Port],
+    ):
+        key = self._accessed.pop()
+        instance = cls(self, appliance, **values)
         self._sensors[key] = instance
 
     def sensor(self, name: str) -> Any | None:
