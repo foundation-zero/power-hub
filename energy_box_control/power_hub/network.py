@@ -88,7 +88,7 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_mix: Mix
     waste_pump: SwitchPump  # P-1004
     outboard_exchange: HeatExchanger  # W-1007
-    outboard_pump: SwitchPump # P-1004
+    outboard_pump: SwitchPump  # P-1004
     outboard_source: Source
     fresh_water_source: Source
     cooling_demand: Source
@@ -262,15 +262,15 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.chilled_loop_pump)
             .value(SwitchPumpState())
             .define_state(self.waste_bypass_valve)
-            .value(ValveState(0)) # no bypass, all to chillers
+            .value(ValveState(0))  # no bypass, all to chillers
             .define_state(self.waste_bypass_mix)
             .value(ApplianceState())
             .define_state(self.waste_switch_valve)
-            .value(ValveState(0)) # all to Yazaki
+            .value(ValveState(0))  # all to Yazaki
             .define_state(self.waste_mix)
             .value(ApplianceState())
             .define_state(self.preheat_switch_valve)
-            .value(ValveState(1)) # no preheat
+            .value(ValveState(1))  # no preheat
             .define_state(self.preheat_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE, phc.AMBIENT_TEMPERATURE))
             .define_state(self.preheat_mix)

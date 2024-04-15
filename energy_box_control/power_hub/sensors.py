@@ -4,7 +4,7 @@ from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
 )
-from energy_box_control.appliances.mix import Mix, MixPort
+
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
@@ -55,9 +55,6 @@ class HeatPipesSensors(FromState):
 @sensors()
 class PcmSensors(FromState):
     spec: Pcm
-    yazaki: "YazakiSensors"
-    heat_pipes: "HeatPipesSensors"
-    hot_reservoir_pcm_valve: "ValveSensors"  # CV1001
     temperature: Celsius = sensor(technical_name="TS1007")
 
     charge_input_temperature: Celsius = sensor(
@@ -71,44 +68,45 @@ class PcmSensors(FromState):
         from_port=PcmPort.CHARGE_OUT,
     )
 
+    charge_flow: Celsius = sensor(
+        technical_name="FS1011",
+        type=SensorType.FLOW,
+        from_port=PcmPort.CHARGE_IN,
+    )
+
+    discharge_input_temperature: Celsius = sensor(
+        technical_name="TS1030",
+        type=SensorType.TEMPERATURE,
+        from_port=PcmPort.DISCHARGE_IN,
+    )
+    discharge_output_temperature: Celsius = sensor(
+        technical_name="TS1031",
+        type=SensorType.TEMPERATURE,
+        from_port=PcmPort.DISCHARGE_OUT,
+    )
+
     discharge_flow: LiterPerSecond = sensor(
         technical_name="FS1003", type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN
     )
 
     @property
-    def discharge_input_temperature(self) -> Celsius:
-        return self.yazaki.hot_output_temperature
+    def charge_power(
+        self,
+    ) -> Watt:
+        return (
+            self.charge_flow
+            * (self.charge_input_temperature - self.charge_output_temperature)
+            * self.spec.specific_heat_capacity_charge
+        )
 
     @property
     def discharge_power(
         self,
-    ) -> (
-        Watt
-    ):  # this is problematic if we want to know losses / energy that goes into heating up circuit. Unless we can infer from the position of the bypass valve
-        return self.yazaki.used_heat
-
-    @property
-    def discharge_output_temperature(
-        self,
-    ) -> Celsius:  # base this on pcm internal temp?
+    ) -> Watt:
         return (
-            self.discharge_power
-            / (self.spec.specific_heat_capacity_discharge * self.discharge_flow)
-        ) + self.discharge_input_temperature
-
-    @property
-    def charge_power(
-        self,
-    ) -> Watt:  # this is problematic if we want to know losses in the system
-        return (
-            self.heat_pipes.power if self.hot_reservoir_pcm_valve.position == 0 else 0
-        )
-
-    @property
-    def charge_flow(self) -> LiterPerSecond:
-        return self.charge_power / (
-            self.spec.specific_heat_capacity_charge
-            * (self.charge_input_temperature - self.charge_output_temperature)
+            self.discharge_flow
+            * (self.discharge_input_temperature - self.discharge_output_temperature)
+            * self.spec.specific_heat_capacity_discharge
         )
 
     @property
@@ -128,9 +126,10 @@ class PcmSensors(FromState):
 class YazakiSensors(FromState):
     spec: Yazaki
     chiller_switch_valve: "ValveSensors"
-    chill_mix: "MixSensors"  # replace by cold reservoir?
-    outboard_exchange: "HeatExchangerSensors"
-    # preheat_reservoir: "PreheatReservoirSensors"
+    cold_reservoir: "BoilerSensors"
+    waste_switch_valve: "ValveSensors"
+    preheat_switch_valve: "ValveSensors"
+
     hot_flow: LiterPerSecond = sensor(
         technical_name="FS1004", type=SensorType.FLOW, from_port=YazakiPort.HOT_IN
     )
@@ -145,25 +144,32 @@ class YazakiSensors(FromState):
         from_port=YazakiPort.HOT_OUT,
     )
 
-    cooling_flow: LiterPerSecond = (
-        sensor(  # Would need to resolve using preheat and waste exchange power
-            type=SensorType.FLOW, from_port=YazakiPort.COOLING_IN
+    @property
+    def cooling_input_temperature(self) -> Celsius:
+        return (
+            self.waste_switch_valve.input_temperature
+            if self.waste_switch_valve.position == 0
+            else float("nan")
         )
-    )
-
-    cooling_input_temperature: Celsius = sensor(
-        technical_name="TS1014",
-        type=SensorType.TEMPERATURE,
-        from_port=YazakiPort.COOLING_IN,
-    )
-    cooling_output_temperature: Celsius = sensor(
-        technical_name="TS1015",
-        type=SensorType.TEMPERATURE,
-        from_port=YazakiPort.COOLING_OUT,
-    )
 
     @property
-    def chilled_input_temperature(self) -> Celsius:  # TS1023
+    def cooling_output_temperature(self) -> Celsius:
+        return (
+            self.preheat_switch_valve.input_temperature
+            if self.waste_switch_valve.position == 0
+            else float("nan")
+        )
+
+    @property
+    def cooling_flow(self) -> LiterPerSecond:
+        return (
+            self.preheat_switch_valve.input_flow
+            if self.waste_switch_valve.position == 0
+            else float("nan")
+        )
+
+    @property
+    def chilled_input_temperature(self) -> Celsius:
         return (
             self.chiller_switch_valve.input_temperature
             if self.chiller_switch_valve.position == 0
@@ -173,11 +179,9 @@ class YazakiSensors(FromState):
     @property
     def chilled_output_temperature(
         self,
-    ) -> (
-        Celsius
-    ):  # TS1024  #instead of on the mix, can define it on the cold_reservoir_in..
+    ) -> Celsius:
         return (
-            self.chill_mix.output_temperature
+            self.cold_reservoir.fill_in_temperature
             if self.chiller_switch_valve.position == 0
             else float("nan")
         )
@@ -185,11 +189,9 @@ class YazakiSensors(FromState):
     @property
     def chilled_flow(
         self,
-    ) -> (
-        LiterPerSecond
-    ):  # FS1006   #instead of on the mix, can define it on the cold_reservoir_in..
+    ) -> LiterPerSecond:
         return (
-            self.chill_mix.output_flow
+            self.cold_reservoir.fill_in_flow
             if self.chiller_switch_valve.position == 0
             else float("nan")
         )
@@ -204,12 +206,11 @@ class YazakiSensors(FromState):
 
     @property
     def waste_heat(self) -> Watt:
-        # return self.cooling_flow * (self.cooling_output_temperature - self.cooling_input_temperature) * self.spec.specific_heat_capacity_cooling
         return (
-            (self.outboard_exchange.power)
-            if self.chiller_switch_valve.position == 0
-            else float("nan")
-        )  # add preheat reservoir power
+            self.cooling_flow
+            * (self.cooling_output_temperature - self.cooling_input_temperature)
+            * self.spec.specific_heat_capacity_cooling
+        )
 
     @property
     def used_heat(self) -> Watt:
@@ -266,6 +267,9 @@ class BoilerSensors(FromState):
     fill_out_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=BoilerPort.FILL_OUT
     )
+    fill_in_flow: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=BoilerPort.FILL_IN
+    )
 
 
 @sensors()
@@ -275,15 +279,7 @@ class ValveSensors(FromState):
     input_temperature: Celsius = sensor(
         type=SensorType.TEMPERATURE, from_port=ValvePort.AB
     )
-
-
-@sensors()
-class MixSensors(FromState):
-    spec: Mix
-    output_temperature: Celsius = sensor(
-        type=SensorType.TEMPERATURE, from_port=MixPort.AB
-    )
-    output_flow: LiterPerSecond = sensor(type=SensorType.FLOW, from_port=MixPort.AB)
+    input_flow: LiterPerSecond = sensor(type=SensorType.FLOW, from_port=ValvePort.AB)
 
     def in_position(self, position: float, diff: float = 0.05) -> bool:
         return abs(self.position - position) < diff
@@ -358,11 +354,10 @@ class PowerHubSensors(NetworkSensors):
     chiller: ChillerSensors
     chiller_switch_valve: ValveSensors
     cold_reservoir: BoilerSensors
-    yazaki_waste_bypass_valve: ValveSensors
-    preheat_bypass_valve: ValveSensors
+    waste_bypass_valve: ValveSensors
+    preheat_switch_valve: ValveSensors
     preheat_reservoir: BoilerSensors
     waste_switch_valve: ValveSensors
-    chiller_waste_bypass_valve: ValveSensors
 
 
 SensorName = str
