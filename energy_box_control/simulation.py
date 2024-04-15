@@ -3,6 +3,12 @@ import queue
 import time
 from typing import Any
 from uuid import UUID
+from energy_box_control.power_hub.control import (
+    control_from_json,
+    control_power_hub,
+    initial_control_state,
+    no_control,
+)
 from energy_box_control.power_hub.sensors import get_sensor_values
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
@@ -74,10 +80,10 @@ def run(steps: int = 0):
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
-        power_hub.no_control(),
+        no_control(power_hub),
     )
 
-    control_state = PowerHub.initial_control_state()
+    control_state = initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
     publish_to_mqtt(
@@ -85,15 +91,15 @@ def run(steps: int = 0):
         SENSOR_VALUES_TOPIC,
         json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
     )
-    control_values = power_hub.no_control()
+    control_values = no_control(power_hub)
 
     while True:
 
         power_hub_sensors = power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )
-        new_control_state, control_values = power_hub.regulate(
-            control_state, power_hub_sensors
+        new_control_state, control_values = control_power_hub(
+            power_hub, control_state, power_hub_sensors
         )
 
         publish_to_mqtt(
@@ -104,8 +110,8 @@ def run(steps: int = 0):
                 cls=_encoder(),
             ),
         )
-        control_values = power_hub.control_from_json(
-            control_values_queue.get(block=True)
+        control_values = control_from_json(
+            power_hub, control_values_queue.get(block=True)
         )
 
         new_state = power_hub.simulate(state, control_values)
