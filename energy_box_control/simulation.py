@@ -2,14 +2,13 @@ import json
 import queue
 import time
 from typing import Any
-from energy_box_control.network import Network, NetworkControl
 from energy_box_control.power_hub.network import PowerHubControlState
 from energy_box_control.power_hub.sensors import get_sensor_values
 from mqtt import (
     create_and_connect_client,
     publish_value_to_mqtt,
     publish_to_mqtt,
-    create_listener,
+    initialize_and_start_listener,
 )
 from paho.mqtt import client as mqtt_client
 
@@ -26,16 +25,7 @@ control_values_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
 
 
-def control_values_to_dict[
-    Net: Network[Any]
-](control: NetworkControl[Net], network: Net):
-    return {
-        network.find_appliance_name_by_id(item.id): value
-        for item, value in control.__dict__["_controls"].items()
-    }
-
-
-class CustomEncoder(json.JSONEncoder):
+class NestedObjectWithAppliancesEncoder(json.JSONEncoder):
     def default(self, o: Any):
         if hasattr(o, "__dict__"):
             return {attr: value for attr, value in o.__dict__.items() if attr != "spec"}
@@ -56,22 +46,26 @@ def publish_sensor_values(
         publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
 
 
-def control_values_on_message(client: mqtt_client.Client, userdata: str, message: str):
-    decoded_message = str(message.payload.decode("utf-8"))  # type: ignore
+def control_values_on_message(
+    client: mqtt_client.Client, userdata: str, message: mqtt_client.MQTTMessage
+):
+    decoded_message = str(message.payload.decode("utf-8"))
     print("Received message:", decoded_message)
     control_values_queue.put(decoded_message)
 
 
-def sensor_values_on_message(client: mqtt_client.Client, userdata: str, message: str):
-    decoded_message = str(message.payload.decode("utf-8"))  # type: ignore
+def sensor_values_on_message(
+    client: mqtt_client.Client, userdata: str, message: mqtt_client.MQTTMessage
+):
+    decoded_message = str(message.payload.decode("utf-8"))
     print("Received message:", decoded_message)
     sensor_values_queue.put(decoded_message)
 
 
 def run():
     mqtt_client = create_and_connect_client()
-    create_listener(CONTROL_VALUES_TOPIC, control_values_on_message, mqtt_client)
-    create_listener(SENSOR_VALUES_TOPIC, sensor_values_on_message, mqtt_client)
+    initialize_and_start_listener(CONTROL_VALUES_TOPIC, control_values_on_message)
+    initialize_and_start_listener(SENSOR_VALUES_TOPIC, sensor_values_on_message)
     power_hub = PowerHub.power_hub()
 
     state = power_hub.simulate(
@@ -85,7 +79,7 @@ def run():
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=CustomEncoder),
+        json.dumps(power_hub_sensors, cls=NestedObjectWithAppliancesEncoder),
     )
     control_values = power_hub.no_control()
 
@@ -101,11 +95,12 @@ def run():
             mqtt_client,
             CONTROL_VALUES_TOPIC,
             json.dumps(
-                control_values_to_dict(control_values, power_hub), cls=CustomEncoder
+                control_values.get_control_values_dict(power_hub),
+                cls=NestedObjectWithAppliancesEncoder,
             ),
         )
-        control_values = control_values.from_json(
-            control_values_queue.get(block=True), power_hub
+        control_values = power_hub.control_from_json(
+            control_values_queue.get(block=True)
         )
 
         new_state = power_hub.simulate(state, control_values)
@@ -115,7 +110,7 @@ def run():
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=CustomEncoder),
+            json.dumps(power_hub_sensors, cls=NestedObjectWithAppliancesEncoder),
         )
 
         for sensor_field in fields(power_hub_sensors):

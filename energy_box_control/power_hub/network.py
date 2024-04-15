@@ -631,8 +631,8 @@ class PowerHub(Network[PowerHubSensors]):
             self,
         )
 
-    def sensors_from_json(self, json_str: str):
-        json_object = json.loads(json_str)
+    def sensors_from_json(self, sensor_json: str):
+        json_object = json.loads(sensor_json)
         init_order = PowerHubSensors.sensor_initialization_order()
 
         context = PowerHubSensors.context(
@@ -746,3 +746,27 @@ class PowerHub(Network[PowerHubSensors]):
         #   PID domestic cooling pump based on setpoint of cold reservoir temperature + 3 degrees
 
         return (control_state, self.no_control())
+
+    def control_from_json(self, control_json: str) -> NetworkControl[Self]:
+        control_dict = json.loads(control_json)
+        return (
+            self.control(getattr(self, "hot_reservoir"))
+            .value(BoilerControl(heater_on=control_dict["hot_reservoir"]["heater_on"]))
+            .control(getattr(self, "preheat_reservoir"))
+            .value(
+                BoilerControl(heater_on=control_dict["preheat_reservoir"]["heater_on"])
+            )
+            .control(getattr(self, "cold_reservoir"))
+            .value(BoilerControl(heater_on=control_dict["cold_reservoir"]["heater_on"]))
+            .control(getattr(self, "heat_pipes_pump"))
+            .value(SwitchPumpControl(on=control_dict["heat_pipes_pump"]["on"]))
+            .control(getattr(self, "pcm_to_yazaki_pump"))
+            .value(SwitchPumpControl(on=control_dict["pcm_to_yazaki_pump"]["on"]))
+            .control(getattr(self, "chilled_loop_pump"))
+            .value(SwitchPumpControl(on=control_dict["chilled_loop_pump"]["on"]))
+            .control(getattr(self, "waste_pump"))
+            .value(SwitchPumpControl(on=control_dict["waste_pump"]["on"]))
+            .control(getattr(self, "outboard_pump"))
+            .value(SwitchPumpControl(on=control_dict["outboard_pump"]["on"]))
+            .build()
+        )

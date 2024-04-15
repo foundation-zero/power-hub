@@ -11,6 +11,8 @@ import time
 
 HOST = "mosquitto"
 PORT = 1883
+MIN_CLIENT_ID_INT = 0
+MAX_CLIEND_ID_INT = 1000000000
 
 
 def on_connect(
@@ -24,7 +26,7 @@ def on_connect(
 
 def create_and_connect_client() -> mqtt_client.Client:
     print(f"Connecting to {HOST}:{PORT}")
-    client_id = f"python-mqtt-{random.randint(0, 1000)}"
+    client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
     client.on_connect = on_connect
     client.connect(HOST, PORT)
@@ -59,12 +61,11 @@ def publish_to_mqtt(
     return result
 
 
-def create_listener(
+def initialize_and_start_listener(
     topic: str,
-    on_message: Callable[[mqtt_client.Client, str, str], None],
-    client: mqtt_client.Client,
+    on_message: Callable[[mqtt_client.Client, str, mqtt_client.MQTTMessage], None],
 ):
     client = create_and_connect_client()
     client.subscribe(topic)
-    client.on_message = on_message  # type: ignore
+    client.on_message = on_message
     client.loop_start()
