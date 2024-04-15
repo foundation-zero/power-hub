@@ -1,15 +1,22 @@
+import os
 from typing import Callable, Dict
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import MQTTMessageInfo
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
+from dotenv import load_dotenv
 
 import random
 from datetime import datetime
 import json
 import time
 
+dotenv_path = os.path.normpath(
+    os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
+)
+load_dotenv(dotenv_path)
 
-HOST = "mosquitto"
+
+HOST = os.environ["DOCKER_MQTT_HOST"]
 PORT = 1883
 MIN_CLIENT_ID_INT = 0
 MAX_CLIEND_ID_INT = 1000000000
