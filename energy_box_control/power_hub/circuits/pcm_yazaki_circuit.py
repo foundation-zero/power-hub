@@ -26,24 +26,13 @@ from energy_box_control.network import (
 )
 
 
-from energy_box_control.power_hub.power_hub_components import (
-    pcm,
-    yazaki_bypass_mix,
-    pcm_to_yazaki_pump,
-    yazaki,
-    yazaki_hot_bypass_valve,
-)
-from energy_box_control.power_hub.sensors import PcmSensors, ValveSensors, YazakiSensors
-from energy_box_control.sensors import NetworkSensors, WeatherSensors
-
 import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass
-class PcmYazakiSensors(NetworkSensors):
-    pcm: PcmSensors
-    yazaki_hot_bypass_valve: ValveSensors
-    yazaki: YazakiSensors
+class PcmYazakiSensors:
+    yazaki_hot_in_temperature: float
+    yazaki_hot_bypass_valve_position: float
 
 
 @dataclass
@@ -67,11 +56,11 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     @staticmethod
     def pcm_yazaki_circuit() -> "PcmYazakiNetwork":
         return PcmYazakiNetwork(
-            pcm,
-            yazaki_bypass_mix,
-            pcm_to_yazaki_pump,
-            yazaki,
-            yazaki_hot_bypass_valve,
+            phc.pcm,
+            phc.yazaki_bypass_mix,
+            phc.pcm_to_yazaki_pump,
+            phc.yazaki,
+            phc.yazaki_hot_bypass_valve,
             Source(2.55, 31),
             Source(0.77, 17.6),
         )
@@ -112,8 +101,8 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .connect(self.chilled_source)
             .at(SourcePort.OUTPUT)
             .to(self.yazaki)
-            .at(YazakiPort.CHILLED_IN)
-        ).build() 
+            .at(YazakiPort.CHILLED_IN).build()
+        )
         # fmt: on
 
     def feedback(self) -> NetworkFeedbacks[Self]:
@@ -129,9 +118,9 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
     ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.yazaki_hot_bypass_valve.position,
+            sensors.yazaki_hot_bypass_valve_position,
             control_state.yazaki_hot_in_setpoint,
-            sensors.yazaki.hot_input_temperature,
+            sensors.yazaki_hot_in_temperature,
             reversed=True,
         )
 
@@ -147,11 +136,13 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PcmYazakiSensors:
-        return PcmYazakiSensors.resolve_for_network(
-            WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
-            ),
-            state,
-            self,
+        return PcmYazakiSensors(
+            yazaki_hot_in_temperature=state.connection(
+                self.yazaki, YazakiPort.HOT_IN
+            ).temperature,
+            yazaki_hot_bypass_valve_position=state.appliance(
+                self.yazaki_hot_bypass_valve
+            )
+            .get()
+            .position,
         )

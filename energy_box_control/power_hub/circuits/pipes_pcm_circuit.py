@@ -45,10 +45,9 @@ import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass
-class PipesPcmSensors(NetworkSensors):
-    heat_pipes: HeatPipesSensors
-    heat_pipes_valve: ValveSensors
-    pcm: PcmSensors
+class PipesPcmSensors:
+    heat_pipes_out_temperature: float
+    heat_pipes_valve_position: float
 
 
 @dataclass
@@ -121,9 +120,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
-            sensors.heat_pipes_valve.position,
+            sensors.heat_pipes_valve_position,
             control_state.hot_loop_setpoint,
-            sensors.heat_pipes.output_temperature,
+            sensors.heat_pipes_out_temperature,
             reversed=False,
         )
 
@@ -137,11 +136,11 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PipesPcmSensors:
-        return PipesPcmSensors.resolve_for_network(
-            WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
-            ),
-            state,
-            self,
+        return PipesPcmSensors(
+            heat_pipes_out_temperature=state.connection(
+                self.heat_pipes, HeatPipesPort.OUT
+            ).temperature,
+            heat_pipes_valve_position=state.appliance(self.heat_pipes_valve)
+            .get()
+            .position,
         )
