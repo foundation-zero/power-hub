@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import json
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -620,7 +621,7 @@ class PowerHub(Network[PowerHubSensors]):
         )
         # fmt: on
 
-    def sensors(self, state: NetworkState[Self]) -> PowerHubSensors:
+    def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         return PowerHubSensors.resolve_for_network(
             WeatherSensors(
                 ambient_temperature=phc.AMBIENT_TEMPERATURE,
@@ -629,6 +630,27 @@ class PowerHub(Network[PowerHubSensors]):
             state,
             self,
         )
+
+    def sensors_from_json(self, sensor_json: str):
+        sensors = json.loads(sensor_json)
+        init_order = PowerHubSensors.sensor_initialization_order()
+
+        context = PowerHubSensors.context(
+            WeatherSensors(
+                ambient_temperature=phc.AMBIENT_TEMPERATURE,
+                global_irradiance=phc.GLOBAL_IRRADIANCE,
+            )
+        )
+
+        with context:
+            for sensor in init_order:
+                context.from_values(
+                    sensors[sensor.name],
+                    sensor.type,
+                    getattr(context.subject, sensor.name),
+                    getattr(self, sensor.name),
+                )
+            return context.result()
 
     def no_control(self) -> NetworkControl[Self]:
         # control function that implements no control - all boilers off and all pumps on
@@ -724,3 +746,25 @@ class PowerHub(Network[PowerHubSensors]):
         #   PID domestic cooling pump based on setpoint of cold reservoir temperature + 3 degrees
 
         return (control_state, self.no_control())
+
+    def control_from_json(self, control_json: str) -> NetworkControl[Self]:
+        controls = json.loads(control_json)
+        return (
+            self.control(self.hot_reservoir)
+            .value(BoilerControl(heater_on=controls["hot_reservoir"]["heater_on"]))
+            .control(self.preheat_reservoir)
+            .value(BoilerControl(heater_on=controls["preheat_reservoir"]["heater_on"]))
+            .control(self.cold_reservoir)
+            .value(BoilerControl(heater_on=controls["cold_reservoir"]["heater_on"]))
+            .control(self.heat_pipes_pump)
+            .value(SwitchPumpControl(on=controls["heat_pipes_pump"]["on"]))
+            .control(self.pcm_to_yazaki_pump)
+            .value(SwitchPumpControl(on=controls["pcm_to_yazaki_pump"]["on"]))
+            .control(self.chilled_loop_pump)
+            .value(SwitchPumpControl(on=controls["chilled_loop_pump"]["on"]))
+            .control(self.waste_pump)
+            .value(SwitchPumpControl(on=controls["waste_pump"]["on"]))
+            .control(self.outboard_pump)
+            .value(SwitchPumpControl(on=controls["outboard_pump"]["on"]))
+            .build()
+        )

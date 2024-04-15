@@ -34,7 +34,7 @@ def run_simulation(
             state = network.simulate(state, control_values, min_max_temperature)
         except Exception as e:
             return SimulationFailure(e, i, state)
-        sensors = network.sensors(state)
+        sensors = network.sensors_from_state(state)
         if control_function:
             control_state, control_values = control_function(control_state, sensors)
     return SimulationSuccess(state)

@@ -65,7 +65,7 @@ class BoilerNetwork(Network[BoilerSensors]):
             .build()
         )
 
-    def sensors(self, state: NetworkState[Self]) -> BoilerSensors:
+    def sensors_from_state(self, state: NetworkState[Self]) -> BoilerSensors:
         return BoilerSensors(state.appliance(self.boiler).get().temperature)
 
     def regulate(
@@ -165,5 +165,5 @@ class YazakiNetwork(Network[None]):
             .build()
         )
 
-    def sensors(self, state: NetworkState[Self]) -> None:
+    def sensors_from_state(self, state: NetworkState[Self]) -> None:
         return None

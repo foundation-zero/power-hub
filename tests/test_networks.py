@@ -6,7 +6,7 @@ from energy_box_control.networks import BoilerNetwork, ControlState
 
 def run(network: BoilerNetwork, state, control_state, times):
     for _ in range(times):
-        sensors = network.sensors(state)
+        sensors = network.sensors_from_state(state)
         new_control_state, control_values = network.regulate(control_state, sensors)
         new_state = network.simulate(state, control_values)
 

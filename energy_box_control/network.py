@@ -364,6 +364,12 @@ class NetworkControl[Net: "Network[Any]"]:
     def appliance[App: AnyAppliance](self, app: App) -> ControlGetter[App]:
         return ControlGetter(app, self._controls.get(app, None))
 
+    def name_to_control_values_mapping(self, network: Net) -> dict[str, GenericControl]:
+        return {
+            network.find_appliance_name_by_id(item.id): value
+            for item, value in self._controls.items()
+        }
+
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:
     def __init__(self, *prev: *Prev):
@@ -541,10 +547,11 @@ class Network[Sensors](ABC):
 
         return inputs
 
-    def find_appliance_name_by_id(self, id: uuid.UUID) -> str | None:
+    def find_appliance_name_by_id(self, id: uuid.UUID) -> str:
         for name, appliance in self.__dict__.items():
             if appliance.id == id:
                 return name
+        raise ValueError(f"Name not found for appliance with id {id}")
 
     @staticmethod
     def check_temperatures(
@@ -637,4 +644,4 @@ class Network[Sensors](ABC):
         return ApplianceFeedback(app)
 
     @abstractmethod
-    def sensors(self, state: NetworkState[Self]) -> Sensors: ...
+    def sensors_from_state(self, state: NetworkState[Self]) -> Sensors: ...
