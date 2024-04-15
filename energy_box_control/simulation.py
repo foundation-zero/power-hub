@@ -69,12 +69,8 @@ def queue_on_message(
 
 def run():
     mqtt_client = create_and_connect_client()
-    run_listener(
-        CONTROL_VALUES_TOPIC, partial(queue_on_message, queue=control_values_queue)
-    )
-    run_listener(
-        SENSOR_VALUES_TOPIC, partial(queue_on_message, queue=sensor_values_queue)
-    )
+    run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
+    run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
     power_hub = PowerHub.power_hub()
 
     state = power_hub.simulate(
