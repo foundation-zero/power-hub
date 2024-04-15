@@ -27,6 +27,17 @@ jobs:
 
       - name: Test
         run: poetry run pytest
+      
+      - uses: hoverkraft-tech/compose-action@v1.5.1
+        with:
+          compose-file: "./docker-compose.yml"
+          services: telegraf
+      
+      - name: Integration tests
+        run: poetry run pytest --runintegration tests/test_api_integration.py
+        env:
+          DOCKER_MQTT_HOST: '0.0.0.0'
+          DOCKER_INFLUXDB_URL: 'http://0.0.0.0:8086'
 
   test-ui:
     runs-on: ubuntu-latest

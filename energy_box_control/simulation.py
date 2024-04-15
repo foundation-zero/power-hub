@@ -6,7 +6,7 @@ from uuid import UUID
 from energy_box_control.power_hub.network import PowerHubControlState
 from energy_box_control.power_hub.sensors import get_sensor_values
 from energy_box_control.power_hub import PowerHub
-from mqtt import (
+from energy_box_control.mqtt import (
     create_and_connect_client,
     publish_value_to_mqtt,
     publish_to_mqtt,
@@ -67,7 +67,7 @@ def queue_on_message(
     queue.put(decoded_message)
 
 
-def run():
+def run(steps: int = 0):
     mqtt_client = create_and_connect_client()
     run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
     run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
@@ -89,6 +89,7 @@ def run():
     control_values = power_hub.no_control()
 
     while True:
+
         power_hub_sensors = power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )
@@ -109,6 +110,7 @@ def run():
         )
 
         new_state = power_hub.simulate(state, control_values)
+
         control_state = new_control_state
         state = new_state
         power_hub_sensors = power_hub.sensors_from_state(new_state)
@@ -125,6 +127,8 @@ def run():
                 mqtt_client,
                 state.time.timestamp,
             )
+        if steps and steps < new_state.time.step:
+            break
 
         time.sleep(1)
 
