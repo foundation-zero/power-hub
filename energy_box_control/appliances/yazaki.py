@@ -37,7 +37,7 @@ class YazakiState(ApplianceState):
 
 @dataclass(frozen=True, eq=True)
 class YazakiControl(ApplianceControl):
-    pass
+    on: bool
 
 
 _ref_temps_cooling: list[Celsius] = [27, 29.5, 31, 32]

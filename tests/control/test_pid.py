@@ -14,46 +14,45 @@ from hypothesis.strategies import floats, lists
     )
 )
 def test_zero_pid(measurements):
-    config = PidConfig(50, 0, 0, 0)
+    config = PidConfig(0, 0, 0)
     pid = Pid(config)
     for measurement in measurements:
-        pid, control = pid.run(measurement)
+        pid, control = pid.run(50, measurement)
         assert control == 0
 
 
 @given(lists(floats(allow_infinity=False, allow_nan=False)))
 def test_no_deviation(measured):
-    config = PidConfig(measured, 1, 1, 1)
+    config = PidConfig(1, 1, 1)
     pid = Pid(config)
     for measure in measured:
-        pid.config = replace(config, setpoint=measure)
-        pid, control = pid.run(measure)
+        pid, control = pid.run(measure, measure)
         assert control == 0
 
 
 @given(floats(allow_infinity=False, allow_nan=False))
 def test_only_proportional(measure):
-    config = PidConfig(50, 1, 0, 0)
+    config = PidConfig(1, 0, 0)
     pid = Pid(config)
-    _, control = pid.run(measure)
+    _, control = pid.run(50, measure)
     assert control == 50 - measure
 
 
 @given(floats(allow_infinity=False, allow_nan=False))
 def test_integral_single_step(measure):
-    config = PidConfig(50, 0, 1, 0)
+    config = PidConfig(0, 1, 0)
     pid = Pid(config)
-    _, control = pid.run(measure)
+    _, control = pid.run(50, measure)
     assert control == 50 - measure
 
 
 @given(floats(allow_infinity=False, allow_nan=False))
 def test_integral_over_multiple_steps(measure):
-    config = PidConfig(50, 0, 0.1, 0)
+    config = PidConfig(0, 0.1, 0)
     pid = Pid(config)
     control = 0.0
     for i in range(1000):
-        pid, control = pid.run(control - measure)
+        pid, control = pid.run(50, control - measure)
     assert control == approx(50 + measure)
 
 
@@ -69,14 +68,14 @@ class LinearSystem:
 
 def test_noisy_system():
     system = LinearSystem(5, -20, 0.5)
-    pid = Pid(PidConfig(10, 0.00, 0.0001, 0))
+    pid = Pid(PidConfig(0.00, 0.0001, 0))
     control = 0.0
     total = 0.0
     n = 1000000
     for i in range(n):
         measure = system.control(control)
         total += measure
-        pid, control = pid.run(measure)
+        pid, control = pid.run(10, measure)
 
     assert total / n == approx(10, abs=0.1)
 
@@ -105,16 +104,16 @@ def test_overshoot_limitation():
         measures = []
         for i in range(100000):
             measure = system.control(control)
-            pid, control = pid.run(measure)
+            pid, control = pid.run(10, measure)
             measures.append(measure)
         return measures
 
     kp = 0.01
 
-    without_overshoot_limitation = run_control(Pid(PidConfig(10, kp, 0, 0)))
+    without_overshoot_limitation = run_control(Pid(PidConfig(kp, 0, 0)))
     assert max(without_overshoot_limitation) > 12
 
-    with_overshoot_limitation = run_control(Pid(PidConfig(10, kp, 0, 1)))
+    with_overshoot_limitation = run_control(Pid(PidConfig(kp, 0, 1)))
 
     assert max(with_overshoot_limitation) < 11
 
@@ -122,18 +121,30 @@ def test_overshoot_limitation():
 def test_upper_bound():
     one_to_one = LinearSystem(1, 0, 0)
 
-    pid = Pid(PidConfig(100, 1, 0, 0, (0, 50)))
+    pid = Pid(PidConfig(1, 0, 0, (0, 50)))
 
     measure = one_to_one.control(0)
-    _, control = pid.run(measure)
+    _, control = pid.run(100, measure)
     assert control == 50
 
 
 def test_lower_bound():
     one_to_one = LinearSystem(1, 0, 0)
 
-    pid = Pid(PidConfig(-100, 1, 0, 0, (0, 50)))
+    pid = Pid(PidConfig(1, 0, 0, (0, 50)))
 
     measure = one_to_one.control(0)
-    _, control = pid.run(measure)
+    _, control = pid.run(-100, measure)
+    assert control == 0
+
+
+def test_integral_windup():
+    pid = Pid(PidConfig(0, 1, 0, (-100, 100)))
+
+    for i in range(1_000_000):
+        pid, _ = pid.run(1, 0)
+
+    pid, _ = pid.run(0, 100)
+    pid, control = pid.run(100, 100)
+
     assert control == 0

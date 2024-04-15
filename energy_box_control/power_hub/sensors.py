@@ -67,6 +67,10 @@ class PcmSensors(FromState):
 
     temperature: Celsius
 
+    @property
+    def state_of_charge(self):
+        return float(self.temperature > self.spec.phase_change_temperature)
+
 
 @sensors()
 class YazakiSensors(FromState):
@@ -136,6 +140,9 @@ class BoilerSensors(FromState):
 class ValveSensors(FromState):
     spec: Valve
     position: float
+
+    def in_position(self, position: float, diff: float = 0.05) -> bool:
+        return abs(self.position - position) < diff
 
 
 def derive_flow(

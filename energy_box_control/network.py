@@ -382,6 +382,13 @@ class ControlBuilder[Net: "Network[Any]", *Prev]:
     ) -> "ControlApplianceBuilder[Net, App, *Prev]":
         return ControlApplianceBuilder(app, *self._prev)
 
+    def combine[
+        *Others
+    ](
+        self, other: "ControlBuilder[Net, *Others]"
+    ) -> "ControlBuilder[Net, *Prev, *Others]":
+        return ControlBuilder(*self._prev, *other._prev)
+
     def build(self) -> NetworkControl[Net]:
         control = dict(cast(Iterable[tuple[AnyAppliance, GenericControl]], self._prev))
         return NetworkControl(control)

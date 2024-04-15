@@ -3,7 +3,6 @@ import queue
 import time
 from typing import Any
 from uuid import UUID
-from energy_box_control.power_hub.network import PowerHubControlState
 from energy_box_control.power_hub.sensors import get_sensor_values
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
@@ -78,7 +77,7 @@ def run(steps: int = 0):
         power_hub.no_control(),
     )
 
-    control_state = PowerHubControlState()
+    control_state = PowerHub.initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
     publish_to_mqtt(

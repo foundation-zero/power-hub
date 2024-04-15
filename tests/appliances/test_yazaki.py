@@ -18,7 +18,7 @@ def test_yazaki():
         Source(1.2, 88), Source(2.55, 31), Source(0.77, 17.6), Yazaki(4184, 4184, 4184)
     )
 
-    control = network.control(network.yazaki).value(YazakiControl()).build()
+    control = network.control(network.yazaki).value(YazakiControl(on=True)).build()
 
     state_1 = network.simulate(network.initial_state(), control)
 
@@ -36,7 +36,7 @@ def test_yazaki():
 def test_yazaki_outside_ref_values(caplog):
     yazaki = Yazaki(4184, 4184, 4184)
     initial_yazaki_state = YazakiState()
-    yazaki_control = YazakiControl()
+    yazaki_control = YazakiControl(on=True)
     hot_in = 15
     chilled_in = 0
     cooling_in = 0

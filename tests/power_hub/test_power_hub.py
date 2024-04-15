@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from energy_box_control.power_hub.network import PowerHubControlState
 import energy_box_control.power_hub.power_hub_components as phc
-from tests.test_simulation import SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 
 
 @fixture
@@ -51,9 +51,22 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
         power_hub,
         power_hub.simple_initial_state(),
         power_hub.no_control(),
-        PowerHubControlState(),
+        power_hub.initial_control_state(),
         None,
         min_max_temperature,
+    )
+
+    assert isinstance(result, SimulationSuccess)
+
+
+def test_power_hub_simulation_control(power_hub):
+    result = run_simulation(
+        power_hub,
+        power_hub.simple_initial_state(),
+        power_hub.no_control(),
+        power_hub.initial_control_state(),
+        power_hub.regulate,
+        None,
     )
 
     assert isinstance(result, SimulationSuccess)
