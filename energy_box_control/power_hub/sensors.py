@@ -78,17 +78,13 @@ class PcmSensors(FromState):
 
     @property
     def charge_flow(self) -> LiterPerSecond:
-        return (
-            self.hot_switch_valve.flow
-            if self.hot_switch_valve.position == 1
-            else float("nan")
-        )
+        return self.hot_switch_valve.flow * (1 - self.hot_switch_valve.position)
 
     @property
     def charge_input_temperature(self) -> Celsius:
         return (
             self.hot_switch_valve.input_temperature
-            if self.hot_switch_valve.position == 1
+            if self.hot_switch_valve.position == 0
             else float("nan")
         )
 
@@ -96,7 +92,7 @@ class PcmSensors(FromState):
     def charge_output_temperature(self) -> Celsius:
         return (
             self.hot_mix.output_temperature
-            if self.hot_switch_valve.position == 1
+            if self.hot_switch_valve.position == 0
             else float("nan")
         )
 
@@ -201,11 +197,7 @@ class YazakiSensors(FromState):
     def chilled_flow(
         self,
     ) -> LiterPerSecond:
-        return (
-            self.cold_reservoir.exchange_flow
-            if self.chiller_switch_valve.position == 0
-            else float("nan")
-        )
+        return self.cold_reservoir.exchange_flow * self.chiller_switch_valve.position
 
     @property
     def cool_power(self) -> Watt:
@@ -264,15 +256,13 @@ class HeatExchangerSensors(FromState):
         )
 
 
-class BoilerSensors(FromState):
-    spec: Boiler
-    temperature: Celsius
-
-
 @sensors()
-class HotReservoirSensors(BoilerSensors):
+class HotReservoirSensors(FromState):
+    spec: Boiler
+    temperature: Celsius = sensor(technical_name="TS-1043")
     hot_switch_valve: "HotSwitchSensors"
     hot_mix: "HotMixSensors"
+    preheat_reservoir: "PreHeatSensors"
 
     fill_flow: LiterPerSecond = sensor(
         technical_name="FS-1010",
@@ -280,17 +270,23 @@ class HotReservoirSensors(BoilerSensors):
         from_port=BoilerPort.FILL_OUT,
     )
 
-    fill_input_temperature: Celsius = sensor(
-        technical_name="TS-1044",
-        type=SensorType.TEMPERATURE,
-        from_port=BoilerPort.FILL_IN,
-    )
-
     fill_output_temperature: Celsius = sensor(
         technical_name="TS-1042",
         type=SensorType.TEMPERATURE,
-        from_port=BoilerPort.FILL_IN,
+        from_port=BoilerPort.FILL_OUT,
     )
+
+    @property
+    def fill_input_temperature(self) -> Celsius:
+        return self.preheat_reservoir.temperature
+
+    @property
+    def fill_power(self) -> Watt:  # estimate taking internal temperature of preheat
+        return (
+            self.fill_flow
+            * (self.fill_input_temperature - self.fill_output_temperature)
+            * self.spec.specific_heat_capacity_exchange
+        )
 
     @property
     def exchange_flow(self) -> LiterPerSecond:
@@ -317,12 +313,52 @@ class HotReservoirSensors(BoilerSensors):
         )
 
     @property
-    def fill_power(self) -> Watt:
+    def exchange_power(self) -> Watt:
+        return (
+            self.exchange_flow
+            * (self.exchange_input_temperature - self.exchange_output_temperature)
+            * self.spec.specific_heat_capacity_exchange
+        )
+
+    @property
+    def total_heating_power(self) -> Watt:  # power including preheat
         return (
             self.fill_flow
-            * (self.fill_input_temperature - self.fill_output_temperature)
+            * (
+                self.fill_output_temperature
+                - self.preheat_reservoir.fill_input_temperature
+            )
             * self.spec.specific_heat_capacity_fill
         )
+
+
+@sensors()
+class PreHeatSensors(FromState):
+    spec: Boiler
+    temperature: Celsius = sensor(technical_name="TS-1039")
+    waste_switch_valve: "WasteSwitchSensors"
+
+    exchange_input_temperature: Celsius = sensor(
+        technical_name="TS-1032",
+        type=SensorType.TEMPERATURE,
+        from_port=BoilerPort.HEAT_EXCHANGE_IN,
+    )
+
+    exchange_output_temperature: Celsius = sensor(
+        technical_name="TS-1034",
+        type=SensorType.TEMPERATURE,
+        from_port=BoilerPort.HEAT_EXCHANGE_OUT,
+    )
+
+    fill_input_temperature: Celsius = sensor(
+        technical_name="TS-1040",
+        type=SensorType.TEMPERATURE,
+        from_port=BoilerPort.FILL_IN,
+    )
+
+    @property
+    def exchange_flow(self) -> LiterPerSecond:
+        return self.waste_switch_valve.input_temperature
 
     @property
     def exchange_power(self) -> Watt:
@@ -334,9 +370,12 @@ class HotReservoirSensors(BoilerSensors):
 
 
 @sensors()
-class ColdReservoirSensors(BoilerSensors):
+class ColdReservoirSensors(FromState):
+    spec: Boiler
+    temperature: Celsius = sensor(technical_name="TS-1025")
+
     fill_flow: LiterPerSecond = sensor(
-        technical_name="FS-1005", type=SensorType.FLOW, from_port=BoilerPort.FILL_OUT
+        technical_name="FS-1005", type=SensorType.FLOW, from_port=BoilerPort.FILL_IN
     )
 
     fill_input_temperature: Celsius = sensor(
@@ -526,7 +565,7 @@ class PowerHubSensors(NetworkSensors):
     cold_reservoir: ColdReservoirSensors
     waste_bypass_valve: WasteSwitchSensors
     preheat_switch_valve: PreHeatSwitchSensors
-    preheat_reservoir: BoilerSensors
+    preheat_reservoir: PreHeatSensors
     waste_switch_valve: WasteSwitchSensors
     outboard_exchange: HeatExchangerSensors
     hot_mix: HotMixSensors

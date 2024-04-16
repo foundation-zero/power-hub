@@ -133,7 +133,7 @@ class PowerHub(Network[PowerHubSensors]):
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(50, phc.AMBIENT_TEMPERATURE)
+        initial_boiler_state = BoilerState(20, phc.AMBIENT_TEMPERATURE)
         initial_cold_reservoir_state = BoilerState(10, phc.AMBIENT_TEMPERATURE)
         initial_valve_state = ValveState(0.5)
         return (
@@ -145,7 +145,7 @@ class PowerHub(Network[PowerHubSensors]):
                 )
             )
             .define_state(power_hub.heat_pipes_valve)
-            .value(ValveState(0))
+            .value(initial_valve_state)
             .define_state(power_hub.heat_pipes_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.heat_pipes_mix)
@@ -206,8 +206,17 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.chill_mix)
-            .at(MixPort.AB)
+            .define_state(power_hub.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.heat_pipes_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.pcm_to_yazaki_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.chilled_loop_pump)
+            .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
