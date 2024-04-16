@@ -30,6 +30,7 @@ class HotControlState:
     control_mode_timer: Timer[HotControlMode]
     control_mode: HotControlMode
     feedback_valve_controller: Pid
+    hot_reservoir_pcm_valve_position: float
 
 
 class ChillControlMode(Enum):
@@ -51,6 +52,8 @@ YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 class ChillControlState:
     control_mode_timer: Timer[ChillControlMode]
     control_mode: ChillControlMode
+    chiller_switch_valve_position: float
+    waste_switch_valve_position: float
 
 
 class WasteControlMode(Enum):
@@ -122,10 +125,13 @@ def initial_control_state() -> PowerHubControlState:
             control_mode_timer=Timer(timedelta(minutes=5)),
             control_mode=HotControlMode.DUMP,
             feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
+            hot_reservoir_pcm_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
             control_mode=ChillControlMode.NO_CHILL,
             control_mode_timer=Timer(timedelta(minutes=15)),
+            chiller_switch_valve_position=CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+            waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
             control_mode=WasteControlMode.NO_OUTBOARD,
@@ -190,18 +196,21 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
-        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
     else:  # hot_control_mode == HotControlMode.DUMP
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
         feedback_valve_control = 0
-        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+        hot_reservoir_pcm_valve_position = (
+            control_state.hot_control.hot_reservoir_pcm_valve_position
+        )
         run_heat_pipes_pump = False
 
     hot_control_state = HotControlState(
         control_mode_timer=hot_control_mode_timer,
         control_mode=hot_control_mode,
         feedback_valve_controller=feedback_valve_controller,
+        hot_reservoir_pcm_valve_position=hot_reservoir_pcm_valve_position,
     )
 
     control = (
@@ -324,11 +333,20 @@ def chill_control(
         else:
             running = no_run
     else:
-        chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
-        waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+        chiller_switch_valve_position = (
+            control_state.chill_control.chiller_switch_valve_position
+        )
+        waste_switch_valve_position = (
+            control_state.chill_control.waste_switch_valve_position
+        )
         running = no_run
 
-    return ChillControlState(control_mode_timer, control_mode), (
+    return ChillControlState(
+        control_mode_timer,
+        control_mode,
+        chiller_switch_valve_position,
+        waste_switch_valve_position,
+    ), (
         power_hub.control(power_hub.chiller_switch_valve)
         .value(ValveControl(chiller_switch_valve_position))
         .control(power_hub.waste_switch_valve)
