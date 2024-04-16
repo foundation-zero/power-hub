@@ -78,7 +78,11 @@ class PcmSensors(FromState):
 
     @property
     def charge_flow(self) -> LiterPerSecond:
-        return self.hot_switch_valve.flow * (1 - self.hot_switch_valve.position)
+        return (
+            self.hot_switch_valve.flow
+            if self.hot_switch_valve.position == 0
+            else float("nan")
+        )
 
     @property
     def charge_input_temperature(self) -> Celsius:

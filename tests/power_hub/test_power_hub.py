@@ -12,7 +12,7 @@ from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import SwitchPumpState
 from energy_box_control.appliances.valve import ValveState
-from energy_box_control.appliances.yazaki import YazakiState
+from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
 from energy_box_control.network import NetworkState
 from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
@@ -65,7 +65,7 @@ def test_power_hub_sensors(power_hub):
 
 def test_derived_sensors(power_hub, min_max_temperature):
 
-    state = power_hub.example_initial_state(power_hub)
+    state = power_hub.simple_initial_state(power_hub)
     control_state = PowerHubControlState()
     control_values = power_hub.no_control()
 
@@ -85,6 +85,16 @@ def test_derived_sensors(power_hub, min_max_temperature):
         )
         assert sensors.pcm.discharge_output_temperature == approx(
             state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-4
+        )
+
+        assert sensors.yazaki.chilled_input_temperature == approx(
+            state.connection(power_hub.yazaki, YazakiPort.CHILLED_IN).temperature,
+            abs=1e-4,
+        )
+
+        assert sensors.yazaki.cooling_input_temperature == approx(
+            state.connection(power_hub.yazaki, YazakiPort.COOLING_IN).temperature,
+            abs=1e-4,
         )
 
 
