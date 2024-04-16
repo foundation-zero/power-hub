@@ -91,7 +91,6 @@ def run(steps: int = 0):
         SENSOR_VALUES_TOPIC,
         json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
     )
-    control_values = no_control(power_hub)
 
     while True:
 

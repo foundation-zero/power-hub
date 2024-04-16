@@ -21,6 +21,10 @@ class HotControlMode(Enum):
     HEAT_PCM = "heat_pcm"
 
 
+HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
+HOT_RESERVOIR_PCM_VALVE_PCM_POSITION = ValveControl.a_position()
+
+
 @dataclass
 class HotControlState:
     control_mode_timer: Timer[HotControlMode]
@@ -31,16 +35,16 @@ class HotControlState:
 class ChillControlMode(Enum):
     NO_CHILL = "no_chill"
     CHILL_YAZAKI = "chill_yazaki"
-    WAIT_BEFORE_COMPRESSOR = "wait_before_compressor"
-    CHILL_COMPRESSOR = "chill_compressor"
+    WAIT_BEFORE_CHILLER = "wait_before_chiller"
+    CHILL_CHILLER = "chill_chiller"
 
 
-CHILLER_SWITCH_VALVE_YAZAKI_POSITION = 0.0
-CHILLER_SWITCH_VALVE_COMPRESSION_POSITION = 1.0
-WASTE_SWITCH_VALVE_YAZAKI_POSITION = 0.0
-WASTE_SWITCH_VALVE_COMPRESSION_POSITION = 1.0
-WASTE_BYPASS_VALVE_OPEN_POSITION = 0.0
-YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = 0.0
+CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
+CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
+WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
+WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
+WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
+YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 
 
 @dataclass
@@ -71,7 +75,7 @@ def setpoint(description: str):
 @dataclass
 class Setpoints:
     hot_reservoir_temperature: Celsius = setpoint(
-        "minimum temperature of hot reservoir to be maintained, hot reservoir is prioritized of pcm"
+        "minimum temperature of hot reservoir to be maintained, hot reservoir is prioritized over pcm"
     )
     pcm_temperature: Celsius = setpoint("minimum temperature of pcm to be maintained")
     pcm_charge_temperature_offset: Celsius = setpoint(
@@ -86,7 +90,7 @@ class Setpoints:
     cold_reservoir_yazaki_temperature: Celsius = setpoint(
         "maximum temperature of cold reservoir to be maintained by Yazaki"
     )
-    cold_reservoir_compressor_temperature: Celsius = setpoint(
+    cold_reservoir_chiller_temperature: Celsius = setpoint(
         "maximum temperature of cold reservoir to be maintained by compression chiller (ideally greater than cold_reservoir_yazaki_temperature)"
     )
     preheat_reservoir_temperature: Celsius = setpoint(
@@ -111,7 +115,7 @@ def initial_control_state() -> PowerHubControlState:
             hot_reservoir_charge_temperature_offset=5,
             pcm_yazaki_temperature=80,
             cold_reservoir_yazaki_temperature=8,
-            cold_reservoir_compressor_temperature=11,
+            cold_reservoir_chiller_temperature=11,
             preheat_reservoir_temperature=38,
         ),
         hot_control=HotControlState(
@@ -174,6 +178,7 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
+        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
         run_heat_pipes_pump = True
     elif hot_control_mode == HotControlMode.HEAT_PCM:
         heat_setpoint = (
@@ -185,10 +190,12 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
+        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
         run_heat_pipes_pump = True
     else:  # hot_control_mode == HotControlMode.DUMP
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
         feedback_valve_control = 0
+        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
         run_heat_pipes_pump = False
 
     hot_control_state = HotControlState(
@@ -202,6 +209,8 @@ def hot_control(
         .value(SwitchPumpControl(on=run_heat_pipes_pump))
         .control(power_hub.heat_pipes_valve)
         .value(ValveControl(feedback_valve_control))
+        .control(power_hub.hot_reservoir_pcm_valve)
+        .value(ValveControl(hot_reservoir_pcm_valve_position))
         .control(power_hub.hot_reservoir)
         .value(BoilerControl(heater_on=False))
     )
@@ -240,14 +249,14 @@ def chill_control(
             return ChillControlMode.CHILL_YAZAKI
         elif (
             sensors.cold_reservoir.temperature
-            > control_state.setpoints.cold_reservoir_compressor_temperature
+            > control_state.setpoints.cold_reservoir_chiller_temperature
         ):
-            return ChillControlMode.CHILL_COMPRESSOR
+            return ChillControlMode.CHILL_CHILLER
         elif (
             sensors.cold_reservoir.temperature
             > control_state.setpoints.cold_reservoir_yazaki_temperature
         ):
-            return ChillControlMode.WAIT_BEFORE_COMPRESSOR
+            return ChillControlMode.WAIT_BEFORE_CHILLER
         else:  # temp ok
             return ChillControlMode.NO_CHILL
 
@@ -303,9 +312,9 @@ def chill_control(
             running = run_yazaki
         else:
             running = no_run
-    elif control_mode == ChillControlMode.CHILL_COMPRESSOR:
-        chiller_switch_valve_position = CHILLER_SWITCH_VALVE_COMPRESSION_POSITION
-        waste_switch_valve_position = WASTE_SWITCH_VALVE_COMPRESSION_POSITION
+    elif control_mode == ChillControlMode.CHILL_CHILLER:
+        chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
+        waste_switch_valve_position = WASTE_SWITCH_VALVE_CHILLER_POSITION
 
         # wait for valves to get into position
         if sensors.chiller_switch_valve.in_position(

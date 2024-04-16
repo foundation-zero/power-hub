@@ -67,14 +67,14 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
     assert isinstance(result, SimulationSuccess)
 
 
-def test_power_hub_simulation_control(power_hub):
+def test_power_hub_simulation_control(power_hub, min_max_temperature):
     result = run_simulation(
         power_hub,
         power_hub.simple_initial_state(),
         no_control(power_hub),
         initial_control_state(),
         partial(control_power_hub, power_hub),
-        None,
+        min_max_temperature,
     )
 
     assert isinstance(result, SimulationSuccess)

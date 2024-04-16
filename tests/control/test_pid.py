@@ -142,7 +142,8 @@ def test_integral_windup():
     pid = Pid(PidConfig(0, 1, 0, (-100, 100)))
 
     for i in range(1_000_000):
-        pid, _ = pid.run(1, 0)
+        pid, control = pid.run(1, 0)
+        assert control == min(i + 1, 100)
 
     pid, _ = pid.run(0, 100)
     pid, control = pid.run(100, 100)
