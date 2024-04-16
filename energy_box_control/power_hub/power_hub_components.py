@@ -1,3 +1,4 @@
+from energy_box_control.schedules import ConstSchedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
@@ -21,7 +22,13 @@ SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 
-heat_pipes = HeatPipes(0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT)
+
+def heat_pipes(global_irradiance_schedule: ConstSchedule[float]) -> HeatPipes:
+    return HeatPipes(
+        0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT, global_irradiance_schedule
+    )
+
+
 heat_pipes_valve = Valve()
 heat_pipes_pump = SwitchPump(15 / 60)
 heat_pipes_mix = Mix()

@@ -30,6 +30,7 @@ from energy_box_control.power_hub.power_hub_components import (
     heat_pipes_mix,
     heat_pipes_valve,
     pcm,
+    GLOBAL_IRRADIANCE,
 )
 
 from energy_box_control.power_hub.sensors import (
@@ -37,6 +38,7 @@ from energy_box_control.power_hub.sensors import (
     PcmSensors,
     ValveSensors,
 )
+from energy_box_control.schedules import ConstSchedule
 from energy_box_control.sensors import NetworkSensors, WeatherSensors
 
 import energy_box_control.power_hub.power_hub_components as phc
@@ -68,7 +70,11 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     @staticmethod
     def pipes_pcm_circuit() -> "PipesPcmNetwork":
         return PipesPcmNetwork(
-            heat_pipes, heat_pipes_valve, heat_pipes_pump, heat_pipes_mix, pcm
+            heat_pipes(ConstSchedule(GLOBAL_IRRADIANCE)),
+            heat_pipes_valve,
+            heat_pipes_pump,
+            heat_pipes_mix,
+            pcm,
         )
 
     def connections(self) -> NetworkConnections[Self]:
