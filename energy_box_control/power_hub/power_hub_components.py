@@ -26,18 +26,38 @@ GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 COOLING_DEMAND: Watt = 100 / 24 / 60 / 60  # 100 kWh / day
 
 
-def heat_pipes(global_irradiance_schedule: Schedule[float]) -> HeatPipes:
+def heat_pipes(
+    global_irradiance_schedule: Schedule[WattPerMeterSquared],
+    ambient_temperature_schedule: Schedule[Celsius],
+) -> HeatPipes:
     return HeatPipes(
-        0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT, global_irradiance_schedule
+        0.767,
+        1.649,
+        0.006,
+        16.3,
+        GLYCOL_SPECIFIC_HEAT,
+        global_irradiance_schedule,
+        ambient_temperature_schedule,
     )
 
 
 heat_pipes_valve = Valve()
 heat_pipes_pump = SwitchPump(15 / 60)
 heat_pipes_mix = Mix()
-hot_reservoir = hot_reservoir = Boiler(
-    130, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
-)
+
+
+def hot_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler:
+
+    return Boiler(
+        130,
+        6,
+        40,
+        GLYCOL_SPECIFIC_HEAT,
+        WATER_SPECIFIC_HEAT,
+        ambient_temperature_schedule,
+    )
+
+
 hot_switch_valve = Valve()
 hot_mix = Mix()
 pcm = Pcm(
@@ -59,14 +79,38 @@ chiller = Chiller(
     WATER_SPECIFIC_HEAT,
 )
 chill_mix = Mix()
-cold_reservoir = Boiler(800, 0, 0, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
+
+
+def cold_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler:
+    return Boiler(
+        800,
+        0,
+        0,
+        WATER_SPECIFIC_HEAT,
+        WATER_SPECIFIC_HEAT,
+        ambient_temperature_schedule,
+    )
+
+
 chilled_loop_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
 waste_switch_valve = Valve()
 waste_bypass_valve = Valve()
 waste_mix = Mix()
 waste_bypass_mix = Mix()
 preheat_switch_valve = Valve()
-preheat_reservoir = Boiler(100, 0, 36, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
+
+
+def preheat_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler:
+    return Boiler(
+        100,
+        0,
+        36,
+        WATER_SPECIFIC_HEAT,
+        WATER_SPECIFIC_HEAT,
+        ambient_temperature_schedule,
+    )
+
+
 preheat_mix = Mix()
 waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
