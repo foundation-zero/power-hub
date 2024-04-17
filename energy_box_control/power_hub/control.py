@@ -73,27 +73,6 @@ class WasteControlState:
     control_mode: WasteControlMode
 
 
-# class FreshWaterControlMode(Enum):
-#     NO_FRESHWATER_DEMAND = "no_freshwater_demand"
-#     FRESH_WATER_DEMAND = "freshwater_demand"
-
-# @dataclass
-# class FreshWaterControlState:
-#     control_mode_timer: Timer[FreshWaterControlMode]
-#     control_mode: FreshWaterControlMode
-
-# def fresh_water_control(power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors):
-
-#      def _control_mode():
-#         return FreshWaterControlMode.FRESH_WATER_DEMAND if sensors.fresh_water_demand else FreshWaterControlMode.NO_FRESHWATER_DEMAND
-
-#     control_mode_timer, control_mode = (
-#         control_state.waste_control.control_mode_timer.run(_control_mode)
-#     )
-
-#     return (FreshWaterControlState(control_mode_timer, control_mode), power_hub.control(power_hub.fresh_water_pump).value(SwitchPumpControl(True))
-
-
 def setpoint(description: str):
     return field(metadata={"description": description})
 
@@ -445,6 +424,10 @@ def control_power_hub(
         .value(BoilerControl(False))
         .control(power_hub.cold_reservoir)
         .value(BoilerControl(False))
+        .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(on=True))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(on=True))
         .combine(hot)
         .combine(chill)
         .combine(waste)
@@ -512,6 +495,10 @@ def control_from_json(
         .value(SwitchPumpControl(on=controls["chilled_loop_pump"]["on"]))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=controls["waste_pump"]["on"]))
+        .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(on=controls["fresh_water_pump"]["on"]))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(on=controls["cooling_demand_pump"]["on"]))
         .control(power_hub.outboard_pump)
         .value(SwitchPumpControl(on=controls["outboard_pump"]["on"]))
         .control(power_hub.yazaki)
