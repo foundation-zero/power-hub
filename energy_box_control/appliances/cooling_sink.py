@@ -4,9 +4,9 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
 )
 from energy_box_control.schedules import Schedule
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import JoulePerLiterKelvin, Watt
 
 
@@ -25,7 +25,7 @@ class CoolingSink(Appliance[ApplianceState, None, CoolingSinkPort]):
         inputs: dict[CoolingSinkPort, ConnectionState],
         previous_state: ApplianceState,
         control: None,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[ApplianceState, dict[CoolingSinkPort, ConnectionState]]:
 
         output_temperature = (
