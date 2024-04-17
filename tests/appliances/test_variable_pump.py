@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 from pytest import fixture
 
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances import (
     VariablePump,
     VariablePumpControl,
     VariablePumpPort,
     VariablePumpState,
 )
+from energy_box_control.time import ProcessTime
 
 
 @fixture
@@ -17,7 +18,7 @@ def variable_pump():
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_variable_pump_off(variable_pump, simulation_time):

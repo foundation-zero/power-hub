@@ -27,6 +27,7 @@ from energy_box_control.network import (
 
 
 import energy_box_control.power_hub.power_hub_components as phc
+from energy_box_control.time import ProcessTime
 
 
 @dataclass
@@ -114,7 +115,10 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         ).build()
 
     def regulate(
-        self, control_state: PcmYazakiControlState, sensors: PcmYazakiSensors
+        self,
+        control_state: PcmYazakiControlState,
+        sensors: PcmYazakiSensors,
+        _time: ProcessTime,
     ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(

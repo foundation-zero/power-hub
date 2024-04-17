@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Self
 from pytest import approx
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -20,6 +20,7 @@ from energy_box_control.appliances import (
     ValvePort,
     ValveState,
 )
+from energy_box_control.time import ProcessTime
 
 
 def test_network():
@@ -39,7 +40,7 @@ def test_network():
                 .value(ValveState(0.5))
                 .define_state(self.boiler)
                 .value(BoilerState(50, 20))
-                .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+                .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
             )
 
         def connections(self):
@@ -81,7 +82,7 @@ def test_circular_network():
                 .define_state(self.boiler)
                 .at(BoilerPort.HEAT_EXCHANGE_OUT)
                 .value(ConnectionState(1, 100))
-                .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+                .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
             )
 
         def connections(self) -> NetworkConnections[Self]:

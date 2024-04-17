@@ -35,6 +35,8 @@ from energy_box_control.power_hub.power_hub_components import (
 
 from energy_box_control.schedules import ConstSchedule
 
+from energy_box_control.time import ProcessTime
+
 
 @dataclass
 class PipesPcmSensors:
@@ -108,7 +110,10 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         )
 
     def regulate(
-        self, control_state: PipesPcmControlState, sensors: PipesPcmSensors
+        self,
+        control_state: PipesPcmControlState,
+        sensors: PipesPcmSensors,
+        _time: ProcessTime,
     ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(

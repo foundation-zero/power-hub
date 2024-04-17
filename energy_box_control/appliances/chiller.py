@@ -6,8 +6,8 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
 )
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import JoulePerLiterKelvin, Watt
 
 
@@ -39,7 +39,7 @@ class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
         control: ChillerControl,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
         cooling_power = self.cooling_capacity if control.on else 0
 

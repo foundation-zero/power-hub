@@ -6,12 +6,12 @@ from energy_box_control.appliances import (
     ConnectionState,
     ApplianceState,
 )
-from energy_box_control.appliances.base import SimulationTime
+from energy_box_control.time import ProcessTime
 
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_mix(simulation_time):
