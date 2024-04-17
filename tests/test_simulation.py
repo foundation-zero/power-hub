@@ -24,12 +24,13 @@ def run_simulation(
     initial_control_state,
     control_function,
     min_max_temperature,
+    steps,
 ):
     state = initial_state
     control_values = initial_control_values
     control_state = initial_control_state
 
-    for i in range(5000):
+    for i in range(steps):
         try:
             state = network.simulate(state, control_values, min_max_temperature)
         except Exception as e:

@@ -130,6 +130,7 @@ def test_pipes_to_pcm_simulation(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -149,6 +150,7 @@ def test_half_valve(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -178,6 +180,7 @@ def test_pcm_charge(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -207,6 +210,7 @@ def test_simple_control(
         PipesPcmControlState(85),
         pipes_pcm_circuit.regulate,
         min_max_temperature,
+        500,
     )
     assert isinstance(result, SimulationSuccess)
     assert result.state.connection(
