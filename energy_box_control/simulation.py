@@ -1,9 +1,14 @@
 import json
 import queue
 import time
-from typing import Any
-from uuid import UUID
-from energy_box_control.power_hub.network import PowerHubControlState
+from energy_box_control.json import encoder
+from energy_box_control.power_hub.control import (
+    control_from_json,
+    control_power_hub,
+    control_to_json,
+    initial_control_state,
+    no_control,
+)
 from energy_box_control.power_hub.sensors import get_sensor_values
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
@@ -17,25 +22,6 @@ from dataclasses import fields
 from datetime import datetime
 
 from functools import partial
-
-
-def _encoder(blacklist: set[str] = set()) -> type[json.JSONEncoder]:
-
-    class NestedEncoder(json.JSONEncoder):
-
-        def default(self, o: Any):
-            if hasattr(o, "__dict__"):
-                return {
-                    attr: value
-                    for attr, value in o.__dict__.items()
-                    if attr not in blacklist
-                }
-            if type(o) == UUID:
-                return o.hex
-            else:
-                return json.JSONEncoder.default(self, o)
-
-    return NestedEncoder
 
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -75,38 +61,34 @@ def run(steps: int = 0):
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
-        power_hub.no_control(),
+        no_control(power_hub),
     )
 
-    control_state = PowerHubControlState()
+    control_state = initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
+        json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
     )
-    control_values = power_hub.no_control()
 
     while True:
 
         power_hub_sensors = power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )
-        new_control_state, control_values = power_hub.regulate(
-            control_state, power_hub_sensors
+        new_control_state, control_values = control_power_hub(
+            power_hub, control_state, power_hub_sensors
         )
 
         publish_to_mqtt(
             mqtt_client,
             CONTROL_VALUES_TOPIC,
-            json.dumps(
-                control_values.name_to_control_values_mapping(power_hub),
-                cls=_encoder(),
-            ),
+            control_to_json(power_hub, control_values),
         )
-        control_values = power_hub.control_from_json(
-            control_values_queue.get(block=True)
+        control_values = control_from_json(
+            power_hub, control_values_queue.get(block=True)
         )
 
         new_state = power_hub.simulate(state, control_values)
@@ -117,7 +99,7 @@ def run(steps: int = 0):
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
+            json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
         )
 
         for sensor_field in fields(power_hub_sensors):

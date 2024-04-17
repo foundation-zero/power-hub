@@ -18,6 +18,14 @@ class ValveState(ApplianceState):
 class ValveControl(ApplianceControl):
     position: float
 
+    @staticmethod
+    def a_position() -> float:
+        return 0.0
+
+    @staticmethod
+    def b_position() -> float:
+        return 1.0
+
 
 class ValvePort(Port):
     A = "a"

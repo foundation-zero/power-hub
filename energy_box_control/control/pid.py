@@ -1,13 +1,16 @@
 from dataclasses import dataclass
 
 
+def _clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(value, upper))
+
+
 @dataclass
 class PidConfig:
-    setpoint: float
     kp: float
     ki: float
     kd: float
-    bounds: tuple[float, float] | None = None
+    output_limits: tuple[float, float] | None = None
 
 
 class Pid:
@@ -20,8 +23,8 @@ class Pid:
         self._integral = 0
         self._e_prev = 0
 
-    def run(self, measurement: float) -> "tuple[Pid, float]":
-        e = self.config.setpoint - measurement
+    def run(self, setpoint: float, measurement: float) -> "tuple[Pid, float]":
+        e = setpoint - measurement
 
         p = self.config.kp * e
         i = self._integral + self.config.ki * e
@@ -29,9 +32,10 @@ class Pid:
 
         raw_control_value = p + i + d
 
-        if self.config.bounds:
-            lower, upper = self.config.bounds
-            bounded_control_value = max(lower, min(raw_control_value, upper))
+        if self.config.output_limits:
+            lower, upper = self.config.output_limits
+            bounded_control_value = _clamp(raw_control_value, lower, upper)
+            i = _clamp(i, lower, upper)
         else:
             bounded_control_value = raw_control_value
 

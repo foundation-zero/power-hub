@@ -19,23 +19,23 @@ def test_timing(mocker):
 
     with freeze_time(initial_datetime) as frozen_datetime:
         mock = mocker.Mock()
-        timer = timer.run(mock)
+        timer, _ = timer.run(mock)
         mock.assert_called_once()
 
-        timer = timer.run(mock)
-        mock.assert_called_once()
-
-        frozen_datetime.tick(timedelta(seconds=30))
-
-        timer = timer.run(mock)
+        timer, _ = timer.run(mock)
         mock.assert_called_once()
 
         frozen_datetime.tick(timedelta(seconds=30))
 
-        timer = timer.run(mock)
+        timer, _ = timer.run(mock)
+        mock.assert_called_once()
+
+        frozen_datetime.tick(timedelta(seconds=30))
+
+        timer, _ = timer.run(mock)
         assert mock.call_count == 2
 
         frozen_datetime.tick(timedelta(minutes=1))
 
-        timer = timer.run(mock)
+        timer, _ = timer.run(mock)
         assert mock.call_count == 3
