@@ -18,7 +18,7 @@ from energy_box_control.sensors import get_sensor_class_properties
 from energy_box_control.api.open_weather import create_weather_manager
 
 dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
+    os.path.join(os.path.realpath(__file__), "../../../", ".env")
 )
 load_dotenv(dotenv_path)
 
@@ -85,7 +85,7 @@ def build_get_values_query(
     topic = f"power_hub/appliance_sensors/{appliance_name}/{field_name}"
 
     return fluxy.pipe(
-        fluxy.from_bucket(os.environ["DOCKER_INFLUXDB_INIT_BUCKET"]),
+        fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
         fluxy.range(*build_query_range(minutes_back)),
         fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
         fluxy.filter(lambda r: r._field == "value"),
@@ -141,10 +141,11 @@ def serialize_dataframe(columns: list[str]):
 
 
 def get_influx_client() -> InfluxDBClientAsync:
-    url = os.environ["DOCKER_INFLUXDB_URL"]
-    token = os.environ["DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"]
-    org = os.environ["DOCKER_INFLUXDB_INIT_ORG"]
-    return InfluxDBClientAsync(url, token, org=org)
+    return InfluxDBClientAsync(
+        os.environ["INFLUXDB_URL"],
+        os.environ["INFLUXDB_TOKEN"],
+        org=os.environ["INFLUXDB_ORGANISATION"],
+    )
 
 
 @app.while_serving

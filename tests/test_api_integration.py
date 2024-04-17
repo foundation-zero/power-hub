@@ -17,9 +17,7 @@ from http import HTTPStatus
 
 BASE_URL = "http://0.0.0.0:5001"
 
-dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
-)
+dotenv_path = os.path.normpath(os.path.join(os.path.realpath(__file__), "../", ".env"))
 load_dotenv(dotenv_path)
 
 
@@ -47,40 +45,33 @@ async def influx_has_entries():
 
 
 async def _check_simulation_entries():
-    try:
-        async with asyncio.timeout(10):
-            while True:
-                if await influx_has_entries():
-                    break
-                await asyncio.sleep(0.5)
-    except TimeoutError as e:
-        raise e
+    async with asyncio.timeout(20):
+        while True:
+            if await influx_has_entries():
+                break
+            await asyncio.sleep(0.5)
 
 
-async def _start_api():
-    api_process = multiprocessing.Process(target=run_api)
-    api_process.start()
-    try:
-        async with asyncio.timeout(20):
-            while True:
-                if api_is_up():
-                    break
-                await asyncio.sleep(0.5)
-    except TimeoutError as e:
-        api_process.terminate()
-        api_process.join()
-        raise e
-    return api_process
+async def _check_api_is_up():
+    async with asyncio.timeout(20):
+        while True:
+            if api_is_up():
+                break
+            await asyncio.sleep(0.5)
 
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup():
-    api_process = await _start_api()
-    run_simulation(5)
-    await _check_simulation_entries()
-    yield
-    api_process.terminate()
-    api_process.join()
+    api_process = multiprocessing.Process(target=run_api)
+    api_process.start()
+    try:
+        await _check_api_is_up()
+        run_simulation(5)
+        await _check_simulation_entries()
+        yield
+    finally:
+        api_process.terminate()
+        api_process.join()
 
 
 @pytest.mark.integration
