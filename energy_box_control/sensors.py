@@ -146,6 +146,7 @@ class SensorType(Enum):
 
 @dataclass(eq=True, frozen=True)
 class Sensor:
+    technical_name: str | None = None
     from_weather: bool = False
     from_port: Port | None = None
     type: SensorType | None = None

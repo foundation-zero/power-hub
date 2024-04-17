@@ -35,7 +35,7 @@ heat_pipes_mix = Mix()
 hot_reservoir = hot_reservoir = Boiler(
     130, 6, 40, GLYCOL_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT
 )
-hot_reservoir_pcm_valve = Valve()
+hot_switch_valve = Valve()
 hot_mix = Mix()
 pcm = Pcm(
     latent_heat=242000 * 610,  # 610 kg at 242 kJ/kg
@@ -58,17 +58,15 @@ chiller = Chiller(
 chill_mix = Mix()
 cold_reservoir = Boiler(800, 0, 0, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 chilled_loop_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
-yazaki_waste_bypass_valve = Valve()
-yazaki_waste_mix = Mix()
+waste_switch_valve = Valve()
+waste_bypass_valve = Valve()
 waste_mix = Mix()
-preheat_bypass_valve = Valve()
+waste_bypass_mix = Mix()
+preheat_switch_valve = Valve()
 preheat_reservoir = Boiler(100, 0, 36, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 preheat_mix = Mix()
-outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
-waste_switch_valve = Valve()
 waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
-chiller_waste_bypass_valve = Valve()
-chiller_waste_mix = Mix()
+outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 fresh_water_source = Source(0, SEAWATER_TEMP)
 outboard_pump = SwitchPump(300 / 60)
 outboard_source = Source(0, SEAWATER_TEMP)

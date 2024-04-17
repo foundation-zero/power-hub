@@ -31,7 +31,7 @@ class HotControlState:
     control_mode_timer: Timer[HotControlMode]
     control_mode: HotControlMode
     feedback_valve_controller: Pid
-    hot_reservoir_pcm_valve_position: float
+    hot_switch_valve_position: float
 
 
 class ChillControlMode(Enum):
@@ -126,7 +126,7 @@ def initial_control_state() -> PowerHubControlState:
             control_mode_timer=Timer(timedelta(minutes=5)),
             control_mode=HotControlMode.DUMP,
             feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
-            hot_reservoir_pcm_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+            hot_switch_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
             control_mode=ChillControlMode.NO_CHILL,
@@ -145,16 +145,16 @@ def hot_control(
     power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors
 ):
     # hot water usage
-    # PID heat pipes feedback valve by ~ +5 degrees above the heat destination with max of 95 degrees (depending on the hot_reservoir_pcm_valve)
+    # PID heat pipes feedback valve by ~ +5 degrees above the heat destination with max of 95 degrees (depending on the hot_switch_valve)
     # every 5 minutes
     #   if hot reservoir is below its target temp: heat boiler
     #   else if PCM is below its max temperature (95 degrees C): heat PCM
     #   else off
     # if heat boiler
-    #   have hot_reservoir_pcm_valve feed water into reservoir heat exchanger
+    #   have hot_switch_valve feed water into reservoir heat exchanger
     #   run pump
     # if heat PCM
-    #   have hot_reservoir_pcm_valve feed water into PCM
+    #   have hot_switch_valve feed water into PCM
     #   monitor PCM SoC by counting power
     #   run pump
     # if off
@@ -185,7 +185,7 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
-        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
         run_heat_pipes_pump = True
     elif hot_control_mode == HotControlMode.HEAT_PCM:
         heat_setpoint = (
@@ -197,21 +197,19 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
-        hot_reservoir_pcm_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
     else:  # hot_control_mode == HotControlMode.DUMP
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
         feedback_valve_control = 0
-        hot_reservoir_pcm_valve_position = (
-            control_state.hot_control.hot_reservoir_pcm_valve_position
-        )
+        hot_switch_valve_position = control_state.hot_control.hot_switch_valve_position
         run_heat_pipes_pump = False
 
     hot_control_state = HotControlState(
         control_mode_timer=hot_control_mode_timer,
         control_mode=hot_control_mode,
         feedback_valve_controller=feedback_valve_controller,
-        hot_reservoir_pcm_valve_position=hot_reservoir_pcm_valve_position,
+        hot_switch_valve_position=hot_switch_valve_position,
     )
 
     control = (
@@ -219,8 +217,8 @@ def hot_control(
         .value(SwitchPumpControl(on=run_heat_pipes_pump))
         .control(power_hub.heat_pipes_valve)
         .value(ValveControl(feedback_valve_control))
-        .control(power_hub.hot_reservoir_pcm_valve)
-        .value(ValveControl(hot_reservoir_pcm_valve_position))
+        .control(power_hub.hot_switch_valve)
+        .value(ValveControl(hot_switch_valve_position))
         .control(power_hub.hot_reservoir)
         .value(BoilerControl(heater_on=False))
     )
@@ -354,7 +352,7 @@ def chill_control(
         .value(ValveControl(waste_switch_valve_position))
         .control(power_hub.yazaki_hot_bypass_valve)
         .value(ValveControl(YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION))
-        .control(power_hub.yazaki_waste_bypass_valve)
+        .control(power_hub.waste_bypass_valve)
         .value(ValveControl(WASTE_BYPASS_VALVE_OPEN_POSITION))
         .combine(running)
     )
@@ -388,7 +386,7 @@ def waste_control(
         WasteControlState(control_mode_timer, control_mode),
         power_hub.control(power_hub.outboard_pump)
         .value(SwitchPumpControl(control_mode == WasteControlMode.RUN_OUTBOARD))
-        .control(power_hub.preheat_bypass_valve)
+        .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_BYPASS_CLOSED_POSITION)),
     )
 
