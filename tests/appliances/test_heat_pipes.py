@@ -2,11 +2,13 @@ from datetime import datetime, timedelta
 from pytest import approx, fixture
 from energy_box_control.appliances.base import ConnectionState, SimulationTime
 from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPort
+from energy_box_control.schedules import ConstSchedule
+from energy_box_control.units import *
 
 
 @fixture
 def heat_pipes():
-    return HeatPipes(0.50, 0.1, 0.1, 1, 1)
+    return HeatPipes(0.50, 0.1, 0.1, 1, 1, ConstSchedule(1))
 
 
 @fixture
@@ -19,7 +21,7 @@ def test_equal_temps(heat_pipes, simulation_time):
         {
             HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(10, 10, 1),
+        HeatPipesState(10, 10),
         None,
         simulation_time,
     )
@@ -32,7 +34,7 @@ def test_differential_temp(heat_pipes, simulation_time):
         {
             HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(10, 9, 1),
+        HeatPipesState(10, 9),
         None,
         simulation_time,
     )
@@ -43,12 +45,12 @@ def test_differential_temp(heat_pipes, simulation_time):
 
 @fixture
 def hub_heat_pipes():
-    return HeatPipes(0.767, 1.649, 0.006, 16.3, 3840 * 0.993)
+    return HeatPipes(0.767, 1.649, 0.006, 16.3, 3840 * 0.993, ConstSchedule(1000))
 
 
 def test_hub_stagnation_temp(hub_heat_pipes, simulation_time):
     inputs = {HeatPipesPort.IN: ConnectionState(1, 100)}
-    pipes_state = HeatPipesState(100, 20, 1000)
+    pipes_state = HeatPipesState(100, 20)
 
     temp_diff = None
     for _ in range(1000):

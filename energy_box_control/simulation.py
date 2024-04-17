@@ -9,6 +9,8 @@ from energy_box_control.power_hub.control import (
     initial_control_state,
     no_control,
 )
+
+from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.power_hub.sensors import get_sensor_values
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
@@ -22,6 +24,9 @@ from dataclasses import fields
 from datetime import datetime
 
 from functools import partial
+
+from energy_box_control.schedules import ConstSchedule
+from energy_box_control.power_hub.power_hub_components import GLOBAL_IRRADIANCE
 
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -57,7 +62,8 @@ def run(steps: int = 0):
     mqtt_client = create_and_connect_client()
     run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
     run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
-    power_hub = PowerHub.power_hub()
+
+    power_hub = PowerHub.power_hub(PowerHubSchedules(ConstSchedule(GLOBAL_IRRADIANCE)))
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
