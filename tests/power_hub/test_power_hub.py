@@ -8,20 +8,20 @@ from energy_box_control.appliances.boiler import BoilerPort
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
-from energy_box_control.power_hub import control
 from energy_box_control.power_hub.control import (
-    PowerHubControlState,
     control_power_hub,
     initial_control_state,
     no_control,
 )
 import energy_box_control.power_hub.power_hub_components as phc
-from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationSuccess, run_simulation
+from energy_box_control.power_hub.network import PowerHubSchedules
+from energy_box_control.schedules import ConstSchedule
 
 
 @fixture
 def power_hub() -> PowerHub:
-    return PowerHub.power_hub()
+    return PowerHub.power_hub(PowerHubSchedules(ConstSchedule(phc.GLOBAL_IRRADIANCE)))
 
 
 @fixture
