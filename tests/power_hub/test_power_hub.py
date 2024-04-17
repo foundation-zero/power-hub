@@ -19,12 +19,13 @@ from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
 from energy_box_control.power_hub.control import (
+    PowerHubControlState,
     control_power_hub,
     initial_control_state,
     no_control,
 )
 import energy_box_control.power_hub.power_hub_components as phc
-from tests.test_simulation import SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.schedules import ConstSchedule
 
@@ -66,8 +67,7 @@ def test_power_hub_sensors(power_hub):
 def test_derived_sensors(power_hub, min_max_temperature):
 
     state = power_hub.simple_initial_state(power_hub)
-    control_state = PowerHubControlState()
-    control_values = power_hub.no_control()
+    control_values = no_control(power_hub)
 
     for i in range(500):
         try:
@@ -121,6 +121,7 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature):
         initial_control_state(),
         partial(control_power_hub, power_hub),
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)

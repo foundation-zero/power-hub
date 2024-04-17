@@ -33,15 +33,7 @@ from energy_box_control.power_hub.power_hub_components import (
     GLOBAL_IRRADIANCE,
 )
 
-from energy_box_control.power_hub.sensors import (
-    HeatPipesSensors,
-    PcmSensors,
-    ValveSensors,
-)
 from energy_box_control.schedules import ConstSchedule
-from energy_box_control.sensors import NetworkSensors, WeatherSensors
-
-import energy_box_control.power_hub.power_hub_components as phc
 
 
 @dataclass

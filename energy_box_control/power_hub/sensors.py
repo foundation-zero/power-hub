@@ -229,7 +229,9 @@ class YazakiSensors(FromState):
 
     @property
     def efficiency(self) -> float:
-        return self.used_power / self.cool_power if self.cool_power > 0 else float("nan")
+        return (
+            self.used_power / self.cool_power if self.cool_power > 0 else float("nan")
+        )
 
 
 @sensors()
@@ -433,6 +435,9 @@ class ColdReservoirSensors(FromState):
 class ValveSensors(FromState):
     spec: Valve
     position: float
+
+    def in_position(self, position: float, diff: float = 0.05) -> bool:
+        return abs(self.position - position) < diff
 
 
 @sensors()
