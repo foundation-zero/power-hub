@@ -2,13 +2,14 @@ from datetime import datetime, timedelta
 from hypothesis import assume, example, given, reproduce_failure
 from hypothesis.strategies import floats
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances.boiler import (
     Boiler,
     BoilerControl,
     BoilerPort,
     BoilerState,
 )
+from energy_box_control.time import ProcessTime
 
 volume_strat = floats(1, 1e3, allow_nan=False)
 temp_strat = floats(0, 150, allow_nan=False)

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Self
 from pytest import approx
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -20,6 +20,7 @@ from energy_box_control.appliances import (
     ValvePort,
     ValveState,
 )
+from energy_box_control.time import ProcessTime
 
 
 def test_network():

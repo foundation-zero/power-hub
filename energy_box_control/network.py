@@ -23,7 +23,7 @@ from energy_box_control.appliances import (
     ConnectionState,
     Port,
 )
-from energy_box_control.appliances.base import ProcessTime
+from energy_box_control.time import ProcessTime
 from energy_box_control.linearize import linearize
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync

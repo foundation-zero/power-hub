@@ -6,8 +6,8 @@ from energy_box_control.appliances.base import (
     Celsius,
     ConnectionState,
     Port,
-    ProcessTime,
 )
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import (
     Joule,
     JoulePerKelvin,

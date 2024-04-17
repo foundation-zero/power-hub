@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from pytest import fixture
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances import (
     Chiller,
     ChillerPort,
     ChillerState,
 )
 from energy_box_control.appliances.chiller import ChillerControl
+from energy_box_control.time import ProcessTime
 
 
 @fixture

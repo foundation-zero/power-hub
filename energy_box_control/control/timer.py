@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Callable
 
-from energy_box_control.appliances.base import ProcessTime
+from energy_box_control.time import ProcessTime
 
 
 class Timer[T]:

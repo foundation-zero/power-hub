@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
 import json
-from energy_box_control.appliances.base import ProcessTime
+from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
 from energy_box_control.appliances.switch_pump import SwitchPumpControl

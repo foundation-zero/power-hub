@@ -3,7 +3,6 @@ from pytest import approx, fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    ProcessTime,
 )
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
@@ -20,6 +19,7 @@ from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
 )
 import energy_box_control.power_hub.power_hub_components as phc
 from energy_box_control.network import NetworkState
+from energy_box_control.time import ProcessTime
 from tests.test_simulation import SimulationSuccess, run_simulation
 
 

@@ -5,7 +5,6 @@ from pytest import approx, fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    ProcessTime,
 )
 from energy_box_control.appliances.heat_pipes import HeatPipesPort, HeatPipesState
 from energy_box_control.appliances.mix import MixPort
@@ -25,6 +24,7 @@ from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
+from energy_box_control.time import ProcessTime
 from tests.test_simulation import SimulationSuccess, run_simulation
 
 

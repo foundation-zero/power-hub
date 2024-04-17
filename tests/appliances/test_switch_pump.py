@@ -7,7 +7,8 @@ from energy_box_control.appliances import (
     SwitchPumpState,
     SwitchPumpControl,
 )
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.time import ProcessTime
 
 
 @fixture

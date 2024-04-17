@@ -6,8 +6,8 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    ProcessTime,
 )
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import JoulePerLiterKelvin, Watt
 
 

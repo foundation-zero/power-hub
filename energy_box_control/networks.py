@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Self
-from energy_box_control.appliances.base import Celsius, ProcessTime
+from energy_box_control.appliances.base import Celsius
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort, YazakiState
 from energy_box_control.network import (
     Network,
@@ -22,6 +22,7 @@ from energy_box_control.appliances import (
     ValvePort,
     ValveState,
 )
+from energy_box_control.time import ProcessTime
 
 
 @dataclass

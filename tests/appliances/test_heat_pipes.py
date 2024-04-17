@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPort
 from energy_box_control.schedules import ConstSchedule
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import *
 
 

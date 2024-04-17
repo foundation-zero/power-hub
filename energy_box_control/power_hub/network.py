@@ -26,7 +26,6 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    ProcessTime,
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
@@ -57,6 +56,7 @@ from datetime import datetime, timedelta
 
 from energy_box_control.schedules import Schedule
 from energy_box_control.sensors import WeatherSensors
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import WattPerMeterSquared
 
 

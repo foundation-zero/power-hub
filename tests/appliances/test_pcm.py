@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from pytest import fixture
 
 from energy_box_control.appliances import Pcm, PcmState, PcmPort
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.time import ProcessTime
 
 
 @fixture

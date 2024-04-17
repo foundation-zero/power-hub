@@ -3,12 +3,12 @@ from pytest import fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    ProcessTime,
 )
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
 )
+from energy_box_control.time import ProcessTime
 
 
 @fixture

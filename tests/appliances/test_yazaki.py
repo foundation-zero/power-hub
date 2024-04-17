@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pytest import approx
 import pytest
-from energy_box_control.appliances.base import ConnectionState, ProcessTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances.source import Source
 from energy_box_control.appliances.yazaki import (
     Yazaki,
@@ -11,6 +11,8 @@ from energy_box_control.appliances.yazaki import (
 )
 from energy_box_control.networks import YazakiNetwork
 import logging
+
+from energy_box_control.time import ProcessTime
 
 
 def test_yazaki():

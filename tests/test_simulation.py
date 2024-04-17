@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from energy_box_control.appliances.base import ProcessTime
+from energy_box_control.time import ProcessTime
 from energy_box_control.network import NetworkState
 
 
