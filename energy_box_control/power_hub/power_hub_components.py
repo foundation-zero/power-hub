@@ -1,7 +1,9 @@
+from energy_box_control.appliances.cooling_sink import CoolingSink
 from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
+    Watt,
     WattPerMeterSquared,
 )
 from energy_box_control.appliances.boiler import Boiler
@@ -21,6 +23,7 @@ SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
 SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
+COOLING_DEMAND: Watt = 100 / 24 / 60 / 60  # 100 kWh / day
 
 
 def heat_pipes(global_irradiance_schedule: Schedule[float]) -> HeatPipes:
@@ -67,7 +70,16 @@ preheat_reservoir = Boiler(100, 0, 36, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 preheat_mix = Mix()
 waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
-fresh_water_source = Source(0, SEAWATER_TEMP)
+waste_switch_valve = Valve()
+waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
+chiller_waste_bypass_valve = Valve()
+chiller_waste_mix = Mix()
+fresh_water_pump = SwitchPump(35 / 60)
+fresh_water_source = Source(float("nan"), SEAWATER_TEMP)
 outboard_pump = SwitchPump(300 / 60)
-outboard_source = Source(0, SEAWATER_TEMP)
-cooling_demand = Source(1, 40)
+outboard_source = Source(float("nan"), SEAWATER_TEMP)
+cooling_demand_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
+
+
+def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:
+    return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)
