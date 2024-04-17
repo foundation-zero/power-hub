@@ -16,7 +16,7 @@ from energy_box_control.appliances.valve import (
     ValvePort,
     dummy_bypass_valve_temperature_control,
 )
-from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
+from energy_box_control.appliances.yazaki import Yazaki, YazakiControl, YazakiPort
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -141,6 +141,8 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .value(SwitchPumpControl(on=True))
             .control(self.yazaki_hot_bypass_valve)
             .value(ValveControl(position=new_valve_position))
+            .control(self.yazaki)
+            .value(YazakiControl(True))
             .build(),
         )
 
