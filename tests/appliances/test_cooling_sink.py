@@ -7,6 +7,7 @@ from energy_box_control.appliances.base import (
     SimulationTime,
 )
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
+from energy_box_control.schedules import ConstSchedule
 
 
 @fixture
@@ -15,7 +16,7 @@ def simulation_time():
 
 
 def test_cooling_sink(simulation_time):
-    sink = CoolingSink(1, 1)
+    sink = CoolingSink(1, ConstSchedule(1))
 
     _, output = sink.simulate(
         {CoolingSinkPort.INPUT: ConnectionState(1, 10)},

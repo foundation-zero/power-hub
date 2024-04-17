@@ -3,6 +3,7 @@ from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
+    Watt,
     WattPerMeterSquared,
 )
 from energy_box_control.appliances.boiler import Boiler
@@ -22,6 +23,7 @@ SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
 SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
+COOLING_DEMAND: Watt = 100 / 24 / 60 / 60  # 100 kWh / day
 
 
 def heat_pipes(global_irradiance_schedule: Schedule[float]) -> HeatPipes:
@@ -77,4 +79,7 @@ fresh_water_source = Source(float("nan"), SEAWATER_TEMP)
 outboard_pump = SwitchPump(300 / 60)
 outboard_source = Source(float("nan"), SEAWATER_TEMP)
 cooling_demand_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
-cooling_demand = CoolingSink(100 / 24 / 60 / 60, WATER_SPECIFIC_HEAT)  # 100 kWh/day
+
+
+def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:
+    return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)  # 100 kWh/day

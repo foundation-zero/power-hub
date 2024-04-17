@@ -32,7 +32,11 @@ from energy_box_control.schedules import ConstSchedule
 
 @fixture
 def power_hub() -> PowerHub:
-    return PowerHub.power_hub(PowerHubSchedules(ConstSchedule(phc.GLOBAL_IRRADIANCE)))
+    return PowerHub.power_hub(
+        PowerHubSchedules(
+            ConstSchedule(phc.GLOBAL_IRRADIANCE), ConstSchedule(phc.COOLING_DEMAND)
+        )
+    )
 
 
 @fixture

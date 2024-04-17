@@ -6,6 +6,7 @@ from energy_box_control.appliances.base import (
     Port,
     SimulationTime,
 )
+from energy_box_control.schedules import Schedule
 from energy_box_control.units import JoulePerLiterKelvin, Watt
 
 
@@ -16,8 +17,8 @@ class CoolingSinkPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class CoolingSink(Appliance[ApplianceState, None, CoolingSinkPort]):
-    power: Watt
     specific_heat_capacity: JoulePerLiterKelvin
+    cooling_demand_schedule: Schedule[Watt]
 
     def simulate(
         self,
@@ -30,7 +31,7 @@ class CoolingSink(Appliance[ApplianceState, None, CoolingSinkPort]):
         output_temperature = (
             inputs[CoolingSinkPort.INPUT].temperature
             + (
-                self.power
+                self.cooling_demand_schedule.at(simulation_time)
                 / (inputs[CoolingSinkPort.INPUT].flow * self.specific_heat_capacity)
             )
             if inputs[CoolingSinkPort.INPUT].flow > 0

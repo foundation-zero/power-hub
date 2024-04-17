@@ -58,7 +58,7 @@ from datetime import datetime, timedelta
 from energy_box_control.schedules import Schedule
 from energy_box_control.sensors import WeatherSensors
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import WattPerMeterSquared
+from energy_box_control.units import Watt, WattPerMeterSquared
 
 
 @dataclass
@@ -137,7 +137,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_pump,
             phc.outboard_source,
             phc.cooling_demand_pump,
-            phc.cooling_demand,
+            phc.cooling_demand(schedules.cooling_demand_schedule),
         )
 
     @staticmethod
@@ -661,3 +661,4 @@ class PowerHub(Network[PowerHubSensors]):
 @dataclass
 class PowerHubSchedules:
     global_irradiance_schedule: Schedule[WattPerMeterSquared]
+    cooling_demand_schedule: Schedule[Watt]
