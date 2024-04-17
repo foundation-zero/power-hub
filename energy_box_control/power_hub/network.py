@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
+
 from typing import Self
 from energy_box_control.appliances import (
     HeatPipes,
@@ -21,7 +22,6 @@ from energy_box_control.appliances import (
     HeatExchangerPort,
     Source,
     SourcePort,
-    BoilerControl,
 )
 from energy_box_control.appliances.base import (
     ApplianceState,
@@ -35,7 +35,6 @@ from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
-    SwitchPumpControl,
     SwitchPumpPort,
     SwitchPumpState,
 )
@@ -47,7 +46,6 @@ from energy_box_control.network import (
     NetworkConnections,
     NetworkFeedbacks,
     NetworkState,
-    NetworkControl,
 )
 
 from energy_box_control.power_hub.sensors import (
@@ -58,11 +56,6 @@ import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
 from energy_box_control.sensors import WeatherSensors
-
-
-@dataclass
-class PowerHubControlState:
-    pass
 
 
 @dataclass
@@ -651,120 +644,3 @@ class PowerHub(Network[PowerHubSensors]):
                     getattr(self, sensor.name),
                 )
             return context.result()
-
-    def no_control(self) -> NetworkControl[Self]:
-        # control function that implements no control - all boilers off and all pumps on
-        return (
-            self.control(self.hot_reservoir)
-            .value(BoilerControl(heater_on=False))
-            .control(self.preheat_reservoir)
-            .value(BoilerControl(heater_on=False))
-            .control(self.cold_reservoir)
-            .value(BoilerControl(heater_on=False))
-            .control(self.heat_pipes_pump)
-            .value(SwitchPumpControl(on=True))
-            .control(self.pcm_to_yazaki_pump)
-            .value(SwitchPumpControl(on=True))
-            .control(self.chilled_loop_pump)
-            .value(SwitchPumpControl(on=True))
-            .control(self.waste_pump)
-            .value(SwitchPumpControl(on=True))
-            .control(self.outboard_pump)
-            .value(SwitchPumpControl(on=True))
-            .build()
-        )
-
-    def regulate(
-        self, control_state: PowerHubControlState, sensors: PowerHubSensors
-    ) -> tuple[(PowerHubControlState, NetworkControl[Self])]:
-        # Rough Initial description of envisioned control plan
-        # All specific values can very well be tweaked depending on calibration or performance tuning
-
-        # Control modes
-        # Hot: heat boiler / heat PCM / off
-        # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
-        # Waste: preheat below temp / preheat full: waste heat outboard
-        # Domestic cooling: provide cooling / ventilation cooling
-
-        # hot water usage
-        # PID heat pipes feedback valve by ~ +5 degrees above the heat destination (depending on the hot_reservoir_pcm_valve)
-        # every 5 minutes
-        #   if hot reservoir is below its target temp: heat boiler
-        #   else if PCM is below its max temperature (95 degrees C): heat PCM
-        #   else off
-        # if heat boiler
-        #   have hot_reservoir_pcm_valve feed water into reservoir heat exchanger
-        #   run pump
-        # if heat PCM
-        #   have hot_reservoir_pcm_valve feed water into PCM
-        #   monitor PCM SoC by counting power
-        #   run pump
-        # if off
-        #   (do not run pump)
-
-        # Chill
-        # every 15 minutes
-        #   if cold reservoir < 9 degrees C: reservoir full
-        #   if cold reservoir > 9 degrees C and PCM SoC > 80%: chill Yazaki
-        #   if cold reservoir > 9 degrees C and PCM SoC < 80%: wait before starting e-chiller
-        #   if cold reservoir > 11 degrees C and PCM SoC < 80%: chill e-chiller
-
-        # if chill yazaki:
-        #   switch chiller valve to Yazaki
-        #   switch waste valve to Yazaki
-        #   keep pcm Yazaki valve open
-        #   ensure waste heat take away is flowing
-        #   run pcm pump
-        #   PID chill pump at speed at which Yazaki chill output is -3 degrees from chill reservoir
-        # if chill e-chiller:
-        #   switch chiller valve to e-chiller
-        #   switch waste valve to e-chiller
-        #   keep pcm e-chiller valve open
-        #   ensure waste heat take away is flowing
-        #   PID chill pump at speed at which e-chiller chill output is -3 degrees from chill reservoir
-
-        # Waste
-        # every 5 minutes
-        #   if preheat reservoir > waste output temp or preheat reservoir > 35 degrees C: bypass preheat
-        #   if preheat reservoir < waste output temp and preheat reservoir < 35 degrees: enter preheat
-
-        # if bypass preheat:
-        #   direct flow into active chiller (no bypass)
-        #   bypass preheat reservoir
-        #   run outboard heat exchange pump
-        # if enter preheat:
-        #   bypass waste heat for +3 degrees over preheat reservoir temp
-        #   fully enter preheat reservoir
-        #   do not run outboard heat exchange pump
-
-        # Domestic cooling
-        # every 30 miuntes
-        #   if ambient temperature > 25 degrees C: provide active cooling
-        #   if ambient temperature < 25 degrees C: ventilation cooling
-
-        # if provide active cooling:
-        #   PID domestic cooling pump based on setpoint of cold reservoir temperature + 3 degrees
-
-        return (control_state, self.no_control())
-
-    def control_from_json(self, control_json: str) -> NetworkControl[Self]:
-        controls = json.loads(control_json)
-        return (
-            self.control(self.hot_reservoir)
-            .value(BoilerControl(heater_on=controls["hot_reservoir"]["heater_on"]))
-            .control(self.preheat_reservoir)
-            .value(BoilerControl(heater_on=controls["preheat_reservoir"]["heater_on"]))
-            .control(self.cold_reservoir)
-            .value(BoilerControl(heater_on=controls["cold_reservoir"]["heater_on"]))
-            .control(self.heat_pipes_pump)
-            .value(SwitchPumpControl(on=controls["heat_pipes_pump"]["on"]))
-            .control(self.pcm_to_yazaki_pump)
-            .value(SwitchPumpControl(on=controls["pcm_to_yazaki_pump"]["on"]))
-            .control(self.chilled_loop_pump)
-            .value(SwitchPumpControl(on=controls["chilled_loop_pump"]["on"]))
-            .control(self.waste_pump)
-            .value(SwitchPumpControl(on=controls["waste_pump"]["on"]))
-            .control(self.outboard_pump)
-            .value(SwitchPumpControl(on=controls["outboard_pump"]["on"]))
-            .build()
-        )

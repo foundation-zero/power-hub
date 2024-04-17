@@ -370,6 +370,11 @@ class NetworkControl[Net: "Network[Any]"]:
             for item, value in self._controls.items()
         }
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, NetworkControl):
+            return self._controls == value._controls
+        return False
+
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:
     def __init__(self, *prev: *Prev):
@@ -381,6 +386,13 @@ class ControlBuilder[Net: "Network[Any]", *Prev]:
         self: "ControlBuilder[Net, *Prev]", app: App
     ) -> "ControlApplianceBuilder[Net, App, *Prev]":
         return ControlApplianceBuilder(app, *self._prev)
+
+    def combine[
+        *Others
+    ](
+        self, other: "ControlBuilder[Net, *Others]"
+    ) -> "ControlBuilder[Net, *Prev, *Others]":
+        return ControlBuilder(*self._prev, *other._prev)
 
     def build(self) -> NetworkControl[Net]:
         control = dict(cast(Iterable[tuple[AnyAppliance, GenericControl]], self._prev))

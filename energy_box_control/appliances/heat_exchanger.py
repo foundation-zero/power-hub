@@ -41,6 +41,21 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
             * self.specific_heat_capacity_B
         )
 
+        if (
+            inputs[HeatExchangerPort.A_IN].flow == 0
+            or inputs[HeatExchangerPort.B_IN].flow == 0
+        ):
+            return ApplianceState(), {
+                HeatExchangerPort.A_OUT: ConnectionState(
+                    inputs[HeatExchangerPort.A_IN].flow,
+                    inputs[HeatExchangerPort.A_IN].temperature,
+                ),
+                HeatExchangerPort.B_OUT: ConnectionState(
+                    inputs[HeatExchangerPort.B_IN].flow,
+                    inputs[HeatExchangerPort.B_IN].temperature,
+                ),
+            }
+
         equilibrium_temperature = (heat_A + heat_B) / (
             inputs[HeatExchangerPort.A_IN].flow * self.specific_heat_capacity_A
             + inputs[HeatExchangerPort.B_IN].flow * self.specific_heat_capacity_B
@@ -48,9 +63,11 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
 
         return ApplianceState(), {
             HeatExchangerPort.A_OUT: ConnectionState(
-                inputs[HeatExchangerPort.A_IN].flow, equilibrium_temperature
+                inputs[HeatExchangerPort.A_IN].flow,
+                equilibrium_temperature,
             ),
             HeatExchangerPort.B_OUT: ConnectionState(
-                inputs[HeatExchangerPort.B_IN].flow, equilibrium_temperature
+                inputs[HeatExchangerPort.B_IN].flow,
+                equilibrium_temperature,
             ),
         }

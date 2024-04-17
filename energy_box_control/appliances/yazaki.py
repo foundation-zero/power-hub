@@ -37,7 +37,7 @@ class YazakiState(ApplianceState):
 
 @dataclass(frozen=True, eq=True)
 class YazakiControl(ApplianceControl):
-    pass
+    on: bool
 
 
 _ref_temps_cooling: list[Celsius] = [27, 29.5, 31, 32]
@@ -84,6 +84,12 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         control: YazakiControl,
         simulation_time: SimulationTime,
     ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
+        if not control.on:
+            return YazakiState(), {
+                YazakiPort.HOT_OUT: inputs[YazakiPort.HOT_IN],
+                YazakiPort.COOLING_OUT: inputs[YazakiPort.COOLING_IN],
+                YazakiPort.CHILLED_OUT: inputs[YazakiPort.CHILLED_IN],
+            }
 
         hot_in = inputs[YazakiPort.HOT_IN]
         cooling_in = inputs[YazakiPort.COOLING_IN]

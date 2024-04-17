@@ -6,6 +6,7 @@ from energy_box_control.appliances import (
     ChillerPort,
     ChillerState,
 )
+from energy_box_control.appliances.chiller import ChillerControl
 
 
 @fixture
@@ -20,7 +21,7 @@ def test_chiller(chiller):
             ChillerPort.COOLING_IN: ConnectionState(1, 20),
         },
         ChillerState(),
-        None,
+        ChillerControl(on=True),
         SimulationTime(timedelta(seconds=1), 0, datetime.now()),
     )
     assert outputs[ChillerPort.CHILLED_OUT].temperature == 9

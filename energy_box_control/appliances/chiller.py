@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
     Appliance,
+    ApplianceControl,
     ApplianceState,
     ConnectionState,
     Port,
@@ -23,7 +24,12 @@ class ChillerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class Chiller(Appliance[ChillerState, None, ChillerPort]):
+class ChillerControl(ApplianceControl):
+    on: bool
+
+
+@dataclass(frozen=True, eq=True)
+class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
     cooling_capacity: Watt
     specific_heat_capacity_chilled: JoulePerLiterKelvin
     specific_heat_capacity_cooling: JoulePerLiterKelvin
@@ -32,13 +38,14 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
         self,
         inputs: dict[ChillerPort, ConnectionState],
         previous_state: ChillerState,
-        control: None,
+        control: ChillerControl,
         simulation_time: SimulationTime,
     ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
+        cooling_power = self.cooling_capacity if control.on else 0
 
         chilled_out_temp = (
             inputs[ChillerPort.CHILLED_IN].temperature
-            - self.cooling_capacity
+            - cooling_power
             / (
                 self.specific_heat_capacity_chilled
                 * inputs[ChillerPort.CHILLED_IN].flow
@@ -50,7 +57,7 @@ class Chiller(Appliance[ChillerState, None, ChillerPort]):
 
         cooling_out_temp = (
             inputs[ChillerPort.COOLING_IN].temperature
-            + self.cooling_capacity
+            + cooling_power
             / (
                 self.specific_heat_capacity_cooling
                 * inputs[ChillerPort.COOLING_IN].flow

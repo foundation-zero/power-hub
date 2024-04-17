@@ -13,7 +13,7 @@ from energy_box_control.appliances.switch_pump import (
     SwitchPumpState,
 )
 from energy_box_control.appliances.valve import ValvePort, ValveState
-from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
+from energy_box_control.appliances.yazaki import YazakiControl, YazakiPort, YazakiState
 from energy_box_control.power_hub.circuits.pcm_yazaki_circuit import (
     PcmYazakiControlState,
     PcmYazakiNetwork,
@@ -98,6 +98,8 @@ def control_pump_on(pcm_yazaki_circuit):
     return (
         pcm_yazaki_circuit.control(pcm_yazaki_circuit.pcm_to_yazaki_pump)
         .value(SwitchPumpControl(on=True))
+        .control(pcm_yazaki_circuit.yazaki)
+        .value(YazakiControl(True))
         .build()
     )
 
