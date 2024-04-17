@@ -72,6 +72,7 @@ class WasteControlState:
     control_mode_timer: Timer[WasteControlMode]
     control_mode: WasteControlMode
 
+
 # class FreshWaterControlMode(Enum):
 #     NO_FRESHWATER_DEMAND = "no_freshwater_demand"
 #     FRESH_WATER_DEMAND = "freshwater_demand"
@@ -85,14 +86,13 @@ class WasteControlState:
 
 #      def _control_mode():
 #         return FreshWaterControlMode.FRESH_WATER_DEMAND if sensors.fresh_water_demand else FreshWaterControlMode.NO_FRESHWATER_DEMAND
-        
+
 #     control_mode_timer, control_mode = (
 #         control_state.waste_control.control_mode_timer.run(_control_mode)
 #     )
 
 #     return (FreshWaterControlState(control_mode_timer, control_mode), power_hub.control(power_hub.fresh_water_pump).value(SwitchPumpControl(True))
 
-    
 
 def setpoint(description: str):
     return field(metadata={"description": description})
@@ -480,6 +480,8 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(on=True))
+        .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)
         .value(SwitchPumpControl(on=True))

@@ -29,6 +29,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
+from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.source import SourceState
@@ -94,7 +95,8 @@ class PowerHub(Network[PowerHubSensors]):
     outboard_exchange: HeatExchanger  # W-1007
     outboard_pump: SwitchPump  # P-1004
     outboard_source: Source
-    cooling_demand: Source
+    cooling_demand_pump: SwitchPump
+    cooling_demand: CoolingSink
 
     def __post_init__(self):
         super().__init__()
@@ -134,6 +136,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_exchange,
             phc.outboard_pump,
             phc.outboard_source,
+            phc.cooling_demand_pump,
             phc.cooling_demand,
         )
 
@@ -217,20 +220,16 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.heat_pipes_pump)
-            .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.pcm_to_yazaki_pump)
-            .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
-            .define_state(power_hub.chilled_loop_pump)
+            .define_state(power_hub.cooling_demand_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.cooling_demand_pump)
+            .value(SwitchPumpState())
             .define_state(power_hub.cooling_demand)
-            .value(SourceState())
+            .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
@@ -313,11 +312,16 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.cooling_demand_pump)
+            .at(SwitchPumpPort.OUT)
+            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .define_state(self.cooling_demand_pump)
+            .value(SwitchPumpState())
             .define_state(self.cooling_demand)
-            .value(SourceState())
+            .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, start_time))
         )
 
@@ -472,8 +476,15 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.chilled_loop_pump)
             .at(SwitchPumpPort.IN)
 
+            .connect(self.cold_reservoir)
+            .at(BoilerPort.FILL_OUT)
+            .to(self.cooling_demand_pump)
+            .at(SwitchPumpPort.IN)
+
+
+
             .connect(self.cooling_demand)
-            .at(SourcePort.OUTPUT)
+            .at(CoolingSinkPort.OUTPUT)
             .to(self.cold_reservoir)
             .at(BoilerPort.FILL_IN)
 
@@ -495,6 +506,10 @@ class PowerHub(Network[PowerHubSensors]):
             .at(SwitchPumpPort.OUT)
             .to(self.chiller_switch_valve)
             .at(ValvePort.AB)
+            .feedback(self.cooling_demand_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.cooling_demand)
+            .at(CoolingSinkPort.INPUT)
         )
 
     def _waste_side_connections(self):

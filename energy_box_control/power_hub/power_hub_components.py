@@ -1,3 +1,4 @@
+from energy_box_control.appliances.cooling_sink import CoolingSink
 from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
@@ -75,4 +76,5 @@ fresh_water_pump = SwitchPump(35 / 60)
 fresh_water_source = Source(float("nan"), SEAWATER_TEMP)
 outboard_pump = SwitchPump(300 / 60)
 outboard_source = Source(float("nan"), SEAWATER_TEMP)
-cooling_demand = Source(1, 40)
+cooling_demand_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
+cooling_demand = CoolingSink(100 / 24 / 60 / 60, WATER_SPECIFIC_HEAT)  # 100 kWh/day
