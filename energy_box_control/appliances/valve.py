@@ -5,8 +5,8 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
 )
+from energy_box_control.time import ProcessTime
 
 
 @dataclass(frozen=True, eq=True)
@@ -41,7 +41,7 @@ class Valve(Appliance[ValveState, ValveControl, ValvePort]):
         inputs: dict[ValvePort, ConnectionState],
         previous_state: ValveState,
         control: ValveControl | None,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[ValveState, dict[ValvePort, ConnectionState]]:
 
         input = inputs[ValvePort.AB]

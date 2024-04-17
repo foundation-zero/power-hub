@@ -6,8 +6,8 @@ from energy_box_control.appliances.base import (
     Celsius,
     ConnectionState,
     Port,
-    SimulationTime,
 )
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import (
     Joule,
     JoulePerKelvin,
@@ -65,7 +65,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         inputs: dict[PcmPort, ConnectionState],
         previous_state: PcmState,
         control: None,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[PcmState, dict[PcmPort, ConnectionState]]:
         pcm_heat = (
             self.sensible_capacity * previous_state.temperature

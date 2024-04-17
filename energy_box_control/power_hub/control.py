@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
 import json
+from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
 from energy_box_control.appliances.switch_pump import SwitchPumpControl
@@ -142,7 +143,10 @@ def initial_control_state() -> PowerHubControlState:
 
 
 def hot_control(
-    power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: ProcessTime,
 ):
     # hot water usage
     # PID heat pipes feedback valve by ~ +5 degrees above the heat destination with max of 95 degrees (depending on the hot_switch_valve)
@@ -172,7 +176,7 @@ def hot_control(
             return HotControlMode.DUMP
 
     hot_control_mode_timer, hot_control_mode = (
-        control_state.hot_control.control_mode_timer.run(_hot_control_mode)
+        control_state.hot_control.control_mode_timer.run(_hot_control_mode, time)
     )
 
     if hot_control_mode == HotControlMode.HEAT_RESERVOIR:
@@ -226,7 +230,10 @@ def hot_control(
 
 
 def chill_control(
-    power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: ProcessTime,
 ):
     # Chill
     # every 15 minutes
@@ -269,7 +276,7 @@ def chill_control(
             return ChillControlMode.NO_CHILL
 
     control_mode_timer, control_mode = (
-        control_state.chill_control.control_mode_timer.run(_chill_control_mode)
+        control_state.chill_control.control_mode_timer.run(_chill_control_mode, time)
     )
 
     no_run = (
@@ -359,7 +366,10 @@ def chill_control(
 
 
 def waste_control(
-    power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: ProcessTime,
 ):
     # Waste
     # every 5 minutes
@@ -379,7 +389,7 @@ def waste_control(
             return WasteControlMode.NO_OUTBOARD
 
     control_mode_timer, control_mode = (
-        control_state.waste_control.control_mode_timer.run(_control_mode)
+        control_state.waste_control.control_mode_timer.run(_control_mode, time)
     )
 
     return (
@@ -392,7 +402,10 @@ def waste_control(
 
 
 def control_power_hub(
-    power_hub: PowerHub, control_state: PowerHubControlState, sensors: PowerHubSensors
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: ProcessTime,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     # Rough Initial description of envisioned control plan
 
@@ -400,9 +413,9 @@ def control_power_hub(
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
     # Waste: run outboard / no run outboard
-    hot_control_state, hot = hot_control(power_hub, control_state, sensors)
-    chill_control_state, chill = chill_control(power_hub, control_state, sensors)
-    waste_control_state, waste = waste_control(power_hub, control_state, sensors)
+    hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
+    chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
+    waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
 
     control = (
         power_hub.control(power_hub.hot_reservoir)

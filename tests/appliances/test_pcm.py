@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from pytest import fixture
 
 from energy_box_control.appliances import Pcm, PcmState, PcmPort
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.time import ProcessTime
 
 
 @fixture
@@ -31,7 +32,7 @@ def high_transfer_pcm():
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_nothing(pcm, simulation_time):
@@ -100,7 +101,7 @@ def test_charge_phase_double_step(pcm):
         {PcmPort.CHARGE_IN: ConnectionState(1, pcm.phase_change_temperature + 10)},
         initial_state,
         None,
-        SimulationTime(timedelta(seconds=2), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=2), 0, datetime.now()),
     )
 
     assert state.temperature == 50
@@ -129,7 +130,7 @@ def test_charge_post_phase_double_step(pcm):
         {PcmPort.CHARGE_IN: ConnectionState(1, 80)},
         initial_state,
         None,
-        SimulationTime(timedelta(seconds=2), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=2), 0, datetime.now()),
     )
 
     assert state.temperature == 70

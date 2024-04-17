@@ -5,9 +5,9 @@ from energy_box_control.appliances.base import (
     Celsius,
     ConnectionState,
     Port,
-    SimulationTime,
 )
 from energy_box_control.schedules import Schedule
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import (
     JoulePerLiterKelvin,
     MeterSquared,
@@ -40,7 +40,7 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
         inputs: dict[HeatPipesPort, ConnectionState],
         previous_state: HeatPipesState,
         control: None,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
 
         input = inputs[HeatPipesPort.IN]

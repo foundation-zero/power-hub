@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pytest import approx
 import pytest
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances.source import Source
 from energy_box_control.appliances.yazaki import (
     Yazaki,
@@ -11,6 +11,8 @@ from energy_box_control.appliances.yazaki import (
 )
 from energy_box_control.networks import YazakiNetwork
 import logging
+
+from energy_box_control.time import ProcessTime
 
 
 def test_yazaki():
@@ -50,7 +52,7 @@ def test_yazaki_outside_ref_values(caplog):
         connections,
         initial_yazaki_state,
         yazaki_control,
-        SimulationTime(timedelta(seconds=1), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
     caplog.set_level(logging.WARNING)
     assert (
