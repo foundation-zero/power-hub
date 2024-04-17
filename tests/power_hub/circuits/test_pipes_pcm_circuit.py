@@ -32,9 +32,7 @@ from tests.test_simulation import SimulationSuccess, run_simulation
 def initial_state_without_valve(pipes_pcm_circuit):
     return (
         pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
-        .value(
-            HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE, GLOBAL_IRRADIANCE)
-        )
+        .value(HeatPipesState(AMBIENT_TEMPERATURE, AMBIENT_TEMPERATURE))
         .define_state(pipes_pcm_circuit.heat_pipes_pump)
         .value(SwitchPumpState())
         .define_state(pipes_pcm_circuit.heat_pipes_mix)
@@ -64,7 +62,7 @@ def initial_state_pipes_to_pcm_warm(
 ) -> NetworkState["PipesPcmNetwork"]:
     return (
         pipes_pcm_circuit.define_state(pipes_pcm_circuit.heat_pipes)
-        .value(HeatPipesState(75, 75, GLOBAL_IRRADIANCE))
+        .value(HeatPipesState(75, 75))
         .define_state(pipes_pcm_circuit.heat_pipes_valve)
         .value(ValveState(0))
         .define_state(pipes_pcm_circuit.heat_pipes_pump)

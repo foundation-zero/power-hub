@@ -21,7 +21,7 @@ def test_equal_temps(heat_pipes, simulation_time):
         {
             HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(10, 10, 1),
+        HeatPipesState(10, 10),
         None,
         simulation_time,
     )
@@ -34,7 +34,7 @@ def test_differential_temp(heat_pipes, simulation_time):
         {
             HeatPipesPort.IN: ConnectionState(1, 10),
         },
-        HeatPipesState(10, 9, 1),
+        HeatPipesState(10, 9),
         None,
         simulation_time,
     )
@@ -50,7 +50,7 @@ def hub_heat_pipes():
 
 def test_hub_stagnation_temp(hub_heat_pipes, simulation_time):
     inputs = {HeatPipesPort.IN: ConnectionState(1, 100)}
-    pipes_state = HeatPipesState(100, 20, 1000)
+    pipes_state = HeatPipesState(100, 20)
 
     temp_diff = None
     for _ in range(1000):

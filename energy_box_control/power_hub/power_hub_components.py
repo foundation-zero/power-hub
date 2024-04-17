@@ -1,4 +1,4 @@
-from energy_box_control.schedules import ConstSchedule
+from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
@@ -23,7 +23,7 @@ AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 
 
-def heat_pipes(global_irradiance_schedule: ConstSchedule[float]) -> HeatPipes:
+def heat_pipes(global_irradiance_schedule: Schedule[float]) -> HeatPipes:
     return HeatPipes(
         0.767, 1.649, 0.006, 16.3, GLYCOL_SPECIFIC_HEAT, global_irradiance_schedule
     )

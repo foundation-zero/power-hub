@@ -33,7 +33,7 @@ class PeriodicSchedule[T](Schedule[T]):
         ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class GivenSchedule[T](Schedule[T]):
     schedule_start: datetime
     schedule_end: datetime
@@ -42,7 +42,7 @@ class GivenSchedule[T](Schedule[T]):
     def at(self, simulation_time: SimulationTime) -> T:
         if not self.schedule_start < simulation_time.timestamp < self.schedule_end:
             raise ValueError(
-                f"Time {simulation_time.timestamp.strftime('%d/%m/%Y %H:%M:%S')} is outside of given schedule"
+                f"Time {simulation_time.timestamp.strftime('%d/%m/%Y %H:%M:%S')} is outside of given schedule {self}"
             )
         return self.values[
             floor(
@@ -51,7 +51,6 @@ class GivenSchedule[T](Schedule[T]):
                         (simulation_time.timestamp - self.schedule_start)
                         / (self.schedule_end - self.schedule_start)
                     )
-                    % 1
                 )
                 * len(self.values)
             )

@@ -1,3 +1,4 @@
+import re
 import pytest
 from datetime import datetime, timedelta
 
@@ -11,36 +12,86 @@ def test_const_schedule():
     assert ConstSchedule(value).at(simulation_time) == value
 
 
-def test_periodic_schedule():
-    period_start = datetime(2024, 4, 15)
-    period_delta = timedelta(days=5)
-    schedule = PeriodicSchedule(period_start, period_delta, [1, 2, 3, 4, 5])
-    assert schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 17))) == 3
+@pytest.fixture
+def period_start():
+    return datetime(2000, 1, 1)
+
+
+@pytest.fixture
+def period_delta():
+    return timedelta(days=5)
+
+
+@pytest.fixture
+def periodic_schedule(period_start, period_delta):
+    return PeriodicSchedule(period_start, period_delta, [1, 2, 3, 4, 5])
+
+
+def test_within_periodic_schedule(periodic_schedule):
     assert (
-        schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 23, 23, 59)))
-        == 4
+        periodic_schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 3)))
+        == 3
     )
-    assert schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 24))) == 5
     assert (
-        schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 24, 1))) == 5
+        periodic_schedule.at(
+            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 2, 23, 59))
+        )
+        == 2
     )
-    assert schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 25))) == 1
-    assert schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 10))) == 1
+
+
+def test_after_periodic_schedule(periodic_schedule):
     assert (
-        schedule.at(SimulationTime(timedelta(days=1), 0, period_start + period_delta))
+        periodic_schedule.at(
+            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 10))
+        )
+        == 5
+    )
+    assert (
+        periodic_schedule.at(
+            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 11))
+        )
         == 1
     )
 
 
-def test_given_schedule():
-    schedule = GivenSchedule(
-        datetime(2024, 4, 15), datetime(2024, 4, 20), [1, 2, 3, 4, 5]
+def test_before_periodic_schedule(periodic_schedule):
+    assert (
+        periodic_schedule.at(
+            SimulationTime(timedelta(days=1), 0, datetime(1999, 12, 31))
+        )
+        == 5
     )
-    assert schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 17))) == 3
 
+
+def test_off_by_one(periodic_schedule, period_start, period_delta):
+    assert (
+        periodic_schedule.at(
+            SimulationTime(timedelta(days=1), 0, period_start + period_delta)
+        )
+        == 1
+    )
+
+
+@pytest.fixture
+def given_schedule():
+    return GivenSchedule(datetime(2024, 4, 15), datetime(2024, 4, 20), [1, 2, 3, 4, 5])
+
+
+def test_given_schedule(given_schedule):
+
+    assert (
+        given_schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 17)))
+        == 3
+    )
+
+
+def test_outside_give_schedule(given_schedule):
     sim_time = SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 24))
     with pytest.raises(
         ValueError,
-        match=f"Time {sim_time.timestamp.strftime('%d/%m/%Y %H:%M:%S')} is outside of given schedule",
+        match=re.escape(
+            f"Time {sim_time.timestamp.strftime('%d/%m/%Y %H:%M:%S')} is outside of given schedule {given_schedule}"
+        ),
     ):
-        schedule.at(sim_time)
+        given_schedule.at(sim_time)

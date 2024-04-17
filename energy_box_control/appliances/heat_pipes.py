@@ -19,7 +19,6 @@ from energy_box_control.units import (
 class HeatPipesState(ApplianceState):
     mean_temperature: Celsius
     ambient_temperature: Celsius
-    global_irradiance: WattPerMeterSquared
 
 
 class HeatPipesPort(Port):
@@ -34,7 +33,7 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
     second_order_loss_coefficient: float
     absorber_area: MeterSquared
     specific_heat_medium: JoulePerLiterKelvin
-    global_irradiance_schedule: Schedule[float]
+    global_irradiance_schedule: Schedule[WattPerMeterSquared]
 
     def simulate(
         self,
@@ -62,9 +61,7 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
         )
 
         new_state = HeatPipesState(
-            (temp_out + input.temperature) / 2,
-            previous_state.ambient_temperature,
-            previous_state.global_irradiance,
+            (temp_out + input.temperature) / 2, previous_state.ambient_temperature
         )
 
         return new_state, {HeatPipesPort.OUT: ConnectionState(input.flow, temp_out)}

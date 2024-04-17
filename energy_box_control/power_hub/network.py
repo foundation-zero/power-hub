@@ -55,8 +55,9 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import ConstSchedule
+from energy_box_control.schedules import Schedule
 from energy_box_control.sensors import WeatherSensors
+from energy_box_control.units import WattPerMeterSquared
 
 
 @dataclass
@@ -145,7 +146,6 @@ class PowerHub(Network[PowerHubSensors]):
                 HeatPipesState(
                     phc.AMBIENT_TEMPERATURE,
                     phc.AMBIENT_TEMPERATURE,
-                    phc.GLOBAL_IRRADIANCE,
                 )
             )
             .define_state(power_hub.heat_pipes_valve)
@@ -235,7 +235,6 @@ class PowerHub(Network[PowerHubSensors]):
                 HeatPipesState(
                     phc.AMBIENT_TEMPERATURE,
                     phc.AMBIENT_TEMPERATURE,
-                    phc.GLOBAL_IRRADIANCE,
                 )
             )
             .define_state(self.heat_pipes_valve)
@@ -646,6 +645,7 @@ class PowerHub(Network[PowerHubSensors]):
                 )
             return context.result()
 
+
 @dataclass
 class PowerHubSchedules:
-    global_irradiance_schedule: ConstSchedule[float]
+    global_irradiance_schedule: Schedule[WattPerMeterSquared]
