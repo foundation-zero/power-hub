@@ -26,7 +26,7 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    SimulationTime,
+    ProcessTime,
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
@@ -223,7 +223,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.cooling_demand)
             .value(SourceState())
-            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+            .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def simple_initial_state(
@@ -308,7 +308,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.cooling_demand)
             .value(SourceState())
-            .build(SimulationTime(timedelta(seconds=1), 0, start_time))
+            .build(ProcessTime(timedelta(seconds=1), 0, start_time))
         )
 
     def connections(self) -> NetworkConnections[Self]:

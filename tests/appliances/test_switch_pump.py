@@ -7,7 +7,7 @@ from energy_box_control.appliances import (
     SwitchPumpState,
     SwitchPumpControl,
 )
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState, ProcessTime
 
 
 @fixture
@@ -17,7 +17,7 @@ def switch_pump():
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_switch_pump_off(switch_pump, simulation_time):

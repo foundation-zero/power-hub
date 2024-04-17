@@ -3,7 +3,7 @@ from pytest import fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    SimulationTime,
+    ProcessTime,
 )
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
@@ -13,7 +13,7 @@ from energy_box_control.appliances.heat_exchanger import (
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_heat_exchanger_equal_flow(simulation_time):

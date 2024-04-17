@@ -7,7 +7,7 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
+    ProcessTime,
 )
 from energy_box_control.units import Celsius, JoulePerLiterKelvin, Liter, Watt
 
@@ -47,7 +47,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         inputs: dict[BoilerPort, ConnectionState],
         previous_state: BoilerState,
         control: BoilerControl,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
 
         # assuming constant specific heat capacities with the temperature ranges

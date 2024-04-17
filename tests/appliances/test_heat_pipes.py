@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState, ProcessTime
 from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPort
 from energy_box_control.schedules import ConstSchedule
 from energy_box_control.units import *
@@ -13,7 +13,7 @@ def heat_pipes():
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_equal_temps(heat_pipes, simulation_time):

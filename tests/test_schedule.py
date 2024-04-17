@@ -2,13 +2,13 @@ import re
 import pytest
 from datetime import datetime, timedelta
 
-from energy_box_control.appliances.base import SimulationTime
+from energy_box_control.time import ProcessTime
 from energy_box_control.schedules import ConstSchedule, PeriodicSchedule, GivenSchedule
 
 
 def test_const_schedule():
     value = 5
-    simulation_time = SimulationTime(timedelta(days=1), 0, datetime(2024, 5, 12))
+    simulation_time = ProcessTime(timedelta(days=1), 0, datetime(2024, 5, 12))
     assert ConstSchedule(value).at(simulation_time) == value
 
 
@@ -29,12 +29,12 @@ def periodic_schedule(period_start, period_delta):
 
 def test_within_periodic_schedule(periodic_schedule):
     assert (
-        periodic_schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 3)))
+        periodic_schedule.at(ProcessTime(timedelta(days=1), 0, datetime(2000, 1, 3)))
         == 3
     )
     assert (
         periodic_schedule.at(
-            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 2, 23, 59))
+            ProcessTime(timedelta(days=1), 0, datetime(2000, 1, 2, 23, 59))
         )
         == 2
     )
@@ -42,24 +42,18 @@ def test_within_periodic_schedule(periodic_schedule):
 
 def test_after_periodic_schedule(periodic_schedule):
     assert (
-        periodic_schedule.at(
-            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 10))
-        )
+        periodic_schedule.at(ProcessTime(timedelta(days=1), 0, datetime(2000, 1, 10)))
         == 5
     )
     assert (
-        periodic_schedule.at(
-            SimulationTime(timedelta(days=1), 0, datetime(2000, 1, 11))
-        )
+        periodic_schedule.at(ProcessTime(timedelta(days=1), 0, datetime(2000, 1, 11)))
         == 1
     )
 
 
 def test_before_periodic_schedule(periodic_schedule):
     assert (
-        periodic_schedule.at(
-            SimulationTime(timedelta(days=1), 0, datetime(1999, 12, 31))
-        )
+        periodic_schedule.at(ProcessTime(timedelta(days=1), 0, datetime(1999, 12, 31)))
         == 5
     )
 
@@ -67,7 +61,7 @@ def test_before_periodic_schedule(periodic_schedule):
 def test_off_by_one(periodic_schedule, period_start, period_delta):
     assert (
         periodic_schedule.at(
-            SimulationTime(timedelta(days=1), 0, period_start + period_delta)
+            ProcessTime(timedelta(days=1), 0, period_start + period_delta)
         )
         == 1
     )
@@ -81,13 +75,12 @@ def given_schedule():
 def test_given_schedule(given_schedule):
 
     assert (
-        given_schedule.at(SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 17)))
-        == 3
+        given_schedule.at(ProcessTime(timedelta(days=1), 0, datetime(2024, 4, 17))) == 3
     )
 
 
 def test_outside_give_schedule(given_schedule):
-    sim_time = SimulationTime(timedelta(days=1), 0, datetime(2024, 4, 24))
+    sim_time = ProcessTime(timedelta(days=1), 0, datetime(2024, 4, 24))
     with pytest.raises(
         ValueError,
         match=re.escape(

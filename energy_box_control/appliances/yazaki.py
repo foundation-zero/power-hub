@@ -5,7 +5,7 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
+    ProcessTime,
 )
 
 from scipy.interpolate import RegularGridInterpolator
@@ -82,7 +82,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         inputs: dict[YazakiPort, ConnectionState],
         previous_state: YazakiState,
         control: YazakiControl,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
         if not control.on:
             return YazakiState(), {

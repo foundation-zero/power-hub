@@ -3,7 +3,7 @@ from pytest import approx, fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
-    SimulationTime,
+    ProcessTime,
 )
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
@@ -53,7 +53,7 @@ def initial_state_pcm_to_yazaki(
             pcm_yazaki_circuit.yazaki_hot_bypass_valve
         )
         .value(ValveState(0))
-        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+        .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 
@@ -66,7 +66,7 @@ def initial_state_yazaki_to_yazaki(
             pcm_yazaki_circuit.yazaki_hot_bypass_valve
         )
         .value(ValveState(1))
-        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+        .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 
@@ -79,7 +79,7 @@ def initial_state_half_valve(
             pcm_yazaki_circuit.yazaki_hot_bypass_valve
         )
         .value(ValveState(0.5))
-        .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+        .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
 

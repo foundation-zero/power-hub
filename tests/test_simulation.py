@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from energy_box_control.appliances.base import SimulationTime
+from energy_box_control.appliances.base import ProcessTime
 from energy_box_control.network import NetworkState
 
 
@@ -37,7 +37,9 @@ def run_simulation(
             return SimulationFailure(e, i, state)
         sensors = network.sensors_from_state(state)
         if control_function:
-            control_state, control_values = control_function(control_state, sensors)
+            control_state, control_values = control_function(
+                control_state, sensors, state.time
+            )
     return SimulationSuccess(state)
 
 
@@ -45,6 +47,6 @@ def test_simulation_time_timestamp():
     start = datetime(2023, 1, 1, 0, 0, 0)
     step_size = timedelta(days=1)
     step = 10
-    simulation_time = SimulationTime(step_size, step, start)
+    simulation_time = ProcessTime(step_size, step, start)
 
     assert simulation_time.timestamp == datetime(2023, 1, 11, 0, 0, 0)
