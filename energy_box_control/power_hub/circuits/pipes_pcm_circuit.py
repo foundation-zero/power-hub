@@ -46,8 +46,8 @@ import energy_box_control.power_hub.power_hub_components as phc
 
 @dataclass
 class PipesPcmSensors:
-    heat_pipes_out_temperature: float
-    heat_pipes_valve_position: float
+    heat_pipes_out_temperature: Celsius
+    heat_pipes_valve_position: Celsius
 
 
 @dataclass

@@ -212,7 +212,7 @@ class YazakiSensors(FromState):
         )
 
     @property
-    def waste_heat(self) -> Watt:
+    def waste_power(self) -> Watt:
         return (
             self.cooling_flow
             * (self.cooling_output_temperature - self.cooling_input_temperature)
@@ -220,7 +220,7 @@ class YazakiSensors(FromState):
         )
 
     @property
-    def used_heat(self) -> Watt:
+    def used_power(self) -> Watt:
         return (
             self.hot_flow
             * (self.hot_input_temperature - self.hot_output_temperature)
@@ -229,7 +229,7 @@ class YazakiSensors(FromState):
 
     @property
     def efficiency(self) -> float:
-        return self.used_heat / self.cool_power if self.cool_power > 0 else float("nan")
+        return self.used_power / self.cool_power if self.cool_power > 0 else float("nan")
 
 
 @sensors()

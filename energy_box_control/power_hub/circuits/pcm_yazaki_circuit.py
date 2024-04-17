@@ -31,8 +31,8 @@ import energy_box_control.power_hub.power_hub_components as phc
 
 @dataclass
 class PcmYazakiSensors:
-    yazaki_hot_in_temperature: float
-    yazaki_hot_bypass_valve_position: float
+    yazaki_hot_in_temperature: Celsius
+    yazaki_hot_bypass_valve_position: Celsius
 
 
 @dataclass

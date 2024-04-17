@@ -520,7 +520,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(YazakiPort.COOLING_OUT)
             .to(self.waste_mix)
             .at(MixPort.A)
-            
+
             .connect(self.waste_mix)
             .at(MixPort.AB)
             .to(self.waste_bypass_mix)
@@ -530,7 +530,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.AB)
             .to(self.preheat_switch_valve)
             .at(ValvePort.AB)
-    
+
             .connect(self.preheat_switch_valve)
             .at(ValvePort.A)
             .to(self.preheat_reservoir)
@@ -554,7 +554,7 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.waste_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.outboard_exchange)
-            .at(HeatExchangerPort.A_IN)        
+            .at(HeatExchangerPort.A_IN)
         )
         # fmt: on
 
