@@ -5,12 +5,12 @@ from energy_box_control.appliances.base import (
     ApplianceState,
     ConnectionState,
     Port,
-    SimulationTime,
 )
 
 from scipy.interpolate import RegularGridInterpolator
 import logging
 
+from energy_box_control.time import ProcessTime
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
@@ -82,7 +82,7 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
         inputs: dict[YazakiPort, ConnectionState],
         previous_state: YazakiState,
         control: YazakiControl,
-        simulation_time: SimulationTime,
+        simulation_time: ProcessTime,
     ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
         if not control.on:
             return YazakiState(), {

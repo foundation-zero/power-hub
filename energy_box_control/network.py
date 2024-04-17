@@ -23,7 +23,7 @@ from energy_box_control.appliances import (
     ConnectionState,
     Port,
 )
-from energy_box_control.appliances.base import SimulationTime
+from energy_box_control.time import ProcessTime
 from energy_box_control.linearize import linearize
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
@@ -57,7 +57,7 @@ class StateGetter[App: AnyAppliance]:
 class NetworkState(Generic[Net]):
     def __init__(
         self,
-        time: SimulationTime,
+        time: ProcessTime,
         appliance_state: dict[Appliance[Any, Any, Any], ApplianceState],
         connection_state: dict[
             tuple[Appliance[Any, Any, Any], Port], ConnectionState
@@ -100,7 +100,7 @@ class NetworkState(Generic[Net]):
         return self._connection_state[(appliance, port)]
 
     @property
-    def time(self) -> SimulationTime:
+    def time(self) -> ProcessTime:
         return self._time
 
 
@@ -128,7 +128,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
     ](self, app: App) -> "NetworkStateValueBuilder[Net, App, *Prev]":
         return NetworkStateValueBuilder(self._network, app, *self._prev)
 
-    def build(self, time: SimulationTime) -> NetworkState[Net]:
+    def build(self, time: ProcessTime) -> NetworkState[Net]:
         state = list(
             cast(
                 Iterable[

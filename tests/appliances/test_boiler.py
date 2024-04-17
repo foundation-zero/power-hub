@@ -2,13 +2,14 @@ from datetime import datetime, timedelta
 from hypothesis import assume, example, given, reproduce_failure
 from hypothesis.strategies import floats
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState, SimulationTime
+from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.appliances.boiler import (
     Boiler,
     BoilerControl,
     BoilerPort,
     BoilerState,
 )
+from energy_box_control.time import ProcessTime
 
 volume_strat = floats(1, 1e3, allow_nan=False)
 temp_strat = floats(0, 150, allow_nan=False)
@@ -48,7 +49,7 @@ def test_boiler_heating(
         {},
         BoilerState(boiler_temp, ambient_temperature=ambient_temp),
         BoilerControl(heater_on=True),
-        SimulationTime(timedelta(seconds=1), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
 
     assert state.temperature == approx(
@@ -95,7 +96,7 @@ def test_boiler_exchange(
         },
         BoilerState(boiler_temp, ambient_temp),
         BoilerControl(heater_on=False),
-        SimulationTime(timedelta(seconds=1), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
     assert state.temperature == approx((boiler_temp + exchange_in_temp) / 2, abs=1e-6)
 
@@ -130,7 +131,7 @@ def test_boiler_fill(
         {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
         BoilerState(boiler_temp, ambient_temp),
         BoilerControl(heater_on=False),
-        SimulationTime(timedelta(seconds=1), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
     assert state.temperature == approx((boiler_temp + fill_in_temp) / 2, abs=1e-6)
 
@@ -142,7 +143,7 @@ def boiler():
 
 @fixture
 def simulation_time():
-    return SimulationTime(timedelta(seconds=1), 0, datetime.now())
+    return ProcessTime(timedelta(seconds=1), 0, datetime.now())
 
 
 def test_boiler_heat_loss(boiler, simulation_time):
@@ -167,14 +168,14 @@ def test_boiler_double_step(boiler, simulation_time):
         {},
         first_state,
         BoilerControl(heater_on=True),
-        SimulationTime(timedelta(seconds=1), 1, datetime.now()),
+        ProcessTime(timedelta(seconds=1), 1, datetime.now()),
     )
 
     double_step_state, _ = boiler.simulate(
         {},
         state,
         BoilerControl(heater_on=True),
-        SimulationTime(timedelta(seconds=2), 0, datetime.now()),
+        ProcessTime(timedelta(seconds=2), 0, datetime.now()),
     )
 
     assert double_step_state == second_state

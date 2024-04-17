@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Self
-from energy_box_control.appliances.base import Celsius, SimulationTime
+from energy_box_control.appliances.base import Celsius
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort, YazakiState
 from energy_box_control.network import (
     Network,
@@ -22,6 +22,7 @@ from energy_box_control.appliances import (
     ValvePort,
     ValveState,
 )
+from energy_box_control.time import ProcessTime
 
 
 @dataclass
@@ -53,7 +54,7 @@ class BoilerNetwork(Network[BoilerSensors]):
             .value(SourceState())
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+            .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -99,7 +100,7 @@ class BoilerValveNetwork(BoilerNetwork):
             .value(self.valve_state)
             .define_state(self.boiler)
             .value(self.boiler_state)
-            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+            .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -144,7 +145,7 @@ class YazakiNetwork(Network[None]):
             .value(SourceState())
             .define_state(self.yazaki)
             .value(YazakiState())
-            .build(SimulationTime(timedelta(seconds=1), 0, datetime.now()))
+            .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
     def connections(self) -> NetworkConnections[Self]:
