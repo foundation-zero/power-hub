@@ -140,13 +140,17 @@ def serialize_dataframe(columns: list[str]):
     return _serialize_dataframe
 
 
-@app.while_serving
-async def influx_client():
+def get_influx_client() -> InfluxDBClientAsync:
     url = os.environ["DOCKER_INFLUXDB_URL"]
     token = os.environ["DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"]
     org = os.environ["DOCKER_INFLUXDB_INIT_ORG"]
+    return InfluxDBClientAsync(url, token, org=org)
+
+
+@app.while_serving
+async def influx_client():
     try:
-        async with InfluxDBClientAsync(url, token, org=org) as client:
+        async with get_influx_client() as client:
             app.influx = client  # type: ignore
             yield
     except Exception as e:
