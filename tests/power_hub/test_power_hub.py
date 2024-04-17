@@ -4,17 +4,28 @@ from pytest import approx, fixture
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
-from energy_box_control.appliances.boiler import BoilerPort
+from energy_box_control.appliances.base import ApplianceState
+from energy_box_control.appliances.boiler import BoilerPort, BoilerState
+from energy_box_control.appliances.chiller import ChillerState
+from energy_box_control.appliances.heat_pipes import HeatPipesState
+from energy_box_control.appliances.pcm import PcmPort, PcmState
+from energy_box_control.appliances.source import SourceState
+from energy_box_control.appliances.switch_pump import SwitchPumpState
+from energy_box_control.appliances.valve import ValveState
+from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
+from energy_box_control.network import NetworkState
+from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
 from dataclasses import dataclass
 
 from energy_box_control.power_hub.control import (
+    PowerHubControlState,
     control_power_hub,
     initial_control_state,
     no_control,
 )
 import energy_box_control.power_hub.power_hub_components as phc
-from tests.test_simulation import SimulationSuccess, run_simulation
+from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.schedules import ConstSchedule
 
@@ -47,10 +58,44 @@ def test_power_hub_sensors(power_hub):
         sensors.heat_pipes.output_temperature
         == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
     )
-    assert sensors.hot_reservoir.heat_exchange_flow == approx(
+    assert sensors.hot_reservoir.exchange_flow == approx(
         next_state.connection(power_hub.hot_reservoir, BoilerPort.HEAT_EXCHANGE_IN).flow
     )
     assert sensors.cold_reservoir is not None
+
+
+def test_derived_sensors(power_hub, min_max_temperature):
+
+    state = power_hub.simple_initial_state(power_hub)
+    control_values = no_control(power_hub)
+
+    for i in range(500):
+        try:
+            state = power_hub.simulate(state, control_values, min_max_temperature)
+        except Exception as e:
+            SimulationFailure(e, i, state)
+
+        sensors = power_hub.sensors_from_state(state)
+
+        assert sensors.pcm.discharge_input_temperature == approx(
+            state.connection(power_hub.pcm, PcmPort.DISCHARGE_IN).temperature, abs=1e-4
+        )
+        assert sensors.pcm.charge_flow == approx(
+            state.connection(power_hub.pcm, PcmPort.CHARGE_IN).flow, abs=1e-4
+        )
+        assert sensors.pcm.discharge_output_temperature == approx(
+            state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-4
+        )
+
+        assert sensors.yazaki.chilled_input_temperature == approx(
+            state.connection(power_hub.yazaki, YazakiPort.CHILLED_IN).temperature,
+            abs=1e-4,
+        )
+
+        assert sensors.yazaki.cooling_input_temperature == approx(
+            state.connection(power_hub.yazaki, YazakiPort.COOLING_IN).temperature,
+            abs=1e-4,
+        )
 
 
 def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
@@ -62,6 +107,7 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
         initial_control_state(),
         None,
         min_max_temperature,
+        5000,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -75,6 +121,7 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature):
         initial_control_state(),
         partial(control_power_hub, power_hub),
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)

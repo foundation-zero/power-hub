@@ -118,6 +118,7 @@ def test_pcm_yazaki_simulation(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -157,6 +158,7 @@ def test_yazaki_yazaki_simulation(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -193,6 +195,7 @@ def test_half_valve(
         None,
         None,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
@@ -232,6 +235,7 @@ def test_simple_control(
         PcmYazakiControlState(75),
         pcm_yazaki_circuit.regulate,
         min_max_temperature,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
