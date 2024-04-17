@@ -82,4 +82,4 @@ cooling_demand_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
 
 
 def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:
-    return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)  # 100 kWh/day
+    return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)
