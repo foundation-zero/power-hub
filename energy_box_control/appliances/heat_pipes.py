@@ -7,6 +7,7 @@ from energy_box_control.appliances.base import (
     Port,
     SimulationTime,
 )
+from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     JoulePerLiterKelvin,
     MeterSquared,
@@ -18,7 +19,6 @@ from energy_box_control.units import (
 class HeatPipesState(ApplianceState):
     mean_temperature: Celsius
     ambient_temperature: Celsius
-    global_irradiance: WattPerMeterSquared
 
 
 class HeatPipesPort(Port):
@@ -33,6 +33,7 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
     second_order_loss_coefficient: float
     absorber_area: MeterSquared
     specific_heat_medium: JoulePerLiterKelvin
+    global_irradiance_schedule: Schedule[WattPerMeterSquared]
 
     def simulate(
         self,
@@ -47,7 +48,8 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
         dT = previous_state.mean_temperature - previous_state.ambient_temperature
 
         power = self.absorber_area * (
-            previous_state.global_irradiance * self.optical_efficiency
+            self.global_irradiance_schedule.at(simulation_time)
+            * self.optical_efficiency
             - self.first_order_loss_coefficient * dT
             - self.second_order_loss_coefficient * dT**2
         )
@@ -59,9 +61,7 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
         )
 
         new_state = HeatPipesState(
-            (temp_out + input.temperature) / 2,
-            previous_state.ambient_temperature,
-            previous_state.global_irradiance,
+            (temp_out + input.temperature) / 2, previous_state.ambient_temperature
         )
 
         return new_state, {HeatPipesPort.OUT: ConnectionState(input.flow, temp_out)}
