@@ -370,6 +370,11 @@ class NetworkControl[Net: "Network[Any]"]:
             for item, value in self._controls.items()
         }
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, NetworkControl):
+            return self._controls == value._controls
+        return False
+
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:
     def __init__(self, *prev: *Prev):

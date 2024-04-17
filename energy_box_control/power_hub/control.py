@@ -8,6 +8,7 @@ from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.timer import Timer
+from energy_box_control.json import encoder
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
@@ -477,5 +478,13 @@ def control_from_json(
         .value(SwitchPumpControl(on=controls["waste_pump"]["on"]))
         .control(power_hub.outboard_pump)
         .value(SwitchPumpControl(on=controls["outboard_pump"]["on"]))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(on=controls["yazaki"]["on"]))
+        .control(power_hub.chiller)
+        .value(ChillerControl(on=controls["chiller"]["on"]))
         .build()
     )
+
+
+def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> str:
+    return json.dumps(control.name_to_control_values_mapping(power_hub), cls=encoder())

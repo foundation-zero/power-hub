@@ -1,11 +1,11 @@
 import json
 import queue
 import time
-from typing import Any
-from uuid import UUID
+from energy_box_control.json import encoder
 from energy_box_control.power_hub.control import (
     control_from_json,
     control_power_hub,
+    control_to_json,
     initial_control_state,
     no_control,
 )
@@ -22,25 +22,6 @@ from dataclasses import fields
 from datetime import datetime
 
 from functools import partial
-
-
-def _encoder(blacklist: set[str] = set()) -> type[json.JSONEncoder]:
-
-    class NestedEncoder(json.JSONEncoder):
-
-        def default(self, o: Any):
-            if hasattr(o, "__dict__"):
-                return {
-                    attr: value
-                    for attr, value in o.__dict__.items()
-                    if attr not in blacklist
-                }
-            if type(o) == UUID:
-                return o.hex
-            else:
-                return json.JSONEncoder.default(self, o)
-
-    return NestedEncoder
 
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -89,7 +70,7 @@ def run(steps: int = 0):
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
+        json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
     )
 
     while True:
@@ -104,10 +85,7 @@ def run(steps: int = 0):
         publish_to_mqtt(
             mqtt_client,
             CONTROL_VALUES_TOPIC,
-            json.dumps(
-                control_values.name_to_control_values_mapping(power_hub),
-                cls=_encoder(),
-            ),
+            control_to_json(power_hub, control_values),
         )
         control_values = control_from_json(
             power_hub, control_values_queue.get(block=True)
@@ -121,7 +99,7 @@ def run(steps: int = 0):
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=_encoder(set("spec"))),
+            json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
         )
 
         for sensor_field in fields(power_hub_sensors):
