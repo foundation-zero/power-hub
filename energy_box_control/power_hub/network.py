@@ -87,10 +87,13 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
     waste_pump: SwitchPump  # P-1004
+    chiller_waste_bypass_valve: Valve  # CV-1009
+    chiller_waste_mix: Mix
+    fresh_water_pump: SwitchPump
+    fresh_water_source: Source
     outboard_exchange: HeatExchanger  # W-1007
     outboard_pump: SwitchPump  # P-1004
     outboard_source: Source
-    fresh_water_source: Source
     cooling_demand: Source
 
     def __post_init__(self):
@@ -124,10 +127,13 @@ class PowerHub(Network[PowerHubSensors]):
             phc.preheat_reservoir,
             phc.preheat_mix,
             phc.waste_pump,
+            phc.chiller_waste_bypass_valve,
+            phc.chiller_waste_mix,
+            phc.fresh_water_pump,
+            phc.fresh_water_source,
             phc.outboard_exchange,
             phc.outboard_pump,
             phc.outboard_source,
-            phc.fresh_water_source,
             phc.cooling_demand,
         )
 
@@ -198,6 +204,8 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(power_hub.outboard_source)
             .value(SourceState())
+            .define_state(power_hub.fresh_water_pump)
+            .value(SwitchPumpState())
             .define_state(power_hub.fresh_water_source)
             .value(SourceState())
             .define_state(power_hub.heat_pipes_pump)
@@ -292,6 +300,8 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.outboard_source)
             .value(SourceState())
+            .define_state(self.fresh_water_pump)
+            .value(SwitchPumpState())
             .define_state(self.fresh_water_source)
             .value(SourceState())
             .define_state(self.heat_pipes_pump)
@@ -586,6 +596,11 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self.connect(self.fresh_water_source)
             .at(SourcePort.OUTPUT)
+            .to(self.fresh_water_pump)
+            .at(SwitchPumpPort.IN)
+
+            .connect(self.fresh_water_pump)
+            .at(SwitchPumpPort.OUT)
             .to(self.preheat_reservoir)
             .at(BoilerPort.FILL_IN)
             
