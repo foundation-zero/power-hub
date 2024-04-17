@@ -1,6 +1,8 @@
 from dataclasses import Field, dataclass, fields
 from enum import Enum
+import json
 from math import nan
+from uuid import UUID
 
 from energy_box_control.appliances.base import (
     Appliance,
@@ -217,6 +219,7 @@ def sensors[T: type]() -> Callable[[T], T]:
             return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
 
         cls.__init__ = _init  # type: ignore
+        cls.is_sensor = True
         cls.from_state = _from_state  # type: ignore
         return cls
 
@@ -236,3 +239,22 @@ def get_sensor_class_properties(sensor_cls: Any) -> set[str]:
             if type(field_value) == property or type(field_value) == Sensor
         ]
     )
+
+
+def is_sensor(cls: Any) -> bool:
+    return hasattr(cls, "is_sensor") and cls.is_sensor
+
+
+class SensorEncoder(json.JSONEncoder):
+
+    def default(self, o: Any):
+        if hasattr(o, "__dict__"):
+            return {
+                attr: value
+                for attr, value in o.__dict__.items()
+                if attr != "spec" and not (is_sensor(value) and is_sensor(o))
+            }
+        if type(o) == UUID:
+            return o.hex
+        else:
+            return json.JSONEncoder.default(self, o)

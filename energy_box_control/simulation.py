@@ -31,6 +31,7 @@ from energy_box_control.power_hub.power_hub_components import (
     AMBIENT_TEMPERATURE,
     COOLING_DEMAND,
 )
+from energy_box_control.sensors import SensorEncoder
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
@@ -114,7 +115,7 @@ def run(steps: int = 0):
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
+            json.dumps(power_hub_sensors, cls=SensorEncoder),
         )
 
         for sensor_field in fields(power_hub_sensors):
