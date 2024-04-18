@@ -22,8 +22,13 @@ services:
     volumes:
       - influxdb-data:/var/lib/influxdb2
       - influxdb-config:/etc/influxdb2
-    env_file:
-      - simulation.env
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASS}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORGANISATION}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_TELEGRAF_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
   
   telegraf:
     image: telegraf
@@ -37,7 +42,7 @@ services:
     networks:
       - power_hub_simulation
     env_file:
-      - simulation.env
+      - .env
 
   simulation:
     depends_on:
@@ -50,6 +55,8 @@ services:
     command: "run_power_hub_simulation"
     networks:
       - power_hub_simulation
+    env_file:
+      - .env
 
   power_hub_api:
     depends_on:
@@ -64,7 +71,7 @@ services:
     networks:
       - power_hub_simulation
     env_file:
-      - simulation.env
+      - .env
 
 networks:
   power_hub_simulation:

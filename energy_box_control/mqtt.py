@@ -11,12 +11,12 @@ import json
 import time
 
 dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", "simulation.env")
+    os.path.join(os.path.realpath(__file__), "../../../", ".env")
 )
 load_dotenv(dotenv_path)
 
 
-HOST = os.environ["DOCKER_MQTT_HOST"]
+HOST = os.environ["MQTT_HOST"]
 PORT = 1883
 MIN_CLIENT_ID_INT = 0
 MAX_CLIEND_ID_INT = 1000000000

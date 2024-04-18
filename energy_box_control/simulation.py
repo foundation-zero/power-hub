@@ -1,7 +1,7 @@
 import json
 import queue
 import time
-from energy_box_control.json import encoder
+from energy_box_control.simulation_json import encoder
 from energy_box_control.power_hub.control import (
     control_from_json,
     control_power_hub,
