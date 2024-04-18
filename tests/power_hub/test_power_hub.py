@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import partial
 from numpy import power
 from pytest import approx, fixture
@@ -72,7 +73,7 @@ def test_power_hub_sensors(power_hub):
 
 def test_derived_sensors(power_hub, min_max_temperature):
 
-    state = power_hub.simple_initial_state(power_hub)
+    state = power_hub.simple_initial_state(datetime.now())
     control_values = no_control(power_hub)
 
     for i in range(500):

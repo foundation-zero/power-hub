@@ -32,8 +32,6 @@ class HeatPipesSensors(FromState):
     flow: LiterPerSecond = sensor(
         technical_name="FS-1001", type=SensorType.FLOW, from_port=HeatPipesPort.IN
     )
-    ambient_temperature: Celsius = sensor(from_weather=True)
-    global_irradiance: WattPerMeterSquared = sensor(from_weather=True)
     input_temperature: Celsius = sensor(
         technical_name="TS-1001",
         type=SensorType.TEMPERATURE,
@@ -559,7 +557,7 @@ class ChillerSensors(FromState):
             * self.spec.specific_heat_capacity_cooling
         )
 
-
+    
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors

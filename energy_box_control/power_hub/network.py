@@ -48,6 +48,7 @@ from energy_box_control.network import (
     NetworkState,
 )
 
+from energy_box_control.power_hub.control import HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
 )
@@ -259,7 +260,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.hot_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.hot_switch_valve)
-            .value(ValveState(0))  # everything to pcm, nothing to hot reservoir
+            .value(ValveState(HOT_RESERVOIR_PCM_VALVE_PCM_POSITION))  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
             .value(ApplianceState())
             .define_state(self.pcm)

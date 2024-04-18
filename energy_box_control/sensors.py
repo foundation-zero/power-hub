@@ -68,6 +68,24 @@ class NetworkSensors:
 
             return context.result()
 
+    def to_dict(self) -> dict[str, dict[str, Any]]:
+
+        return {
+            name: {
+                **{
+                    attr: val
+                    for attr, val in vars(subsensor).items() # type: ignore
+                    if attr != "spec" and not is_sensor(val)
+                },
+                **{
+                    attr: p.__get__(subsensor)
+                    for attr, p in vars(type(subsensor)).items() # type: ignore
+                    if isinstance(p, property)
+                },
+            }
+            for name, subsensor in vars(self).items()
+        }
+
 
 class FromState(Protocol):
     @classmethod

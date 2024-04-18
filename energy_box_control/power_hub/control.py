@@ -525,7 +525,7 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.outboard_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.yazaki)
-        .value(YazakiControl(on=False))
+        .value(YazakiControl(on=True))
         .control(power_hub.chiller)
         .value(ChillerControl(on=False))
         .build()
