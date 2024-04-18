@@ -9,7 +9,7 @@ from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.timer import Timer
-from energy_box_control.json import encoder
+from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
