@@ -19,15 +19,6 @@ jobs:
 
       - run: poetry check
 
-      - name: Black
-        run: poetry run black --check energy_box_control tests
-
-      - name: Type check
-        run: poetry run pyright
-
-      - name: Test
-        run: poetry run pytest
-
       - uses: hoverkraft-tech/compose-action@v1.5.1
         with:
           compose-file: "./docker-compose.yml"
@@ -39,6 +30,16 @@ jobs:
           MQTT_HOST: "0.0.0.0"
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
+          OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
+
+      - name: Black
+        run: poetry run black --check energy_box_control tests
+
+      - name: Type check
+        run: poetry run pyright
+
+      - name: Test
+        run: poetry run pytest
 
   test-ui:
     runs-on: ubuntu-latest

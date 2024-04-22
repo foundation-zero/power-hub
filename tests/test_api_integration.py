@@ -13,6 +13,7 @@ from energy_box_control.api.api import (
 )
 from dotenv import load_dotenv
 from http import HTTPStatus
+from unittest import mock
 
 
 BASE_URL = "http://0.0.0.0:5001"
@@ -111,12 +112,33 @@ def test_get_total_value(headers):
     assert json.loads(response.text) > 0
 
 
+@pytest.fixture
+def lat_lon():
+    return "?lat=50&lon=50"
+
+
 @pytest.mark.integration
-def test_get_weather(headers):
-    response = requests.get(
-        f"{BASE_URL}/weather/current?lat=41.3874&lon=2.1686", headers=headers
-    )
+def test_get_current_weather(headers, lat_lon):
+    response = requests.get(f"{BASE_URL}/weather/current{lat_lon}", headers=headers)
     assert response.status_code == HTTPStatus.OK
-    assert set(["country", "temp", "location_name"]).issubset(
+    assert set(["temp", "feels_like", "pressure"]).issubset(
         json.loads(response.text).keys()
     )
+
+
+@pytest.mark.integration
+def test_get_hourly_weather(headers, lat_lon):
+    response = requests.get(f"{BASE_URL}/weather/hourly{lat_lon}", headers=headers)
+    hourly_weather = json.loads(response.text)
+    assert response.status_code == HTTPStatus.OK
+    assert type(hourly_weather) == list
+    assert set(["temp", "feels_like", "pressure"]).issubset(hourly_weather[0])
+
+
+@pytest.mark.integration
+def test_get_daily_weather(headers, lat_lon):
+    response = requests.get(f"{BASE_URL}/weather/daily{lat_lon}", headers=headers)
+    daily_weather = json.loads(response.text)
+    assert response.status_code == HTTPStatus.OK
+    assert type(daily_weather) == list
+    assert set(["temp", "feels_like", "pressure"]).issubset(daily_weather[0])
