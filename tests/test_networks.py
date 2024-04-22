@@ -2,6 +2,7 @@ from pytest import approx
 
 from energy_box_control.appliances import Boiler, BoilerState, Source
 from energy_box_control.networks import BoilerNetwork, ControlState
+from energy_box_control.schedules import ConstSchedule
 
 
 def run(network: BoilerNetwork, state, control_state, times):
@@ -17,7 +18,9 @@ def run(network: BoilerNetwork, state, control_state, times):
 
 
 def test_heater():
-    network = BoilerNetwork(Source(0, 0), Boiler(10, 1, 0, 0, 1), BoilerState(0, 0))
+    network = BoilerNetwork(
+        Source(0, 0), Boiler(10, 1, 0, 0, 1, ConstSchedule(0)), BoilerState(0)
+    )
     control_state = ControlState(50)
 
     state_1, new_control_state = run(

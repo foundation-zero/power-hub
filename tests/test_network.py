@@ -21,6 +21,7 @@ from energy_box_control.appliances import (
     ValveState,
 )
 from energy_box_control.time import ProcessTime
+from energy_box_control.schedules import ConstSchedule
 
 
 def test_network():
@@ -28,7 +29,7 @@ def test_network():
         exchange_source = Source(0, 1)
         fill_source = Source(0, 1)
         valve = Valve()
-        boiler = Boiler(1, 0, 0, 1, 1)
+        boiler = Boiler(1, 0, 0, 1, 1, ConstSchedule(20))
 
         def initial_state(self):
             return (
@@ -39,7 +40,7 @@ def test_network():
                 .define_state(self.valve)
                 .value(ValveState(0.5))
                 .define_state(self.boiler)
-                .value(BoilerState(50, 20))
+                .value(BoilerState(50))
                 .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
             )
 
@@ -73,12 +74,12 @@ def test_circular_network():
     """Tests a circular network with just a boiler this in essence turns the flow through the heat exchanger into extra heat capacity"""
 
     class CircularNetwork(Network[None]):
-        boiler = Boiler(99, 100, 0, 1, 1)
+        boiler = Boiler(99, 100, 0, 1, 1, ConstSchedule(20))
 
         def initial_state(self) -> NetworkState[Self]:
             return (
                 self.define_state(self.boiler)
-                .value(BoilerState(100, 20))
+                .value(BoilerState(100))
                 .define_state(self.boiler)
                 .at(BoilerPort.HEAT_EXCHANGE_OUT)
                 .value(ConnectionState(1, 100))
