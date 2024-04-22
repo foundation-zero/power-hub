@@ -55,10 +55,25 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import Schedule
+from energy_box_control.schedules import ConstSchedule, Schedule
 from energy_box_control.sensors import WeatherSensors
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import Watt, WattPerMeterSquared
+from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
+
+
+@dataclass
+class PowerHubSchedules:
+    global_irradiance: Schedule[WattPerMeterSquared]
+    ambient_temperature: Schedule[Celsius]
+    cooling_demand: Schedule[Watt]
+
+    @staticmethod
+    def const_schedules() -> "PowerHubSchedules":
+        return PowerHubSchedules(
+            ConstSchedule(phc.GLOBAL_IRRADIANCE),
+            ConstSchedule(phc.AMBIENT_TEMPERATURE),
+            ConstSchedule(phc.COOLING_DEMAND),
+        )
 
 
 @dataclass
@@ -102,13 +117,13 @@ class PowerHub(Network[PowerHubSensors]):
         super().__init__()
 
     @staticmethod
-    def power_hub(schedules: "PowerHubSchedules") -> "PowerHub":
+    def power_hub(schedules: PowerHubSchedules) -> "PowerHub":
         return PowerHub(
-            phc.heat_pipes(schedules.global_irradiance_schedule),
+            phc.heat_pipes(schedules.global_irradiance, schedules.ambient_temperature),
             phc.heat_pipes_valve,
             phc.heat_pipes_pump,
             phc.heat_pipes_mix,
-            phc.hot_reservoir,
+            phc.hot_reservoir(schedules.ambient_temperature),
             phc.hot_switch_valve,
             phc.hot_mix,
             phc.pcm,
@@ -119,14 +134,14 @@ class PowerHub(Network[PowerHubSensors]):
             phc.yazaki_bypass_mix,
             phc.chiller,
             phc.chill_mix,
-            phc.cold_reservoir,
+            phc.cold_reservoir(schedules.ambient_temperature),
             phc.chilled_loop_pump,
             phc.waste_switch_valve,
             phc.waste_mix,
             phc.waste_bypass_valve,
             phc.waste_bypass_mix,
             phc.preheat_switch_valve,
-            phc.preheat_reservoir,
+            phc.preheat_reservoir(schedules.ambient_temperature),
             phc.preheat_mix,
             phc.waste_pump,
             phc.chiller_waste_bypass_valve,
@@ -137,22 +152,17 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_pump,
             phc.outboard_source,
             phc.cooling_demand_pump,
-            phc.cooling_demand(schedules.cooling_demand_schedule),
+            phc.cooling_demand(schedules.cooling_demand),
         )
 
     @staticmethod
     def example_initial_state(power_hub: "PowerHub") -> NetworkState["PowerHub"]:
-        initial_boiler_state = BoilerState(20, phc.AMBIENT_TEMPERATURE)
-        initial_cold_reservoir_state = BoilerState(10, phc.AMBIENT_TEMPERATURE)
+        initial_boiler_state = BoilerState(20)
+        initial_cold_reservoir_state = BoilerState(10)
         initial_valve_state = ValveState(0.5)
         return (
             power_hub.define_state(power_hub.heat_pipes)
-            .value(
-                HeatPipesState(
-                    phc.AMBIENT_TEMPERATURE,
-                    phc.AMBIENT_TEMPERATURE,
-                )
-            )
+            .value(HeatPipesState(phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.heat_pipes_valve)
             .value(initial_valve_state)
             .define_state(power_hub.heat_pipes_pump)
@@ -239,12 +249,7 @@ class PowerHub(Network[PowerHubSensors]):
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
         return (
             self.define_state(self.heat_pipes)
-            .value(
-                HeatPipesState(
-                    phc.AMBIENT_TEMPERATURE,
-                    phc.AMBIENT_TEMPERATURE,
-                )
-            )
+            .value(HeatPipesState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.heat_pipes_valve)
             .value(ValveState(0))  # all to circuit, no bypass
             .define_state(self.heat_pipes_pump)
@@ -252,7 +257,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.heat_pipes_mix)
             .value(ApplianceState())
             .define_state(self.hot_reservoir)
-            .value(BoilerState(phc.AMBIENT_TEMPERATURE, phc.AMBIENT_TEMPERATURE))
+            .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.hot_switch_valve)
             .value(ValveState(0))  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
@@ -274,7 +279,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.chill_mix)
             .value(ApplianceState())
             .define_state(self.cold_reservoir)
-            .value(BoilerState(phc.AMBIENT_TEMPERATURE, phc.AMBIENT_TEMPERATURE))
+            .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.chilled_loop_pump)
             .value(SwitchPumpState())
             .define_state(self.waste_bypass_valve)
@@ -288,7 +293,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.preheat_switch_valve)
             .value(ValveState(1))  # no preheat
             .define_state(self.preheat_reservoir)
-            .value(BoilerState(phc.AMBIENT_TEMPERATURE, phc.AMBIENT_TEMPERATURE))
+            .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.preheat_mix)
             .value(ApplianceState())
             .define_state(self.waste_pump)
@@ -656,9 +661,3 @@ class PowerHub(Network[PowerHubSensors]):
                     getattr(self, sensor.name),
                 )
             return context.result()
-
-
-@dataclass
-class PowerHubSchedules:
-    global_irradiance_schedule: Schedule[WattPerMeterSquared]
-    cooling_demand_schedule: Schedule[Watt]

@@ -11,7 +11,9 @@ import energy_box_control.power_hub.power_hub_components as phc
 def test_control_from_json_roundtrips():
     power_hub = PowerHub.power_hub(
         PowerHubSchedules(
-            ConstSchedule(phc.GLOBAL_IRRADIANCE), ConstSchedule(phc.COOLING_DEMAND)
+            ConstSchedule(phc.GLOBAL_IRRADIANCE),
+            ConstSchedule(phc.AMBIENT_TEMPERATURE),
+            ConstSchedule(phc.COOLING_DEMAND),
         )
     )
     control = no_control(power_hub)

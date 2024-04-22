@@ -31,6 +31,7 @@ from energy_box_control.power_hub.power_hub_components import (
     heat_pipes_valve,
     pcm,
     GLOBAL_IRRADIANCE,
+    AMBIENT_TEMPERATURE,
 )
 
 from energy_box_control.schedules import ConstSchedule
@@ -63,7 +64,9 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
     @staticmethod
     def pipes_pcm_circuit() -> "PipesPcmNetwork":
         return PipesPcmNetwork(
-            heat_pipes(ConstSchedule(GLOBAL_IRRADIANCE)),
+            heat_pipes(
+                ConstSchedule(GLOBAL_IRRADIANCE), ConstSchedule(AMBIENT_TEMPERATURE)
+            ),
             heat_pipes_valve,
             heat_pipes_pump,
             heat_pipes_mix,
