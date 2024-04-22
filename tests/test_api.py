@@ -10,6 +10,8 @@ import fluxy
 import os
 import pandas as pd
 import json
+import unittest.mock as mock
+from energy_box_control.api.weather import *
 
 
 HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
@@ -20,9 +22,7 @@ async def mock_influx(mocker):
     app.influx = mocker.patch.object(InfluxDBClientAsync, "query_api")  # type: ignore
     fut = Future()
     fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
-
     app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
-
     yield
 
 
@@ -108,3 +108,72 @@ async def test_build_get_appliance_values_query():
     assert query.range == fluxy.range(
         datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
     )
+
+
+@dataclass
+class SimpleWeather:
+    current: dict[str, int]
+    hourly: dict[str, int]
+    daily: dict[str, int]
+
+
+@pytest.fixture
+def lat_lon():
+    return "?lat=41.3874&lon=2.1686"
+
+
+def get_simple_weather(weather: str):
+    return SimpleWeather({"value": 1}, {"value": 1}, {"value": 1})
+
+
+def mock_open_weather(*args):
+    pass
+
+
+mock_open_weather = mock.create_autospec(mock_open_weather, return_value="{'value': 1}")
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_get_weather(lat_lon, forecast_window, mocker):
+    mocker.patch("energy_box_control.api.weather.get_open_weather", mock_open_weather)
+    mocker.patch(
+        "energy_box_control.api.weather.WeatherResponse.from_json",
+        get_simple_weather,
+    )
+
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+
+    mock_open_weather.assert_called()  # type: ignore
+    assert (await response.json)["value"] == 1
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_weather_from_cache(lat_lon, forecast_window, mocker):
+    mocker.patch("energy_box_control.api.weather.get_open_weather", mock_open_weather)
+    mocker.patch(
+        "energy_box_control.api.weather.WeatherResponse.from_json",
+        get_simple_weather,
+    )
+    _ = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+    mock_open_weather.assert_called_once()  # type: ignore
+    assert (await response.json)["value"] == 1
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_weather_location_whitelist(forecast_window):
+    lat = 50.0
+    lon = 50.0
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}?lat={lat}&lon={lon}", headers=HEADERS
+    )
+    assert response.status_code == 422
+    assert (await response.data).decode(
+        "utf-8"
+    ) == f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist."

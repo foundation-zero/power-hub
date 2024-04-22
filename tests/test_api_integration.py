@@ -113,12 +113,27 @@ def test_get_total_value(headers):
     assert json.loads(response.text) > 0
 
 
+@pytest.fixture
+def lat_lon():
+    return "?lat=41.3874&lon=2.1686"
+
+
 @pytest.mark.integration
-def test_get_weather(headers):
-    response = requests.get(
-        f"{BASE_URL}/weather/current?lat=41.3874&lon=2.1686", headers=headers
-    )
+def test_get_current_weather(headers, lat_lon):
+    response = requests.get(f"{BASE_URL}/weather/current{lat_lon}", headers=headers)
     assert response.status_code == HTTPStatus.OK
-    assert set(["country", "temp", "location_name"]).issubset(
+    assert set(["temp", "feels_like", "pressure"]).issubset(
         json.loads(response.text).keys()
     )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("forecast_window", ["hourly", "daily"])
+def test_get_hourly_weather(headers, lat_lon, forecast_window):
+    response = requests.get(
+        f"{BASE_URL}/weather/{forecast_window}{lat_lon}", headers=headers
+    )
+    weather = json.loads(response.text)
+    assert response.status_code == HTTPStatus.OK
+    assert type(weather) == list
+    assert set(["temp", "feels_like", "pressure"]).issubset(weather[0])
