@@ -38,7 +38,7 @@ from energy_box_control.appliances.switch_pump import (
     SwitchPumpPort,
     SwitchPumpState,
 )
-from energy_box_control.appliances.valve import ValveState
+from energy_box_control.appliances.valve import ValveControl, ValveState
 from energy_box_control.appliances.yazaki import YazakiState
 
 from energy_box_control.network import (
@@ -48,9 +48,9 @@ from energy_box_control.network import (
     NetworkState,
 )
 
-from energy_box_control.power_hub.control import HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
+    WeatherSensors,
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
@@ -114,6 +114,8 @@ class PowerHub(Network[PowerHubSensors]):
     cooling_demand_pump: SwitchPump
     cooling_demand: CoolingSink
 
+    schedules: "PowerHubSchedules"
+
     def __post_init__(self):
         super().__init__()
 
@@ -154,6 +156,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_source,
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
+            schedules,
         )
 
     @staticmethod
@@ -260,7 +263,9 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.hot_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.hot_switch_valve)
-            .value(ValveState(HOT_RESERVOIR_PCM_VALVE_PCM_POSITION))  # everything to pcm, nothing to hot reservoir
+            .value(
+                ValveState(HOT_RESERVOIR_PCM_VALVE_PCM_POSITION)
+            )  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
             .value(ApplianceState())
             .define_state(self.pcm)
@@ -633,11 +638,17 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
-        return PowerHubSensors.resolve_for_network(
+        context = PowerHubSensors.context()
+        context.from_sensor(
             WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
+                phc.AMBIENT_TEMPERATURE,
+                self.schedules.global_irradiance_schedule.at(state.time),
             ),
+            context.subject.weather,
+        )
+
+        return context.resolve_for_network(
+            PowerHubSensors,
             state,
             self,
         )
@@ -646,12 +657,7 @@ class PowerHub(Network[PowerHubSensors]):
         sensors = json.loads(sensor_json)
         init_order = PowerHubSensors.sensor_initialization_order()
 
-        context = PowerHubSensors.context(
-            WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
-            )
-        )
+        context = PowerHubSensors.context()
 
         with context:
             for sensor in init_order:

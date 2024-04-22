@@ -19,7 +19,17 @@ from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.timer import Timer
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.network import PowerHub
+from energy_box_control.power_hub.network import (
+    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    WASTE_BYPASS_VALVE_OPEN_POSITION,
+    WASTE_SWITCH_VALVE_CHILLER_POSITION,
+    WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+    YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION,
+    PowerHub,
+)
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Watt
 from enum import Enum
@@ -32,10 +42,6 @@ class HotControlMode(State):
     HEAT_RESERVOIR = "heat_reservoir"
     PREPARE_HEAT_PCM = "prepare_heat_pcm"
     HEAT_PCM = "heat_pcm"
-
-
-HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
-HOT_RESERVOIR_PCM_VALVE_PCM_POSITION = ValveControl.a_position()
 
 
 @dataclass
@@ -51,14 +57,6 @@ class ChillControlMode(Enum):
     CHILL_YAZAKI = "chill_yazaki"
     WAIT_BEFORE_CHILLER = "wait_before_chiller"
     CHILL_CHILLER = "chill_chiller"
-
-
-CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
-YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 
 
 @dataclass
@@ -519,7 +517,7 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.fresh_water_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)

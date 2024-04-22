@@ -32,7 +32,7 @@ SpecificAppliance = Appliance[ApplianceState, ApplianceControl | None, Port]
 GenericControl = ApplianceControl | None
 App = TypeVar("App", bound=AnyAppliance, covariant=True)
 Prev = TypeVarTuple("Prev")
-Net = TypeVar("Net", bound="Network[Any]")
+Net = TypeVar("Net", bound="Network[Any]", covariant=True)
 FromPort = TypeVar("FromPort", bound=Port)
 ToPort = TypeVar("ToPort", bound=Port)
 From = TypeVar("From", bound=AnyAppliance, covariant=True)

@@ -18,21 +18,14 @@ from collections import deque
 
 from energy_box_control.linearize import linearize
 from energy_box_control.network import NetworkState, Network
-from energy_box_control.units import Celsius, WattPerMeterSquared
-
-
-@dataclass
-class WeatherSensors:
-    ambient_temperature: Celsius
-    global_irradiance: WattPerMeterSquared
 
 
 @dataclass
 class NetworkSensors:
 
     @classmethod
-    def context(cls, weather: WeatherSensors) -> "SensorContext[Self]":
-        return SensorContext(cls, weather)
+    def context(cls) -> "SensorContext[Self]":
+        return SensorContext(cls)
 
     @classmethod
     def sensor_initialization_order(cls) -> list[Field[Any]]:
@@ -51,35 +44,18 @@ class NetworkSensors:
             lambda sensor: [(sensor.name, sensor.type)],
         )
 
-    @classmethod
-    def resolve_for_network[
-        Net: "Network[NetworkSensors]"
-    ](cls, weather: WeatherSensors, state: NetworkState[Net], network: Net):
-        with cls.context(weather) as context:
-            sensors = cls.sensor_initialization_order()
-
-            for sensor in sensors:
-                context.from_state(
-                    state,
-                    sensor.type,
-                    getattr(context.subject, sensor.name),
-                    getattr(network, sensor.name),
-                )
-
-            return context.result()
-
     def to_dict(self) -> dict[str, dict[str, Any]]:
 
         return {
             name: {
                 **{
                     attr: val
-                    for attr, val in vars(subsensor).items() # type: ignore
+                    for attr, val in vars(subsensor).items()  # type: ignore
                     if attr != "spec" and not is_sensor(val)
                 },
                 **{
                     attr: p.__get__(subsensor)
-                    for attr, p in vars(type(subsensor)).items() # type: ignore
+                    for attr, p in vars(type(subsensor)).items()  # type: ignore
                     if isinstance(p, property)
                 },
             }
@@ -101,9 +77,8 @@ class FromState(Protocol):
 
 class SensorContext[T]:
 
-    def __init__(self, cls: type[T], weather: "WeatherSensors") -> None:
+    def __init__(self, cls: type[T]) -> None:
         self._cls = cls
-        self._weather = weather
         self._accessed: Deque[str] = deque()
         self._sensors: dict[str, Any] = {}
 
@@ -118,6 +93,28 @@ class SensorContext[T]:
 
         return cast(T, Wrapper())
 
+    def resolve_for_network[
+        Sensors: NetworkSensors,
+    ](
+        self,
+        sensors: type[Sensors],
+        state: NetworkState[Network[Sensors]],
+        network: Network[Sensors],
+    ):
+        init_order = sensors.sensor_initialization_order()
+
+        for sensor in init_order:
+            appliance = getattr(network, sensor.name, None)
+            if appliance:
+                self.from_state(
+                    state,
+                    sensor.type,
+                    getattr(self.subject, sensor.name),
+                    appliance,
+                )
+
+        return self.result()
+
     def from_state[
         State: ApplianceState, Control: ApplianceControl | None, Port: Port
     ](
@@ -130,6 +127,10 @@ class SensorContext[T]:
         key = self._accessed.pop()
         instance = klass.from_state(self, appliance, state)
         self._sensors[key] = instance
+
+    def from_sensor(self, sensor: Any, _location: Any):
+        key = self._accessed.pop()
+        self._sensors[key] = sensor
 
     def from_values(
         self,
@@ -148,10 +149,6 @@ class SensorContext[T]:
     def result(self) -> "T":
         return self._cls(**self._sensors)
 
-    @property
-    def weather(self):
-        return self._weather
-
     def __enter__(self):
         return self
 
@@ -167,7 +164,6 @@ class SensorType(Enum):
 @dataclass(eq=True, frozen=True)
 class Sensor:
     technical_name: str | None = None
-    from_weather: bool = False
     from_port: Port | None = None
     type: SensorType | None = None
 
@@ -186,13 +182,13 @@ def sensors[T: type]() -> Callable[[T], T]:
             **kwargs: dict[str, Any],
         ):
             for name, annotation in get_type_hints(cls).items():
-                value = getattr(cls, name, None)
+                # value = getattr(cls, name, None)
                 if name.startswith("_"):
                     continue
                 if isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
-                elif value == Sensor(from_weather=True):
-                    setattr(self, name, getattr(context.weather, name))
+                # elif value == Sensor(from_weather=True):
+                #     setattr(self, name, getattr(context.weather, name))
                 elif (sub_sensor := context.sensor(name)) and type(
                     sub_sensor
                 ) == annotation:

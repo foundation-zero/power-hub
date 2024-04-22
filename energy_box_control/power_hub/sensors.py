@@ -557,7 +557,13 @@ class ChillerSensors(FromState):
             * self.spec.specific_heat_capacity_cooling
         )
 
-    
+
+@dataclass
+class WeatherSensors:
+    ambient_temperature: Celsius
+    global_irradiance: WattPerMeterSquared
+
+
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
@@ -576,6 +582,7 @@ class PowerHubSensors(NetworkSensors):
     waste_switch_valve: WasteSwitchSensors
     outboard_exchange: HeatExchangerSensors
     hot_mix: HotMixSensors
+    weather: WeatherSensors
 
 
 SensorName = str
