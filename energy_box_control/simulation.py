@@ -86,7 +86,7 @@ def run(steps: int = 0):
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
+        json.dumps(power_hub_sensors, cls=encoder(set(["spec"]))),
     )
 
     while True:

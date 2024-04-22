@@ -249,7 +249,9 @@ class PowerHub(Network[PowerHubSensors]):
         )
 
     def simple_initial_state(
-        self, start_time: datetime = datetime.now()
+        self,
+        start_time: datetime = datetime.now(),
+        step_size: timedelta = timedelta(seconds=1),
     ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
         return (
@@ -342,7 +344,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.cooling_demand)
             .value(ApplianceState())
-            .build(ProcessTime(timedelta(seconds=1), 0, start_time))
+            .build(ProcessTime(step_size, 0, start_time))
         )
 
     def connections(self) -> NetworkConnections[Self]:

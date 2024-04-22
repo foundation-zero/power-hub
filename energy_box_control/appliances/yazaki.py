@@ -119,16 +119,25 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 _heat_input_interpolator((cooling_in.temperature, hot_in.temperature))
             )
 
-            hot_temp_out = hot_in.temperature - heat_input / (
-                hot_in.flow * self.specific_heat_capacity_hot
+            hot_temp_out = (
+                hot_in.temperature
+                - heat_input / (hot_in.flow * self.specific_heat_capacity_hot)
+                if hot_in.flow > 0
+                else hot_in.temperature
             )
 
-            cooling_temp_out = cooling_in.temperature + (
-                heat_input + cooling_capacity
-            ) / (cooling_in.flow * self.specific_heat_capacity_cooling)
+            cooling_temp_out = (
+                cooling_in.temperature
+                + (heat_input + cooling_capacity)
+                / (cooling_in.flow * self.specific_heat_capacity_cooling)
+                if cooling_in.flow > 0
+                else cooling_in.temperature
+            )
 
             chilled_temp_out = chilled_in.temperature - cooling_capacity / (
                 chilled_in.flow * self.specific_heat_capacity_chilled
+                if chilled_in.flow > 0
+                else chilled_in.temperature
             )
 
         return YazakiState(), {

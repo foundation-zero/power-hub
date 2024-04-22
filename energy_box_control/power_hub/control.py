@@ -480,7 +480,7 @@ def control_power_hub(
         .control(power_hub.cold_reservoir)
         .value(BoilerControl(False))
         .control(power_hub.fresh_water_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .combine(hot)
@@ -497,6 +497,36 @@ def control_power_hub(
             setpoints=control_state.setpoints,
         ),
         control,
+    )
+
+
+def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
+    return (
+        power_hub.control(power_hub.hot_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.preheat_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.cold_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.heat_pipes_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.pcm_to_yazaki_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.chilled_loop_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.waste_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.outboard_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(on=False))
+        .control(power_hub.chiller)
+        .value(ChillerControl(on=False))
+        .build()
     )
 
 
