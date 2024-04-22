@@ -9,6 +9,17 @@ from energy_box_control.control.state_machines import (
     State,
     StateMachine,
 )
+from energy_box_control.power_hub.network import PowerHub
+from energy_box_control.power_hub.power_hub_components import (
+    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    WASTE_BYPASS_VALVE_OPEN_POSITION,
+    WASTE_SWITCH_VALVE_CHILLER_POSITION,
+    WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+    YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION,
+)
 from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
@@ -19,17 +30,7 @@ from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.timer import Timer
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.network import (
-    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
-    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
-    WASTE_BYPASS_VALVE_OPEN_POSITION,
-    WASTE_SWITCH_VALVE_CHILLER_POSITION,
-    WASTE_SWITCH_VALVE_YAZAKI_POSITION,
-    YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION,
-    PowerHub,
-)
+
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Watt
 from enum import Enum
