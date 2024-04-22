@@ -10,6 +10,7 @@ from energy_box_control.appliances.boiler import (
     BoilerState,
 )
 from energy_box_control.time import ProcessTime
+from energy_box_control.schedules import ConstSchedule
 
 volume_strat = floats(1, 1e3, allow_nan=False)
 temp_strat = floats(0, 150, allow_nan=False)
@@ -44,10 +45,11 @@ def test_boiler_heating(
         heat_loss,
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
+        ConstSchedule(ambient_temp),
     )
     state, _ = boiler.simulate(
         {},
-        BoilerState(boiler_temp, ambient_temperature=ambient_temp),
+        BoilerState(boiler_temp),
         BoilerControl(heater_on=True),
         ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
@@ -84,6 +86,7 @@ def test_boiler_exchange(
         0,
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
+        ConstSchedule(ambient_temp),
     )
     exchange_in_flow = (
         volume * specific_heat_capacity_fill / specific_heat_capacity_exchange
@@ -94,7 +97,7 @@ def test_boiler_exchange(
                 exchange_in_flow, exchange_in_temp
             )
         },
-        BoilerState(boiler_temp, ambient_temp),
+        BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
         ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
@@ -126,10 +129,11 @@ def test_boiler_fill(
         0,
         specific_heat_capacity_exchange,
         specific_heat_capacity_fill,
+        ConstSchedule(ambient_temp),
     )
     state, _ = boiler.simulate(
         {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
-        BoilerState(boiler_temp, ambient_temp),
+        BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
         ProcessTime(timedelta(seconds=1), 0, datetime.now()),
     )
@@ -138,7 +142,7 @@ def test_boiler_fill(
 
 @fixture
 def boiler():
-    return Boiler(1, 1, 1, 1, 1)
+    return Boiler(1, 1, 1, 1, 1, ConstSchedule(20))
 
 
 @fixture
@@ -148,7 +152,7 @@ def simulation_time():
 
 def test_boiler_heat_loss(boiler, simulation_time):
 
-    state = BoilerState(50, 20)
+    state = BoilerState(50)
 
     for _ in range(100):
         state, _ = boiler.simulate(
@@ -159,7 +163,7 @@ def test_boiler_heat_loss(boiler, simulation_time):
 
 
 def test_boiler_double_step(boiler, simulation_time):
-    state = BoilerState(50, 20)
+    state = BoilerState(50)
 
     first_state, _ = boiler.simulate(
         {}, state, BoilerControl(heater_on=True), simulation_time

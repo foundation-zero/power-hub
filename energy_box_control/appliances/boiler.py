@@ -9,13 +9,13 @@ from energy_box_control.appliances.base import (
     Port,
 )
 from energy_box_control.time import ProcessTime
+from energy_box_control.schedules import Schedule
 from energy_box_control.units import Celsius, JoulePerLiterKelvin, Liter, Watt
 
 
 @dataclass(frozen=True, eq=True)
 class BoilerState(ApplianceState):
     temperature: Celsius
-    ambient_temperature: Celsius
 
 
 class BoilerPort(Port):
@@ -37,6 +37,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
     heat_loss: Watt
     specific_heat_capacity_exchange: JoulePerLiterKelvin
     specific_heat_capacity_fill: JoulePerLiterKelvin
+    ambient_temperature_schedule: Schedule[Celsius]
 
     @cached_property
     def tank_capacity(self):
@@ -91,7 +92,10 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             - (
                 self.heat_loss
                 * simulation_time.step_seconds
-                * (previous_state.temperature > previous_state.ambient_temperature)
+                * (
+                    previous_state.temperature
+                    > self.ambient_temperature_schedule.at(simulation_time)
+                )
             )
         ) / (self.tank_capacity + exchange_capacity + fill_capacity)
 
@@ -118,9 +122,6 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         }
 
         return (
-            BoilerState(
-                temperature=equilibrium_temperature,
-                ambient_temperature=previous_state.ambient_temperature,
-            ),
+            BoilerState(temperature=equilibrium_temperature),
             connection_states,
         )

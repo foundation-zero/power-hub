@@ -27,10 +27,10 @@ from functools import partial
 
 from energy_box_control.schedules import ConstSchedule
 from energy_box_control.power_hub.power_hub_components import (
-    COOLING_DEMAND,
     GLOBAL_IRRADIANCE,
+    AMBIENT_TEMPERATURE,
+    COOLING_DEMAND,
 )
-
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
@@ -68,7 +68,9 @@ def run(steps: int = 0):
 
     power_hub = PowerHub.power_hub(
         PowerHubSchedules(
-            ConstSchedule(GLOBAL_IRRADIANCE), ConstSchedule(COOLING_DEMAND)
+            ConstSchedule(GLOBAL_IRRADIANCE),
+            ConstSchedule(AMBIENT_TEMPERATURE),
+            ConstSchedule(COOLING_DEMAND),
         )
     )
 
