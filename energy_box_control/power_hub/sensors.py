@@ -138,10 +138,6 @@ class PcmSensors(FromState):
     def charged(self) -> bool:
         return self.temperature > self.spec.phase_change_temperature
 
-    @property
-    def state_of_charge(self):
-        return float(self.temperature > self.spec.phase_change_temperature)
-
 
 @sensors()
 class YazakiSensors(FromState):
