@@ -54,11 +54,12 @@ class HeatPipesSensors(FromState):
 
     @property
     def power(self) -> Watt:
-        return (
+        power = (
             self.flow
             * (self.output_temperature - self.input_temperature)
             * self.spec.specific_heat_medium
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -111,21 +112,23 @@ class PcmSensors(FromState):
     def charge_power(
         self,
     ) -> Watt:
-        return (
+        power = (
             self.charge_flow
             * (self.charge_input_temperature - self.charge_output_temperature)
             * self.spec.specific_heat_capacity_charge
         )
+        return power if power == power else 0
 
     @property
     def discharge_power(
         self,
     ) -> Watt:
-        return (
+        power = (
             self.discharge_flow
             * (self.discharge_output_temperature - self.discharge_input_temperature)
             * self.spec.specific_heat_capacity_discharge
         )
+        return power if power == power else 0
 
     @property
     def net_charge(self) -> Watt:
@@ -218,33 +221,36 @@ class YazakiSensors(FromState):
         )
 
     @property
-    def cool_power(self) -> Watt:
-        return (
+    def chill_power(self) -> Watt:
+        power = (
             self.chilled_flow
-            * (self.chilled_input_temperature - self.chilled_output_temperature)
+            * (self.chilled_output_temperature - self.chilled_input_temperature)
             * self.spec.specific_heat_capacity_chilled
         )
+        return power if power == power else 0
 
     @property
     def waste_power(self) -> Watt:
-        return (
+        power = (
             self.cooling_flow
             * (self.cooling_output_temperature - self.cooling_input_temperature)
             * self.spec.specific_heat_capacity_cooling
         )
+        return power if power == power else 0
 
     @property
     def used_power(self) -> Watt:
-        return (
+        power = (
             self.hot_flow
             * (self.hot_input_temperature - self.hot_output_temperature)
             * self.spec.specific_heat_capacity_hot
         )
+        return power if power == power else 0
 
     @property
     def efficiency(self) -> float:
         return (
-            self.used_power / self.cool_power if self.cool_power > 0 else float("nan")
+            self.chill_power / self.used_power if self.used_power > 0 else float("nan")
         )
 
 
@@ -269,11 +275,12 @@ class HeatExchangerSensors(FromState):
 
     @property
     def power(self) -> Watt:
-        return (
+        power = (
             self.flow
-            * (self.output_temperature - self.input_temperature)
+            * (self.input_temperature - self.output_temperature)
             * self.spec.specific_heat_capacity_A
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -298,15 +305,18 @@ class HotReservoirSensors(FromState):
 
     @property
     def fill_input_temperature(self) -> Celsius:
-        return self.preheat_reservoir.temperature
+        return (
+            self.preheat_reservoir.temperature if self.fill_flow > 0 else float("nan")
+        )
 
     @property
     def fill_power(self) -> Watt:  # estimate taking internal temperature of preheat
-        return (
+        power = (
             self.fill_flow
             * (self.fill_input_temperature - self.fill_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
     @property
     def exchange_flow(self) -> LiterPerSecond:
@@ -337,15 +347,17 @@ class HotReservoirSensors(FromState):
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
             * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
 
+        return power if power == power else 0
+
     @property
     def total_heating_power(self) -> Watt:  # power including preheat
-        return (
+        power = (
             self.fill_flow
             * (
                 self.fill_output_temperature
@@ -353,6 +365,7 @@ class HotReservoirSensors(FromState):
             )
             * self.spec.specific_heat_capacity_fill
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -385,11 +398,12 @@ class PreHeatSensors(FromState):
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
-            * (self.exchange_input_temperature - self.exchange_output_temperature)
+            * (self.exchange_output_temperature - self.exchange_input_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -433,19 +447,21 @@ class ColdReservoirSensors(FromState):
 
     @property
     def fill_power(self) -> Watt:
-        return (
+        power = (
             self.fill_flow
-            * (self.fill_input_temperature - self.fill_output_temperature)
+            * (self.fill_output_temperature - self.fill_input_temperature)
             * self.spec.specific_heat_capacity_fill
         )
+        return power if power == power else 0
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
             * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -564,20 +580,22 @@ class ChillerSensors(FromState):
         )
 
     @property
-    def cool_power(self) -> Watt:
-        return (
+    def chill_power(self) -> Watt:
+        power = (
             self.chilled_flow
-            * (self.chilled_input_temperature - self.chilled_output_temperature)
+            * (self.chilled_output_temperature - self.chilled_input_temperature)
             * self.spec.specific_heat_capacity_chilled
         )
+        return power if power == power else 0
 
     @property
     def waste_heat(self) -> Watt:
-        return (
+        power = (
             self.cooling_flow
             * (self.cooling_output_temperature - self.cooling_input_temperature)
             * self.spec.specific_heat_capacity_cooling
         )
+        return power if power == power else 0
 
 
 @dataclass
