@@ -50,10 +50,10 @@ _cooling_capacity_values: list[list[KiloWatt]] = [
 ]
 
 _heat_input_values: list[list[KiloWatt]] = [
-    [12.5, 10.0, 9.0, 7.0],
-    [21.0, 18.0, 17.0, 14.0],
-    [30.0, 26.0, 25.0, 22.5],
-    [37.0, 34.0, 32.0, 27.5],
+    [12.5, 21.0, 30.0, 37.0],
+    [10.0, 18.0, 26.0, 34.0],
+    [9.0, 17.0, 25.0, 32.0],
+    [7.0, 14.0, 22.5, 27.5],
 ]
 
 _cooling_capacity_interpolator = RegularGridInterpolator(
@@ -134,8 +134,10 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 else cooling_in.temperature
             )
 
-            chilled_temp_out = chilled_in.temperature - cooling_capacity / (
-                chilled_in.flow * self.specific_heat_capacity_chilled
+            chilled_temp_out = (
+                chilled_in.temperature
+                - cooling_capacity
+                / (chilled_in.flow * self.specific_heat_capacity_chilled)
                 if chilled_in.flow > 0
                 else chilled_in.temperature
             )

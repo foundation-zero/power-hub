@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
+from hypothesis import example
 from numpy import power
 from pytest import approx, fixture
 from energy_box_control.appliances import (
@@ -132,3 +133,20 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature):
     )
 
     assert isinstance(result, SimulationSuccess)
+
+
+def test_power_hub_simulation_control_minute_step(power_hub, min_max_temperature):
+
+    for seconds in [1, 60, 60 * 60, 60 * 60 * 24]:
+
+        result = run_simulation(
+            power_hub,
+            power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
+            no_control(power_hub),
+            initial_control_state(),
+            partial(control_power_hub, power_hub),
+            min_max_temperature,
+            500,
+        )
+
+        assert isinstance(result, SimulationSuccess)
