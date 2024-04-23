@@ -503,8 +503,6 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.cooling_demand_pump)
             .at(SwitchPumpPort.IN)
 
-
-
             .connect(self.cooling_demand)
             .at(CoolingSinkPort.OUTPUT)
             .to(self.cold_reservoir)
@@ -523,16 +521,19 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def _chilled_side_feedback(self):
+        # fmt: off
         return (
             self.define_feedback(self.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.chiller_switch_valve)
             .at(ValvePort.AB)
+
             .feedback(self.cooling_demand_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.cooling_demand)
             .at(CoolingSinkPort.INPUT)
         )
+        # fmt: on
 
     def _waste_side_connections(self):
         # fmt: off

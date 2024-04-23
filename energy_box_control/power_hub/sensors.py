@@ -250,7 +250,7 @@ class YazakiSensors(FromState):
     @property
     def efficiency(self) -> float:
         return (
-            self.chill_power / self.used_power if self.used_power > 0 else float("nan")
+            -self.chill_power / self.used_power if self.used_power > 0 else float("nan")
         )
 
 
@@ -449,7 +449,7 @@ class ColdReservoirSensors(FromState):
     def fill_power(self) -> Watt:
         power = (
             self.fill_flow
-            * (self.fill_output_temperature - self.fill_input_temperature)
+            * (self.fill_input_temperature - self.fill_output_temperature)
             * self.spec.specific_heat_capacity_fill
         )
         return power if power == power else 0

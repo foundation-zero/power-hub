@@ -23,7 +23,7 @@ SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
 SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
-COOLING_DEMAND: Watt = 100 / 24 / 60 / 60  # 100 kWh / day
+COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
 
 
 HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
