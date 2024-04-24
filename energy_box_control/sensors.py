@@ -182,13 +182,10 @@ def sensors[T: type]() -> Callable[[T], T]:
             **kwargs: dict[str, Any],
         ):
             for name, annotation in get_type_hints(cls).items():
-                # value = getattr(cls, name, None)
                 if name.startswith("_"):
                     continue
                 if isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
-                # elif value == Sensor(from_weather=True):
-                #     setattr(self, name, getattr(context.weather, name))
                 elif (sub_sensor := context.sensor(name)) and type(
                     sub_sensor
                 ) == annotation:
@@ -232,9 +229,22 @@ def sensors[T: type]() -> Callable[[T], T]:
             }
             return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
 
+        def _values(sensor: Any) -> dict[str, Any]:
+            return {name: getattr(sensor, name) for name in get_type_hints(cls).keys()}
+
+        def _eq(self: Any, other: object):
+            if not isinstance(other, cls):
+                return False
+            return _values(self) == _values(other)
+
+        def _hash(self: Any):
+            return hash(_values(self))
+
         cls.__init__ = _init  # type: ignore
-        cls.is_sensor = True
         cls.from_state = _from_state  # type: ignore
+        cls.is_sensor = True
+        cls.__eq__ = _eq
+        cls.__hash__ = _hash
         return cls
 
     return _decorator
@@ -272,3 +282,7 @@ class SensorEncoder(json.JSONEncoder):
             return o.hex
         else:
             return json.JSONEncoder.default(self, o)
+
+
+def sensors_to_json(sensors: Any):
+    return json.dumps(sensors, cls=SensorEncoder)
