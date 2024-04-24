@@ -50,10 +50,10 @@ _cooling_capacity_values: list[list[KiloWatt]] = [
 ]
 
 _heat_input_values: list[list[KiloWatt]] = [
-    [12.5, 10.0, 9.0, 7.0],
-    [21.0, 18.0, 17.0, 14.0],
-    [30.0, 26.0, 25.0, 22.5],
-    [37.0, 34.0, 32.0, 27.5],
+    [12.5, 21.0, 30.0, 37.0],
+    [10.0, 18.0, 26.0, 34.0],
+    [9.0, 17.0, 25.0, 32.0],
+    [7.0, 14.0, 22.5, 27.5],
 ]
 
 _cooling_capacity_interpolator = RegularGridInterpolator(
@@ -119,16 +119,34 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 _heat_input_interpolator((cooling_in.temperature, hot_in.temperature))
             )
 
-            hot_temp_out = hot_in.temperature - heat_input / (
-                hot_in.flow * self.specific_heat_capacity_hot
+            if cooling_capacity <= 0 or heat_input <= 0:
+                logging.warning(
+                    f"No cooling capacity or heat input resulting from a cooling in temperature of {cooling_in.temperature} and hot in temperature of {hot_in.temperature} that are far outside the reference values"
+                )
+                cooling_capacity = 0
+                heat_input = 0
+
+            hot_temp_out = (
+                hot_in.temperature
+                - heat_input / (hot_in.flow * self.specific_heat_capacity_hot)
+                if hot_in.flow > 0
+                else hot_in.temperature
             )
 
-            cooling_temp_out = cooling_in.temperature + (
-                heat_input + cooling_capacity
-            ) / (cooling_in.flow * self.specific_heat_capacity_cooling)
+            cooling_temp_out = (
+                cooling_in.temperature
+                + (heat_input + cooling_capacity)
+                / (cooling_in.flow * self.specific_heat_capacity_cooling)
+                if cooling_in.flow > 0
+                else cooling_in.temperature
+            )
 
-            chilled_temp_out = chilled_in.temperature - cooling_capacity / (
-                chilled_in.flow * self.specific_heat_capacity_chilled
+            chilled_temp_out = (
+                chilled_in.temperature
+                - cooling_capacity
+                / (chilled_in.flow * self.specific_heat_capacity_chilled)
+                if chilled_in.flow > 0
+                else chilled_in.temperature
             )
 
         return YazakiState(), {

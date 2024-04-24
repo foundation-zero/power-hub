@@ -32,7 +32,7 @@ SpecificAppliance = Appliance[ApplianceState, ApplianceControl | None, Port]
 GenericControl = ApplianceControl | None
 App = TypeVar("App", bound=AnyAppliance, covariant=True)
 Prev = TypeVarTuple("Prev")
-Net = TypeVar("Net", bound="Network[Any]")
+Net = TypeVar("Net", bound="Network[Any]", covariant=True)
 FromPort = TypeVar("FromPort", bound=Port)
 ToPort = TypeVar("ToPort", bound=Port)
 From = TypeVar("From", bound=AnyAppliance, covariant=True)
@@ -42,13 +42,13 @@ ToControl = TypeVar("ToControl", bound=GenericControl)
 
 class StateGetter[App: AnyAppliance]:
     def __init__[
-        State: ApplianceState, Control: GenericControl, Port: Port
-    ](self: "StateGetter[Appliance[State, Control, Port]]", _: App, state: State):
+        State: ApplianceState, Control: GenericControl, TPort: Port
+    ](self: "StateGetter[Appliance[State, Control, TPort]]", _: App, state: State):
         self._state = state
 
     def get[
-        State: ApplianceState, Control: GenericControl, Port: Port
-    ](self: "StateGetter[Appliance[State, Control, Port]]") -> State:
+        State: ApplianceState, Control: GenericControl, TPort: Port
+    ](self: "StateGetter[Appliance[State, Control, TPort]]") -> State:
         return cast(
             State, self._state
         )  # cast should be safe; State and App are bound together
@@ -169,13 +169,13 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, Port: Port
+        State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, Port], *Prev]",
-        port: Port,
-    ) -> NetworkStateConnectionBuilder[Net, App, Port, *Prev]:
+        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort], *Prev]",
+        port: TPort,
+    ) -> NetworkStateConnectionBuilder[Net, App, TPort, *Prev]:
         return cast(
-            NetworkStateConnectionBuilder[Net, App, Port, *Prev],
+            NetworkStateConnectionBuilder[Net, App, TPort, *Prev],
             NetworkStateConnectionBuilder(
                 self._network,
                 (self._app, port),
@@ -184,9 +184,9 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
         )
 
     def value[
-        State: ApplianceState, Control: GenericControl, Port: Port
+        State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, Port], *Prev]",
+        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort], *Prev]",
         state: State,
     ) -> NetworkStateBuilder[Net, *Prev, App, State]:
         return cast(
@@ -247,13 +247,13 @@ class ApplianceConnector(Generic[Net, From, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, Port: Port
+        State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "ApplianceConnector[Net, Appliance[State, Control, Port], *Prev]",
-        from_port: Port,
-    ) -> PortFromConnector[Net, From, Port, *Prev]:
+        self: "ApplianceConnector[Net, Appliance[State, Control, TPort], *Prev]",
+        from_port: TPort,
+    ) -> PortFromConnector[Net, From, TPort, *Prev]:
         return cast(
-            PortFromConnector[Net, From, Port, *Prev],
+            PortFromConnector[Net, From, TPort, *Prev],
             PortFromConnector(self._from_app, from_port, *self._prev),
         )
 
@@ -409,9 +409,9 @@ class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
         self._app = app
 
     def value[
-        State: ApplianceState, Control: GenericControl, Port: Port
+        State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "ControlApplianceBuilder[Net, Appliance[State, Control, Port], *Prev]",
+        self: "ControlApplianceBuilder[Net, Appliance[State, Control, TPort], *Prev]",
         control: Control,
     ) -> ControlBuilder[Net, tuple[App, Control], *Prev]:
         return cast(
@@ -466,13 +466,13 @@ class ApplianceFeedback(Generic[Net, From, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, Port: Port
+        State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "ApplianceFeedback[Net, Appliance[State, Control, Port], *Prev]",
-        from_port: Port,
-    ) -> PortFromFeedback[Net, From, Port, *Prev]:
+        self: "ApplianceFeedback[Net, Appliance[State, Control, TPort], *Prev]",
+        from_port: TPort,
+    ) -> PortFromFeedback[Net, From, TPort, *Prev]:
         return cast(
-            PortFromFeedback[Net, From, Port, *Prev],
+            PortFromFeedback[Net, From, TPort, *Prev],
             PortFromFeedback(self._from_app, from_port, *self._prev),
         )
 

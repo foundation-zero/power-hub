@@ -1,7 +1,5 @@
-import json
 import queue
 import time
-from energy_box_control.simulation_json import encoder
 from energy_box_control.power_hub.control import (
     control_from_json,
     control_power_hub,
@@ -25,12 +23,7 @@ from datetime import datetime
 
 from functools import partial
 
-from energy_box_control.schedules import ConstSchedule
-from energy_box_control.power_hub.power_hub_components import (
-    GLOBAL_IRRADIANCE,
-    AMBIENT_TEMPERATURE,
-    COOLING_DEMAND,
-)
+from energy_box_control.sensors import sensors_to_json
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
@@ -66,13 +59,7 @@ def run(steps: int = 0):
     run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
     run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
 
-    power_hub = PowerHub.power_hub(
-        PowerHubSchedules(
-            ConstSchedule(GLOBAL_IRRADIANCE),
-            ConstSchedule(AMBIENT_TEMPERATURE),
-            ConstSchedule(COOLING_DEMAND),
-        )
-    )
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
@@ -85,7 +72,7 @@ def run(steps: int = 0):
     publish_to_mqtt(
         mqtt_client,
         SENSOR_VALUES_TOPIC,
-        json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
+        sensors_to_json(power_hub_sensors),
     )
 
     while True:
@@ -114,7 +101,7 @@ def run(steps: int = 0):
         publish_to_mqtt(
             mqtt_client,
             SENSOR_VALUES_TOPIC,
-            json.dumps(power_hub_sensors, cls=encoder(set("spec"))),
+            sensors_to_json(power_hub_sensors),
         )
 
         for sensor_field in fields(power_hub_sensors):

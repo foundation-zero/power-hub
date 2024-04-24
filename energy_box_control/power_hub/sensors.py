@@ -6,6 +6,15 @@ from energy_box_control.appliances.heat_exchanger import (
 )
 
 from energy_box_control.appliances.mix import MixPort
+
+from energy_box_control.power_hub.power_hub_components import (
+    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    WASTE_SWITCH_VALVE_CHILLER_POSITION,
+    WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+)
 from energy_box_control.units import (
     Celsius,
     LiterPerSecond,
@@ -32,8 +41,6 @@ class HeatPipesSensors(FromState):
     flow: LiterPerSecond = sensor(
         technical_name="FS-1001", type=SensorType.FLOW, from_port=HeatPipesPort.IN
     )
-    ambient_temperature: Celsius = sensor(from_weather=True)
-    global_irradiance: WattPerMeterSquared = sensor(from_weather=True)
     input_temperature: Celsius = sensor(
         technical_name="TS-1001",
         type=SensorType.TEMPERATURE,
@@ -47,11 +54,12 @@ class HeatPipesSensors(FromState):
 
     @property
     def power(self) -> Watt:
-        return (
+        power = (
             self.flow
             * (self.output_temperature - self.input_temperature)
             * self.spec.specific_heat_medium
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -80,15 +88,15 @@ class PcmSensors(FromState):
     def charge_flow(self) -> LiterPerSecond:
         return (
             self.hot_switch_valve.flow
-            if self.hot_switch_valve.position == 0
-            else float("nan")
+            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            else 0
         )
 
     @property
     def charge_input_temperature(self) -> Celsius:
         return (
             self.hot_switch_valve.input_temperature
-            if self.hot_switch_valve.position == 0
+            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
             else float("nan")
         )
 
@@ -96,7 +104,7 @@ class PcmSensors(FromState):
     def charge_output_temperature(self) -> Celsius:
         return (
             self.hot_mix.output_temperature
-            if self.hot_switch_valve.position == 0
+            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
             else float("nan")
         )
 
@@ -104,21 +112,23 @@ class PcmSensors(FromState):
     def charge_power(
         self,
     ) -> Watt:
-        return (
+        power = (
             self.charge_flow
             * (self.charge_input_temperature - self.charge_output_temperature)
             * self.spec.specific_heat_capacity_charge
         )
+        return power if power == power else 0
 
     @property
     def discharge_power(
         self,
     ) -> Watt:
-        return (
+        power = (
             self.discharge_flow
             * (self.discharge_output_temperature - self.discharge_input_temperature)
             * self.spec.specific_heat_capacity_discharge
         )
+        return power if power == power else 0
 
     @property
     def net_charge(self) -> Watt:
@@ -127,10 +137,6 @@ class PcmSensors(FromState):
     @property
     def charged(self) -> bool:
         return self.temperature > self.spec.phase_change_temperature
-
-    @property
-    def state_of_charge(self):
-        return float(self.temperature > self.spec.phase_change_temperature)
 
 
 @sensors()
@@ -159,7 +165,7 @@ class YazakiSensors(FromState):
     def cooling_input_temperature(self) -> Celsius:
         return (
             self.waste_switch_valve.input_temperature
-            if self.waste_switch_valve.position == 0
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
             else float("nan")
         )
 
@@ -167,7 +173,7 @@ class YazakiSensors(FromState):
     def cooling_output_temperature(self) -> Celsius:
         return (
             self.preheat_switch_valve.input_temperature
-            if self.waste_switch_valve.position == 0
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
             else float("nan")
         )
 
@@ -175,15 +181,16 @@ class YazakiSensors(FromState):
     def cooling_flow(self) -> LiterPerSecond:
         return (
             self.preheat_switch_valve.input_flow
-            if self.waste_switch_valve.position == 0
-            else float("nan")
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
+            else 0
         )
 
     @property
     def chilled_input_temperature(self) -> Celsius:
         return (
             self.chiller_switch_valve.input_temperature
-            if self.chiller_switch_valve.position == 0
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
             else float("nan")
         )
 
@@ -193,7 +200,8 @@ class YazakiSensors(FromState):
     ) -> Celsius:
         return (
             self.cold_reservoir.exchange_input_temperature
-            if self.chiller_switch_valve.position == 0
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
             else float("nan")
         )
 
@@ -201,36 +209,44 @@ class YazakiSensors(FromState):
     def chilled_flow(
         self,
     ) -> LiterPerSecond:
-        return self.cold_reservoir.exchange_flow * self.chiller_switch_valve.position
-
-    @property
-    def cool_power(self) -> Watt:
         return (
-            self.chilled_flow
-            * (self.chilled_input_temperature - self.chilled_output_temperature)
-            * self.spec.specific_heat_capacity_chilled
+            self.cold_reservoir.exchange_flow
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+            else 0
         )
 
     @property
+    def chill_power(self) -> Watt:
+        power = (
+            self.chilled_flow
+            * (self.chilled_output_temperature - self.chilled_input_temperature)
+            * self.spec.specific_heat_capacity_chilled
+        )
+        return power if power == power else 0
+
+    @property
     def waste_power(self) -> Watt:
-        return (
+        power = (
             self.cooling_flow
             * (self.cooling_output_temperature - self.cooling_input_temperature)
             * self.spec.specific_heat_capacity_cooling
         )
+        return power if power == power else 0
 
     @property
     def used_power(self) -> Watt:
-        return (
+        power = (
             self.hot_flow
             * (self.hot_input_temperature - self.hot_output_temperature)
             * self.spec.specific_heat_capacity_hot
         )
+        return power if power == power else 0
 
     @property
     def efficiency(self) -> float:
         return (
-            self.used_power / self.cool_power if self.cool_power > 0 else float("nan")
+            -self.chill_power / self.used_power if self.used_power > 0 else float("nan")
         )
 
 
@@ -255,11 +271,12 @@ class HeatExchangerSensors(FromState):
 
     @property
     def power(self) -> Watt:
-        return (
+        power = (
             self.flow
-            * (self.output_temperature - self.input_temperature)
+            * (self.input_temperature - self.output_temperature)
             * self.spec.specific_heat_capacity_A
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -284,29 +301,34 @@ class HotReservoirSensors(FromState):
 
     @property
     def fill_input_temperature(self) -> Celsius:
-        return self.preheat_reservoir.temperature
+        return (
+            self.preheat_reservoir.temperature if self.fill_flow > 0 else float("nan")
+        )
 
     @property
     def fill_power(self) -> Watt:  # estimate taking internal temperature of preheat
-        return (
+        power = (
             self.fill_flow
             * (self.fill_input_temperature - self.fill_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
     @property
     def exchange_flow(self) -> LiterPerSecond:
         return (
             self.hot_switch_valve.flow
-            if self.hot_switch_valve.position == 0
-            else float("nan")
+            if self.hot_switch_valve.position
+            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+            else 0
         )
 
     @property
     def exchange_input_temperature(self) -> Celsius:
         return (
             self.hot_switch_valve.input_temperature
-            if self.hot_switch_valve.position == 0
+            if self.hot_switch_valve.position
+            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
             else float("nan")
         )
 
@@ -314,21 +336,24 @@ class HotReservoirSensors(FromState):
     def exchange_output_temperature(self) -> Celsius:
         return (
             self.hot_mix.output_temperature
-            if self.hot_switch_valve.position == 0
+            if self.hot_switch_valve.position
+            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
             else float("nan")
         )
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
             * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
 
+        return power if power == power else 0
+
     @property
     def total_heating_power(self) -> Watt:  # power including preheat
-        return (
+        power = (
             self.fill_flow
             * (
                 self.fill_output_temperature
@@ -336,13 +361,14 @@ class HotReservoirSensors(FromState):
             )
             * self.spec.specific_heat_capacity_fill
         )
+        return power if power == power else 0
 
 
 @sensors()
 class PreHeatSensors(FromState):
     spec: Boiler
     temperature: Celsius = sensor(technical_name="TS-1039")
-    waste_switch_valve: "WasteSwitchSensors"
+    outboard_exchange: "HeatExchangerSensors"
 
     exchange_input_temperature: Celsius = sensor(
         technical_name="TS-1032",
@@ -364,15 +390,16 @@ class PreHeatSensors(FromState):
 
     @property
     def exchange_flow(self) -> LiterPerSecond:
-        return self.waste_switch_valve.input_temperature
+        return self.outboard_exchange.flow
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
             * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -416,19 +443,21 @@ class ColdReservoirSensors(FromState):
 
     @property
     def fill_power(self) -> Watt:
-        return (
+        power = (
             self.fill_flow
             * (self.fill_input_temperature - self.fill_output_temperature)
             * self.spec.specific_heat_capacity_fill
         )
+        return power if power == power else 0
 
     @property
     def exchange_power(self) -> Watt:
-        return (
+        power = (
             self.exchange_flow
             * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
+        return power if power == power else 0
 
 
 @sensors()
@@ -495,7 +524,7 @@ class ChillerSensors(FromState):
     def cooling_input_temperature(self) -> Celsius:
         return (
             self.waste_switch_valve.input_temperature
-            if self.waste_switch_valve.position == 1
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_CHILLER_POSITION
             else float("nan")
         )
 
@@ -503,7 +532,7 @@ class ChillerSensors(FromState):
     def cooling_output_temperature(self) -> Celsius:
         return (
             self.preheat_switch_valve.input_temperature
-            if self.waste_switch_valve.position == 1
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_CHILLER_POSITION
             else float("nan")
         )
 
@@ -511,15 +540,16 @@ class ChillerSensors(FromState):
     def cooling_flow(self) -> LiterPerSecond:
         return (
             self.preheat_switch_valve.input_flow
-            if self.waste_switch_valve.position == 1
-            else float("nan")
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_CHILLER_POSITION
+            else 0
         )
 
     @property
     def chilled_input_temperature(self) -> Celsius:
         return (
             self.chiller_switch_valve.input_temperature
-            if self.chiller_switch_valve.position == 1
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_CHILLER_POSITION
             else float("nan")
         )
 
@@ -529,7 +559,8 @@ class ChillerSensors(FromState):
     ) -> Celsius:
         return (
             self.cold_reservoir.exchange_input_temperature
-            if self.chiller_switch_valve.position == 1
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_CHILLER_POSITION
             else float("nan")
         )
 
@@ -539,25 +570,34 @@ class ChillerSensors(FromState):
     ) -> LiterPerSecond:
         return (
             self.cold_reservoir.exchange_flow
-            if self.chiller_switch_valve.position == 1
-            else float("nan")
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_CHILLER_POSITION
+            else 0
         )
 
     @property
-    def cool_power(self) -> Watt:
-        return (
+    def chill_power(self) -> Watt:
+        power = (
             self.chilled_flow
-            * (self.chilled_input_temperature - self.chilled_output_temperature)
+            * (self.chilled_output_temperature - self.chilled_input_temperature)
             * self.spec.specific_heat_capacity_chilled
         )
+        return power if power == power else 0
 
     @property
     def waste_heat(self) -> Watt:
-        return (
+        power = (
             self.cooling_flow
             * (self.cooling_output_temperature - self.cooling_input_temperature)
             * self.spec.specific_heat_capacity_cooling
         )
+        return power if power == power else 0
+
+
+@dataclass
+class WeatherSensors:
+    ambient_temperature: Celsius
+    global_irradiance: WattPerMeterSquared
 
 
 @dataclass
@@ -578,6 +618,7 @@ class PowerHubSensors(NetworkSensors):
     waste_switch_valve: WasteSwitchSensors
     outboard_exchange: HeatExchangerSensors
     hot_mix: HotMixSensors
+    weather: WeatherSensors
 
 
 SensorName = str
