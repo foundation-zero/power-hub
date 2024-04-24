@@ -138,7 +138,7 @@ def initial_control_state() -> PowerHubControlState:
             pcm_yazaki_temperature=80,
             cold_reservoir_yazaki_temperature=8,
             cold_reservoir_chiller_temperature=11,
-            preheat_reservoir_temperature=38,
+            preheat_reservoir_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on tazaki cooling in temp
         ),
         hot_control=HotControlState(
             context=Context(),

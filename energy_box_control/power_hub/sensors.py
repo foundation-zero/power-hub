@@ -396,7 +396,7 @@ class PreHeatSensors(FromState):
     def exchange_power(self) -> Watt:
         power = (
             self.exchange_flow
-            * (self.exchange_output_temperature - self.exchange_input_temperature)
+            * (self.exchange_input_temperature - self.exchange_output_temperature)
             * self.spec.specific_heat_capacity_exchange
         )
         return power if power == power else 0

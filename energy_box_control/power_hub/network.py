@@ -58,7 +58,6 @@ import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
 from energy_box_control.schedules import ConstSchedule, Schedule
-from energy_box_control.sensors import WeatherSensors
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
 
@@ -654,7 +653,7 @@ class PowerHub(Network[PowerHubSensors]):
         context.from_sensor(
             WeatherSensors(
                 phc.AMBIENT_TEMPERATURE,
-                self.schedules.global_irradiance_schedule.at(state.time),
+                self.schedules.global_irradiance.at(state.time),
             ),
             context.subject.weather,
         )
