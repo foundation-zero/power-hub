@@ -1,20 +1,21 @@
 from http import HTTPStatus
-from typing import Union
-from dataclass_wizard import JSONWizard  # type: ignore
+from dacite import from_dict
 from dataclasses import dataclass
-
-import requests
+import aiohttp
 from energy_box_control.units import (
     Celsius,
     HectoPascal,
     MeterPerSecond,
-    MoisturePercentage,
-    MeteorologicalDegree,
-    Degrees,
+    Percentage,
+    Degree,
 )
 from datetime import datetime, timedelta
-from quart import Quart
 import os
+import json
+
+
+class CacheMissError(Exception):
+    pass
 
 
 UNIT_SYSTEM = "metric"
@@ -43,12 +44,13 @@ class DailyTemp(DailyFeelsLike):
 
 @dataclass
 class CurrentWeather:
+    dt: int
     temp: Celsius
     feels_like: Celsius
     pressure: HectoPascal
-    humidity: MoisturePercentage
+    humidity: Percentage
     wind_speed: MeterPerSecond
-    wind_deg: MeteorologicalDegree
+    wind_deg: Degree
     weather: list[Weather]
 
 
@@ -59,43 +61,55 @@ class DailyWeather:
     temp: DailyTemp
     feels_like: DailyFeelsLike
     pressure: HectoPascal
-    humidity: MoisturePercentage
+    humidity: Percentage
     wind_speed: MeterPerSecond
-    wind_deg: MeteorologicalDegree
+    wind_deg: Degree
     weather: list[Weather]
 
 
 @dataclass
-class HourlyWeather(CurrentWeather):
-    dt: int
-
-
-@dataclass
-class WeatherResponse(JSONWizard):
-    lat: Degrees
-    lon: Degrees
+class WeatherResponse:
+    lat: float
+    lon: float
     current: CurrentWeather
-    hourly: list[HourlyWeather]
+    hourly: list[CurrentWeather]
     daily: list[DailyWeather]
     timezone: str
 
 
-def get_open_weather(lat: Degrees, lon: Degrees) -> str:
-    r = requests.get(
-        f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={os.environ['OPEN_WEATHER_API_KEY']}&units={UNIT_SYSTEM}"
-    )
-    if r.status_code != HTTPStatus.OK:
-        raise Exception
-    return r.text
+class WeatherClient:
 
+    def __init__(self) -> None:
+        self.cached_weather: dict[
+            tuple[float, float], tuple[datetime, WeatherResponse] | None
+        ] = {}
 
-async def get_weather(
-    lat: Degrees, lon: Degrees, app: Quart, cache_delta: timedelta = timedelta(hours=1)
-) -> Union[WeatherResponse, list[WeatherResponse]]:
-    if (lat, lon) in app.weather and (  # type: ignore
-        datetime.now() - app.weather[(lat, lon)]["datetime"]  # type: ignore
-    ) < cache_delta:
-        return app.weather[(lat, lon)]["weather"]  # type: ignore
-    weather = WeatherResponse.from_json(get_open_weather(lat, lon))  # type: ignore
-    app.weather[(lat, lon)] = {"datetime": datetime.now(), "weather": weather}  # type: ignore
-    return weather
+    async def get_weather(
+        self, lat: float, lon: float, cache_delta: timedelta = timedelta(hours=1)
+    ) -> WeatherResponse:
+        try:
+            return self._get_weather_from_cache(lat, lon, cache_delta)
+        except CacheMissError:
+            weather = await self._fetch_weather(lat, lon)
+            self.cached_weather[(lat, lon)] = (datetime.now(), weather)
+            return weather
+
+    def _get_weather_from_cache(
+        self, lat: float, lon: float, cache_delta: timedelta
+    ) -> WeatherResponse:
+        if self.cached_weather and (entry := self.cached_weather.get((lat, lon), None)):
+            time, weather = entry
+            if (datetime.now() - time) < cache_delta:
+                return weather
+        raise CacheMissError(f"No recent weather for {lat}, {lon} exists in cache.")
+
+    async def _fetch_weather(self, lat: float, lon: float) -> WeatherResponse:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={os.environ['OPEN_WEATHER_API_KEY']}&units={UNIT_SYSTEM}"
+            ) as response:
+                if response.status != HTTPStatus.OK:
+                    raise Exception(
+                        f"Call to Open Weather failed with status {response.status}"
+                    )
+                return from_dict(WeatherResponse, json.loads(await response.text()))

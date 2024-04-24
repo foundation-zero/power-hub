@@ -14,8 +14,7 @@ from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import get_sensor_class_properties
-from energy_box_control.api.weather import get_weather
-from energy_box_control.units import Degrees
+from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", ".env")
@@ -27,7 +26,6 @@ DEFAULT_MINUTES_BACK = 60
 DEFAULT_POWER_INTERVAL_SECONDS = 10
 
 app = Quart(__name__)
-app.weather = {}  # type: ignore
 QuartSchema(
     app,
     security=[{"power_hub_api": []}],
@@ -67,8 +65,8 @@ class ComputedValuesQuery(ValuesQuery):
 
 @dataclass
 class WeatherQuery:
-    lat: Degrees
-    lon: Degrees
+    lat: float
+    lon: float
 
 
 def build_query_range(minutes_back: float) -> tuple[datetime, datetime]:
@@ -160,6 +158,12 @@ async def influx_client():
         print(e)
 
 
+@app.while_serving
+async def weather_client():
+    app.weather_client = WeatherClient()  # type: ignore
+    yield
+
+
 @app.route("/")
 async def hello_world() -> str:
     return "Hello World!"
@@ -226,46 +230,44 @@ async def get_values_total(
 
 
 WeatherProperty = str
-WEATHER_LOCATION_WHITELIST = [(41.3874, 2.1686)]
+WEATHER_LOCATION_WHITELIST = {(41.3874, 2.1686)}
 
 
 @no_type_check
 def check_weather_location_whitelist(f):
     @wraps(f)
     @no_type_check
-    async def decorator(*args, **kwargs):
-        lat = kwargs["query_args"].lat
-        lon = kwargs["query_args"].lon
+    async def decorator(*args, query_args, **kwargs):
+        lat = query_args.lat
+        lon = query_args.lon
         if (lat, lon) not in WEATHER_LOCATION_WHITELIST:
             return await make_response(
                 f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist.",
                 HTTPStatus.UNPROCESSABLE_ENTITY,
             )
-        return await f(*args, **kwargs)
+        return await f(*args, query_args=query_args, **kwargs)
 
     return decorator
 
 
 @app.route("/weather/current")
-@no_type_check
 @token_required
 @validate_querystring(WeatherQuery)  # type: ignore
 @check_weather_location_whitelist
 async def get_current_weather(
     query_args: WeatherQuery,
-) -> dict[WeatherProperty, float | str]:
-    return (await get_weather(query_args.lat, query_args.lon, app)).current
+) -> dict[WeatherProperty, float | str | list[dict[str, str]]]:
+    return (await app.weather_client.get_weather(query_args.lat, query_args.lon)).current  # type: ignore
 
 
 @app.route("/weather/hourly")
-@no_type_check
 @token_required
 @validate_querystring(WeatherQuery)  # type: ignore
 @check_weather_location_whitelist
 async def get_hourly_weather(
     query_args: WeatherQuery,
-) -> dict[WeatherProperty, float | str]:
-    return (await get_weather(query_args.lat, query_args.lon, app)).hourly
+) -> list[CurrentWeather]:
+    return (await app.weather_client.get_weather(query_args.lat, query_args.lon)).hourly  # type: ignore
 
 
 @app.route("/weather/daily")
@@ -275,9 +277,11 @@ async def get_hourly_weather(
 @check_weather_location_whitelist
 async def get_daily_weather(
     query_args: WeatherQuery,
-) -> dict[WeatherProperty, float | str]:
+) -> list[DailyWeather]:
     return (
-        await get_weather(query_args.lat, query_args.lon, app, timedelta(days=1))
+        await app.weather_client.get_weather(
+            query_args.lat, query_args.lon, timedelta(days=1)
+        )
     ).daily
 
 

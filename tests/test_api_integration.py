@@ -122,9 +122,7 @@ def lat_lon():
 def test_get_current_weather(headers, lat_lon):
     response = requests.get(f"{BASE_URL}/weather/current{lat_lon}", headers=headers)
     assert response.status_code == HTTPStatus.OK
-    assert set(["temp", "feels_like", "pressure"]).issubset(
-        json.loads(response.text).keys()
-    )
+    assert {"temp", "feels_like", "pressure"}.issubset(json.loads(response.text).keys())
 
 
 @pytest.mark.integration
@@ -136,4 +134,4 @@ def test_get_hourly_weather(headers, lat_lon, forecast_window):
     weather = json.loads(response.text)
     assert response.status_code == HTTPStatus.OK
     assert type(weather) == list
-    assert set(["temp", "feels_like", "pressure"]).issubset(weather[0])
+    assert set(["temp", "feels_like", "pressure"]).issubset(next(iter(weather)))
