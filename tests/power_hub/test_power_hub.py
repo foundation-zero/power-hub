@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 from functools import partial
+from hypothesis import example
 from numpy import power
 from pytest import approx, fixture
 from energy_box_control.appliances import (
@@ -72,7 +74,7 @@ def test_power_hub_sensors(power_hub):
 
 def test_derived_sensors(power_hub, min_max_temperature):
 
-    state = power_hub.simple_initial_state(power_hub)
+    state = power_hub.simple_initial_state(datetime.now())
     control_values = no_control(power_hub)
 
     for i in range(500):
@@ -108,26 +110,29 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
 
     result = run_simulation(
         power_hub,
-        power_hub.simple_initial_state(),
+        power_hub.simple_initial_state(step_size=timedelta()),
         no_control(power_hub),
-        initial_control_state(),
+        None,
         None,
         min_max_temperature,
-        5000,
+        500,
     )
 
     assert isinstance(result, SimulationSuccess)
 
 
 def test_power_hub_simulation_control(power_hub, min_max_temperature):
-    result = run_simulation(
-        power_hub,
-        power_hub.simple_initial_state(),
-        no_control(power_hub),
-        initial_control_state(),
-        partial(control_power_hub, power_hub),
-        min_max_temperature,
-        500,
-    )
 
-    assert isinstance(result, SimulationSuccess)
+    for seconds in [1, 60, 60 * 60, 60 * 60 * 24]:
+
+        result = run_simulation(
+            power_hub,
+            power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
+            no_control(power_hub),
+            initial_control_state(),
+            partial(control_power_hub, power_hub),
+            min_max_temperature,
+            500,
+        )
+
+        assert isinstance(result, SimulationSuccess)

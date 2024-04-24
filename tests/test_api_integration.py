@@ -13,6 +13,7 @@ from energy_box_control.api.api import (
 )
 from dotenv import load_dotenv
 from http import HTTPStatus
+from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 
 
 BASE_URL = "http://0.0.0.0:5001"
@@ -29,10 +30,10 @@ def api_is_up():
         return False
 
 
-async def influx_has_entries():
+async def influx_has_entries(client: InfluxDBClientAsync):
     try:
         results = await execute_influx_query(
-            get_influx_client(),
+            client,
             build_get_values_query(
                 5,
                 "heat_pipes",
@@ -45,11 +46,12 @@ async def influx_has_entries():
 
 
 async def _check_simulation_entries():
-    async with asyncio.timeout(20):
-        while True:
-            if await influx_has_entries():
-                break
-            await asyncio.sleep(0.5)
+    async with get_influx_client() as client:
+        async with asyncio.timeout(20):
+            while True:
+                if await influx_has_entries(client):
+                    break
+                await asyncio.sleep(0.5)
 
 
 async def _check_api_is_up():

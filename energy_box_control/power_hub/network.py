@@ -48,15 +48,16 @@ from energy_box_control.network import (
     NetworkState,
 )
 
+
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
+    WeatherSensors,
 )
 
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
 from energy_box_control.schedules import ConstSchedule, Schedule
-from energy_box_control.sensors import WeatherSensors
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
 
@@ -113,6 +114,8 @@ class PowerHub(Network[PowerHubSensors]):
     cooling_demand_pump: SwitchPump
     cooling_demand: CoolingSink
 
+    schedules: "PowerHubSchedules"
+
     def __post_init__(self):
         super().__init__()
 
@@ -153,6 +156,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_source,
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
+            schedules,
         )
 
     @staticmethod
@@ -244,14 +248,18 @@ class PowerHub(Network[PowerHubSensors]):
         )
 
     def simple_initial_state(
-        self, start_time: datetime = datetime.now()
+        self,
+        start_time: datetime = datetime.now(),
+        step_size: timedelta = timedelta(seconds=1),
     ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
         return (
             self.define_state(self.heat_pipes)
             .value(HeatPipesState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.heat_pipes_valve)
-            .value(ValveState(0))  # all to circuit, no bypass
+            .value(
+                ValveState(phc.HEAT_PIPES_BYPASS_OPEN_POSITION)
+            )  # all to circuit, no bypass
             .define_state(self.heat_pipes_pump)
             .value(SwitchPumpState())
             .define_state(self.heat_pipes_mix)
@@ -259,19 +267,25 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.hot_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.hot_switch_valve)
-            .value(ValveState(0))  # everything to pcm, nothing to hot reservoir
+            .value(
+                ValveState(phc.HOT_RESERVOIR_PCM_VALVE_PCM_POSITION)
+            )  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
             .value(ApplianceState())
             .define_state(self.pcm)
             .value(PcmState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.chiller_switch_valve)
-            .value(ValveState(0))  # everything to Yazaki, nothing to chiller
+            .value(
+                ValveState(phc.CHILLER_SWITCH_VALVE_YAZAKI_POSITION)
+            )  # everything to Yazaki, nothing to chiller
             .define_state(self.yazaki)
             .value(YazakiState())
             .define_state(self.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
             .define_state(self.yazaki_hot_bypass_valve)
-            .value(ValveState(0))  # all to pcm, no bypass
+            .value(
+                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION)
+            )  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
             .define_state(self.chiller)
@@ -283,15 +297,17 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.chilled_loop_pump)
             .value(SwitchPumpState())
             .define_state(self.waste_bypass_valve)
-            .value(ValveState(0))  # no bypass, all to chillers
+            .value(
+                ValveState(phc.WASTE_BYPASS_VALVE_OPEN_POSITION)
+            )  # no bypass, all to chillers
             .define_state(self.waste_bypass_mix)
             .value(ApplianceState())
             .define_state(self.waste_switch_valve)
-            .value(ValveState(0))  # all to Yazaki
+            .value(ValveState(phc.WASTE_SWITCH_VALVE_YAZAKI_POSITION))  # all to Yazaki
             .define_state(self.waste_mix)
             .value(ApplianceState())
             .define_state(self.preheat_switch_valve)
-            .value(ValveState(1))  # no preheat
+            .value(ValveState(phc.PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))  # no preheat
             .define_state(self.preheat_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.preheat_mix)
@@ -327,7 +343,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.cooling_demand)
             .value(ApplianceState())
-            .build(ProcessTime(timedelta(seconds=1), 0, start_time))
+            .build(ProcessTime(step_size, 0, start_time))
         )
 
     def connections(self) -> NetworkConnections[Self]:
@@ -486,8 +502,6 @@ class PowerHub(Network[PowerHubSensors]):
             .to(self.cooling_demand_pump)
             .at(SwitchPumpPort.IN)
 
-
-
             .connect(self.cooling_demand)
             .at(CoolingSinkPort.OUTPUT)
             .to(self.cold_reservoir)
@@ -506,16 +520,19 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def _chilled_side_feedback(self):
+        # fmt: off
         return (
             self.define_feedback(self.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.chiller_switch_valve)
             .at(ValvePort.AB)
+
             .feedback(self.cooling_demand_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.cooling_demand)
             .at(CoolingSinkPort.INPUT)
         )
+        # fmt: on
 
     def _waste_side_connections(self):
         # fmt: off
@@ -632,11 +649,17 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
-        return PowerHubSensors.resolve_for_network(
+        context = PowerHubSensors.context()
+        context.from_sensor(
             WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
+                phc.AMBIENT_TEMPERATURE,
+                self.schedules.global_irradiance.at(state.time),
             ),
+            context.subject.weather,
+        )
+
+        return context.resolve_for_network(
+            PowerHubSensors,
             state,
             self,
         )
@@ -645,19 +668,19 @@ class PowerHub(Network[PowerHubSensors]):
         sensors = json.loads(sensor_json)
         init_order = PowerHubSensors.sensor_initialization_order()
 
-        context = PowerHubSensors.context(
-            WeatherSensors(
-                ambient_temperature=phc.AMBIENT_TEMPERATURE,
-                global_irradiance=phc.GLOBAL_IRRADIANCE,
-            )
-        )
+        context = PowerHubSensors.context()
 
         with context:
+            context.from_sensor(
+                WeatherSensors(**sensors["weather"]), context.subject.weather
+            )
             for sensor in init_order:
-                context.from_values(
-                    sensors[sensor.name],
-                    sensor.type,
-                    getattr(context.subject, sensor.name),
-                    getattr(self, sensor.name),
-                )
+                appliance = getattr(self, sensor.name, None)
+                if appliance:
+                    context.from_values(
+                        sensors[sensor.name],
+                        sensor.type,
+                        getattr(context.subject, sensor.name),
+                        appliance,
+                    )
             return context.result()

@@ -14,7 +14,7 @@ from energy_box_control.appliances.mix import Mix
 from energy_box_control.appliances.pcm import Pcm
 from energy_box_control.appliances.source import Source
 from energy_box_control.appliances.switch_pump import SwitchPump
-from energy_box_control.appliances.valve import Valve
+from energy_box_control.appliances.valve import Valve, ValveControl
 from energy_box_control.appliances.yazaki import Yazaki
 
 WATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4186 * 0.997
@@ -23,7 +23,20 @@ SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
 SEAWATER_TEMP: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
-COOLING_DEMAND: Watt = 100 / 24 / 60 / 60  # 100 kWh / day
+COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
+
+
+HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
+HOT_RESERVOIR_PCM_VALVE_PCM_POSITION = ValveControl.a_position()
+CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
+CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
+WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
+WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
+WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
+YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
+
+PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
+HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.a_position()
 
 
 def heat_pipes(

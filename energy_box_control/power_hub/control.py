@@ -9,6 +9,17 @@ from energy_box_control.control.state_machines import (
     State,
     StateMachine,
 )
+from energy_box_control.power_hub.network import PowerHub
+from energy_box_control.power_hub.power_hub_components import (
+    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    WASTE_BYPASS_VALVE_OPEN_POSITION,
+    WASTE_SWITCH_VALVE_CHILLER_POSITION,
+    WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+    YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION,
+)
 from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
@@ -19,7 +30,7 @@ from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.timer import Timer
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.network import PowerHub
+
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Watt
 from enum import Enum
@@ -32,10 +43,6 @@ class HotControlMode(State):
     HEAT_RESERVOIR = "heat_reservoir"
     PREPARE_HEAT_PCM = "prepare_heat_pcm"
     HEAT_PCM = "heat_pcm"
-
-
-HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
-HOT_RESERVOIR_PCM_VALVE_PCM_POSITION = ValveControl.a_position()
 
 
 @dataclass
@@ -51,14 +58,6 @@ class ChillControlMode(Enum):
     CHILL_YAZAKI = "chill_yazaki"
     WAIT_BEFORE_CHILLER = "wait_before_chiller"
     CHILL_CHILLER = "chill_chiller"
-
-
-CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
-YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 
 
 @dataclass
@@ -139,7 +138,7 @@ def initial_control_state() -> PowerHubControlState:
             pcm_yazaki_temperature=80,
             cold_reservoir_yazaki_temperature=8,
             cold_reservoir_chiller_temperature=11,
-            preheat_reservoir_temperature=38,
+            preheat_reservoir_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on tazaki cooling in temp
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -481,7 +480,7 @@ def control_power_hub(
         .control(power_hub.cold_reservoir)
         .value(BoilerControl(False))
         .control(power_hub.fresh_water_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .combine(hot)
@@ -498,6 +497,36 @@ def control_power_hub(
             setpoints=control_state.setpoints,
         ),
         control,
+    )
+
+
+def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
+    return (
+        power_hub.control(power_hub.hot_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.preheat_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.cold_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.heat_pipes_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.pcm_to_yazaki_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.chilled_loop_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.waste_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.outboard_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(on=False))
+        .control(power_hub.chiller)
+        .value(ChillerControl(on=False))
+        .build()
     )
 
 
@@ -519,13 +548,13 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.fresh_water_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.yazaki)
-        .value(YazakiControl(on=False))
+        .value(YazakiControl(on=True))
         .control(power_hub.chiller)
         .value(ChillerControl(on=False))
         .build()
