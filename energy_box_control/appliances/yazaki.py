@@ -119,6 +119,13 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
                 _heat_input_interpolator((cooling_in.temperature, hot_in.temperature))
             )
 
+            if cooling_capacity <= 0 or heat_input <= 0:
+                logging.warning(
+                    f"No cooling capacity or heat input resulting from a cooling in temperature of {cooling_in.temperature} and hot in temperature of {hot_in.temperature} that are far outside the reference values"
+                )
+                cooling_capacity = 0
+                heat_input = 0
+
             hot_temp_out = (
                 hot_in.temperature
                 - heat_input / (hot_in.flow * self.specific_heat_capacity_hot)
