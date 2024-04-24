@@ -66,11 +66,11 @@ class NetworkSensors:
 class FromState(Protocol):
     @classmethod
     def from_state[
-        Cls, State: ApplianceState, Control: ApplianceControl | None, Port: Port
+        Cls, State: ApplianceState, Control: ApplianceControl | None, TPort: Port
     ](
         cls: type[Cls],
         context: "SensorContext[Any]",
-        appliance: Appliance[State, Control, Port],
+        appliance: Appliance[State, Control, TPort],
         state: NetworkState[Any],
     ) -> Cls: ...
 
@@ -116,13 +116,13 @@ class SensorContext[T]:
         return self.result()
 
     def from_state[
-        State: ApplianceState, Control: ApplianceControl | None, Port: Port
+        State: ApplianceState, Control: ApplianceControl | None, TPort: Port
     ](
         self,
         state: NetworkState[Any],
         klass: FromState,
         _location: Any,
-        appliance: Appliance[State, Control, Port],
+        appliance: Appliance[State, Control, TPort],
     ):
         key = self._accessed.pop()
         instance = klass.from_state(self, appliance, state)
@@ -243,8 +243,8 @@ def sensors[T: type]() -> Callable[[T], T]:
         cls.__init__ = _init  # type: ignore
         cls.from_state = _from_state  # type: ignore
         cls.is_sensor = True
-        cls.__eq__ = _eq
-        cls.__hash__ = _hash
+        cls.__eq__ = _eq  # type: ignore
+        cls.__hash__ = _hash  # type: ignore
         return cls
 
     return _decorator
