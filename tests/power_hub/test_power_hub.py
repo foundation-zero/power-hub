@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from energy_box_control.power_hub.control import (
     PowerHubControlState,
     control_power_hub,
+    initial_control_all_off,
     initial_control_state,
     no_control,
 )
@@ -111,7 +112,7 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
     result = run_simulation(
         power_hub,
         power_hub.simple_initial_state(step_size=timedelta()),
-        no_control(power_hub),
+        initial_control_all_off(power_hub),
         None,
         None,
         min_max_temperature,
@@ -128,11 +129,33 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature):
         result = run_simulation(
             power_hub,
             power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
-            no_control(power_hub),
+            initial_control_all_off(power_hub),
             initial_control_state(),
             partial(control_power_hub, power_hub),
             min_max_temperature,
             500,
+        )
+
+        assert isinstance(result, SimulationSuccess)
+
+
+def test_power_hub_simulation_data_schedule(min_max_temperature):
+
+    schedules = PowerHubSchedules.schedules_from_data()
+    power_hub = PowerHub.power_hub(schedules)
+
+    schedule_start = schedules.ambient_temperature.schedule_start  # type: ignore
+
+    for seconds in [1, 60, 360]:
+
+        result = run_simulation(
+            power_hub,
+            power_hub.simple_initial_state(schedule_start, timedelta(seconds=seconds)),
+            initial_control_all_off(power_hub),
+            initial_control_state(),
+            partial(control_power_hub, power_hub),
+            min_max_temperature,
+            100,
         )
 
         assert isinstance(result, SimulationSuccess)

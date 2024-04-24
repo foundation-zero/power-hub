@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from math import floor
 from typing import Protocol
@@ -22,7 +22,7 @@ class ConstSchedule[T](Schedule[T]):
 class PeriodicSchedule[T](Schedule[T]):
     schedule_start: datetime
     period: timedelta
-    values: list[T]
+    values: list[T] = field(compare=False)
 
     def at(self, time: ProcessTime) -> T:
         return self.values[
@@ -37,10 +37,10 @@ class PeriodicSchedule[T](Schedule[T]):
 class GivenSchedule[T](Schedule[T]):
     schedule_start: datetime
     schedule_end: datetime
-    values: list[T]
+    values: list[T] = field(compare=False)
 
     def at(self, time: ProcessTime) -> T:
-        if not self.schedule_start < time.timestamp < self.schedule_end:
+        if not self.schedule_start <= time.timestamp <= self.schedule_end:
             raise ValueError(
                 f"Time {time.timestamp.strftime('%d/%m/%Y %H:%M:%S')} is outside of given schedule {self}"
             )

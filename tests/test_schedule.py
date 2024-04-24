@@ -1,7 +1,9 @@
 import re
+from pandas import read_parquet
 import pytest
 from datetime import datetime, timedelta
 
+from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.time import ProcessTime
 from energy_box_control.schedules import ConstSchedule, PeriodicSchedule, GivenSchedule
 
@@ -88,3 +90,21 @@ def test_outside_give_schedule(given_schedule):
         ),
     ):
         given_schedule.at(sim_time)
+
+
+def test_schedules_from_data():
+
+    data = read_parquet("powerhub_simulation_schedules_data.parquet")
+
+    schedule = PowerHubSchedules.schedules_from_data()
+
+    assert (
+        schedule.global_irradiance.at(
+            ProcessTime(
+                timedelta(hours=1),
+                0,
+                schedule.global_irradiance.schedule_start + timedelta(hours=4),  # type: ignore
+            )
+        )
+        == data["Global Horizontal Radiation"].iloc[4]
+    )

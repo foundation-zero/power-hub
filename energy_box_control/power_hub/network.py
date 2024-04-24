@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import json
 
 from typing import Self
+
+from pandas import read_parquet
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -57,7 +59,7 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import ConstSchedule, Schedule
+from energy_box_control.schedules import ConstSchedule, GivenSchedule, Schedule
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
 
@@ -74,6 +76,19 @@ class PowerHubSchedules:
             ConstSchedule(phc.GLOBAL_IRRADIANCE),
             ConstSchedule(phc.AMBIENT_TEMPERATURE),
             ConstSchedule(phc.COOLING_DEMAND),
+        )
+
+    @staticmethod
+    def schedules_from_data() -> "PowerHubSchedules":
+        data = read_parquet("powerhub_simulation_schedules_data.parquet")
+
+        start = data.index[0].to_pydatetime()  # type: ignore
+        end = data.index[-1].to_pydatetime()  # type: ignore
+
+        return PowerHubSchedules(
+            GivenSchedule(start, end, data["Global Horizontal Radiation"].to_list()),  # type: ignore
+            GivenSchedule(start, end, data["Dry Bulb Temperature"].to_list()),  # type: ignore
+            GivenSchedule(start, end, data["Cooling Demand"].to_list()),  # type: ignore
         )
 
 
