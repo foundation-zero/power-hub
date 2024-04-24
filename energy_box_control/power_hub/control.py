@@ -163,10 +163,11 @@ def initial_control_state() -> PowerHubControlState:
 should_heat_reservoir = Fn.sensors(
     lambda sensors: sensors.hot_reservoir.temperature
 ) < Fn.state(lambda state: state.setpoints.hot_reservoir_temperature)
-should_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state(
-    lambda state: state.setpoints.pcm_temperature
-)
-heat_pipes_not_hot = Fn.sensors(lambda sensors: sensors.heat_pipes.power) < Fn.state(
+should_heat_pcm = (
+    Fn.sensors(lambda sensors: sensors.pcm.temperature)
+    < Fn.state(lambda state: state.setpoints.pcm_temperature)
+) & ~should_heat_reservoir
+heat_pipes_no_power = Fn.sensors(lambda sensors: sensors.heat_pipes.power) < Fn.state(
     lambda state: state.setpoints.minimal_heat_pipes_power
 )
 
@@ -195,7 +196,7 @@ hot_transitions: dict[
     (
         HotControlMode.HEAT_RESERVOIR,
         HotControlMode.WAITING_FOR_SUN,
-    ): heat_pipes_not_hot.holds_true(
+    ): heat_pipes_no_power.holds_true(
         Marker("heat_pipes_not_hot"), timedelta(minutes=1)
     ),
     (HotControlMode.HEAT_PCM, HotControlMode.READY): (~should_heat_pcm).holds_true(
@@ -204,7 +205,7 @@ hot_transitions: dict[
     (
         HotControlMode.HEAT_PCM,
         HotControlMode.WAITING_FOR_SUN,
-    ): heat_pipes_not_hot.holds_true(
+    ): heat_pipes_no_power.holds_true(
         Marker("heat_pipes_not_hot"), timedelta(minutes=1)
     ),
     (HotControlMode.WAITING_FOR_SUN, HotControlMode.READY): Fn.const_pred(
