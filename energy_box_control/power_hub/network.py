@@ -69,6 +69,8 @@ class PowerHubSchedules:
     global_irradiance: Schedule[WattPerMeterSquared]
     ambient_temperature: Schedule[Celsius]
     cooling_demand: Schedule[Watt]
+    seawater_temperatue: Schedule[Celsius]
+    freshwater_temperature: Schedule[Celsius]
 
     @staticmethod
     def const_schedules() -> "PowerHubSchedules":
@@ -76,6 +78,8 @@ class PowerHubSchedules:
             ConstSchedule(phc.GLOBAL_IRRADIANCE),
             ConstSchedule(phc.AMBIENT_TEMPERATURE),
             ConstSchedule(phc.COOLING_DEMAND),
+            ConstSchedule(phc.SEAWATER_TEMPERATURE),
+            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )
 
     @staticmethod
@@ -89,6 +93,8 @@ class PowerHubSchedules:
             GivenSchedule(start, end, data["Global Horizontal Radiation"].to_list()),  # type: ignore
             GivenSchedule(start, end, data["Dry Bulb Temperature"].to_list()),  # type: ignore
             GivenSchedule(start, end, data["Cooling Demand"].to_list()),  # type: ignore
+            ConstSchedule(phc.SEAWATER_TEMPERATURE),
+            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )
 
 
@@ -165,10 +171,10 @@ class PowerHub(Network[PowerHubSensors]):
             phc.chiller_waste_bypass_valve,
             phc.chiller_waste_mix,
             phc.fresh_water_pump,
-            phc.fresh_water_source,
+            phc.fresh_water_source(schedules.freshwater_temperature),
             phc.outboard_exchange,
             phc.outboard_pump,
-            phc.outboard_source,
+            phc.outboard_source(schedules.seawater_temperatue),
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
             schedules,

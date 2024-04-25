@@ -20,7 +20,8 @@ from energy_box_control.appliances.yazaki import Yazaki
 WATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4186 * 0.997
 GLYCOL_SPECIFIC_HEAT: JoulePerLiterKelvin = 3840 * 0.993  # Tyfocor LS @80C
 SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
-SEAWATER_TEMP: Celsius = 24
+SEAWATER_TEMPERATURE: Celsius = 24
+FRESHWATER_TEMPERATURE: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
@@ -134,9 +135,19 @@ waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 chiller_waste_bypass_valve = Valve()
 chiller_waste_mix = Mix()
 fresh_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
-fresh_water_source = Source(float("nan"), SEAWATER_TEMP)
+
+
+def fresh_water_source(freshwater_temperature_schedule: Schedule[Celsius]):
+    return Source(float("nan"), freshwater_temperature_schedule)
+
+
 outboard_pump = SwitchPump(300 / 60, SWITCH_PUMP_POWER)
-outboard_source = Source(float("nan"), SEAWATER_TEMP)
+
+
+def outboard_source(seawater_temperature_schedule: Schedule[Celsius]):
+    return Source(float("nan"), seawater_temperature_schedule)
+
+
 cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 
 
