@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from hypothesis import example
 from numpy import power
+from pandas import read_csv, read_parquet
 from pytest import approx, fixture
 from energy_box_control.appliances import (
     HeatPipesPort,
@@ -28,6 +29,8 @@ from energy_box_control.power_hub.control import (
     no_control,
 )
 import energy_box_control.power_hub.power_hub_components as phc
+from energy_box_control.time import ProcessTime
+from energy_box_control.units import Celsius, Watt, WattPerMeterSquared
 from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.schedules import ConstSchedule
@@ -161,3 +164,23 @@ def test_power_hub_simulation_data_schedule(min_max_temperature):
         )
 
         assert isinstance(result, SimulationSuccess)
+
+
+def test_power_hub_schedules_from_data():
+
+    data = read_csv(
+        "powerhub_simulation_schedules_Jun_Oct_TMY.csv", index_col=0, parse_dates=True
+    )
+
+    schedule = PowerHubSchedules.schedules_from_data()
+
+    assert (
+        schedule.global_irradiance.at(
+            ProcessTime(
+                timedelta(hours=1),
+                0,
+                schedule.global_irradiance.schedule_start + timedelta(hours=4),  # type: ignore
+            )
+        )
+        == data["Global Horizontal Radiation"].iloc[4]
+    )

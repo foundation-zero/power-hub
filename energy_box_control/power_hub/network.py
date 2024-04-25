@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
 
-from typing import Self
+from typing import Self, cast
 
-from pandas import read_parquet
+from pandas import read_csv, DataFrame  # type: ignore
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -84,15 +84,27 @@ class PowerHubSchedules:
 
     @staticmethod
     def schedules_from_data() -> "PowerHubSchedules":
-        data = read_parquet("powerhub_simulation_schedules_data.parquet")
+        data: DataFrame = read_csv(
+            "powerhub_simulation_schedules_Jun_Oct_TMY.csv",
+            index_col=0,
+            parse_dates=True,
+        )
 
-        start = data.index[0].to_pydatetime()  # type: ignore
-        end = data.index[-1].to_pydatetime()  # type: ignore
+        start = cast(datetime, data.index[0].to_pydatetime())  # type: ignore
+        end = cast(datetime, data.index[-1].to_pydatetime())  # type: ignore
+
+        global_irradiance_values = cast(
+            list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore
+        )
+        ambient_temperature_values = cast(
+            list[Celsius], data["Dry Bulb Temperature"].to_list()  # type: ignore
+        )
+        cooling_demand_values = cast(list[Watt], data["Cooling Demand"].to_list())  # type: ignore
 
         return PowerHubSchedules(
-            GivenSchedule(start, end, data["Global Horizontal Radiation"].to_list()),  # type: ignore
-            GivenSchedule(start, end, data["Dry Bulb Temperature"].to_list()),  # type: ignore
-            GivenSchedule(start, end, data["Cooling Demand"].to_list()),  # type: ignore
+            GivenSchedule(start, end, global_irradiance_values),
+            GivenSchedule(start, end, ambient_temperature_values),
+            GivenSchedule(start, end, cooling_demand_values),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )
