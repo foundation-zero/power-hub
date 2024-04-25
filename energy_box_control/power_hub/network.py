@@ -670,17 +670,16 @@ class PowerHub(Network[PowerHubSensors]):
 
         context = PowerHubSensors.context()
 
-        with context:
-            context.from_sensor(
-                WeatherSensors(**sensors["weather"]), context.subject.weather
-            )
-            for sensor in init_order:
-                appliance = getattr(self, sensor.name, None)
-                if appliance:
-                    context.from_values(
-                        sensors[sensor.name],
-                        sensor.type,
-                        getattr(context.subject, sensor.name),
-                        appliance,
-                    )
-            return context.result()
+        context.from_sensor(
+            WeatherSensors(**sensors["weather"]), context.subject.weather
+        )
+        for sensor in init_order:
+            appliance = getattr(self, sensor.name, None)
+            if appliance:
+                context.from_values(
+                    sensors[sensor.name],
+                    sensor.type,
+                    getattr(context.subject, sensor.name),
+                    appliance,
+                )
+        return context.result()

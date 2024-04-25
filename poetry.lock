@@ -668,7 +668,7 @@ pyright = "^1.1.318"
 type = "git"
 url = "https://github.com/foundation-zero/fluxy.git"
 reference = "main"
-resolved_reference = "57222b2b381bf1b553c39a99d405d21b938c3a86"
+resolved_reference = "f7fb9831b4a82cfab5e7d049dc422807cf359d57"
 
 [[package]]
 name = "fonttools"

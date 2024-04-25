@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from energy_box_control.appliances import HeatPipes, HeatPipesPort
+from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -7,6 +7,7 @@ from energy_box_control.appliances.heat_exchanger import (
 
 from energy_box_control.appliances.mix import MixPort
 
+from energy_box_control.appliances.switch_pump import SwitchPumpPort
 from energy_box_control.power_hub.power_hub_components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
@@ -594,6 +595,18 @@ class ChillerSensors(FromState):
         return power if power == power else 0
 
 
+@sensors()
+class SwitchPumpSensors(FromState):
+    spec: SwitchPump
+    flow_out: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=SwitchPumpPort.OUT
+    )
+
+    @property
+    def power_consumed(self) -> Watt:
+        return self.spec.power_demand if self.flow_out > 0 else 0
+
+
 @dataclass
 class WeatherSensors:
     ambient_temperature: Celsius
@@ -619,6 +632,13 @@ class PowerHubSensors(NetworkSensors):
     outboard_exchange: HeatExchangerSensors
     hot_mix: HotMixSensors
     weather: WeatherSensors
+    heat_pipes_pump: SwitchPumpSensors
+    pcm_to_yazaki_pump: SwitchPumpSensors
+    chilled_loop_pump: SwitchPumpSensors
+    waste_pump: SwitchPumpSensors
+    fresh_water_pump: SwitchPumpSensors
+    outboard_pump: SwitchPumpSensors
+    cooling_demand_pump: SwitchPumpSensors
 
 
 SensorName = str
