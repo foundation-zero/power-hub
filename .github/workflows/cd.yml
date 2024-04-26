@@ -24,7 +24,7 @@ jobs:
         with:
           token: "${{ github.token }}"
           initial-status: success
-          environment-url: http://${{steps.extract-alias.outputs.alias}}.foundationzero.pages.dev
+          environment-url: http://${{steps.extract-alias.outputs.alias}}.power-hub.pages.dev
           environment: ${{steps.deploy.outputs.environment}}
 
       - name: Checkout
