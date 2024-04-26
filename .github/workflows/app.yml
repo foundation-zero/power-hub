@@ -1,14 +1,38 @@
-name: cd
-
+name: App
 on:
-  workflow_run:
-    workflows: ["Test"]
-    types:
-      - completed
+  push:
 
 jobs:
-  build:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "./app/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - run: pnpm install
+        working-directory: app
+
+      - run: pnpm lint
+        working-directory: app
+
+      - run: pnpm type-check
+        working-directory: app
+
+      - run: pnpm test:unit
+        working-directory: app
+
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
 
     permissions:
@@ -40,7 +64,7 @@ jobs:
         with:
           node-version-file: "./app/.nvmrc"
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v3
         name: Install pnpm
         id: pnpm-install
         with:
