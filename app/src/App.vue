@@ -2,9 +2,7 @@
   <v-app>
     <v-layout>
       <v-main>
-        <suspense>
-          <router-view />
-        </suspense>
+        <router-view />
       </v-main>
     </v-layout>
   </v-app>
