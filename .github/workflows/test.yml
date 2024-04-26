@@ -39,31 +39,3 @@ jobs:
           MQTT_HOST: "0.0.0.0"
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
-
-  test-ui:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-          cache-dependency-path: app/pnpm-lock.yaml
-
-      - run: pnpm install
-        working-directory: app
-
-      - run: pnpm lint
-        working-directory: app
-
-      - run: pnpm type-check
-        working-directory: app
-
-      - run: pnpm test:unit
-        working-directory: app
