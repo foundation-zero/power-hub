@@ -102,9 +102,9 @@ class PowerHubSchedules:
         cooling_demand_values = cast(list[Watt], data["Cooling Demand"].to_list())  # type: ignore
 
         return PowerHubSchedules(
-            GivenSchedule(start, end, global_irradiance_values),
-            GivenSchedule(start, end, ambient_temperature_values),
-            GivenSchedule(start, end, cooling_demand_values),
+            GivenSchedule(start, end, tuple(global_irradiance_values)),
+            GivenSchedule(start, end, tuple(ambient_temperature_values)),
+            GivenSchedule(start, end, tuple(cooling_demand_values)),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )

@@ -19,7 +19,6 @@ quart-schema = { extras = ["pydantic"], git = "https://github.com/pgjones/quart-
 pandas = "^2.2.1"
 aiohttp = "^3.9.5"
 dacite = "^1.8.1"
-pyarrow = "^16.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
@@ -35,7 +34,6 @@ pyright = "^1.1.350"
 ipykernel = "^6.29.4"
 matplotlib = "^3.8.4"
 seaborn = "^0.13.2"
-pandas-stubs = "^2.2.1.240316"
 
 [tool.pyright]
 strict = ["energy_box_control"]

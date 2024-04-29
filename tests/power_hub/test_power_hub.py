@@ -3,7 +3,7 @@ from functools import partial
 from hypothesis import example
 from numpy import power
 from pandas import read_csv, read_parquet
-from pytest import approx, fixture
+from pytest import approx, fixture, mark
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
@@ -127,43 +127,39 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
     assert isinstance(result, SimulationSuccess)
 
 
-def test_power_hub_simulation_control(power_hub, min_max_temperature):
+@mark.parametrize("seconds", [1, 60, 60 * 60, 60 * 60 * 24])
+def test_power_hub_simulation_control(power_hub, min_max_temperature, seconds):
+    result = run_simulation(
+        power_hub,
+        power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
+        initial_control_all_off(power_hub),
+        initial_control_state(),
+        partial(control_power_hub, power_hub),
+        min_max_temperature,
+        500,
+    )
 
-    for seconds in [1, 60, 60 * 60, 60 * 60 * 24]:
-
-        result = run_simulation(
-            power_hub,
-            power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
-            initial_control_all_off(power_hub),
-            initial_control_state(),
-            partial(control_power_hub, power_hub),
-            min_max_temperature,
-            500,
-        )
-
-        assert isinstance(result, SimulationSuccess)
+    assert isinstance(result, SimulationSuccess)
 
 
-def test_power_hub_simulation_data_schedule(min_max_temperature):
+@mark.parametrize("seconds", [1, 60, 360])
+def test_power_hub_simulation_data_schedule(min_max_temperature, seconds):
 
     schedules = PowerHubSchedules.schedules_from_data()
     power_hub = PowerHub.power_hub(schedules)
 
     schedule_start = schedules.ambient_temperature.schedule_start  # type: ignore
+    result = run_simulation(
+        power_hub,
+        power_hub.simple_initial_state(schedule_start, timedelta(seconds=seconds)),
+        initial_control_all_off(power_hub),
+        initial_control_state(),
+        partial(control_power_hub, power_hub),
+        min_max_temperature,
+        100,
+    )
 
-    for seconds in [1, 60, 360]:
-
-        result = run_simulation(
-            power_hub,
-            power_hub.simple_initial_state(schedule_start, timedelta(seconds=seconds)),
-            initial_control_all_off(power_hub),
-            initial_control_state(),
-            partial(control_power_hub, power_hub),
-            min_max_temperature,
-            100,
-        )
-
-        assert isinstance(result, SimulationSuccess)
+    assert isinstance(result, SimulationSuccess)
 
 
 def test_power_hub_schedules_from_data():
@@ -172,6 +168,7 @@ def test_power_hub_schedules_from_data():
         "powerhub_simulation_schedules_Jun_Oct_TMY.csv", index_col=0, parse_dates=True
     )
 
+    hour = 4
     schedule = PowerHubSchedules.schedules_from_data()
 
     assert (
@@ -179,8 +176,8 @@ def test_power_hub_schedules_from_data():
             ProcessTime(
                 timedelta(hours=1),
                 0,
-                schedule.global_irradiance.schedule_start + timedelta(hours=4),  # type: ignore
+                schedule.global_irradiance.schedule_start + timedelta(hours=hour),  # type: ignore
             )
         )
-        == data["Global Horizontal Radiation"].iloc[4]
+        == data["Global Horizontal Radiation"].iloc[hour]
     )
