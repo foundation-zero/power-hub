@@ -165,3 +165,12 @@ async def test_weather_location_whitelist(forecast_window):
     assert (await response.data).decode(
         "utf-8"
     ) == f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist."
+
+
+async def test_get_total_power():
+    await assert_row_response(
+        await app.test_client().get(
+            f"/power_hub/power_demand/last_values",
+            headers=HEADERS,
+        ),
+    )
