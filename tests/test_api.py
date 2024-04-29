@@ -10,6 +10,8 @@ import fluxy
 import os
 import pandas as pd
 import json
+import unittest.mock as mock
+from energy_box_control.api.weather import *
 
 
 HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
@@ -17,13 +19,14 @@ HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
 
 @pytest.fixture(autouse=True)
 async def mock_influx(mocker):
-    app.influx = mocker.patch.object(InfluxDBClientAsync, "query_api")  # type: ignore
-    fut = Future()
-    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
-
-    app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
-
-    yield
+    with mocker.patch.object(
+        InfluxDBClientAsync, "query_api", return_value=mock.Mock()
+    ):
+        app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
+        fut = Future()
+        fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
+        app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
+        yield
 
 
 @pytest.fixture
@@ -108,3 +111,57 @@ async def test_build_get_appliance_values_query():
     assert query.range == fluxy.range(
         datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
     )
+
+
+@dataclass
+class SimpleWeather:
+    current: dict[str, int]
+    hourly: dict[str, int]
+    daily: dict[str, int]
+
+
+@pytest.fixture
+def lat_lon():
+    return "?lat=41.3874&lon=2.1686"
+
+
+@pytest.fixture(autouse=True)
+async def mock_weather(mocker):
+    with mocker.patch.object(WeatherClient, "_fetch_weather"):
+        app.weather_client = WeatherClient()  # type: ignore
+        app.weather_client._fetch_weather.return_value = SimpleWeather({"value": 1}, {"value": 1}, {"value": 1})  # type: ignore
+        yield
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_get_weather(lat_lon, forecast_window):
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+    app.weather_client._fetch_weather.assert_called()  # type: ignore
+    assert (await response.json)["value"] == 1
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_weather_from_cache(lat_lon, forecast_window):
+    _ = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}{lat_lon}", headers=HEADERS
+    )
+    app.weather_client._fetch_weather.assert_called_once()  # type: ignore
+    assert (await response.json)["value"] == 1
+
+
+@pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])
+async def test_weather_location_whitelist(forecast_window):
+    lat = 50.0
+    lon = 50.0
+    response = await app.test_client().get(
+        f"/weather/{forecast_window}?lat={lat}&lon={lon}", headers=HEADERS
+    )
+    assert response.status_code == 422
+    assert (await response.data).decode(
+        "utf-8"
+    ) == f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist."
