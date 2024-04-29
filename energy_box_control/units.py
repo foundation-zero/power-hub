@@ -9,3 +9,7 @@ WattPerMeterSquared = float
 Joule = float
 JoulePerKelvin = float
 KiloWatt = float
+HectoPascal = float
+MeterPerSecond = float
+Percentage = float
+Degree = float

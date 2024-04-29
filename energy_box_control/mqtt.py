@@ -11,7 +11,7 @@ import json
 import time
 
 dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", ".env")
+    os.path.join(os.path.realpath(__file__), "../../", ".env")
 )
 load_dotenv(dotenv_path)
 
@@ -41,7 +41,10 @@ def create_and_connect_client() -> mqtt_client.Client:
 
 
 def publish_value_to_mqtt(
-    client: mqtt_client.Client, topic: str, value: float, value_timestamp: datetime
+    client: mqtt_client.Client,
+    topic: str,
+    value: float,
+    value_timestamp: datetime,
 ):
 
     result = publish_to_mqtt(

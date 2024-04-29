@@ -1,21 +1,20 @@
 import os
 from quart import Quart, request, make_response, Response
 from dataclasses import dataclass
-from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
 from dotenv import load_dotenv
 from typing import Any, Callable, Literal
 from dataclasses import fields
+from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
-
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import get_sensor_class_properties
-from energy_box_control.api.open_weather import create_weather_manager
+from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", ".env")
@@ -25,7 +24,6 @@ load_dotenv(dotenv_path)
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
 DEFAULT_POWER_INTERVAL_SECONDS = 10
-MAX_POWER_SAMPLES = 2000
 
 app = Quart(__name__)
 QuartSchema(
@@ -66,13 +64,12 @@ class ComputedValuesQuery(ValuesQuery):
 
 
 @dataclass
-class CurrentWeatherQuery:
+class WeatherQuery:
     lat: float
     lon: float
-    temp_unit: str = "celsius"
 
 
-def build_query_range(minutes_back: int) -> tuple[datetime, datetime]:
+def build_query_range(minutes_back: float) -> tuple[datetime, datetime]:
     return (
         datetime.now(timezone.utc) - timedelta(minutes=minutes_back),
         datetime.now(timezone.utc),
@@ -94,7 +91,10 @@ def build_get_values_query(
     )
 
 
-async def execute_influx_query(client: InfluxDBClientAsync, query: fluxy.Query) -> df:
+async def execute_influx_query(
+    client: InfluxDBClientAsync,
+    query: fluxy.Query,
+) -> df:
     return await client.query_api().query_data_frame(query.to_flux())  # type: ignore
 
 
@@ -156,6 +156,12 @@ async def influx_client():
             yield
     except Exception as e:
         print(e)
+
+
+@app.while_serving
+async def weather_client():
+    app.weather_client = WeatherClient()  # type: ignore
+    yield
 
 
 @app.route("/")
@@ -224,30 +230,59 @@ async def get_values_total(
 
 
 WeatherProperty = str
+WEATHER_LOCATION_WHITELIST = {(41.3874, 2.1686)}
+
+
+@no_type_check
+def check_weather_location_whitelist(f):
+    @wraps(f)
+    @no_type_check
+    async def decorator(*args, query_args, **kwargs):
+        lat = query_args.lat
+        lon = query_args.lon
+        if (lat, lon) not in WEATHER_LOCATION_WHITELIST:
+            return await make_response(
+                f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+            )
+        return await f(*args, query_args=query_args, **kwargs)
+
+    return decorator
 
 
 @app.route("/weather/current")
+@token_required
+@validate_querystring(WeatherQuery)  # type: ignore
+@check_weather_location_whitelist
+async def get_current_weather(
+    query_args: WeatherQuery,
+) -> dict[WeatherProperty, float | str | list[dict[str, str]]]:
+    return (await app.weather_client.get_weather(query_args.lat, query_args.lon)).current  # type: ignore
+
+
+@app.route("/weather/hourly")
+@token_required
+@validate_querystring(WeatherQuery)  # type: ignore
+@check_weather_location_whitelist
+async def get_hourly_weather(
+    query_args: WeatherQuery,
+) -> list[CurrentWeather]:
+    return (await app.weather_client.get_weather(query_args.lat, query_args.lon)).hourly  # type: ignore
+
+
+@app.route("/weather/daily")
 @no_type_check
 @token_required
-@validate_querystring(CurrentWeatherQuery)  # type: ignore
-async def get_current_weather(
-    query_args: CurrentWeatherQuery,
-) -> dict[WeatherProperty, float | str]:
-    mgr = create_weather_manager()
-    observation = mgr.weather_at_coords(query_args.lat, query_args.lon)
-    return {
-        "weather": observation.weather.detailed_status,
-        "temp_unit": query_args.temp_unit,
-        "temp": observation.weather.temperature(query_args.temp_unit)["temp"],
-        "temp_feels_like": observation.weather.temperature(query_args.temp_unit)[
-            "feels_like"
-        ],
-        "humidity": observation.weather.humidity,
-        "pressure": observation.weather.pressure["press"],
-        "wind_speed": observation.weather.wind()["speed"],
-        "location_name": observation.location.name,
-        "country": observation.location.country,
-    }
+@validate_querystring(WeatherQuery)  # type: ignore
+@check_weather_location_whitelist
+async def get_daily_weather(
+    query_args: WeatherQuery,
+) -> list[DailyWeather]:
+    return (
+        await app.weather_client.get_weather(
+            query_args.lat, query_args.lon, timedelta(days=1)
+        )
+    ).daily
 
 
 def run() -> None:
