@@ -10,10 +10,12 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import ConnectionState
 from energy_box_control.time import ProcessTime
 
+from energy_box_control.power_hub.power_hub_components import SWITCH_PUMP_POWER
+
 
 @fixture
 def switch_pump():
-    return SwitchPump(1)
+    return SwitchPump(1, SWITCH_PUMP_POWER)
 
 
 @fixture

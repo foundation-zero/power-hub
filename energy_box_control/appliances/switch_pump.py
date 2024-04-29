@@ -9,6 +9,8 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.time import ProcessTime
 
+from energy_box_control.units import LiterPerSecond, Watt
+
 
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
@@ -27,7 +29,8 @@ class SwitchPumpControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class SwitchPump(Appliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
-    flow: float
+    flow: LiterPerSecond
+    power_demand: Watt
 
     def simulate(
         self,

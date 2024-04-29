@@ -135,3 +135,12 @@ def test_get_hourly_weather(headers, lat_lon, forecast_window):
     assert response.status_code == HTTPStatus.OK
     assert type(weather) == list
     assert set(["temp", "feels_like", "pressure"]).issubset(next(iter(weather)))
+
+
+@pytest.mark.integration
+def test_get_total_power_demand(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/power_demand/last_values", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert len(json.loads(response.text)) > 0
