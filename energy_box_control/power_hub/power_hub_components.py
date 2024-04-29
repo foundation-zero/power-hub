@@ -38,6 +38,8 @@ YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
 HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.a_position()
 
+SWITCH_PUMP_POWER: Watt = 2200
+
 
 def heat_pipes(
     global_irradiance_schedule: Schedule[WattPerMeterSquared],
@@ -55,7 +57,7 @@ def heat_pipes(
 
 
 heat_pipes_valve = Valve()
-heat_pipes_pump = SwitchPump(15 / 60)
+heat_pipes_pump = SwitchPump(15 / 60, SWITCH_PUMP_POWER)
 heat_pipes_mix = Mix()
 
 
@@ -83,7 +85,7 @@ pcm = Pcm(
 )
 chiller_switch_valve = Valve()
 yazaki = Yazaki(WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
-pcm_to_yazaki_pump = SwitchPump(72 / 60)
+pcm_to_yazaki_pump = SwitchPump(72 / 60, SWITCH_PUMP_POWER)
 yazaki_hot_bypass_valve = Valve()
 yazaki_bypass_mix = Mix()
 chiller = Chiller(
@@ -105,7 +107,7 @@ def cold_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler:
     )
 
 
-chilled_loop_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
+chilled_loop_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 waste_switch_valve = Valve()
 waste_bypass_valve = Valve()
 waste_mix = Mix()
@@ -125,17 +127,17 @@ def preheat_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler
 
 
 preheat_mix = Mix()
-waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
+waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 waste_switch_valve = Valve()
-waste_pump = SwitchPump(100 / 60)  # 50 - 170 l/m
+waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 chiller_waste_bypass_valve = Valve()
 chiller_waste_mix = Mix()
-fresh_water_pump = SwitchPump(35 / 60)
+fresh_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
 fresh_water_source = Source(float("nan"), SEAWATER_TEMP)
-outboard_pump = SwitchPump(300 / 60)
+outboard_pump = SwitchPump(300 / 60, SWITCH_PUMP_POWER)
 outboard_source = Source(float("nan"), SEAWATER_TEMP)
-cooling_demand_pump = SwitchPump(70 / 60)  # 42 - 100 l/min
+cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 
 
 def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:

@@ -7,8 +7,8 @@ from typing import Any, Callable, Literal
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
-from datetime import datetime, timedelta, timezone
-from functools import wraps
+from datetime import datetime, timezone, timedelta
+from functools import reduce, wraps
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
@@ -23,7 +23,7 @@ load_dotenv(dotenv_path)
 
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
-DEFAULT_POWER_INTERVAL_SECONDS = 10
+DEFAULT_POWER_INTERVAL_SECONDS = 1
 
 app = Quart(__name__)
 QuartSchema(
@@ -227,6 +227,47 @@ async def get_values_total(
         ),
     )
     return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
+
+
+@app.route("/power_hub/power_demand/last_values")
+@token_required
+@validate_querystring(ComputedValuesQuery)  # type: ignore
+@serialize_dataframe(["time", "value"])
+async def get_total_power(
+    query_args: ComputedValuesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+
+    def _pump_consumption(r: fluxy.Row):
+        pump_names = [
+            field.name for field in fields(PowerHubSensors) if "pump" in field.name
+        ]
+        exps = [
+            r.topic == f"power_hub/appliance_sensors/{pump_name}/power_consumed"
+            for pump_name in pump_names
+        ]
+        return reduce(lambda prev, cur: prev | cur, exps)
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            fluxy.pipe(
+                fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
+                fluxy.range(*build_query_range(query_args.minutes_back)),
+                fluxy.filter(_pump_consumption),
+                fluxy.aggregate_window(
+                    timedelta(seconds=query_args.interval_seconds),
+                    fluxy.WindowOperation.MEAN,
+                    False,
+                ),
+                fluxy.keep(["_value", "_time"]),
+                fluxy.aggregate_window(
+                    timedelta(seconds=query_args.interval_seconds),
+                    fluxy.WindowOperation.SUM,
+                    False,
+                ),
+            ),
+        )
+    ).rename(columns={"_value": "value", "_time": "time"})
 
 
 WeatherProperty = str
