@@ -7,7 +7,7 @@ from energy_box_control.schedules import ConstSchedule
 
 def test_valve():
     network = BoilerValveNetwork(
-        Source(2, 100),
+        Source(2, ConstSchedule(100)),
         Boiler(1, 0, 0, 1, 1, ConstSchedule(20)),
         BoilerState(0),
         ValveState(0.5),

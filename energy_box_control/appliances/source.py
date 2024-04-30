@@ -5,6 +5,7 @@ from energy_box_control.appliances.base import (
     ConnectionState,
     Port,
 )
+from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import Celsius, LiterPerSecond
 
@@ -21,7 +22,7 @@ class SourcePort(Port):
 @dataclass(frozen=True, eq=True)
 class Source(Appliance[SourceState, None, SourcePort]):
     flow: LiterPerSecond
-    temp: Celsius
+    temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
@@ -30,4 +31,8 @@ class Source(Appliance[SourceState, None, SourcePort]):
         control: None,
         simulation_time: ProcessTime,
     ) -> tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
-        return SourceState(), {SourcePort.OUTPUT: ConnectionState(self.flow, self.temp)}
+        return SourceState(), {
+            SourcePort.OUTPUT: ConnectionState(
+                self.flow, self.temperature_schedule.at(simulation_time)
+            )
+        }

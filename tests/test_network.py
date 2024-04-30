@@ -26,8 +26,8 @@ from energy_box_control.schedules import ConstSchedule
 
 def test_network():
     class MyNetwork(Network[None]):
-        exchange_source = Source(0, 1)
-        fill_source = Source(0, 1)
+        exchange_source = Source(0, ConstSchedule(1))
+        fill_source = Source(0, ConstSchedule(1))
         valve = Valve()
         boiler = Boiler(1, 0, 0, 1, 1, ConstSchedule(20))
 

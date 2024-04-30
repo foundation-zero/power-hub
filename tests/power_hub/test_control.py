@@ -14,6 +14,8 @@ def test_control_from_json_roundtrips():
             ConstSchedule(phc.GLOBAL_IRRADIANCE),
             ConstSchedule(phc.AMBIENT_TEMPERATURE),
             ConstSchedule(phc.COOLING_DEMAND),
+            ConstSchedule(phc.SEAWATER_TEMPERATURE),
+            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )
     )
     control = no_control(power_hub)
