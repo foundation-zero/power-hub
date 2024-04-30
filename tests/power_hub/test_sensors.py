@@ -1,14 +1,37 @@
+from dataclasses import fields
+import json
+from pytest import fixture
 from energy_box_control.power_hub.control import no_control
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
+from energy_box_control.power_hub.sensors import sensor_values
 from energy_box_control.sensors import sensors_to_json
 
 
-def test_sensors_to_json_roundtrips():
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+@fixture
+def power_hub():
+    return PowerHub.power_hub(PowerHubSchedules.const_schedules())
+
+
+@fixture
+def sensors(power_hub):
     initial = power_hub.simple_initial_state()
     state = power_hub.simulate(initial, no_control(power_hub))
 
-    sensors = power_hub.sensors_from_state(state)
+    return power_hub.sensors_from_state(state)
+
+
+def test_sensors_to_json_roundtrips(power_hub, sensors):
     json = sensors_to_json(sensors)
     roundtripped = power_hub.sensors_from_json(json)
     assert sensors == roundtripped
+
+
+def test_sensors_to_json_doesnt_include_is_sensor(sensors):
+    returned = json.loads(sensors_to_json(sensors))
+    assert all("is_sensor" not in value for value in returned.values())
+
+
+def test_sensor_values(power_hub, sensors):
+    for field in fields(sensors):
+        values = sensor_values(field.name, sensors)
+        assert "is_sensor" not in values

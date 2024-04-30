@@ -13,7 +13,7 @@ from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
 from energy_box_control.power_hub.sensors import PowerHubSensors
-from energy_box_control.sensors import get_sensor_class_properties
+from energy_box_control.sensors import sensor_fields
 from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
 from energy_box_control.custom_logging import get_logger
 
@@ -184,7 +184,7 @@ async def get_all_appliance_names() -> dict[
     return {
         "appliances": {
             appliance_field.name: {
-                "sensors": get_sensor_class_properties(appliance_field.type),
+                "sensors": sensor_fields(appliance_field.type),
                 "sensors_type": appliance_field.type.__name__,
             }
             for appliance_field in fields(PowerHubSensors)

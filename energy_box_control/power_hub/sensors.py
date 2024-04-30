@@ -37,8 +37,10 @@ from energy_box_control.appliances.valve import Valve, ValvePort
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
+    WithoutAppliance,
     SensorType,
     sensor,
+    sensor_fields,
     sensors,
     NetworkSensors,
 )
@@ -652,8 +654,8 @@ class WaterMakerSensors(FromState):
     )
 
 
-@dataclass
-class WeatherSensors:
+@sensors(from_appliance=False)
+class WeatherSensors(WithoutAppliance):
     ambient_temperature: Celsius
     global_irradiance: WattPerMeterSquared
 
@@ -694,13 +696,9 @@ SensorName = str
 SensorValue = float | Celsius | LiterPerSecond | WattPerMeterSquared
 
 
-def get_sensor_values(
+def sensor_values(
     sensor_name: SensorName, sensors: PowerHubSensors
 ) -> dict[SensorName, SensorValue]:
-    attr = getattr(sensors, sensor_name)
+    sensor = getattr(sensors, sensor_name)
 
-    return {
-        field: getattr(attr, field)
-        for field in dir(attr)
-        if field[0] != "_" and (type(getattr(attr, field)) in [float, int, bool])
-    }
+    return {field: getattr(sensor, field) for field in sensor_fields(type(sensor))}

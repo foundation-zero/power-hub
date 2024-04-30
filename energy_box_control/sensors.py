@@ -75,6 +75,10 @@ class FromState(Protocol):
     ) -> Cls: ...
 
 
+class WithoutAppliance(Protocol):
+    def __init__(self, context: "SensorContext[Any]", **values: Any): ...
+
+
 class SensorContext[T]:
 
     def __init__(self, cls: type[T]) -> None:
@@ -128,11 +132,13 @@ class SensorContext[T]:
         instance = klass.from_state(self, appliance, state)
         self._sensors[key] = instance
 
-    def from_sensor(self, sensor: Any, _location: Any):
+    def without_appliance(
+        self, sensor: type[WithoutAppliance], _location: Any, **values: Any
+    ):
         key = self._accessed.pop()
-        self._sensors[key] = sensor
+        self._sensors[key] = sensor(self, **values)
 
-    def from_values(
+    def with_appliance(
         self,
         values: dict[str, float | int | bool],
         cls: Any,
@@ -172,10 +178,10 @@ def sensor(*args: Any, **kwargs: Any) -> Any:
     return Sensor(*args, **kwargs)
 
 
-def sensors[T: type]() -> Callable[[T], T]:
+def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
     def _decorator(cls: T) -> T:
         @functools.wraps(cls.__init__)
-        def _init(
+        def _init_from_appliance(
             self: Any,
             context: SensorContext[Any],
             appliance: Appliance[Any, Any, Any],
@@ -184,8 +190,22 @@ def sensors[T: type]() -> Callable[[T], T]:
             for name, annotation in get_type_hints(cls).items():
                 if name.startswith("_"):
                     continue
-                if isclass(annotation) and issubclass(annotation, Appliance):
+                elif isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
+                elif (sub_sensor := context.sensor(name)) and type(
+                    sub_sensor
+                ) == annotation:
+                    setattr(self, name, sub_sensor)
+                else:
+                    setattr(self, name, kwargs[name])
+
+        @functools.wraps(cls.__init__)
+        def _init_from_args(
+            self: Any, context: SensorContext[Any], **kwargs: dict[str, Any]
+        ):
+            for name, annotation in get_type_hints(cls).items():
+                if name.startswith("_"):
+                    continue
                 elif (sub_sensor := context.sensor(name)) and type(
                     sub_sensor
                 ) == annotation:
@@ -240,8 +260,11 @@ def sensors[T: type]() -> Callable[[T], T]:
         def _hash(self: Any):
             return hash(_values(self))
 
-        cls.__init__ = _init  # type: ignore
-        cls.from_state = _from_state  # type: ignore
+        if from_appliance:
+            cls.__init__ = _init_from_appliance  # type: ignore
+            cls.from_state = _from_state  # type: ignore
+        else:
+            cls.__init__ = _init_from_args  # type: ignore
         cls.is_sensor = True
         cls.__eq__ = _eq  # type: ignore
         cls.__hash__ = _hash  # type: ignore
@@ -250,14 +273,15 @@ def sensors[T: type]() -> Callable[[T], T]:
     return _decorator
 
 
-def get_sensor_class_properties(sensor_cls: Any) -> set[str]:
+def sensor_fields(sensor_cls: Any) -> set[str]:
     return set(
         [
             field_name
             for field_name, field_value in get_type_hints(sensor_cls).items()
             if field_value in [float, int]
         ]
-        + [
+    ) | set(
+        [
             field_name
             for field_name, field_value in getmembers(sensor_cls)
             if type(field_value) == property or type(field_value) == Sensor
