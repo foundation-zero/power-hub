@@ -10,7 +10,7 @@ from energy_box_control.power_hub.control import (
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
-from energy_box_control.power_hub.sensors import get_sensor_values
+from energy_box_control.power_hub.sensors import sensor_values
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
@@ -111,7 +111,7 @@ def run(steps: int = 0):
         for sensor_field in fields(power_hub_sensors):
             publish_sensor_values(
                 sensor_field.name,
-                get_sensor_values(sensor_field.name, power_hub_sensors),
+                sensor_values(sensor_field.name, power_hub_sensors),
                 mqtt_client,
                 state.time.timestamp,
             )
