@@ -611,7 +611,7 @@ class SwitchPumpSensors(FromState):
 @sensors()
 class PVSensors(FromState):
     spec: PVPanel
-    produced_power: float
+    power: Watt
 
 
 @dataclass

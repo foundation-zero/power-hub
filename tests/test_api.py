@@ -19,14 +19,12 @@ HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
 
 @pytest.fixture(autouse=True)
 async def mock_influx(mocker):
-    with mocker.patch.object(
-        InfluxDBClientAsync, "query_api", return_value=mock.Mock()
-    ):
-        app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
-        fut = Future()
-        fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
-        app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
-        yield
+    mocker.patch.object(InfluxDBClientAsync, "query_api", return_value=mock.Mock())
+    app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
+    fut = Future()
+    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
+    app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
+    yield
 
 
 @pytest.fixture
@@ -127,10 +125,10 @@ def lat_lon():
 
 @pytest.fixture(autouse=True)
 async def mock_weather(mocker):
-    with mocker.patch.object(WeatherClient, "_fetch_weather"):
-        app.weather_client = WeatherClient()  # type: ignore
-        app.weather_client._fetch_weather.return_value = SimpleWeather({"value": 1}, {"value": 1}, {"value": 1})  # type: ignore
-        yield
+    mocker.patch.object(WeatherClient, "_fetch_weather")
+    app.weather_client = WeatherClient()  # type: ignore
+    app.weather_client._fetch_weather.return_value = SimpleWeather({"value": 1}, {"value": 1}, {"value": 1})  # type: ignore
+    yield
 
 
 @pytest.mark.parametrize("forecast_window", ["current", "hourly", "daily"])

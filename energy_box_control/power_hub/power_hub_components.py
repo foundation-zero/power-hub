@@ -39,8 +39,10 @@ YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
 HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.a_position()
 
-PV_PANEL_SURFACE_AREA = 20
-PV_PANEL_EFFICIENCY = 0.3
+PV_PANEL_SURFACE_AREA = 200
+PV_PANEL_EFFICIENCY = (
+    0.2 * 0.85
+)  # accounting for non optimal placement of northern side of roof
 
 SWITCH_PUMP_POWER: Watt = 2200
 

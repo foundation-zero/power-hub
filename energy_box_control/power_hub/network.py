@@ -32,7 +32,7 @@ from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
-from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState, PVPanelPort
+from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
@@ -348,9 +348,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ApplianceState())
             .define_state(self.pv_panel)
             .value(PVPanelState(0))
-            .define_state(self.pv_panel)
-            .at(PVPanelPort.OUT)
-            .value(ConnectionState(float("nan"), 20))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -368,6 +365,7 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(waste_side)
             .combine(fresh_water)
             .combine(outboard)
+            .unconnected(self.pv_panel)
             .build()
         )
 
@@ -376,13 +374,11 @@ class PowerHub(Network[PowerHubSensors]):
         pcm_yazaki = self._pcm_yazaki_feedback()
         chilled_side = self._chilled_side_feedback()
         waste_side = self._waste_side_feedback()
-        pv = self._pv_feedback()
 
         return (
             pipes_pcm.combine(pcm_yazaki)
             .combine(chilled_side)
             .combine(waste_side)
-            .combine(pv)
             .build()
         )
 
@@ -657,14 +653,6 @@ class PowerHub(Network[PowerHubSensors]):
             .at(BoilerPort.FILL_IN)
         )
         # fmt: on
-
-    def _pv_feedback(self):
-        return (
-            self.define_feedback(self.pv_panel)
-            .at(PVPanelPort.OUT)
-            .to(self.pv_panel)
-            .at(PVPanelPort.IN)
-        )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         context = PowerHubSensors.context()
