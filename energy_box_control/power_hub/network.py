@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
 
-from typing import Self
+from typing import Self, cast
+
+from pandas import read_csv, DataFrame  # type: ignore
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -57,7 +59,7 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import ConstSchedule, Schedule
+from energy_box_control.schedules import ConstSchedule, GivenSchedule, Schedule
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
 
@@ -67,6 +69,8 @@ class PowerHubSchedules:
     global_irradiance: Schedule[WattPerMeterSquared]
     ambient_temperature: Schedule[Celsius]
     cooling_demand: Schedule[Watt]
+    seawater_temperatue: Schedule[Celsius]
+    freshwater_temperature: Schedule[Celsius]
 
     @staticmethod
     def const_schedules() -> "PowerHubSchedules":
@@ -74,6 +78,35 @@ class PowerHubSchedules:
             ConstSchedule(phc.GLOBAL_IRRADIANCE),
             ConstSchedule(phc.AMBIENT_TEMPERATURE),
             ConstSchedule(phc.COOLING_DEMAND),
+            ConstSchedule(phc.SEAWATER_TEMPERATURE),
+            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
+        )
+
+    @staticmethod
+    def schedules_from_data() -> "PowerHubSchedules":
+        data: DataFrame = read_csv(
+            "powerhub_simulation_schedules_Jun_Oct_TMY.csv",
+            index_col=0,
+            parse_dates=True,
+        )
+
+        start = cast(datetime, data.index[0].to_pydatetime())  # type: ignore
+        end = cast(datetime, data.index[-1].to_pydatetime())  # type: ignore
+
+        global_irradiance_values = cast(
+            list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore
+        )
+        ambient_temperature_values = cast(
+            list[Celsius], data["Dry Bulb Temperature"].to_list()  # type: ignore
+        )
+        cooling_demand_values = cast(list[Watt], data["Cooling Demand"].to_list())  # type: ignore
+
+        return PowerHubSchedules(
+            GivenSchedule(start, end, tuple(global_irradiance_values)),
+            GivenSchedule(start, end, tuple(ambient_temperature_values)),
+            GivenSchedule(start, end, tuple(cooling_demand_values)),
+            ConstSchedule(phc.SEAWATER_TEMPERATURE),
+            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
         )
 
 
@@ -150,10 +183,10 @@ class PowerHub(Network[PowerHubSensors]):
             phc.chiller_waste_bypass_valve,
             phc.chiller_waste_mix,
             phc.fresh_water_pump,
-            phc.fresh_water_source,
+            phc.fresh_water_source(schedules.freshwater_temperature),
             phc.outboard_exchange,
             phc.outboard_pump,
-            phc.outboard_source,
+            phc.outboard_source(schedules.seawater_temperatue),
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
             schedules,

@@ -19,7 +19,9 @@ def run(network: BoilerNetwork, state, control_state, times):
 
 def test_heater():
     network = BoilerNetwork(
-        Source(0, 0), Boiler(10, 1, 0, 0, 1, ConstSchedule(0)), BoilerState(0)
+        Source(0, ConstSchedule(0)),
+        Boiler(10, 1, 0, 0, 1, ConstSchedule(0)),
+        BoilerState(0),
     )
     control_state = ControlState(50)
 

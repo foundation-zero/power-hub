@@ -24,7 +24,7 @@ def period_delta():
 
 @pytest.fixture
 def periodic_schedule(period_start, period_delta):
-    return PeriodicSchedule(period_start, period_delta, [1, 2, 3, 4, 5])
+    return PeriodicSchedule(period_start, period_delta, (1, 2, 3, 4, 5))
 
 
 def test_within_periodic_schedule(periodic_schedule):
@@ -69,7 +69,7 @@ def test_off_by_one(periodic_schedule, period_start, period_delta):
 
 @pytest.fixture
 def given_schedule():
-    return GivenSchedule(datetime(2024, 4, 15), datetime(2024, 4, 20), [1, 2, 3, 4, 5])
+    return GivenSchedule(datetime(2024, 4, 15), datetime(2024, 4, 20), (1, 2, 3, 4, 5))
 
 
 def test_given_schedule(given_schedule):
