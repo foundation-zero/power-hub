@@ -72,6 +72,8 @@ services:
       - power_hub_simulation
     env_file:
       - .env
+    environment:
+    - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
 
 networks:
   power_hub_simulation:

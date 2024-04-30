@@ -267,6 +267,13 @@ class NetworkConnector(Generic[Net, *Prev]):
     ](self, from_app: From) -> ApplianceConnector[Net, From, *Prev]:
         return ApplianceConnector(from_app, *self._prev)
 
+    def unconnected[
+        App: AnyAppliance
+    ](self, app: App) -> "NetworkConnector[Net, *Prev, App]":
+        return cast(
+            "NetworkConnector[Net, *Prev, App]", NetworkConnector(*self._prev, app)
+        )
+
     def combine[
         *Others
     ](
@@ -275,18 +282,25 @@ class NetworkConnector(Generic[Net, *Prev]):
         return NetworkConnector(*self._prev, *connector._prev)
 
     def build(self) -> "NetworkConnections[Net]":
-        connections = cast(
-            list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]],
+        items = cast(
+            list[
+                Connection[Net, AnyAppliance, Port, AnyAppliance, Port] | AnyAppliance
+            ],
             list(self._prev),
         )
-        return NetworkConnections[Net](connections)
+        connections = [item for item in items if isinstance(item, Connection)]
+        unconnected_appliances = [item for item in items if isinstance(item, Appliance)]
+        return NetworkConnections[Net](connections, unconnected_appliances)
 
 
 class NetworkConnections[Net: "Network[Any]"]:
     def __init__(
-        self, connections: list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]]
+        self,
+        connections: list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]],
+        unconnected: list[AnyAppliance] = [],
     ):
         self._connections = connections
+        self._unconnected = unconnected
 
     def _connection_dict(
         self,
@@ -319,7 +333,7 @@ class NetworkConnections[Net: "Network[Any]"]:
             lambda connection: connection.from_app
         )
 
-        return linearize(
+        return self._unconnected + linearize(
             incoming_connections.keys(),
             lambda appliance: incoming_connections[appliance],
             lambda appliance: outgoing_connections[appliance],

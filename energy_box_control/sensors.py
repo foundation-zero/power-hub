@@ -159,7 +159,6 @@ class SensorContext[T]:
 class SensorType(Enum):
     FLOW = "flow"
     TEMPERATURE = "temperature"
-    POWER_DEMAND = "power"
 
 
 @dataclass(eq=True, frozen=True)

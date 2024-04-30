@@ -138,9 +138,9 @@ def test_get_hourly_weather(headers, lat_lon, forecast_window):
 
 
 @pytest.mark.integration
-def test_get_total_power_demand(headers):
+def test_get_total_electrical_power(headers):
     response = requests.get(
-        f"{BASE_URL}/power_hub/power_demand/last_values", headers=headers
+        f"{BASE_URL}/power_hub/electrical_power/last_values", headers=headers
     )
     assert response.status_code == HTTPStatus.OK
     assert len(json.loads(response.text)) > 0
