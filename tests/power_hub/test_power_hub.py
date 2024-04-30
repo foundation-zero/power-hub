@@ -7,8 +7,7 @@ from pytest import approx, fixture, mark
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
-from energy_box_control.appliances.base import ApplianceState
-from energy_box_control.appliances.boiler import BoilerPort, BoilerState
+from energy_box_control.appliances.boiler import BoilerPort
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmPort, PcmState

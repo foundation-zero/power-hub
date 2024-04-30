@@ -229,7 +229,7 @@ async def get_values_total(
     return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
 
 
-@app.route("/power_hub/power_demand/last_values")
+@app.route("/power_hub/electrical_power/last_values")
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
 @serialize_dataframe(["time", "value"])
@@ -242,7 +242,7 @@ async def get_total_power(
             field.name for field in fields(PowerHubSensors) if "pump" in field.name
         ]
         exps = [
-            r.topic == f"power_hub/appliance_sensors/{pump_name}/power_consumed"
+            r.topic == f"power_hub/appliance_sensors/{pump_name}/electrical_power"
             for pump_name in pump_names
         ]
         return reduce(lambda prev, cur: prev | cur, exps)
