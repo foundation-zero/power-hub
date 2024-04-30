@@ -7,6 +7,7 @@ from energy_box_control.appliances.heat_exchanger import (
 
 from energy_box_control.appliances.mix import MixPort
 
+from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import SwitchPumpPort
 from energy_box_control.power_hub.power_hub_components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
@@ -603,8 +604,14 @@ class SwitchPumpSensors(FromState):
     )
 
     @property
-    def power_consumed(self) -> Watt:
-        return self.spec.power_demand if self.flow_out > 0 else 0
+    def electrical_power(self) -> Watt:
+        return self.spec.electrical_power if self.flow_out > 0 else 0
+
+
+@sensors()
+class PVSensors(FromState):
+    spec: PVPanel
+    power: Watt
 
 
 @dataclass
@@ -639,6 +646,7 @@ class PowerHubSensors(NetworkSensors):
     fresh_water_pump: SwitchPumpSensors
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
+    pv_panel: PVSensors
 
 
 SensorName = str

@@ -30,7 +30,7 @@ class SwitchPumpControl(ApplianceControl):
 @dataclass(frozen=True, eq=True)
 class SwitchPump(Appliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
     flow: LiterPerSecond
-    power_demand: Watt
+    electrical_power: Watt
 
     def simulate(
         self,

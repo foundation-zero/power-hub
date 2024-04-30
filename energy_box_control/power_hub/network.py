@@ -34,6 +34,7 @@ from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
+from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
@@ -146,6 +147,7 @@ class PowerHub(Network[PowerHubSensors]):
     outboard_source: Source
     cooling_demand_pump: SwitchPump
     cooling_demand: CoolingSink
+    pv_panel: PVPanel
 
     schedules: "PowerHubSchedules"
 
@@ -189,6 +191,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_source(schedules.seawater_temperatue),
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
+            phc.pv_panel(schedules.global_irradiance),
             schedules,
         )
 
@@ -376,6 +379,8 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.cooling_demand)
             .value(ApplianceState())
+            .define_state(self.pv_panel)
+            .value(PVPanelState(0))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -393,6 +398,7 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(waste_side)
             .combine(fresh_water)
             .combine(outboard)
+            .unconnected(self.pv_panel)
             .build()
         )
 

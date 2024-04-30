@@ -1,4 +1,5 @@
 from energy_box_control.appliances.cooling_sink import CoolingSink
+from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
@@ -38,6 +39,11 @@ YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
 HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.a_position()
+
+PV_PANEL_SURFACE_AREA = 200
+PV_PANEL_EFFICIENCY = (
+    0.2 * 0.85
+)  # accounting for non optimal placement of northern side of roof
 
 SWITCH_PUMP_POWER: Watt = 2200
 
@@ -153,3 +159,9 @@ cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 
 def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:
     return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)
+
+
+def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPanel:
+    return PVPanel(
+        global_irradiance_schedule, PV_PANEL_SURFACE_AREA, PV_PANEL_EFFICIENCY
+    )
