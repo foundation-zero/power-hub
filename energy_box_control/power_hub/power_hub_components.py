@@ -1,9 +1,15 @@
 from energy_box_control.appliances.cooling_sink import CoolingSink
 from energy_box_control.appliances.pv_panel import PVPanel
+from energy_box_control.appliances.water_demand import WaterDemand
+from energy_box_control.appliances.water_maker import WaterMaker
+from energy_box_control.appliances.water_tank import WaterTank
+from energy_box_control.appliances.water_treatment import WaterTreatment
 from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
+    Liter,
+    LiterPerSecond,
     Watt,
     WattPerMeterSquared,
 )
@@ -26,6 +32,7 @@ FRESHWATER_TEMPERATURE: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
+WATER_DEMAND: LiterPerSecond = 10
 
 
 HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
@@ -154,6 +161,10 @@ def outboard_source(seawater_temperature_schedule: Schedule[Celsius]):
     return Source(float("nan"), seawater_temperature_schedule)
 
 
+def sea_water_source(seawater_temp_schedule: Schedule[Celsius]) -> Source:
+    return Source(float("nan"), seawater_temp_schedule)
+
+
 cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 
 
@@ -165,3 +176,18 @@ def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPan
     return PVPanel(
         global_irradiance_schedule, PV_PANEL_SURFACE_AREA, PV_PANEL_EFFICIENCY
     )
+
+
+water_maker_pump = SwitchPump(300 / 60, SWITCH_PUMP_POWER)  # Preliminary specs
+water_maker = WaterMaker(1)
+fresh_water_tank = WaterTank(100)
+
+
+def water_demand(
+    water_demand_flow_schedule: Schedule[Liter],
+    water_demand_temp_schedule: Schedule[Celsius],
+) -> WaterDemand:
+    return WaterDemand(water_demand_flow_schedule, water_demand_temp_schedule)
+
+
+water_treatment = WaterTreatment(0.5)

@@ -9,6 +9,12 @@ from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import SwitchPumpPort
+from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
+from energy_box_control.appliances.water_tank import WaterTank, WaterTankPort
+from energy_box_control.appliances.water_treatment import (
+    WaterTreatment,
+    WaterTreatmentPort,
+)
 from energy_box_control.power_hub.power_hub_components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
@@ -19,6 +25,7 @@ from energy_box_control.power_hub.power_hub_components import (
 )
 from energy_box_control.units import (
     Celsius,
+    Liter,
     LiterPerSecond,
     Watt,
     WattPerMeterSquared,
@@ -614,6 +621,37 @@ class PVSensors(FromState):
     power: Watt
 
 
+@sensors()
+class WaterTankSensors(FromState):
+    spec: WaterTank
+    fill: Liter
+    water_demand: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
+    )
+    water_treatment_flow_in: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTankPort.IN_1
+    )
+    water_maker_flow_in: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTankPort.IN_0
+    )
+
+
+@sensors()
+class WaterTreatmentSensors(FromState):
+    spec: WaterTreatment
+    out_flow: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTreatmentPort.OUT
+    )
+
+
+@sensors()
+class WaterMakerSensors(FromState):
+    spec: WaterMaker
+    out_flow: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
+    )
+
+
 @dataclass
 class WeatherSensors:
     ambient_temperature: Celsius
@@ -647,6 +685,9 @@ class PowerHubSensors(NetworkSensors):
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
     pv_panel: PVSensors
+    fresh_water_tank: WaterTankSensors
+    water_treatment: WaterTreatmentSensors
+    water_maker: WaterMakerSensors
 
 
 SensorName = str

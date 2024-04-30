@@ -44,6 +44,7 @@ def power_hub() -> PowerHub:
             ConstSchedule(phc.COOLING_DEMAND),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
+            ConstSchedule(phc.WATER_DEMAND),
         )
     )
 
