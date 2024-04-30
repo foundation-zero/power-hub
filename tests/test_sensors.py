@@ -1,9 +1,9 @@
 from energy_box_control.power_hub.sensors import HotReservoirSensors
-from energy_box_control.sensors import get_sensor_class_properties
+from energy_box_control.sensors import sensor_fields
 
 
 def test_hot_reservoir_properties():
-    assert get_sensor_class_properties(HotReservoirSensors) == set(
+    assert sensor_fields(HotReservoirSensors) == set(
         [
             "temperature",
             "fill_input_temperature",
