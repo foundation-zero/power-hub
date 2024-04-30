@@ -781,12 +781,11 @@ class PowerHub(Network[PowerHubSensors]):
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         context = PowerHubSensors.context()
-        context.from_sensor(
-            WeatherSensors(
-                phc.AMBIENT_TEMPERATURE,
-                self.schedules.global_irradiance.at(state.time),
-            ),
+        context.without_appliance(
+            WeatherSensors,
             context.subject.weather,
+            ambient_temperature=phc.AMBIENT_TEMPERATURE,
+            global_irradiance=self.schedules.global_irradiance.at(state.time),
         )
 
         return context.resolve_for_network(
@@ -801,13 +800,13 @@ class PowerHub(Network[PowerHubSensors]):
 
         context = PowerHubSensors.context()
 
-        context.from_sensor(
-            WeatherSensors(**sensors["weather"]), context.subject.weather
+        context.without_appliance(
+            WeatherSensors, context.subject.weather, **sensors["weather"]
         )
         for sensor in init_order:
             appliance = getattr(self, sensor.name, None)
             if appliance:
-                context.from_values(
+                context.with_appliance(
                     sensors[sensor.name],
                     sensor.type,
                     getattr(context.subject, sensor.name),
