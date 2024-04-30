@@ -13,6 +13,7 @@ from energy_box_control.appliances.yazaki import (
 from energy_box_control.networks import YazakiNetwork
 import logging
 
+from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime
 
 from hypothesis.strategies import floats
@@ -20,7 +21,10 @@ from hypothesis.strategies import floats
 
 def test_yazaki():
     network = YazakiNetwork(
-        Source(1.2, 88), Source(2.55, 31), Source(0.77, 17.6), Yazaki(4184, 4184, 4184)
+        Source(1.2, ConstSchedule(88)),
+        Source(2.55, ConstSchedule(31)),
+        Source(0.77, ConstSchedule(17.6)),
+        Yazaki(4184, 4184, 4184),
     )
 
     control = network.control(network.yazaki).value(YazakiControl(on=True)).build()

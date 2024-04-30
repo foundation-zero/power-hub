@@ -27,6 +27,7 @@ from energy_box_control.network import (
 
 
 import energy_box_control.power_hub.power_hub_components as phc
+from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime
 
 
@@ -62,8 +63,8 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             phc.pcm_to_yazaki_pump,
             phc.yazaki,
             phc.yazaki_hot_bypass_valve,
-            Source(2.55, 31),
-            Source(0.77, 17.6),
+            Source(2.55, ConstSchedule(31)),
+            Source(0.77, ConstSchedule(17.6)),
         )
 
     def connections(self) -> NetworkConnections[Self]:
