@@ -7,7 +7,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import Watt, WattPerMeterSquared, Percentage, MeterSquared
+from energy_box_control.units import Watt, WattPerMeterSquared, MeterSquared
 
 
 @dataclass(frozen=True, eq=True)
@@ -19,7 +19,7 @@ class PVPanelState(ApplianceState):
 class PVPanel(Appliance[PVPanelState, None, Port]):
     global_irradiance_schedule: Schedule[WattPerMeterSquared]
     surface_area: MeterSquared
-    efficiency: Percentage
+    efficiency: float
 
     def simulate(
         self,
