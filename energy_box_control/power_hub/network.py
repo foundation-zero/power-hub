@@ -42,6 +42,26 @@ from energy_box_control.appliances.switch_pump import (
     SwitchPumpState,
 )
 from energy_box_control.appliances.valve import ValveState
+from energy_box_control.appliances.water_demand import (
+    WaterDemand,
+    WaterDemandPort,
+    WaterDemandState,
+)
+from energy_box_control.appliances.water_maker import (
+    WaterMaker,
+    WaterMakerPort,
+    WaterMakerState,
+)
+from energy_box_control.appliances.water_tank import (
+    WaterTank,
+    WaterTankPort,
+    WaterTankState,
+)
+from energy_box_control.appliances.water_treatment import (
+    WaterTreatment,
+    WaterTreatmentPort,
+    WaterTreatmentState,
+)
 from energy_box_control.appliances.yazaki import YazakiState
 
 from energy_box_control.network import (
@@ -62,7 +82,7 @@ from datetime import datetime, timedelta
 
 from energy_box_control.schedules import ConstSchedule, GivenSchedule, Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import WattPerMeterSquared, Celsius, Watt
+from energy_box_control.units import LiterPerSecond, WattPerMeterSquared, Celsius, Watt
 
 
 @dataclass
@@ -72,6 +92,7 @@ class PowerHubSchedules:
     cooling_demand: Schedule[Watt]
     seawater_temperatue: Schedule[Celsius]
     freshwater_temperature: Schedule[Celsius]
+    water_demand: Schedule[LiterPerSecond]
 
     @staticmethod
     def const_schedules() -> "PowerHubSchedules":
@@ -81,6 +102,7 @@ class PowerHubSchedules:
             ConstSchedule(phc.COOLING_DEMAND),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
+            ConstSchedule(phc.WATER_DEMAND),
         )
 
     @staticmethod
@@ -108,6 +130,7 @@ class PowerHubSchedules:
             GivenSchedule(start, end, tuple(cooling_demand_values)),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
+            ConstSchedule(phc.WATER_DEMAND),
         )
 
 
@@ -148,6 +171,12 @@ class PowerHub(Network[PowerHubSensors]):
     cooling_demand_pump: SwitchPump
     cooling_demand: CoolingSink
     pv_panel: PVPanel
+    sea_water_source: Source
+    water_maker_pump: SwitchPump
+    water_maker: WaterMaker
+    fresh_water_tank: WaterTank
+    water_demand: WaterDemand
+    water_treatment: WaterTreatment
 
     schedules: "PowerHubSchedules"
 
@@ -192,6 +221,12 @@ class PowerHub(Network[PowerHubSensors]):
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
             phc.pv_panel(schedules.global_irradiance),
+            phc.sea_water_source(schedules.seawater_temperatue),
+            phc.water_maker_pump,
+            phc.water_maker,
+            phc.fresh_water_tank,
+            phc.water_demand(schedules.water_demand, schedules.seawater_temperatue),
+            phc.water_treatment,
             schedules,
         )
 
@@ -381,6 +416,21 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ApplianceState())
             .define_state(self.pv_panel)
             .value(PVPanelState(0))
+            .define_state(self.sea_water_source)
+            .value(SourceState())
+            .define_state(self.water_maker_pump)
+            .value(SwitchPumpState())
+            .define_state(self.water_maker)
+            .value(WaterMakerState())
+            .define_state(self.fresh_water_tank)
+            .value(WaterTankState(50))
+            .define_state(self.water_demand)
+            .value(WaterDemandState())
+            .define_state(self.water_treatment)
+            .value(WaterTreatmentState())
+            .define_state(self.water_treatment)
+            .at(WaterTreatmentPort.OUT)
+            .value(ConnectionState(10, phc.AMBIENT_TEMPERATURE))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -391,6 +441,7 @@ class PowerHub(Network[PowerHubSensors]):
         waste_side = self._waste_side_connections()
         fresh_water = self._fresh_water_connections()
         outboard = self._outboard_connections()
+        water_maker = self._water_maker_connections()
 
         return (
             pipes_pcm.combine(pcm_yazaki)
@@ -399,6 +450,7 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(fresh_water)
             .combine(outboard)
             .unconnected(self.pv_panel)
+            .combine(water_maker)
             .build()
         )
 
@@ -407,11 +459,13 @@ class PowerHub(Network[PowerHubSensors]):
         pcm_yazaki = self._pcm_yazaki_feedback()
         chilled_side = self._chilled_side_feedback()
         waste_side = self._waste_side_feedback()
+        water_maker = self._water_maker_feedback()
 
         return (
             pipes_pcm.combine(pcm_yazaki)
             .combine(chilled_side)
             .combine(waste_side)
+            .combine(water_maker)
             .build()
         )
 
@@ -686,6 +740,44 @@ class PowerHub(Network[PowerHubSensors]):
             .at(BoilerPort.FILL_IN)
         )
         # fmt: on
+
+    def _water_maker_connections(self):
+        # fmt: off
+        return (
+            self.connect(self.sea_water_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.water_maker_pump)
+            .at(SwitchPumpPort.IN)
+
+            .connect(self.water_maker_pump)
+            .at(SwitchPumpPort.OUT)
+            .to(self.water_maker)
+            .at(WaterMakerPort.IN)
+
+            .connect(self.water_maker)
+            .at(WaterMakerPort.DESALINATED_OUT)
+            .to(self.fresh_water_tank)
+            .at(WaterTankPort.IN_0)
+
+            .connect(self.water_demand)
+            .at(WaterDemandPort.DEMAND_OUT)
+            .to(self.fresh_water_tank)
+            .at(WaterTankPort.CONSUMPTION)
+
+            .connect(self.water_demand)
+            .at(WaterDemandPort.GREY_WATER_OUT)
+            .to(self.water_treatment)
+            .at(WaterTreatmentPort.IN)
+        )
+        # fmt: on
+
+    def _water_maker_feedback(self):
+        return (
+            self.define_feedback(self.water_treatment)
+            .at(WaterTreatmentPort.OUT)
+            .to(self.fresh_water_tank)
+            .at(WaterTankPort.IN_1)
+        )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         context = PowerHubSensors.context()
