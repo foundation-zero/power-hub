@@ -1,0 +1,186 @@
+replicaCount: 3
+
+image:
+  repository: vernemq/vernemq
+  tag: 1.13.0-alpine
+
+  pullPolicy: IfNotPresent
+
+service:
+  # Can be disabled if more advanced use cases require more complex setups, e.g., combining LoadBalancer and ClusterIP for internal and external access. See also issue #274.
+  enabled: true
+  # NodePort - Listen to a port on nodes and forward to the service.
+  # ClusterIP - Listen on the service internal to the cluster only.
+  # LoadBalancer - Create a LoadBalancer in the cloud provider and forward to the service.
+  type: LoadBalancer
+#  clusterIP: 10.1.2.4
+#  externalIPs: []
+#  loadBalancerIP: 10.1.2.4
+#  loadBalancerSourceRanges: []
+#  externalTrafficPolicy: Local
+#  sessionAffinity: None
+#  sessionAffinityConfig: {}
+  mqtt:
+    enabled: false
+    port: 1883
+    # This is the port used by nodes to expose the service
+    nodePort: 1883
+  mqtts:
+    enabled: true
+    port: 8883
+    # This is the port used by nodes to expose the service
+    nodePort: 8883
+  ws:
+    enabled: false
+    port: 8080
+    # This is the port used by nodes to expose the service
+    nodePort: 8080
+  wss:
+    enabled: true
+    port: 8443
+    # This is the port used by nodes to expose the service
+    nodePort: 8443
+  api:
+    enabled: true
+    port: 8888
+    nodePort: 38888
+    annotations: {}
+  annotations: {}
+  labels: {}
+  
+
+## Ingress can optionally be applied when enabling the MQTT websocket service
+## This allows for an ingress controller to route web ports and arbitrary hostnames
+## and paths to the websocket service as well as allow the controller to handle TLS
+## termination for the websocket traffic. Ingress is only possible for traffic exchanged
+## over HTTP, so ONLY the websocket service take advantage of ingress.
+ingress:
+  className: ""
+  enabled: false
+
+  labels: {}
+
+  annotations: {}
+
+  ## Hosts must be provided if ingress is enabled.
+  ##
+  hosts: []
+    # - vernemq.domain.com
+
+  ## Paths to use for ingress rules.
+  ##
+  paths:
+    - path: /
+      pathType: ImplementationSpecific
+      
+
+  ## TLS configuration for ingress
+  ## Secret must be manually created in the namespace
+  ##
+  tls: []
+  # - secretName: vernemq-tls
+  #   hosts:
+  #   - vernemq.domain.com
+
+## VerneMQ resources requests and limits
+## Ref: http://kubernetes.io/docs/user-guide/compute-resources
+resources: {}
+  ## We usually recommend not to specify default resources and to leave this as a conscious
+  ## choice for the user. This also increases chances charts run on environments with little
+  ## resources, such as Minikube. If you do want to specify resources, uncomment the following
+  ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+#  limits:
+#    cpu: 1
+#    memory: 256Mi
+#  requests:
+#    cpu: 1
+#    memory: 256Mi
+
+## Node labels for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+nodeSelector: {}
+
+## Node tolerations for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+tolerations:
+    - key: kubernetes.io/arch
+      operator: Equal
+      value: arm64
+      effect: NoSchedule
+
+## If RBAC is enabled on the cluster,VerneMQ needs a service account
+## with permissisions sufficient to list pods
+rbac:
+  create: true
+  serviceAccount:
+    create: true
+
+persistentVolume:
+  ## If true, VerneMQ will create/use a Persistent Volume Claim
+  ## If false, use local directory
+  enabled: true
+
+  ## VerneMQ data Persistent Volume access modes
+  ## Must match those of existing PV or dynamic provisioner
+  ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+  accessModes:
+    - ReadWriteOnce
+
+  ## VerneMQ data Persistent Volume size
+  size: 5Gi
+
+  ## VerneMQ data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+#  storageClass: ""
+
+  ## Annotations for Persistent Volume Claim
+  annotations: {}
+
+# A list of secrets and their paths to mount inside the pod
+# This is useful for mounting certificates for security (tls)
+secretMounts: []
+
+
+statefulset:
+  ## Start and stop pods in Parallel or OrderedReady (one-by-one.)  Note - Can not change after first release.
+  ## Ref: https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
+  podManagementPolicy: OrderedReady
+  ## Statefulsets rolling update update strategy
+  ## Ref: https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update
+  updateStrategy: RollingUpdate
+  ## Configure how much time VerneMQ takes to move offline queues to other nodes
+  ## Ref: https://vernemq.com/docs/clustering/#detailed-cluster-leave-case-a-make-a-live-node-leave
+  terminationGracePeriodSeconds: 60
+  ## Liveness and Readiness probe values
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+certificates: {}
+
+## VerneMQ settings
+
+acl:
+  enabled: true
+  labels: {}
+  annotations: {}
+  content: |-
+    topic read #
+
+    user power-hub
+    topic read #
+    topic write #

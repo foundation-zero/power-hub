@@ -1,6 +1,6 @@
 resource "google_kms_key_ring" "terraform_state" {
   name     = "power-hub-bucket-tfstate"
-  location = var.location
+  location = var.region
 }
 
 resource "google_kms_crypto_key" "terraform_state_bucket" {
@@ -41,7 +41,7 @@ resource "google_project_iam_member" "default" {
 resource "google_storage_bucket" "default" {
   name          = "power-hub-bucket-tfstate"
   force_destroy = false
-  location      = var.location
+  location      = var.region
   storage_class = "STANDARD"
   versioning {
     enabled = true
