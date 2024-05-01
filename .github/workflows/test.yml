@@ -28,10 +28,7 @@ jobs:
       - name: Test
         run: poetry run pytest
 
-      - uses: hoverkraft-tech/compose-action@v1.5.1
-        with:
-          compose-file: "./docker-compose.yml"
-          services: telegraf
+      - run: docker-compose up -d telegraf
 
       - name: Integration tests
         run: poetry run pytest --runintegration tests/test_api_integration.py
@@ -40,3 +37,14 @@ jobs:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
           OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
+
+      - name: Clear docker volumes
+        run: docker-compose down -v
+
+      - run: docker-compose up -d
+    
+      - name: Simulation integration tests
+        run: poetry run pytest --runintegration tests/test_simulation_integration.py
+        env:
+          INFLUXDB_URL: "http://0.0.0.0:8086"
+          API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
