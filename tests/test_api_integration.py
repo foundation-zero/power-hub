@@ -45,7 +45,7 @@ async def influx_has_entries(client: InfluxDBClientAsync):
         return False
 
 
-async def _check_simulation_entries():
+async def check_simulation_entries():
     async with get_influx_client() as client:
         async with asyncio.timeout(20):
             while True:
@@ -54,7 +54,7 @@ async def _check_simulation_entries():
                 await asyncio.sleep(0.5)
 
 
-async def _check_api_is_up():
+async def check_api_is_up():
     async with asyncio.timeout(20):
         while True:
             if api_is_up():
@@ -67,9 +67,9 @@ async def setup():
     api_process = multiprocessing.Process(target=run_api)
     api_process.start()
     try:
-        await _check_api_is_up()
+        await check_api_is_up()
         run_simulation(5)
-        await _check_simulation_entries()
+        await check_simulation_entries()
         yield
     finally:
         api_process.terminate()
