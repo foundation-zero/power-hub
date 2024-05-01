@@ -1,0 +1,30 @@
+name: Simulation integration test
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - run: pipx install poetry==1.7.1
+
+      - run: poetry install
+
+      - run: poetry check
+
+      - uses: hoverkraft-tech/compose-action@v1.5.1
+        with:
+          compose-file: "./docker-compose.yml"
+
+      - name: Simulation integration tests
+        run: poetry run pytest --runintegration tests/test_simulation_integration.py
+        env:
+          INFLUXDB_URL: "http://0.0.0.0:8086"
+          API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
