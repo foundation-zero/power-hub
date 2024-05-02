@@ -1,5 +1,5 @@
 persistence:
-  size: 200Gi
+  enabled: false # TODO set based on var.env
 
 ingress:
   enabled: true

@@ -80,6 +80,16 @@ resource "helm_release" "influxdb" {
     name  = "ingress.annotations.ingressClassName"
     value = "gce"
   }
+
+  set {
+    name  = "adminUser.organization"
+    value = var.influxdb_org
+  }
+
+  set {
+    name  = "adminUser.bucket"
+    value = var.influxdb_bucket
+  }
 }
 
 resource "kubernetes_service" "influxdb_internal" {

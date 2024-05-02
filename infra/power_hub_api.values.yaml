@@ -1,0 +1,12 @@
+replicaCount: 3
+
+image:
+  repository: europe-west1-docker.pkg.dev/code-zero-zem/power-hub/python-app
+  tag: latest
+  pullPolicy: Always
+imagePullSecret: artifact-registry
+container:
+  commands: 
+  - "poetry"
+  - "run"
+  - "run_power_hub_api"

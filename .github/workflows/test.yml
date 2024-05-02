@@ -52,3 +52,61 @@ jobs:
         env:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: ${{ github.workflow }}-deploy
+      cancel-in-progress: true
+    
+    env:
+      PROJECT_ID: code-zero-zem
+      SERVICE_ACCOUNT: power-hub@code-zero-zem.iam.gserviceaccount.com
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - id: 'checkout'
+        name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: "access_token"
+          workload_identity_provider: 'projects/395730360492/locations/global/workloadIdentityPools/power-hub/providers/power-hub-cloud-oidc-staging'
+          service_account: ${{env.SERVICE_ACCOUNT}}
+
+      - id: 'login-art-registry'
+        name: 'Login to Artifact Registry'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{env.GAR}}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: 'Docker build'
+        run: >
+          docker build
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
+          . -f python_script.Dockerfile
+
+      - name: 'Docker push sha'
+        run: >
+          docker push
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
+
+      - name: 'Docker push latest'
+        run: >
+          docker push
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"

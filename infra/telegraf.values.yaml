@@ -1,0 +1,20 @@
+replicaCount: 3
+
+config: 
+  outputs:
+    - influxdb_v2:
+        urls:
+          - "http://influxdb-internal:8086"
+    - file:
+        files: 
+        - "stdout"
+  inputs:
+    - mqtt_consumer:
+        servers: ["tcp://vernemq-internal:1883"]
+        topics:
+          - "power_hub/#"
+        data_format: "json"
+        json_time_key: "timestamp"
+        json_time_format: "unix"
+service:
+  enabled: false
