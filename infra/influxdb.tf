@@ -77,9 +77,29 @@ resource "helm_release" "influxdb" {
   }
 
   set {
-    name = "ingress.annotations.ingressClassName"
+    name  = "ingress.annotations.ingressClassName"
     value = "gce"
   }
+}
+
+resource "kubernetes_service" "influxdb_internal" {
+  metadata {
+    name = "influxdb-internal"
+  }
+  spec {
+    session_affinity = "ClientIP"
+    selector = {
+      "app.kubernetes.io/name"     = "influxdb2"
+      "app.kubernetes.io/instance" = "influxdb"
+    }
+    port {
+      protocol    = "TCP"
+      port        = 8086
+      target_port = 8086
+    }
+  }
+
+  depends_on = [helm_release.influxdb]
 }
 
 resource "cloudflare_record" "influxdb_record" {

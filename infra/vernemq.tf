@@ -121,6 +121,26 @@ resource "helm_release" "vernemq" {
   }
 }
 
+resource "kubernetes_service" "vernemq_internal" {
+  metadata {
+    name = "vernemq-internal"
+  }
+  spec {
+    session_affinity = "ClientIP"
+    selector = {
+      "app.kubernetes.io/name"     = "vernemq"
+      "app.kubernetes.io/instance" = "vernemq"
+    }
+    port {
+      protocol    = "TCP"
+      port        = 1883
+      target_port = 1883
+    }
+  }
+
+  depends_on = [helm_release.vernemq]
+}
+
 resource "cloudflare_record" "vernemq_record" {
   zone_id = data.cloudflare_zone.zone.id
   name    = local.vernemq_record_name
@@ -128,7 +148,3 @@ resource "cloudflare_record" "vernemq_record" {
   type    = "A"
   comment = "managed by power hub terraform"
 }
-
-# output "load_balancer_name" {
-#   value = "${helm_release.vernemq.name}-${helm_release.vernemq.chart}"
-# }
