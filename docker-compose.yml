@@ -10,6 +10,7 @@ services:
       - power_hub_simulation
     volumes:
       - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./docker/mosquitto.passwd:/mosquitto/config/mosquitto.passwd
   
   influxdb:
     image: influxdb
