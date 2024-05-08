@@ -20,6 +20,8 @@ HOST = os.environ["MQTT_HOST"]
 PORT = 1883
 MIN_CLIENT_ID_INT = 0
 MAX_CLIEND_ID_INT = 1000000000
+USERNAME = os.getenv("MQTT_USERNAME", default="")
+PASSWORD = os.getenv("MQTT_PASSWORD", default="")
 
 
 def on_connect(
@@ -36,6 +38,8 @@ def create_and_connect_client() -> mqtt_client.Client:
     client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
     client.on_connect = on_connect
+    if USERNAME and PASSWORD:
+        client.username_pw_set(username=USERNAME, password=PASSWORD)
     client.connect(HOST, PORT)
     return client
 
