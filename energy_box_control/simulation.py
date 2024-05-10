@@ -1,3 +1,6 @@
+import logging
+import logging.config
+import os
 import queue
 import time
 from energy_box_control.power_hub.control import (
@@ -25,6 +28,13 @@ from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
 
+logging.config.fileConfig(
+    os.path.normpath(os.path.join(os.path.realpath(__file__), "../", "logging.conf")),
+    disable_existing_loggers=False,
+)
+
+logger = logging.getLogger(__name__)
+
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
@@ -50,7 +60,7 @@ def queue_on_message(
     message: mqtt_client.MQTTMessage,
 ):
     decoded_message = str(message.payload.decode("utf-8"))
-    print("Received message:", decoded_message)
+    logger.debug(f"Received message: {decoded_message}")
     queue.put(decoded_message)
 
 

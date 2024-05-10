@@ -1,3 +1,5 @@
+import logging
+import logging.config
 import os
 from quart import Quart, request, make_response, Response
 from dataclasses import dataclass
@@ -15,6 +17,16 @@ from pandas import DataFrame as df  # type: ignore
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import get_sensor_class_properties
 from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
+
+
+logging.config.fileConfig(
+    os.path.normpath(
+        os.path.join(os.path.realpath(__file__), "../../", "logging.conf")
+    ),
+    disable_existing_loggers=False,
+)
+
+logger = logging.getLogger(__name__)
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", ".env")
@@ -155,7 +167,7 @@ async def influx_client():
             app.influx = client  # type: ignore
             yield
     except Exception as e:
-        print(e)
+        logger.exception(e)
 
 
 @app.while_serving
