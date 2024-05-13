@@ -108,7 +108,7 @@ class PowerHubSchedules:
     @staticmethod
     def schedules_from_data() -> "PowerHubSchedules":
         data: DataFrame = read_csv(
-            "powerhub_simulation_schedules_Jun_Oct_TMY.csv",
+            "energy_box_control/power_hub/powerhub_simulation_schedules_Jun_Oct_TMY.csv",
             index_col=0,
             parse_dates=True,
         )
