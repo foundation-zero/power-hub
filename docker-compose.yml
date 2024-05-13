@@ -1,16 +1,23 @@
 services:
-  mosquitto:
-    image: eclipse-mosquitto:latest
-    container_name: mosquitto
+  vernemq:
+    image: vernemq/vernemq:2.0.0-alpine
+    container_name: vernemq
     restart: always
     ports:
       - "1883:1883"
       - "9001:9001"
     networks:
       - power_hub_simulation
-    volumes:
-      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./docker/mosquitto.passwd:/mosquitto/config/mosquitto.passwd
+    environment: 
+      DOCKER_VERNEMQ_ACCEPT_EULA: 'yes'
+      DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
+      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: 'on'
+      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: '172.22.0.2:9001'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   
   influxdb:
     image: influxdb
@@ -38,8 +45,10 @@ services:
     volumes:
       - ./docker/telegraf.conf:/etc/telegraf/telegraf.conf:ro
     depends_on:
-      - mosquitto
-      - influxdb
+      vernemq:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
     networks:
       - power_hub_simulation
     env_file:
@@ -47,8 +56,10 @@ services:
 
   simulation:
     depends_on:
-      - mosquitto
-      - telegraf
+      vernemq:
+        condition: service_healthy
+      telegraf:
+        condition: service_started
     container_name: simulation
     build:
       context: .
@@ -58,6 +69,7 @@ services:
       - power_hub_simulation
     env_file:
       - .env
+    restart: on-failure:5 
 
   power_hub_api:
     depends_on:
@@ -75,6 +87,7 @@ services:
       - .env
     environment:
     - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
+    restart: on-failure:5 
 
 networks:
   power_hub_simulation:

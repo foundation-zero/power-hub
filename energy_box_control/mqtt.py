@@ -1,3 +1,4 @@
+from functools import partial
 import os
 from typing import Callable, Dict
 from paho.mqtt import client as mqtt_client
@@ -28,22 +29,38 @@ PASSWORD = os.getenv("MQTT_PASSWORD", default="")
 
 
 def on_connect(
-    client: mqtt_client.Client, userdata: str, flags: Dict[str, str], rc: MQTTErrorCode
+    client_id: str,
+    topic: str | None,
+    on_message: Callable[[mqtt_client.Client, str, mqtt_client.MQTTMessage], None],
+    client: mqtt_client.Client,
+    userdata: str,
+    flags: Dict[str, str],
+    rc: MQTTErrorCode,
 ):
     if rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        logger.info("Connected to MQTT Broker!")
+        logger.info(f"Connected to MQTT Broker for client {client_id}")
+        if topic:
+            client.subscribe(topic, qos=1)
+            client.on_message = on_message
+            logger.info(f"Subscribed to topic {topic} for {client_id}")
     else:
-        logger.error(f"Failed to connect, return code {rc}")
+        logger.error(f"Failed to connect, return code {rc} for client {client_id}")
 
 
-def create_and_connect_client() -> mqtt_client.Client:
-    logger.debug(f"Connecting to {HOST}:{PORT}")
+def create_and_connect_client(
+    topic: str | None = None,
+    on_message: (
+        Callable[[mqtt_client.Client, str, mqtt_client.MQTTMessage], None] | None
+    ) = None,
+) -> mqtt_client.Client:
     client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
+    logger.info(f"Connecting to {HOST}:{PORT} for client {client_id}")
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
-    client.on_connect = on_connect
+    client.on_connect = partial(on_connect, client_id, topic, on_message)  # type: ignore
+    client.connect(HOST, PORT)
     if USERNAME and PASSWORD:
         client.username_pw_set(username=USERNAME, password=PASSWORD)
-    client.connect(HOST, PORT)
+    client.loop_start()
     return client
 
 
@@ -70,7 +87,7 @@ def publish_value_to_mqtt(
 def publish_to_mqtt(
     client: mqtt_client.Client, topic: str, json_str: str
 ) -> MQTTMessageInfo:
-    result = client.publish(topic, json_str)
+    result = client.publish(topic, json_str, qos=1, retain=True)
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
         logger.info(f"Send `{json_str}` to topic `{topic}`")
     else:
@@ -82,7 +99,4 @@ def run_listener(
     topic: str,
     on_message: Callable[[mqtt_client.Client, str, mqtt_client.MQTTMessage], None],
 ):
-    client = create_and_connect_client()
-    client.subscribe(topic)
-    client.on_message = on_message
-    client.loop_start()
+    create_and_connect_client(topic, on_message)

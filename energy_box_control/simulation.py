@@ -80,10 +80,10 @@ def run(steps: int = 0):
     )
 
     while True:
-
         power_hub_sensors = power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )
+
         new_control_state, control_values = control_power_hub(
             power_hub, control_state, power_hub_sensors, state.time
         )
