@@ -1,6 +1,4 @@
-import logging
-import logging.config
-import os
+from energy_box_control.custom_logging import get_logger
 import queue
 import time
 from energy_box_control.power_hub.control import (
@@ -28,12 +26,8 @@ from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
 
-logging.config.fileConfig(
-    os.path.normpath(os.path.join(os.path.realpath(__file__), "../", "logging.conf")),
-    disable_existing_loggers=False,
-)
+logger = get_logger(__name__)
 
-logger = logging.getLogger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"

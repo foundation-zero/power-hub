@@ -9,16 +9,9 @@ import random
 from datetime import datetime
 import json
 import time
+from energy_box_control.custom_logging import get_logger
 
-import logging
-import logging.config
-
-logging.config.fileConfig(
-    os.path.normpath(os.path.join(os.path.realpath(__file__), "../", "logging.conf")),
-    disable_existing_loggers=False,
-)
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../", ".env")
