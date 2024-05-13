@@ -9,6 +9,9 @@ import random
 from datetime import datetime
 import json
 import time
+from energy_box_control.custom_logging import get_logger
+
+logger = get_logger(__name__)
 
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../", ".env")
@@ -28,13 +31,13 @@ def on_connect(
     client: mqtt_client.Client, userdata: str, flags: Dict[str, str], rc: MQTTErrorCode
 ):
     if rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        print("Connected to MQTT Broker!")
+        logger.info("Connected to MQTT Broker!")
     else:
-        print("Failed to connect, return code %d\n", rc)
+        logger.error(f"Failed to connect, return code {rc}")
 
 
 def create_and_connect_client() -> mqtt_client.Client:
-    print(f"Connecting to {HOST}:{PORT}")
+    logger.debug(f"Connecting to {HOST}:{PORT}")
     client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
     client.on_connect = on_connect
@@ -59,7 +62,7 @@ def publish_value_to_mqtt(
         ),
     )
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        print(
+        logger.info(
             f"Send `{value}` to topic `{topic}` at timestamp {value_timestamp.strftime('%d-%m-%YT%H:%M:%SZ')}"
         )
 
@@ -69,9 +72,9 @@ def publish_to_mqtt(
 ) -> MQTTMessageInfo:
     result = client.publish(topic, json_str)
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
-        print(f"Send `{json_str}` to topic `{topic}`")
+        logger.info(f"Send `{json_str}` to topic `{topic}`")
     else:
-        print(f"Failed to send message to topic {topic}")
+        logger.error(f"Failed to send message to topic {topic}")
     return result
 
 
