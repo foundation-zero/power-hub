@@ -77,7 +77,7 @@ async def setup():
     try:
         await check_api_is_up()
         logger.debug("Running simulation")
-        run_simulation(5)
+        await run_simulation(5)
         logger.debug("Simulation is done")
         await check_simulation_entries()
         yield

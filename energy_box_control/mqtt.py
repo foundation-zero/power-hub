@@ -5,7 +5,6 @@ from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import MQTTMessageInfo
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
 from paho.mqtt.reasoncodes import ReasonCode
-from paho.mqtt.properties import Properties
 from dotenv import load_dotenv
 import asyncio
 
@@ -32,13 +31,19 @@ PASSWORD = os.getenv("MQTT_PASSWORD", default="")
 
 ClientID = str
 
-subscribed = False
 
-def on_subscribe(topic: str, client_id: ClientID, future: asyncio.Future[None], client: mqtt_client.Client, userdata: str, mid: int, reason_code_list: list[ReasonCode]):
-    global subscribed 
-    subscribed = True
+def on_subscribe(
+    topic: str,
+    client_id: ClientID,
+    future: asyncio.Future[None],
+    client: mqtt_client.Client,
+    userdata: str,
+    mid: int,
+    reason_code_list: list[ReasonCode],
+    *_args: Any,
+):
     logger.info(f"Subscribed to topic {topic} for {client_id}")
-    future.set_result(None)
+    future.get_loop().call_soon_threadsafe(future.set_result, None)
 
 
 def subscribe_to_topic(
@@ -50,18 +55,14 @@ def subscribe_to_topic(
 ):
     client.on_subscribe = partial(on_subscribe, topic, client_id, future)
     client.subscribe(topic, qos=1)
-    # while not subscribed:
-    #     logger.info("sleeping")
-    #     time.sleep(0.1)
     client.on_message = on_message
-    
-    
+
 
 def on_connect[
     ClientID
 ](
     client_id: ClientID,
-    on_connect_callback: Callable[[ClientID, mqtt_client.Client], Any] | None,
+    callback: Callable[[ClientID, mqtt_client.Client], Any] | None,
     client: mqtt_client.Client,
     userdata: str,
     flags: Dict[str, str],
@@ -69,8 +70,8 @@ def on_connect[
 ):
     if rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
         logger.info(f"Connected to MQTT Broker for client {client_id}")
-        if on_connect_callback:
-            on_connect_callback(client_id, client)
+        if callback:
+            callback(client_id, client)
     else:
         logger.error(f"Failed to connect, return code {rc} for client {client_id}")
 
@@ -127,4 +128,3 @@ def run_listener(
     future: asyncio.Future[None] = asyncio.get_event_loop().create_future()
     create_and_connect_client(partial(subscribe_to_topic, topic, on_message, future))
     return future
-

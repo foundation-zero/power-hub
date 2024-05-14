@@ -62,14 +62,12 @@ def queue_on_message(
 
 async def run(steps: int = 0):
     mqtt_client = create_and_connect_client()
-    logger.info("waiting")
-    fut = run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
-    def _bla(*args):
-        logger.info("fut done")
-    fut.add_done_callback(_bla)
-    logger.info("no longer waiting")
-    await run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
-    logger.info("no no longer waiting")
+    await run_listener(
+        CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue)
+    )
+    await run_listener(
+        SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
+    )
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
@@ -129,5 +127,9 @@ async def run(steps: int = 0):
         time.sleep(1)
 
 
-if __name__ == "__main__":
+def main():
     asyncio.run(run())
+
+
+if __name__ == "__main__":
+    main()
