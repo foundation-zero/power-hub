@@ -16,7 +16,7 @@ sys.excepthook = uncaught_exception_hook
 
 def get_logger(logger_name: str) -> Logger:
     logging.basicConfig(
-        format="%(asctime)s - %(name)s - %(levelname)s - In method %(funcName)s on line %(lineno)d: %(message)s",
+        format="%(asctime)s - %(name)s - %(levelname)s %(message)s - In method %(funcName)s on line %(lineno)d",
         level=logging.INFO,
         stream=sys.stdout,
     )

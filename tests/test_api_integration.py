@@ -14,6 +14,9 @@ from energy_box_control.api.api import (
 from dotenv import load_dotenv
 from http import HTTPStatus
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
+from energy_box_control.custom_logging import get_logger
+
+logger = get_logger(__name__)
 
 
 BASE_URL = "http://0.0.0.0:5001"
@@ -46,18 +49,23 @@ async def influx_has_entries(client: InfluxDBClientAsync):
 
 
 async def check_simulation_entries():
+    logger.debug("Checking for simulation entries")
     async with get_influx_client() as client:
+        logger.debug("Influx client created")
         async with asyncio.timeout(20):
             while True:
                 if await influx_has_entries(client):
+                    logger.debug("Entries found in influx")
                     break
                 await asyncio.sleep(0.5)
 
 
 async def check_api_is_up():
+    logger.debug("Checking if api is up")
     async with asyncio.timeout(20):
         while True:
             if api_is_up():
+                logger.debug("API is up")
                 break
             await asyncio.sleep(0.5)
 
@@ -68,7 +76,9 @@ async def setup():
     api_process.start()
     try:
         await check_api_is_up()
-        run_simulation(5)
+        logger.debug("Running simulation")
+        await run_simulation(5)
+        logger.debug("Simulation is done")
         await check_simulation_entries()
         yield
     finally:
