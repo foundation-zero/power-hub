@@ -8,17 +8,17 @@ services:
       - "9001:9001"
     networks:
       - power_hub_simulation
-    environment: 
-      DOCKER_VERNEMQ_ACCEPT_EULA: 'yes'
+    environment:
+      DOCKER_VERNEMQ_ACCEPT_EULA: "yes"
       DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
-      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: 'on'
-      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: '0.0.0.0:9001'
+      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
+      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 5s
       timeout: 5s
       retries: 5
-  
+
   influxdb:
     image: influxdb
     container_name: influxdb
@@ -37,7 +37,7 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORGANISATION}
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_TELEGRAF_BUCKET}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
-  
+
   telegraf:
     image: telegraf
     container_name: telegraf
@@ -64,12 +64,12 @@ services:
     build:
       context: .
       dockerfile: python_script.Dockerfile
-    command: "run_power_hub_simulation"
+    command: "energy_box_control.simulation"
     networks:
       - power_hub_simulation
     env_file:
       - .env
-    restart: on-failure:5 
+    restart: on-failure:5
 
   power_hub_api:
     depends_on:
@@ -80,14 +80,14 @@ services:
     build:
       context: .
       dockerfile: python_script.Dockerfile
-    command: "run_power_hub_api"
+    command: "energy_box_control.api.api"
     networks:
       - power_hub_simulation
     env_file:
       - .env
     environment:
-    - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
-    restart: on-failure:5 
+      - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
+    restart: on-failure:5
 
 networks:
   power_hub_simulation:
