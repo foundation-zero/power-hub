@@ -27,13 +27,11 @@ from energy_box_control.appliances.switch_pump import SwitchPumpControl
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 from energy_box_control.control.pid import Pid, PidConfig
-from energy_box_control.control.timer import Timer
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Watt
-from enum import Enum
 
 
 class HotControlMode(State):
@@ -69,7 +67,7 @@ class ChillControlState:
     waste_switch_valve_position: float
 
 
-class WasteControlMode(Enum):
+class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
 
@@ -80,7 +78,7 @@ PREHEAT_BYPASS_OPEN_POSITION = 1.0
 
 @dataclass
 class WasteControlState:
-    control_mode_timer: Timer[WasteControlMode]
+    context: Context
     control_mode: WasteControlMode
 
 
@@ -113,7 +111,10 @@ class Setpoints:
     cold_reservoir_min_temperature: Celsius = setpoint(
         "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    preheat_reservoir_temperature: Celsius = setpoint(
+    preheat_reservoir_min_temperature: Celsius = setpoint(
+        "minimum temperature of the preheat reservoir"
+    )
+    preheat_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of the preheat reservoir"
     )
 
@@ -141,7 +142,8 @@ def initial_control_state() -> PowerHubControlState:
             pcm_charged=78,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
-            preheat_reservoir_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
+            preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
+            preheat_reservoir_min_temperature=25,
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -156,8 +158,8 @@ def initial_control_state() -> PowerHubControlState:
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
+            context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-            control_mode_timer=Timer(timedelta(minutes=5)),
         ),
     )
 
@@ -471,6 +473,33 @@ def chill_control(
     )
 
 
+should_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) > Fn.state(
+    lambda state: state.setpoints.cold_reservoir_max_temperature
+)
+stop_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
+    lambda state: state.setpoints.cold_reservoir_min_temperature
+)
+
+waste_transitions: dict[
+    tuple[WasteControlMode, WasteControlMode],
+    Predicate[
+        PowerHubControlState,
+        PowerHubSensors,
+    ],
+] = {
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): Fn.sensors(
+        lambda sensors: sensors.preheat_reservoir.temperature
+    )
+    > Fn.state(lambda state: state.setpoints.preheat_reservoir_max_temperature),
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): Fn.sensors(
+        lambda sensors: sensors.preheat_reservoir.temperature
+    )
+    < Fn.state(lambda state: state.setpoints.preheat_reservoir_min_temperature),
+}
+
+waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
+
+
 def waste_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
@@ -478,30 +507,25 @@ def waste_control(
     time: ProcessTime,
 ):
     # Waste
-    # every 5 minutes
     #   if preheat reservoir > max preheat reservoir temperature: run outboard
-    #   else: do nothing
+    #   if preheat reservoir < min preheat reservoir temperature: stop running outboard
 
     # if run outboard:
     #   run outboard heat exchange pump
     # In essence this uses the preheat reservoir as an extra heat buffer
-    def _control_mode():
-        if (
-            sensors.preheat_reservoir.temperature
-            > control_state.setpoints.preheat_reservoir_temperature
-        ):
-            return WasteControlMode.RUN_OUTBOARD
-        else:
-            return WasteControlMode.NO_OUTBOARD
 
-    control_mode_timer, control_mode = (
-        control_state.waste_control.control_mode_timer.run(_control_mode, time)
+    waste_control_mode, context = waste_control_machine.run(
+        control_state.waste_control.control_mode,
+        control_state.waste_control.context,
+        control_state,
+        sensors,
+        time,
     )
 
     return (
-        WasteControlState(control_mode_timer, control_mode),
+        WasteControlState(context, waste_control_mode),
         power_hub.control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(control_mode == WasteControlMode.RUN_OUTBOARD))
+        .value(SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD))
         .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_BYPASS_CLOSED_POSITION)),
     )
@@ -513,8 +537,6 @@ def control_power_hub(
     sensors: PowerHubSensors,
     time: ProcessTime,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
-    # Rough Initial description of envisioned control plan
-
     # Control modes
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
