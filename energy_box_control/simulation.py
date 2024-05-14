@@ -26,6 +26,8 @@ from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
 
+import asyncio
+
 logger = get_logger(__name__)
 
 
@@ -58,10 +60,16 @@ def queue_on_message(
     queue.put(decoded_message)
 
 
-def run(steps: int = 0):
+async def run(steps: int = 0):
     mqtt_client = create_and_connect_client()
-    run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
-    run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
+    logger.info("waiting")
+    fut = run_listener(CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue))
+    def _bla(*args):
+        logger.info("fut done")
+    fut.add_done_callback(_bla)
+    logger.info("no longer waiting")
+    await run_listener(SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue))
+    logger.info("no no longer waiting")
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
@@ -122,4 +130,4 @@ def run(steps: int = 0):
 
 
 if __name__ == "__main__":
-    run()
+    asyncio.run(run())

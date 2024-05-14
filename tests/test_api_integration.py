@@ -51,11 +51,11 @@ async def influx_has_entries(client: InfluxDBClientAsync):
 async def check_simulation_entries():
     logger.debug("Checking for simulation entries")
     async with get_influx_client() as client:
-        logger.debug("Client created")
+        logger.debug("Influx client created")
         async with asyncio.timeout(20):
             while True:
                 if await influx_has_entries(client):
-                    logger.debug("Entries found")
+                    logger.debug("Entries found in influx")
                     break
                 await asyncio.sleep(0.5)
 
