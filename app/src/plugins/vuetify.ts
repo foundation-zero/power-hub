@@ -7,11 +7,10 @@ import { createVuetify } from "vuetify";
 
 export default createVuetify({
   theme: {
+    defaultTheme: "light",
     themes: {
       light: {
-        colors: {
-          background: "rgba(237,237,237, 1)",
-        },
+        colors: {},
       },
     },
   },

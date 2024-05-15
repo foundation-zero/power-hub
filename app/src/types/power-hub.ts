@@ -55,3 +55,19 @@ export interface SensorsTree {
 export interface Tree {
   applianceSensors: SensorsTree;
 }
+
+export type PowerHubComponent =
+  | "sun"
+  | "solar-panels"
+  | "heat-tubes"
+  | "heat-storage"
+  | "absorption-chiller"
+  | "compression-chiller"
+  | "cooling-demand"
+  | "power-battery"
+  | "system-demand"
+  | "sea-water"
+  | "water-maker"
+  | "water-storage"
+  | "water-treatment"
+  | "water-demand";
