@@ -3,10 +3,11 @@ variable "vernemq_power_hub_password" {
 }
 
 locals {
-  vernemq_record_name      = "vernemq.${var.env}.${var.subdomain}"
-  vernemq_certificate_name = "vernemq-certicate-secret"
-  vernemq_certificate_path = "/etc/ssl/vernemq"
-  vernemq_host             = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
+  vernemq_record_name           = "vernemq.${var.env}.${var.subdomain}"
+  vernemq_certificate_name      = "vernemq-certicate-secret"
+  vernemq_certificate_path      = "/etc/ssl/vernemq"
+  vernemq_host                  = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
+  vernemq_auth_secret_name      = "vernemq-auth" 
 }
 
 resource "kubernetes_manifest" "vernemq_ssl" {
@@ -33,6 +34,20 @@ resource "kubernetes_manifest" "vernemq_ssl" {
 resource "google_compute_address" "vernemq_ip" {
   name = "${var.name}-${var.env}-vernemq-address"
 }
+
+
+
+resource "kubernetes_secret" "vernemq_auth" {
+  metadata {
+    name = local.vernemq_auth_secret_name
+  }
+
+  data = {
+    password = var.vernemq_power_hub_password
+  }
+}
+
+
 
 resource "helm_release" "vernemq" {
   name       = "vernemq"
@@ -114,10 +129,21 @@ resource "helm_release" "vernemq" {
     name  = "additionalEnv[5].name"
     value = "DOCKER_VERNEMQ_USER_power-hub"
   }
+
   set {
-    name  = "additionalEnv[5].value"
-    value = var.vernemq_power_hub_password
+    name  = "additionalEnv[5].valueFrom.secretKeyRef.name"
+    value = kubernetes_secret.vernemq_auth.metadata.0.name
     type  = "string"
+  }
+
+  set {
+    name  = "additionalEnv[5].valueFrom.secretKeyRef.key"
+    value = "password"
+  }
+
+  set {
+    name  = "persistentVolume.enabled"
+    value = var.env == "staging" ? "false" : "true"
   }
 }
 

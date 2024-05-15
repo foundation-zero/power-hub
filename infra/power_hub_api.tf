@@ -8,9 +8,10 @@ variable "power_hub_api_token" {
 
 
 locals {
-  power_hub_api_record_name = "power-hub-api.${var.env}.${var.subdomain}"
-  power_hub_api_hostname    = "power-hub-api.${var.env}.${var.subdomain}.${var.root_hostname}"
-  power_hub_api_ssl_name    = "${var.name}-${var.env}-power-hub-ssl"
+  power_hub_api_record_name       = "power-hub-api.${var.env}.${var.subdomain}"
+  power_hub_api_hostname          = "power-hub-api.${var.env}.${var.subdomain}.${var.root_hostname}"
+  power_hub_api_ssl_name          = "${var.name}-${var.env}-power-hub-ssl"
+  openweather_api_key_secret_name = "openweather-key"
 }
 
 resource "google_compute_global_address" "power_hub_api_ip" {
@@ -28,6 +29,16 @@ resource "kubernetes_manifest" "power_hub_api_ssl_secret" {
     "spec" = {
       "domains" = [local.power_hub_api_hostname]
     }
+  }
+}
+
+resource "kubernetes_secret" "openweather_api_key" {
+  metadata {
+    name = local.openweather_api_key_secret_name
+  }
+
+  data = {
+    key = var.openweather_api_key
   }
 }
 
@@ -77,10 +88,15 @@ resource "helm_release" "power_hub_api" {
     value = var.power_hub_api_token
   }
 
-  # TODO create secret out of this?
+
   set {
-    name  = "container.env.OPEN_WEATHER_API_KEY"
-    value = var.openweather_api_key
+    name  = "container.envFromSecrets.OPEN_WEATHER_API_KEY.secretName"
+    value = kubernetes_secret.openweather_api_key.metadata.0.name
+  }
+
+  set {
+    name  = "container.envFromSecrets.OPEN_WEATHER_API_KEY.secretKey"
+    value = "key"
   }
 
   set {
@@ -88,9 +104,15 @@ resource "helm_release" "power_hub_api" {
     value = "http://${kubernetes_service.influxdb_internal.metadata.0.name}:${kubernetes_service.influxdb_internal.spec.0.port.0.port}"
   }
 
+
   set {
-    name  = "container.env.INFLUXDB_TOKEN"
-    value = var.influxdb_admin_token
+    name  = "container.envFromSecrets.INFLUXDB_TOKEN.secretName"
+    value = kubernetes_secret.influxdb_auth.metadata.0.name
+  }
+
+  set {
+    name  = "container.envFromSecrets.INFLUXDB_TOKEN.secretKey"
+    value = "admin-token"
   }
 
   set {

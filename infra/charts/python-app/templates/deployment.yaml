@@ -35,6 +35,13 @@ spec:
           - name: {{ quote $key }}
             value: {{ quote $value }}
           {{- end }}
+          {{- range $key, $value := .Values.container.envFromSecrets }}
+          - name: {{quote $key }}
+            valueFrom:
+              secretKeyRef:
+                name: {{quote $value.secretName}}
+                key: {{quote $value.secretKey}}
+          {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.initialDelaySeconds }}
           ports:

@@ -90,6 +90,11 @@ resource "helm_release" "influxdb" {
     name  = "adminUser.bucket"
     value = var.influxdb_bucket
   }
+
+  set {
+    name  = "persistence.enabled"
+    value = var.env == "staging" ? "false" : "true"
+  }
 }
 
 resource "kubernetes_service" "influxdb_internal" {

@@ -1,6 +1,3 @@
-persistence:
-  enabled: false # TODO set based on var.env
-
 ingress:
   enabled: true
   tls: false
