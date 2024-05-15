@@ -34,6 +34,8 @@ const createStreams = (amountOfStreams: number) =>
 export const usePresentationStore = defineStore("presentation", () => {
   const slides = ref<string[]>([]);
   const isRunning = ref(false);
+  const showWidgets = ref(false);
+  const showWaves = ref(true);
 
   const root = ref<SVGSVGElement>();
 
@@ -146,6 +148,8 @@ export const usePresentationStore = defineStore("presentation", () => {
     streamStates,
     pipes,
     root,
+    showWidgets,
+    showWaves,
     getFlow,
     getComponent,
     getComponentState,

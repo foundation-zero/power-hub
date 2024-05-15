@@ -50,7 +50,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   };
 
   const connect = async () => {
-    client ??= await MqttClient.connect(`ws://${location.host}/ws`);
+    client ??= await MqttClient.connect(`ws://${location.host}/mqtt`);
 
     return {
       sensors,

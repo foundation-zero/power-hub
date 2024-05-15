@@ -72,3 +72,19 @@ import { toRefs } from "vue";
 
 const { pipes } = toRefs(usePresentationStore());
 </script>
+
+<style lang="scss" scoped>
+g {
+  & > path {
+    will-change: stroke-width, opacity;
+    transition:
+      stroke-width 750ms ease,
+      opacity 750ms ease;
+  }
+
+  &:not(.active) > path {
+    opacity: 0;
+    stroke-width: 0;
+  }
+}
+</style>
