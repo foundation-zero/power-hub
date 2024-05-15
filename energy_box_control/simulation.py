@@ -45,8 +45,9 @@ def publish_sensor_values(
     simulation_timestamp: datetime,
 ):
     for field_name, value in appliance_sensor_values.items():
-        topic = f"{MQTT_TOPIC_BASE}/appliance_sensors/{appliance_name}/{field_name}"
-        publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
+        if value == value:
+            topic = f"{MQTT_TOPIC_BASE}/appliance_sensors/{appliance_name}/{field_name}"
+            publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
 
 
 def queue_on_message(
