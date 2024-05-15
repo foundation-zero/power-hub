@@ -165,7 +165,9 @@ def test_power_hub_simulation_data_schedule(min_max_temperature, seconds):
 def test_power_hub_schedules_from_data():
 
     data = read_csv(
-        "powerhub_simulation_schedules_Jun_Oct_TMY.csv", index_col=0, parse_dates=True
+        "energy_box_control/power_hub/powerhub_simulation_schedules_Jun_Oct_TMY.csv",
+        index_col=0,
+        parse_dates=True,
     )
 
     hour = 4
