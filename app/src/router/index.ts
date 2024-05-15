@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import ReadingsView from "../views/ReadingsView.vue";
+import DashboardView from "../views/DashboardView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: ReadingsView,
+      component: DashboardView,
     },
   ],
 });

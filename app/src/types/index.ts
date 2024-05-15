@@ -1,22 +1,6 @@
 import type { CamelCase, SnakeCase } from "type-fest";
-import type { Ref } from "vue";
+import type { PowerHubComponent } from "./power-hub";
 export * as PowerHub from "./power-hub";
-
-export type DataTableRow = [
-  key: string,
-  value: string | number | undefined | Ref<string | number | undefined>,
-];
-
-export interface DataTable {
-  name: string;
-  rows: DataTableRow[];
-}
-
-export type TopicCache<T> = {
-  [K in NestedPath<T>]?: RORef<PathValue<T, K> | undefined>;
-};
-
-export type RORef<T> = Readonly<Ref<T>>;
 
 //@see https://stackoverflow.com/questions/58434389/typescript-deep-keyof-of-a-nested-object/76131375#76131375
 export type NestedPath<T> = T extends object
@@ -42,4 +26,59 @@ export type PathValue<T, P extends NestedPath<T>> = P extends `${infer Key}/${in
 export type HistoricalData<T extends string | Date = string, V = string | number> = {
   time: T;
   value: V;
+};
+
+export type Journey = "electrical" | "heat" | "water";
+
+export type ComponentState = {
+  active?: boolean;
+  muted?: boolean;
+  highlighted?: boolean;
+};
+
+export type ComponentElement = {
+  component: PowerHubComponent;
+  state: ComponentState;
+  position: {
+    x: number;
+    y: number;
+  };
+};
+
+export type JourneyStep = {
+  component: PowerHubComponent;
+  journey: Journey;
+  step: number;
+};
+
+export type JourneyFlow = {
+  components: PowerHubComponent[];
+  streams: StreamState[];
+};
+
+export type JourneyFlowWithState = {
+  components: ComponentState[];
+  streams: StreamState[];
+};
+
+export type StreamState = {
+  active?: boolean;
+  muted?: boolean;
+  flowing?: boolean;
+};
+
+export type PipeState = {
+  active?: boolean;
+};
+
+export type Activatable = {
+  active?: boolean;
+};
+
+export type Muteable = {
+  muted?: boolean;
+};
+
+export type Flowable = {
+  flowing?: boolean;
 };

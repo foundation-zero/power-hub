@@ -1,0 +1,124 @@
+<template>
+  <svg
+    v-if="isRunning"
+    id="display-presentation"
+    ref="root"
+    width="100%"
+    viewBox="0 0 1920 1080"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <BackgroundInner />
+    <PhaseLanes />
+    <FZLogo />
+    <PipeLines />
+    <PipeStreams />
+    <PowerHubComponents />
+  </svg>
+</template>
+
+<script setup lang="ts">
+import FZLogo from "./presentation/FZLogo.vue";
+import BackgroundInner from "./presentation/BackgroundInner.vue";
+import PhaseLanes from "./presentation/PhaseLanes.vue";
+import PipeLines from "./presentation/PipeLines.vue";
+import PipeStreams from "./presentation/PipeStreams.vue";
+import PowerHubComponents from "./presentation/PowerHubComponents.vue";
+
+import { usePresentationStore } from "@/stores/presentation";
+import type { Journey } from "@/types";
+import { useSleep, activate, deactivate, mute, unmute, startFlow, stopFlow } from "@/utils";
+import { onMounted, onDeactivated, ref } from "vue";
+import { toRefs } from "vue";
+import { zip } from "lodash";
+
+const COMPONENT_ANIMATION_IN_MS = 750;
+const isRunning = ref(false);
+const sleep = useSleep(isRunning);
+
+const { startSlideShow, stopSlideShow, getFlow } = usePresentationStore();
+const { componentStates, streamStates, root } = toRefs(usePresentationStore());
+
+const activateStream = async (journey: Journey) => {
+  const { streams, components } = getFlow(journey);
+
+  for (let [component, stream] of zip(components, streams)) {
+    if (component) {
+      component.active = true;
+      component.highlighted = true;
+
+      await sleep(COMPONENT_ANIMATION_IN_MS);
+
+      component.highlighted = false;
+    }
+
+    if (stream) {
+      stream.active = true;
+      await sleep(500);
+    }
+  }
+};
+
+const deactivateAll = async (nextJourney: Journey) => {
+  const { components } = getFlow(nextJourney);
+
+  componentStates.value.forEach(deactivate);
+  activate(components[0]);
+
+  streamStates.value.forEach(mute);
+
+  await sleep(COMPONENT_ANIMATION_IN_MS);
+
+  streamStates.value.forEach(deactivate);
+  streamStates.value.forEach(unmute);
+  streamStates.value.forEach(stopFlow);
+};
+
+const activateAllComponents = async () => {
+  componentStates.value.forEach(activate);
+};
+
+const startWaterFlow = async (journey: Journey) => {
+  const { streams } = getFlow(journey);
+  streams.forEach(startFlow);
+};
+
+const start = async () => {
+  if (!isRunning.value) return;
+
+  try {
+    await activateAllComponents();
+    await sleep(5000);
+    await deactivateAll("electrical");
+    await activateStream("electrical");
+    await sleep(3000);
+    await startSlideShow("electrical");
+    await deactivateAll("heat");
+    await activateStream("heat");
+    await sleep(3000);
+    await startSlideShow("heat");
+    await deactivateAll("water");
+    await activateStream("water");
+    await startWaterFlow("water");
+    await sleep(5000);
+    await startSlideShow("water");
+    deactivateAll("electrical");
+
+    setTimeout(start);
+  } catch (e) {
+    if (e !== "aborted") {
+      console.log(e);
+    }
+  }
+};
+
+onMounted(() => {
+  isRunning.value = true;
+  setTimeout(start);
+});
+
+onDeactivated(() => {
+  isRunning.value = false;
+  stopSlideShow();
+});
+</script>
