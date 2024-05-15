@@ -27,13 +27,11 @@ from energy_box_control.appliances.switch_pump import SwitchPumpControl
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 from energy_box_control.control.pid import Pid, PidConfig
-from energy_box_control.control.timer import Timer
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Watt
-from enum import Enum
 
 
 class HotControlMode(State):
@@ -53,22 +51,23 @@ class HotControlState:
     hot_switch_valve_position: float
 
 
-class ChillControlMode(Enum):
+class ChillControlMode(State):
     NO_CHILL = "no_chill"
+    PREPARE_CHILL_YAZAKI = "prepare_chill_yazaki"
     CHILL_YAZAKI = "chill_yazaki"
-    WAIT_BEFORE_CHILLER = "wait_before_chiller"
+    PREPARE_CHILL_CHILLER = "prepare_chill_chiller"
     CHILL_CHILLER = "chill_chiller"
 
 
 @dataclass
 class ChillControlState:
-    control_mode_timer: Timer[ChillControlMode]
+    context: Context
     control_mode: ChillControlMode
     chiller_switch_valve_position: float
     waste_switch_valve_position: float
 
 
-class WasteControlMode(Enum):
+class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
 
@@ -79,7 +78,7 @@ PREHEAT_BYPASS_OPEN_POSITION = 1.0
 
 @dataclass
 class WasteControlState:
-    control_mode_timer: Timer[WasteControlMode]
+    context: Context
     control_mode: WasteControlMode
 
 
@@ -102,16 +101,20 @@ class Setpoints:
     hot_reservoir_charge_temperature_offset: Celsius = setpoint(
         "offset to hot reservoir temperature of temperature of medium flowing into pcm"
     )
-    pcm_yazaki_temperature: Celsius = setpoint(
-        "minimum temperature of pcm to engage yazaki"
+    pcm_discharged: Celsius = setpoint(
+        "maximum temperature at which pcm is fully discharged"
     )
-    cold_reservoir_yazaki_temperature: Celsius = setpoint(
-        "maximum temperature of cold reservoir to be maintained by Yazaki"
+    pcm_charged: Celsius = setpoint("minimum temperature at which pcm is fully charged")
+    cold_reservoir_max_temperature: Celsius = setpoint(
+        "maximum temperature of cold reservoir to be maintained by chillers"
     )
-    cold_reservoir_chiller_temperature: Celsius = setpoint(
-        "maximum temperature of cold reservoir to be maintained by compression chiller (ideally greater than cold_reservoir_yazaki_temperature)"
+    cold_reservoir_min_temperature: Celsius = setpoint(
+        "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    preheat_reservoir_temperature: Celsius = setpoint(
+    preheat_reservoir_min_temperature: Celsius = setpoint(
+        "minimum temperature of the preheat reservoir"
+    )
+    preheat_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of the preheat reservoir"
     )
 
@@ -135,10 +138,12 @@ def initial_control_state() -> PowerHubControlState:
             pcm_temperature=95,
             pcm_charge_temperature_offset=5,
             hot_reservoir_charge_temperature_offset=5,
-            pcm_yazaki_temperature=80,
-            cold_reservoir_yazaki_temperature=8,
-            cold_reservoir_chiller_temperature=11,
-            preheat_reservoir_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on tazaki cooling in temp
+            pcm_discharged=78,
+            pcm_charged=78,
+            cold_reservoir_min_temperature=8,
+            cold_reservoir_max_temperature=11,
+            preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
+            preheat_reservoir_min_temperature=25,
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -147,14 +152,14 @@ def initial_control_state() -> PowerHubControlState:
             hot_switch_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
+            context=Context(),
             control_mode=ChillControlMode.NO_CHILL,
-            control_mode_timer=Timer(timedelta(minutes=15)),
             chiller_switch_valve_position=CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
+            context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-            control_mode_timer=Timer(timedelta(minutes=5)),
         ),
     )
 
@@ -284,18 +289,79 @@ def hot_control(
     return hot_control_state, control
 
 
+should_chill = Fn.sensors(
+    lambda sensors: sensors.cold_reservoir.temperature
+) > Fn.state(lambda state: state.setpoints.cold_reservoir_max_temperature)
+stop_chill = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
+    lambda state: state.setpoints.cold_reservoir_min_temperature
+)
+pcm_charged = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
+    lambda state: state.setpoints.pcm_charged
+)
+pcm_discharged = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state(
+    lambda state: state.setpoints.pcm_discharged
+)
+ready_for_yazaki = Fn.pred(
+    lambda _, sensors: sensors.waste_switch_valve.in_position(
+        WASTE_SWITCH_VALVE_YAZAKI_POSITION
+    )
+) & Fn.pred(
+    lambda _, sensors: sensors.chiller_switch_valve.in_position(
+        CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+    )
+)
+ready_for_chiller = Fn.pred(
+    lambda _, sensors: sensors.waste_switch_valve.in_position(
+        WASTE_SWITCH_VALVE_CHILLER_POSITION
+    )
+) & Fn.pred(
+    lambda _, sensors: sensors.chiller_switch_valve.in_position(
+        CHILLER_SWITCH_VALVE_CHILLER_POSITION
+    )
+)
+
+chill_transitions: dict[
+    tuple[ChillControlMode, ChillControlMode],
+    Predicate[PowerHubControlState, PowerHubSensors],
+] = {
+    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_YAZAKI): should_chill
+    & pcm_charged,
+    (
+        ChillControlMode.PREPARE_CHILL_YAZAKI,
+        ChillControlMode.CHILL_YAZAKI,
+    ): ready_for_yazaki,
+    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_CHILLER): should_chill
+    & ~pcm_discharged,
+    (
+        ChillControlMode.PREPARE_CHILL_CHILLER,
+        ChillControlMode.CHILL_CHILLER,
+    ): ready_for_chiller,
+    (
+        ChillControlMode.CHILL_YAZAKI,
+        ChillControlMode.PREPARE_CHILL_CHILLER,
+    ): should_chill
+    & pcm_discharged,
+    (
+        ChillControlMode.CHILL_CHILLER,
+        ChillControlMode.PREPARE_CHILL_YAZAKI,
+    ): should_chill
+    & pcm_charged,
+    (ChillControlMode.CHILL_YAZAKI, ChillControlMode.NO_CHILL): stop_chill,
+    (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill,
+}
+
+chill_control_state_machine = StateMachine(ChillControlMode, chill_transitions)
+
+
 def chill_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
     time: ProcessTime,
 ):
-    # Chill
-    # every 15 minutes
-    #   if cold reservoir < 9 degrees C: reservoir full
-    #   if cold reservoir > 9 degrees C and PCM SoC > 80%: chill Yazaki
-    #   if cold reservoir > 9 degrees C and PCM SoC < 80%: wait before starting e-chiller
-    #   if cold reservoir > 11 degrees C and PCM SoC < 80%: chill e-chiller
+    # Chill between cold reservoir min and max setpoints
+    # Switch to Yazaki if PCM is full
+    # Switch to compression chiller if PCM is empty
 
     # if chill yazaki:
     #   switch chiller valve to Yazaki
@@ -310,28 +376,13 @@ def chill_control(
     #   keep pcm e-chiller valve open
     #   ensure waste heat take away is flowing
     #   PID chill pump at speed at which e-chiller chill output is -3 degrees from chill reservoir
-    def _chill_control_mode():
-        if (
-            sensors.cold_reservoir.temperature
-            > control_state.setpoints.cold_reservoir_yazaki_temperature
-            and sensors.pcm.temperature > control_state.setpoints.pcm_yazaki_temperature
-        ):
-            return ChillControlMode.CHILL_YAZAKI
-        elif (
-            sensors.cold_reservoir.temperature
-            > control_state.setpoints.cold_reservoir_chiller_temperature
-        ):
-            return ChillControlMode.CHILL_CHILLER
-        elif (
-            sensors.cold_reservoir.temperature
-            > control_state.setpoints.cold_reservoir_yazaki_temperature
-        ):
-            return ChillControlMode.WAIT_BEFORE_CHILLER
-        else:  # temp ok
-            return ChillControlMode.NO_CHILL
 
-    control_mode_timer, control_mode = (
-        control_state.chill_control.control_mode_timer.run(_chill_control_mode, time)
+    chill_control_mode, context = chill_control_state_machine.run(
+        control_state.chill_control.control_mode,
+        control_state.chill_control.context,
+        control_state,
+        sensors,
+        time,
     )
 
     no_run = (
@@ -371,29 +422,31 @@ def chill_control(
         .combine(run_waste_chill)
     )
 
-    if control_mode == ChillControlMode.CHILL_YAZAKI:
+    if chill_control_mode in [
+        ChillControlMode.PREPARE_CHILL_YAZAKI,
+        ChillControlMode.CHILL_YAZAKI,
+    ]:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+        running = (
+            run_yazaki
+            if chill_control_mode == ChillControlMode.CHILL_YAZAKI
+            else no_run
+        )
 
-        # wait for valves to get into position
-        if sensors.chiller_switch_valve.in_position(
-            chiller_switch_valve_position
-        ) and sensors.waste_switch_valve.in_position(waste_switch_valve_position):
-            running = run_yazaki
-        else:
-            running = no_run
-    elif control_mode == ChillControlMode.CHILL_CHILLER:
+    elif chill_control_mode in [
+        ChillControlMode.PREPARE_CHILL_CHILLER,
+        ChillControlMode.CHILL_CHILLER,
+    ]:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_CHILLER_POSITION
+        running = (
+            run_chiller
+            if chill_control_mode == ChillControlMode.CHILL_CHILLER
+            else no_run
+        )
 
-        # wait for valves to get into position
-        if sensors.chiller_switch_valve.in_position(
-            chiller_switch_valve_position
-        ) and sensors.waste_switch_valve.in_position(waste_switch_valve_position):
-            running = run_chiller
-        else:
-            running = no_run
-    else:
+    else:  # no chill
         chiller_switch_valve_position = (
             control_state.chill_control.chiller_switch_valve_position
         )
@@ -403,8 +456,8 @@ def chill_control(
         running = no_run
 
     return ChillControlState(
-        control_mode_timer,
-        control_mode,
+        context,
+        chill_control_mode,
         chiller_switch_valve_position,
         waste_switch_valve_position,
     ), (
@@ -420,6 +473,33 @@ def chill_control(
     )
 
 
+should_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) > Fn.state(
+    lambda state: state.setpoints.cold_reservoir_max_temperature
+)
+stop_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
+    lambda state: state.setpoints.cold_reservoir_min_temperature
+)
+
+waste_transitions: dict[
+    tuple[WasteControlMode, WasteControlMode],
+    Predicate[
+        PowerHubControlState,
+        PowerHubSensors,
+    ],
+] = {
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): Fn.sensors(
+        lambda sensors: sensors.preheat_reservoir.temperature
+    )
+    > Fn.state(lambda state: state.setpoints.preheat_reservoir_max_temperature),
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): Fn.sensors(
+        lambda sensors: sensors.preheat_reservoir.temperature
+    )
+    < Fn.state(lambda state: state.setpoints.preheat_reservoir_min_temperature),
+}
+
+waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
+
+
 def waste_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
@@ -427,30 +507,25 @@ def waste_control(
     time: ProcessTime,
 ):
     # Waste
-    # every 5 minutes
     #   if preheat reservoir > max preheat reservoir temperature: run outboard
-    #   else: do nothing
+    #   if preheat reservoir < min preheat reservoir temperature: stop running outboard
 
     # if run outboard:
     #   run outboard heat exchange pump
     # In essence this uses the preheat reservoir as an extra heat buffer
-    def _control_mode():
-        if (
-            sensors.preheat_reservoir.temperature
-            > control_state.setpoints.preheat_reservoir_temperature
-        ):
-            return WasteControlMode.RUN_OUTBOARD
-        else:
-            return WasteControlMode.NO_OUTBOARD
 
-    control_mode_timer, control_mode = (
-        control_state.waste_control.control_mode_timer.run(_control_mode, time)
+    waste_control_mode, context = waste_control_machine.run(
+        control_state.waste_control.control_mode,
+        control_state.waste_control.context,
+        control_state,
+        sensors,
+        time,
     )
 
     return (
-        WasteControlState(control_mode_timer, control_mode),
+        WasteControlState(context, waste_control_mode),
         power_hub.control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(control_mode == WasteControlMode.RUN_OUTBOARD))
+        .value(SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD))
         .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_BYPASS_CLOSED_POSITION)),
     )
@@ -462,8 +537,6 @@ def control_power_hub(
     sensors: PowerHubSensors,
     time: ProcessTime,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
-    # Rough Initial description of envisioned control plan
-
     # Control modes
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
