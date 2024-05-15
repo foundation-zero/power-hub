@@ -29,6 +29,9 @@ jobs:
       - name: Test
         run: poetry run pytest
 
+      - name: Run simulation notebook
+        run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
+
       - run: docker-compose up -d telegraf
 
       - name: Integration tests
