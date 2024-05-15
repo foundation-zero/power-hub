@@ -2,29 +2,64 @@ variable "openweather_api_key" {
   description = "Open Weather API Key"
 }
 
+variable "power_hub_api_token" {
+  description = "API token"
+}
+
 
 locals {
-  power_hub_api_record_name      = "power-hub-api.${var.env}.${var.subdomain}"
-  power_hub_api_hostname         = "power-hub-api.${var.env}.${var.subdomain}.${var.root_hostname}"
+  power_hub_api_record_name = "power-hub-api.${var.env}.${var.subdomain}"
+  power_hub_api_hostname    = "power-hub-api.${var.env}.${var.subdomain}.${var.root_hostname}"
+  power_hub_api_ssl_name    = "${var.name}-${var.env}-power-hub-ssl"
 }
 
 resource "google_compute_global_address" "power_hub_api_ip" {
   name = "${var.name}-${var.env}-power-hub-api-address"
 }
 
+resource "kubernetes_manifest" "power_hub_api_ssl_secret" {
+  manifest = {
+    "apiVersion" = "networking.gke.io/v1"
+    "kind"       = "ManagedCertificate"
+    "metadata" = {
+      "name"      = local.power_hub_api_ssl_name
+      "namespace" = "default"
+    }
+    "spec" = {
+      "domains" = [local.power_hub_api_hostname]
+    }
+  }
+}
+
 resource "helm_release" "power_hub_api" {
-  name       = "power-hub-api"
-  chart      = "./charts/python-app"
+  name  = "power-hub-api"
+  chart = "./charts/python-app"
 
   values = [file("power_hub_api.values.yaml")]
 
-  depends_on = [ 
-      kubernetes_secret.artifact_registry
-   ]
+  depends_on = [
+    google_container_cluster.primary,
+    kubernetes_manifest.power_hub_api_ssl_secret
+  ]
 
   set {
-    name  = "ingress.hostname"
+    name  = "ingress.hosts[0].host"
     value = local.power_hub_api_hostname
+  }
+
+  set {
+    name  = "ingress.hosts[0].paths[0].path"
+    value = "/"
+  }
+
+  set {
+    name  = "ingress.hosts[0].paths[0].pathType"
+    value = "Prefix"
+  }
+
+  set {
+    name  = "ingress.annotations.networking\\.gke\\.io/managed-certificates"
+    value = local.power_hub_api_ssl_name
   }
 
   set {
@@ -37,7 +72,12 @@ resource "helm_release" "power_hub_api" {
     value = "gce"
   }
 
-   # TODO create secret out of this?
+  set {
+    name  = "container.env.API_TOKEN"
+    value = var.power_hub_api_token
+  }
+
+  # TODO create secret out of this?
   set {
     name  = "container.env.OPEN_WEATHER_API_KEY"
     value = var.openweather_api_key

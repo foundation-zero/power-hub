@@ -1,4 +1,6 @@
-replicaCount: 3
+replicaCount: 1
+
+nameOverride: "power-hub-simulation"
 
 image:
   repository: europe-west1-docker.pkg.dev/code-zero-zem/power-hub/python-app

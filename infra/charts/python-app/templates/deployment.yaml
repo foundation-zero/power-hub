@@ -39,15 +39,15 @@ spec:
           {{- with .Values.initialDelaySeconds }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 5001
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: {{.Values.initialDelaySeconds}}
+            initialDelaySeconds: {{.}}
             httpGet:
               path: /
               port: http
           readinessProbe:
-            initialDelaySeconds: {{.Values.initialDelaySeconds}}
+            initialDelaySeconds: {{.}}
             httpGet:
               path: /
               port: http
