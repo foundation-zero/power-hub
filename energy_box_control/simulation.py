@@ -1,8 +1,12 @@
 import math
+
+from dataclasses import dataclass
+import schedule
 from energy_box_control.custom_logging import get_logger
 import queue
-import time
+from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
+    PowerHubControlState,
     control_from_json,
     control_power_hub,
     control_to_json,
@@ -62,6 +66,50 @@ def queue_on_message(
     queue.put(decoded_message)
 
 
+@dataclass
+class SimulationResult:
+    power_hub: PowerHub
+    state: NetworkState[PowerHub]
+    control_state: PowerHubControlState
+
+    def step(self, mqtt_client: mqtt_client.Client) -> "SimulationResult":
+        power_hub_sensors = self.power_hub.sensors_from_json(
+            sensor_values_queue.get(block=True)
+        )
+
+        control_state, control_values = control_power_hub(
+            self.power_hub, self.control_state, power_hub_sensors, self.state.time
+        )
+
+        publish_to_mqtt(
+            mqtt_client,
+            CONTROL_VALUES_TOPIC,
+            control_to_json(self.power_hub, control_values),
+        )
+        control_values = control_from_json(
+            self.power_hub, control_values_queue.get(block=True)
+        )
+
+        state = self.power_hub.simulate(self.state, control_values)
+
+        power_hub_sensors = self.power_hub.sensors_from_state(state)
+        publish_to_mqtt(
+            mqtt_client,
+            SENSOR_VALUES_TOPIC,
+            sensors_to_json(power_hub_sensors),
+        )
+
+        for sensor_field in fields(power_hub_sensors):
+            publish_sensor_values(
+                sensor_field.name,
+                sensor_values(sensor_field.name, power_hub_sensors),
+                mqtt_client,
+                state.time.timestamp,
+            )
+
+        return SimulationResult(self.power_hub, state, control_state)
+
+
 async def run(steps: int = 0):
     mqtt_client = create_and_connect_client()
     await run_listener(
@@ -87,46 +135,26 @@ async def run(steps: int = 0):
         sensors_to_json(power_hub_sensors),
     )
 
+    result = SimulationResult(power_hub, state, control_state)
+
+    run_queue: queue.Queue[None] = queue.Queue()
+
+    def _add_step_to_queue():
+        run_queue.put(None)
+
+    step = schedule.every(1).seconds.do(_add_step_to_queue)  # type: ignore
+
     while True:
-        power_hub_sensors = power_hub.sensors_from_json(
-            sensor_values_queue.get(block=True)
-        )
+        schedule.run_pending()
+        try:
+            run_queue.get_nowait()
+            result = result.step(mqtt_client)
+            if steps and steps < result.state.time.step:
+                schedule.cancel_job(step)
+                break
 
-        new_control_state, control_values = control_power_hub(
-            power_hub, control_state, power_hub_sensors, state.time
-        )
-
-        publish_to_mqtt(
-            mqtt_client,
-            CONTROL_VALUES_TOPIC,
-            control_to_json(power_hub, control_values),
-        )
-        control_values = control_from_json(
-            power_hub, control_values_queue.get(block=True)
-        )
-
-        new_state = power_hub.simulate(state, control_values)
-
-        control_state = new_control_state
-        state = new_state
-        power_hub_sensors = power_hub.sensors_from_state(new_state)
-        publish_to_mqtt(
-            mqtt_client,
-            SENSOR_VALUES_TOPIC,
-            sensors_to_json(power_hub_sensors),
-        )
-
-        for sensor_field in fields(power_hub_sensors):
-            publish_sensor_values(
-                sensor_field.name,
-                sensor_values(sensor_field.name, power_hub_sensors),
-                mqtt_client,
-                state.time.timestamp,
-            )
-        if steps and steps < new_state.time.step:
-            break
-
-        time.sleep(1)
+        except queue.Empty:
+            pass
 
 
 def main():
