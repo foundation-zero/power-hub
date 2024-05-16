@@ -8,7 +8,8 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <BackgroundInner />
+    <InnerWaves />
+    <OuterWaves />
     <PhaseLanes />
     <FZLogo />
     <PipeLines />
@@ -19,7 +20,8 @@
 
 <script setup lang="ts">
 import FZLogo from "./presentation/FZLogo.vue";
-import BackgroundInner from "./presentation/BackgroundInner.vue";
+import InnerWaves from "./presentation/InnerWaves.vue";
+import OuterWaves from "./presentation/OuterWaves.vue";
 import PhaseLanes from "./presentation/PhaseLanes.vue";
 import PipeLines from "./presentation/PipeLines.vue";
 import PipeStreams from "./presentation/PipeStreams.vue";
@@ -37,7 +39,8 @@ const isRunning = ref(false);
 const sleep = useSleep(isRunning);
 
 const { startSlideShow, stopSlideShow, getFlow } = usePresentationStore();
-const { componentStates, streamStates, root } = toRefs(usePresentationStore());
+const { componentStates, streamStates, root, showWidgets, showWaves, pipes } =
+  toRefs(usePresentationStore());
 
 const activateStream = async (journey: Journey) => {
   const { streams, components } = getFlow(journey);
@@ -74,11 +77,33 @@ const deactivateAll = async (nextJourney: Journey) => {
   streamStates.value.forEach(stopFlow);
 };
 
-const activateAllComponents = async () => {
+const hideAll = (nextJourney: Journey) => {
+  componentStates.value.forEach(mute);
+  const { components } = getFlow(nextJourney);
+  components.forEach(unmute);
+  pipes.value.active = false;
+};
+
+const showAll = () => {
+  componentStates.value.forEach(unmute);
+  pipes.value.active = true;
+};
+
+const toggleWaves = async (show: boolean) => {
+  showWaves.value = show;
+  await sleep(show ? 500 : 1000);
+};
+
+const toggleWidgets = async (show: boolean) => {
+  showWidgets.value = show;
+  await sleep(400);
+};
+
+const activateAllComponents = () => {
   componentStates.value.forEach(activate);
 };
 
-const startWaterFlow = async (journey: Journey) => {
+const startWaterFlow = (journey: Journey) => {
   const { streams } = getFlow(journey);
   streams.forEach(startFlow);
 };
@@ -87,21 +112,41 @@ const start = async () => {
   if (!isRunning.value) return;
 
   try {
-    await activateAllComponents();
+    toggleWidgets(true);
+    activateAllComponents();
     await sleep(5000);
     await deactivateAll("electrical");
     await activateStream("electrical");
     await sleep(3000);
+    await toggleWidgets(false);
+    hideAll("electrical");
+    await toggleWaves(false);
     await startSlideShow("electrical");
-    await deactivateAll("heat");
+    showAll();
+    await toggleWaves(true);
+    await toggleWidgets(true);
+    await deactivateAll("water");
     await activateStream("heat");
     await sleep(3000);
+    await toggleWidgets(false);
+    hideAll("heat");
+    await toggleWaves(false);
     await startSlideShow("heat");
+    showAll();
+    await toggleWaves(true);
+    await toggleWidgets(true);
     await deactivateAll("water");
     await activateStream("water");
-    await startWaterFlow("water");
+    startWaterFlow("water");
     await sleep(5000);
+    await toggleWidgets(false);
+    hideAll("water");
+    await toggleWaves(false);
     await startSlideShow("water");
+    showAll();
+    await toggleWaves(true);
+    await toggleWidgets(true);
+
     deactivateAll("electrical");
 
     setTimeout(start);

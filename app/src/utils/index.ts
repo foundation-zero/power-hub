@@ -48,12 +48,12 @@ export const useSleep = (isRunning: Ref<boolean>) => {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const deactivate = (item: Activatable) => (item.active = false);
-export const activate = (item: Activatable) => (item.active = true);
-export const mute = (item: Muteable) => (item.muted = true);
-export const unmute = (item: Muteable) => (item.muted = false);
-export const startFlow = (item: Flowable) => (item.flowing = true);
-export const stopFlow = (item: Flowable) => (item.flowing = false);
+export const deactivate = <T extends Activatable>(item: T) => (item.active = false);
+export const activate = <T extends Activatable>(item: T) => (item.active = true);
+export const mute = <T extends Muteable>(item: T) => (item.muted = true);
+export const unmute = <T extends Muteable>(item: T) => (item.muted = false);
+export const startFlow = <T extends Flowable>(item: T) => (item.flowing = true);
+export const stopFlow = <T extends Flowable>(item: T) => (item.flowing = false);
 
 export const mapFn = <T, K>(fn: (item: T) => K, ...items: T[]): K[] =>
   items.map((item) => fn(item));
