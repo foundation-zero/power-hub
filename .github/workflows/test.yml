@@ -74,9 +74,7 @@ jobs:
 
     steps:
 
-      - id: 'checkout'
-        name: 'Checkout'
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
@@ -110,3 +108,37 @@ jobs:
         run: >
           docker push
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
+
+  deploy-infra:
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: ${{ github.workflow }}-deploy
+      cancel-in-progress: true
+
+    needs: deploy
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.7.1
+      
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.SERVICE_ACCOUNT}}
+      
+      - run: tofu init
+        working-directory: ./infra
+
+      - run: tofu apply --auto-approve
+        working-directory: ./infra
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
