@@ -9,6 +9,14 @@ export default mergeConfig(
       environment: "jsdom",
       exclude: [...configDefaults.exclude, "tests/e2e/*"],
       root: fileURLToPath(new URL("./", import.meta.url)),
+      deps: {
+        optimizer: {
+          web: {
+            enabled: true,
+            include: ["vue-echarts"],
+          },
+        },
+      },
       server: {
         deps: {
           inline: ["vuetify"],

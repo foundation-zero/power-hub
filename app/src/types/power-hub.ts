@@ -20,7 +20,10 @@ export type PCM = Port<"charge"> &
     stateOfCharge: number;
   };
 
-export type Chiller = Port<"cooling"> & Port<"chilled">;
+export type Chiller = Port<"cooling"> &
+  Port<"chilled"> & {
+    chilledPower: number;
+  };
 
 export type HeatPipes = Port & {
   ambientTemperature: number;
@@ -31,6 +34,7 @@ export type HeatPipes = Port & {
 export type Reservoir = Port<"heat"> &
   Port<"fill"> & {
     temperature: number;
+    usedPower: number;
   };
 
 export interface SensorsTree {
@@ -52,8 +56,13 @@ export interface SensorsTree {
   chillerWasteBypassValve: Valve;
 }
 
+export interface SumTree {
+  electricalPower: number;
+}
+
 export interface Tree {
   applianceSensors: SensorsTree;
+  powerHub: SumTree;
 }
 
 export type PowerHubComponent =
