@@ -54,6 +54,11 @@ resource "helm_release" "power_hub_api" {
   ]
 
   set {
+    name  = "image.repository"
+    value = "${local.power_hub_repo}/python-app"
+  }
+
+  set {
     name  = "ingress.hosts[0].host"
     value = local.power_hub_api_hostname
   }

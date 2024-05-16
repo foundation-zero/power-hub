@@ -60,8 +60,7 @@ jobs:
       cancel-in-progress: true
     
     env:
-      PROJECT_ID: code-zero-zem
-      SERVICE_ACCOUNT: power-hub@code-zero-zem.iam.gserviceaccount.com
+      PROJECT_ID: power-hub-423312
       ZONE: europe-west1
       GAR: europe-west1-docker.pkg.dev
       REPO: power-hub
@@ -81,8 +80,8 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           token_format: "access_token"
-          workload_identity_provider: 'projects/395730360492/locations/global/workloadIdentityPools/power-hub/providers/power-hub-cloud-oidc-staging'
-          service_account: ${{env.SERVICE_ACCOUNT}}
+          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.SERVICE_ACCOUNT}}
 
       - id: 'login-art-registry'
         name: 'Login to Artifact Registry'
@@ -95,6 +94,7 @@ jobs:
       - name: 'Docker build'
         run: >
           docker build
+          --platform linux/amd64
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
           . -f python_script.Dockerfile
@@ -118,7 +118,6 @@ jobs:
     needs: deploy
     timeout-minutes: 15
     runs-on: ubuntu-latest
-
 
     steps:
       - uses: actions/checkout@v4

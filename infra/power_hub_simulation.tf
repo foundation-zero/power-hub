@@ -8,6 +8,11 @@ resource "helm_release" "power_hub_simulation" {
   ]
 
   set {
+    name  = "image.repository"
+    value = "${local.power_hub_repo}/python-app"
+  }
+
+  set {
     name  = "container.envFromSecrets.MQTT_PASSWORD.secretName"
     value = kubernetes_secret.vernemq_auth.metadata.0.name
   }
@@ -17,4 +22,8 @@ resource "helm_release" "power_hub_simulation" {
     value = "password"
   }
 
+  set {
+    name  = "container.env.MQTT_HOST"
+    value = "${kubernetes_service.vernemq_internal.metadata.0.name}"
+  }
 }

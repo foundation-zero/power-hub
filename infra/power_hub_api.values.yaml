@@ -3,14 +3,13 @@ replicaCount: 3
 nameOverride: "power-hub-api"
 
 image:
-  repository: europe-west1-docker.pkg.dev/code-zero-zem/power-hub/python-app
   tag: latest
   pullPolicy: Always
 container:
   commands: 
-  - "poetry"
-  - "run"
-  - "run_power_hub_api"
+  - "/app/env/bin/python"
+  - "-m"
+  - "energy_box_control.api.api"
 
 initialDelaySeconds: 10
 

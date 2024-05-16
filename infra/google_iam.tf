@@ -1,5 +1,5 @@
 resource "google_iam_workload_identity_pool" "power_hub_identity_pool" {
-  workload_identity_pool_id 	= "power-hub"
+  workload_identity_pool_id 	= var.name
   display_name            		= "Power Hub pool"
   description             		= "Power Hub pool"
   disabled                		= false
@@ -7,10 +7,10 @@ resource "google_iam_workload_identity_pool" "power_hub_identity_pool" {
 
 resource "google_iam_workload_identity_pool_provider" "power_hub_pool_provider" {
   workload_identity_pool_id           	    = google_iam_workload_identity_pool.power_hub_identity_pool.workload_identity_pool_id
-  workload_identity_pool_provider_id  	    = "power-hub-cloud-oidc-staging"
-  display_name                        		= "power-hub-cloud-oidc-staging"
-  description                       		= "Power Hub Provider"
-  disabled                        			= false
+  workload_identity_pool_provider_id  	    = "${var.name}-cloud-oidc-${var.env}"
+  display_name                        		  = "${var.name}-cloud-oidc-${var.env}"
+  description                       		    = "Power Hub Provider"
+  disabled                        			    = false
 
   attribute_mapping                         = {
     "google.subject"        = "assertion.sub"
@@ -25,7 +25,7 @@ resource "google_iam_workload_identity_pool_provider" "power_hub_pool_provider" 
 data "google_project" "gcp_project" {}
 
 resource "google_service_account" "service_account" {
-  account_id   = "power-hub"
+  account_id   = var.name
   display_name = "Power Hub"
 }
 

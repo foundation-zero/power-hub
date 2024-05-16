@@ -32,4 +32,15 @@ resource "helm_release" "telegraf" {
     name  = "config.outputs[0].influxdb_v2.bucket"
     value = var.influxdb_bucket
   }
+
+  set {
+    name  = "config.outputs[0].influxdb_v2.urls[0]"
+    value = "http://${kubernetes_service.influxdb_internal.metadata.0.name}:${kubernetes_service.influxdb_internal.spec.0.port.0.port}"
+  }
+
+  set {
+    name  = "config.inputs[0].mqtt_consumer.servers[0]"
+    value = "tcp://${kubernetes_service.vernemq_internal.metadata.0.name}:${kubernetes_service.vernemq_internal.spec.0.port.0.port}"
+  }
+
 }

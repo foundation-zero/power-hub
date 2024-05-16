@@ -25,7 +25,7 @@ resource "kubernetes_secret" "cloudflare_api_token" {
     "api-token" = var.cloudflare_api_token
   }
 }
-
+  
 resource "kubernetes_manifest" "letsencrypt" {
   manifest = {
     "apiVersion" = "cert-manager.io/v1"

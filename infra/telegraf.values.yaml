@@ -2,15 +2,11 @@ replicaCount: 1
 
 config: 
   outputs:
-    - influxdb_v2:
-        urls:
-          - "http://influxdb-internal:8086"
     - file:
         files: 
         - "stdout"
   inputs:
     - mqtt_consumer:
-        servers: ["tcp://vernemq-internal:1883"]
         topics:
           - "power_hub/#"
         data_format: "json"
