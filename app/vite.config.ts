@@ -17,7 +17,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/ws": {
+      "/mqtt": {
         target: "ws://127.0.0.1:9001",
         ws: true,
       },

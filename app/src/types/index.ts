@@ -45,12 +45,6 @@ export type ComponentElement = {
   };
 };
 
-export type JourneyStep = {
-  component: PowerHubComponent;
-  journey: Journey;
-  step: number;
-};
-
 export type JourneyFlow = {
   components: PowerHubComponent[];
   streams: StreamState[];

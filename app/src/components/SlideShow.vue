@@ -31,18 +31,15 @@ div {
   position: absolute;
   top: 0;
   left: 0;
-  will-change: transform, opacity;
-  transition:
-    transform 750ms ease,
-    opacity 750ms ease;
+  will-change: opacity;
+  transition: opacity 1000ms ease;
 }
 
 .slideshow-leave-to {
-  transform: translateX(-100%);
+  opacity: 0;
 }
 
 .slideshow-enter-from {
   opacity: 0;
-  transform: translateX(100%);
 }
 </style>
