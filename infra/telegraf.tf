@@ -10,7 +10,7 @@ resource "helm_release" "telegraf" {
   name       = "telegraf"
   repository = "https://helm.influxdata.com/"
   chart      = "telegraf"
-  values = [file("telegraf.values.yaml")]
+  values     = [file("telegraf.values.yaml")]
 
   depends_on = [
     google_container_cluster.primary,

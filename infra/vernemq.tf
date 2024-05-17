@@ -3,11 +3,11 @@ variable "vernemq_power_hub_password" {
 }
 
 locals {
-  vernemq_record_name           = "vernemq.${var.env}.${var.subdomain}"
-  vernemq_certificate_name      = "vernemq-certicate-secret"
-  vernemq_certificate_path      = "/etc/ssl/vernemq"
-  vernemq_host                  = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
-  vernemq_auth_secret_name      = "vernemq-auth" 
+  vernemq_record_name      = "vernemq.${var.env}.${var.subdomain}"
+  vernemq_certificate_name = "vernemq-certicate-secret"
+  vernemq_certificate_path = "/etc/ssl/vernemq"
+  vernemq_host             = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
+  vernemq_auth_secret_name = "vernemq-auth"
 }
 
 resource "kubernetes_manifest" "vernemq_ssl" {

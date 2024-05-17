@@ -24,6 +24,6 @@ resource "helm_release" "power_hub_simulation" {
 
   set {
     name  = "container.env.MQTT_HOST"
-    value = "${kubernetes_service.vernemq_internal.metadata.0.name}"
+    value = kubernetes_service.vernemq_internal.metadata.0.name
   }
 }

@@ -1,24 +1,24 @@
 resource "google_iam_workload_identity_pool" "power_hub_identity_pool" {
-  workload_identity_pool_id 	= var.name
-  display_name            		= "Power Hub pool"
-  description             		= "Power Hub pool"
-  disabled                		= false
-}   
+  workload_identity_pool_id = var.name
+  display_name              = "Power Hub pool"
+  description               = "Power Hub pool"
+  disabled                  = false
+}
 
 resource "google_iam_workload_identity_pool_provider" "power_hub_pool_provider" {
-  workload_identity_pool_id           	    = google_iam_workload_identity_pool.power_hub_identity_pool.workload_identity_pool_id
-  workload_identity_pool_provider_id  	    = "${var.name}-cloud-oidc-${var.env}"
-  display_name                        		  = "${var.name}-cloud-oidc-${var.env}"
-  description                       		    = "Power Hub Provider"
-  disabled                        			    = false
+  workload_identity_pool_id          = google_iam_workload_identity_pool.power_hub_identity_pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "${var.name}-cloud-oidc-${var.env}"
+  display_name                       = "${var.name}-cloud-oidc-${var.env}"
+  description                        = "Power Hub Provider"
+  disabled                           = false
 
-  attribute_mapping                         = {
-    "google.subject"        = "assertion.sub"
-    "attribute.actor"       = "assertion.actor"
-    "attribute.repository"  = "assertion.repository"
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
   }
   oidc {
-    issuer_uri        = "https://token.actions.githubusercontent.com"
+    issuer_uri = "https://token.actions.githubusercontent.com"
   }
 }
 
@@ -48,7 +48,7 @@ resource "google_service_account_iam_binding" "power_hub_iam_binding" {
 }
 
 resource "google_project_iam_binding" "power_hub_gak_binding" {
-  project = "${var.project_id}"
+  project = var.project_id
   role    = "roles/artifactregistry.writer"
 
   members = [

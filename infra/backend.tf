@@ -1,6 +1,6 @@
 terraform {
- backend "gcs" {
-   bucket  = "power-hub-bucket-tfstate"
-   prefix  = "terraform/state"
- }
+  backend "gcs" {
+    bucket = "power-hub-bucket-tfstate"
+    prefix = "terraform/state"
+  }
 }
