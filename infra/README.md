@@ -2,6 +2,9 @@
 
 ## Bootstrap
 
+Ensure you are logged in properly:
+`gcloud auth application-default login`
+
 For a new project, enable Cloud Key Management Service (KMS) API 
 
 Run tofu in the bootstrap folder:
