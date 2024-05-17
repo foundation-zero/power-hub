@@ -99,15 +99,10 @@ jobs:
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
           . -f python_script.Dockerfile
 
-      - name: 'Docker push sha'
+      - name: 'Docker push sha & latest'
         run: >
-          docker push
+          docker push --all-tags
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
-
-      - name: 'Docker push latest'
-        run: >
-          docker push
-          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-infra:
     if: github.ref == 'refs/heads/main'
