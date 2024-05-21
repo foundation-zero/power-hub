@@ -7,9 +7,10 @@ import requests
 from energy_box_control.simulation import run as run_simulation
 from energy_box_control.api.api import run as run_api
 from energy_box_control.api.api import (
-    build_get_values_query,
+    values_query,
     execute_influx_query,
     get_influx_client,
+    build_query_range,
 )
 from dotenv import load_dotenv
 from http import HTTPStatus
@@ -37,10 +38,9 @@ async def influx_has_entries(client: InfluxDBClientAsync):
     try:
         results = await execute_influx_query(
             client,
-            build_get_values_query(
-                5,
-                "heat_pipes",
-                "power",
+            values_query(
+                lambda r: r.topic == f"power_hub/appliance_sensors/heat_pipes/power",
+                build_query_range(5, None, None),
             ),
         )
         return len(results["_value"]) > 0
@@ -123,6 +123,52 @@ def test_get_total_value(headers):
     assert json.loads(response.text) > 0
 
 
+@pytest.mark.integration
+def test_get_mean_value(headers):
+    response = requests.get(
+        f"{BASE_URL}/appliance_sensors/heat_pipes/power/mean", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert json.loads(response.text) > 0
+
+
+@pytest.mark.integration
+def test_get_electric_power_consumption(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/consumption/electric/power/over/time", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert len(json.loads(response.text)) > 0
+
+
+@pytest.mark.integration
+def test_get_electric_power_consumption_appliances(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/consumption/electric/power/over/time?appliances=pcm_to_yazaki_pump,chilled_loop_pump",
+        headers=headers,
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert len(json.loads(response.text)) > 0
+
+
+@pytest.mark.integration
+def test_get_electric_power_consumption_mean(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/consumption/electric/power/mean", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert json.loads(response.text) > 0
+
+
+@pytest.mark.integration
+def test_get_electric_power_production(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/production/electric/power/over/time", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert len(json.loads(response.text)) > 0
+
+
 @pytest.fixture
 def lat_lon():
     return "?lat=41.3874&lon=2.1686"
@@ -145,12 +191,3 @@ def test_get_hourly_weather(headers, lat_lon, forecast_window):
     assert response.status_code == HTTPStatus.OK
     assert type(weather) == list
     assert set(["temp", "feels_like", "pressure"]).issubset(next(iter(weather)))
-
-
-@pytest.mark.integration
-def test_get_total_electrical_power(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/electrical_power/last_values", headers=headers
-    )
-    assert response.status_code == HTTPStatus.OK
-    assert len(json.loads(response.text)) > 0

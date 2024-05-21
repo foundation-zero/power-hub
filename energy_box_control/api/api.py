@@ -1,14 +1,15 @@
+from enum import Enum
 import os
 from quart import Quart, request, make_response, Response
 from dataclasses import dataclass
 from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
 from dotenv import load_dotenv
-from typing import Any, Callable, Literal
+from typing import Any, Callable, List, Literal, Tuple
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
 from datetime import datetime, timezone, timedelta
-from functools import reduce, wraps
+from functools import partial, reduce, wraps
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
@@ -27,7 +28,7 @@ load_dotenv(dotenv_path)
 
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
-DEFAULT_POWER_INTERVAL_SECONDS = 1
+MAX_ROWS = 172800  # 48 hours
 
 app = Quart(__name__)
 QuartSchema(
@@ -46,6 +47,23 @@ SensorName = str
 ApplianceSensorFieldValue = float
 
 
+class Interval(Enum):
+    SECONDS = 1.0
+    MINUTES = 60.0
+    HOURS = 60 * 60.0
+    DAYS = 60 * 60 * 24.0
+
+    @classmethod
+    def from_string(cls, interval: str) -> "Interval":
+        if interval == "m":
+            return Interval.MINUTES
+        elif interval == "h":
+            return Interval.HOURS
+        elif interval == "d":
+            return Interval.DAYS
+        return Interval.SECONDS
+
+
 @dataclass
 class ReturnedAppliance:
     sensors: list[SensorName]
@@ -60,11 +78,21 @@ class ReturnedAppliances:
 @dataclass
 class ValuesQuery:
     minutes_back: int = DEFAULT_MINUTES_BACK
+    start: str | None = None
+    stop: str | None = None
+
+
+DEFAULT_COMPUTED_INTERVAL = "s"
 
 
 @dataclass
-class ComputedValuesQuery(ValuesQuery):
-    interval_seconds: int = DEFAULT_POWER_INTERVAL_SECONDS
+class AppliancesQuery(ValuesQuery):
+    appliances: str = ""
+
+
+@dataclass
+class ComputedValuesQuery(AppliancesQuery):
+    interval: str = DEFAULT_COMPUTED_INTERVAL
 
 
 @dataclass
@@ -73,25 +101,49 @@ class WeatherQuery:
     lon: float
 
 
-def build_query_range(minutes_back: float) -> tuple[datetime, datetime]:
+def build_query_range(
+    minutes_back: float, start: str | None, stop: str | None
+) -> tuple[datetime, datetime]:
+
+    if start and stop:
+        time_format = "%d-%m-%YT%H:%M:%S"
+        return (
+            datetime.strptime(start, time_format).replace(tzinfo=timezone.utc)
+        ), datetime.strptime(stop, time_format).replace(tzinfo=timezone.utc)
+
     return (
         datetime.now(timezone.utc) - timedelta(minutes=minutes_back),
         datetime.now(timezone.utc),
     )
 
 
-def build_get_values_query(
-    minutes_back: int, appliance_name: str, field_name: str
+def values_query(
+    topic_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
 ) -> fluxy.Query:
-    topic = f"power_hub/appliance_sensors/{appliance_name}/{field_name}"
 
+    start, stop = query_range
     return fluxy.pipe(
         fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
-        fluxy.range(*build_query_range(minutes_back)),
+        fluxy.range(start, stop),
         fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
         fluxy.filter(lambda r: r._field == "value"),
-        fluxy.filter(lambda r: r.topic == topic),
-        fluxy.keep(["_value", "_time", "topic"]),
+        fluxy.filter(topic_filter),
+        fluxy.keep(["_value", "_time"]),
+    )
+
+
+def mean_values_query(
+    topic_filter: fluxy.FilterCallback,
+    interval: float,
+    query_range: Tuple[datetime, datetime],
+) -> fluxy.Query:
+    return fluxy.pipe(
+        values_query(topic_filter, query_range),
+        fluxy.aggregate_window(
+            timedelta(seconds=interval),
+            fluxy.WindowOperation.MEAN,
+            False,
+        ),
     )
 
 
@@ -113,6 +165,35 @@ def token_required(f):
         ):
             return await make_response(
                 "A valid token is missing!", HTTPStatus.UNAUTHORIZED
+            )
+        return await f(*args, **kwargs)
+
+    return decorator
+
+
+@no_type_check
+def limit_query_result(f):
+    @wraps(f)
+    @no_type_check
+    async def decorator(*args, **kwargs):
+        if kwargs["query_args"].start and kwargs["query_args"].stop:
+            start, stop = build_query_range(
+                kwargs["query_args"].minutes_back,
+                kwargs["query_args"].start,
+                kwargs["query_args"].stop,
+            )
+        else:
+            start, stop = build_query_range(
+                kwargs["query_args"].minutes_back, None, None
+            )
+        interval_seconds = (
+            Interval.from_string(kwargs["query_args"].interval).value
+            if hasattr(kwargs["query_args"], "interval")
+            else 1
+        )
+        if (stop - start).total_seconds() / interval_seconds > MAX_ROWS:
+            return await make_response(
+                "Requested dataframe is too large", HTTPStatus.FORBIDDEN
             )
         return await f(*args, **kwargs)
 
@@ -195,37 +276,68 @@ async def get_all_appliance_names() -> dict[
 @app.route("/appliance_sensors/<appliance_name>/<field_name>/last_values")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
+@limit_query_result
 @serialize_dataframe(["time", "value"])
-async def get_last_values_for_appliance_sensor(
+async def get_values_for_appliance_sensor(
     appliance_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceSensorFieldValue]]:
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                field_name,
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
+                ),
             ),
         )
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
+@app.route("/appliance_sensors/<appliance_name>/<field_name>/mean")
+@token_required
+@validate_querystring(ValuesQuery)  # type: ignore
+@limit_query_result
+async def get_mean_value_for_appliance_sensor(
+    appliance_name: str, field_name: str, query_args: ValuesQuery
+) -> list[list[ApplianceSensorFieldValue]]:
+
+    query_result = await execute_influx_query(
+        app.influx,  # type: ignore
+        fluxy.pipe(
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
+                ),
+            ),
+            fluxy.mean(column="_value"),
+        ),
+    )
+    return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
+
+
 @app.route("/appliance_sensors/<appliance_name>/<field_name>/total")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-async def get_values_total(
+@limit_query_result
+async def get_total_value_for_appliance_sensor(
     appliance_name: str,
     field_name: str,
     query_args: ValuesQuery,
 ) -> str:
+
     query_result = await execute_influx_query(
         app.influx,  # type: ignore
         query=fluxy.pipe(
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                field_name,
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
+                ),
             ),
             fluxy.sum("_value"),
         ),
@@ -233,41 +345,97 @@ async def get_values_total(
     return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
 
 
-@app.route("/power_hub/electrical_power/last_values")
+def _topic_filters(appliance_names: List[str], field: str, r: fluxy.Row):
+
+    exps = [
+        r.topic == f"power_hub/appliance_sensors/{appliance_name}/{field}"
+        for appliance_name in appliance_names
+    ]
+    return reduce(lambda prev, cur: prev | cur, exps)
+
+
+@app.route("/power_hub/consumption/electric/power/over/time")
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
+@limit_query_result
 @serialize_dataframe(["time", "value"])
-async def get_total_power(
+async def get_electrical_power_consumption(
     query_args: ComputedValuesQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
-
-    def _pump_consumption(r: fluxy.Row):
-        pump_names = [
+    if not query_args.appliances:
+        appliance_names = [
             field.name for field in fields(PowerHubSensors) if "pump" in field.name
         ]
-        exps = [
-            r.topic == f"power_hub/appliance_sensors/{pump_name}/electrical_power"
-            for pump_name in pump_names
-        ]
-        return reduce(lambda prev, cur: prev | cur, exps)
+    else:
+        appliance_names = query_args.appliances.split(",")
 
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
-            fluxy.pipe(
-                fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
-                fluxy.range(*build_query_range(query_args.minutes_back)),
-                fluxy.filter(_pump_consumption),
-                fluxy.aggregate_window(
-                    timedelta(seconds=query_args.interval_seconds),
-                    fluxy.WindowOperation.MEAN,
-                    False,
+            mean_values_query(
+                partial(_topic_filters, appliance_names, "electrical_power"),
+                Interval.from_string(query_args.interval).value,
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
                 ),
-                fluxy.keep(["_value", "_time"]),
-                fluxy.aggregate_window(
-                    timedelta(seconds=query_args.interval_seconds),
-                    fluxy.WindowOperation.SUM,
-                    False,
+            ),
+        )
+    ).rename(columns={"_value": "value", "_time": "time"})
+
+
+@app.route("/power_hub/consumption/electric/power/mean")
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+async def get_electrical_power_consumption_mean(
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+
+    if not query_args.appliances:
+        appliance_names = [
+            field.name for field in fields(PowerHubSensors) if "pump" in field.name
+        ]
+    else:
+        appliance_names = query_args.appliances.split(",")
+
+    query_result = await execute_influx_query(
+        app.influx,  # type: ignore
+        fluxy.pipe(
+            mean_values_query(
+                partial(_topic_filters, appliance_names, "electrical_power"),
+                1,
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
+                ),
+            ),
+            fluxy.mean(column="_value"),
+        ),
+    )
+
+    return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
+
+
+@app.route("/power_hub/production/electric/power/over/time")
+@token_required
+@validate_querystring(ComputedValuesQuery)  # type: ignore
+@limit_query_result
+@serialize_dataframe(["time", "value"])
+async def get_electrical_power_production(
+    query_args: ComputedValuesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+
+    if not query_args.appliances:
+        appliance_names = ["pv_panel"]
+    else:
+        appliance_names = query_args.appliances.split(",")
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_values_query(
+                partial(_topic_filters, appliance_names, "power"),
+                Interval.from_string(query_args.interval).value,
+                build_query_range(
+                    query_args.minutes_back, query_args.start, query_args.stop
                 ),
             ),
         )
