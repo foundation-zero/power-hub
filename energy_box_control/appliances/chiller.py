@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -29,18 +29,18 @@ class ChillerControl(ApplianceControl):
 
 
 @dataclass(frozen=True, eq=True)
-class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
+class Chiller(ThermalAppliance[ChillerState, ChillerControl, ChillerPort]):
     cooling_capacity: Watt
     specific_heat_capacity_chilled: JoulePerLiterKelvin
     specific_heat_capacity_cooling: JoulePerLiterKelvin
 
     def simulate(
         self,
-        inputs: dict[ChillerPort, ConnectionState],
+        inputs: dict[ChillerPort, ThermalState],
         previous_state: ChillerState,
         control: ChillerControl,
         simulation_time: ProcessTime,
-    ) -> tuple[ChillerState, dict[ChillerPort, ConnectionState]]:
+    ) -> tuple[ChillerState, dict[ChillerPort, ThermalState]]:
         cooling_power = self.cooling_capacity if control.on else 0
 
         chilled_out_temp = (
@@ -70,10 +70,10 @@ class Chiller(Appliance[ChillerState, ChillerControl, ChillerPort]):
         return (
             ChillerState(),
             {
-                ChillerPort.CHILLED_OUT: ConnectionState(
+                ChillerPort.CHILLED_OUT: ThermalState(
                     inputs[ChillerPort.CHILLED_IN].flow, chilled_out_temp
                 ),
-                ChillerPort.COOLING_OUT: ConnectionState(
+                ChillerPort.COOLING_OUT: ThermalState(
                     inputs[ChillerPort.COOLING_IN].flow, cooling_out_temp
                 ),
             },

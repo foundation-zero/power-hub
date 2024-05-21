@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.schedules import Schedule
@@ -20,19 +20,19 @@ class SourcePort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class Source(Appliance[SourceState, None, SourcePort]):
+class Source(ThermalAppliance[SourceState, None, SourcePort]):
     flow: LiterPerSecond
     temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
-        inputs: dict[SourcePort, "ConnectionState"],
+        inputs: dict[SourcePort, "ThermalState"],
         previous_state: SourceState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[SourceState, dict[SourcePort, "ConnectionState"]]:
+    ) -> tuple[SourceState, dict[SourcePort, "ThermalState"]]:
         return SourceState(), {
-            SourcePort.OUTPUT: ConnectionState(
+            SourcePort.OUTPUT: ThermalState(
                 self.flow, self.temperature_schedule.at(simulation_time)
             )
         }

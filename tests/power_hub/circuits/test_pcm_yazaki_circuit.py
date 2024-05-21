@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from pytest import approx, fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
-    ConnectionState,
+    ThermalState,
 )
 from energy_box_control.appliances.pcm import PcmPort, PcmState
 from energy_box_control.appliances.source import SourceState
@@ -40,7 +40,7 @@ def initial_state_without_valve(pcm_yazaki_circuit):
         .value(SourceState())
         .define_state(pcm_yazaki_circuit.pcm_to_yazaki_pump)
         .at(SwitchPumpPort.OUT)
-        .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+        .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
     )
 
 

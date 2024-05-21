@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -15,15 +15,15 @@ class MixPort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Mix(Appliance[ApplianceState, None, MixPort]):
+class Mix(ThermalAppliance[ApplianceState, None, MixPort]):
 
     def simulate(
         self,
-        inputs: dict[MixPort, ConnectionState],
+        inputs: dict[MixPort, ThermalState],
         previous_state: ApplianceState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[ApplianceState, dict[MixPort, ConnectionState]]:
+    ) -> tuple[ApplianceState, dict[MixPort, ThermalState]]:
         a = inputs[MixPort.A]
         b = inputs[MixPort.B]
 
@@ -33,6 +33,4 @@ class Mix(Appliance[ApplianceState, None, MixPort]):
             else (a.temperature + b.temperature) / 2
         )
 
-        return ApplianceState(), {
-            MixPort.AB: ConnectionState(a.flow + b.flow, mix_temp)
-        }
+        return ApplianceState(), {MixPort.AB: ThermalState(a.flow + b.flow, mix_temp)}

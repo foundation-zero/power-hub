@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pytest import fixture
 
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances import (
     VariablePump,
     VariablePumpControl,
@@ -23,7 +23,7 @@ def simulation_time():
 
 def test_variable_pump_off(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
-        {VariablePumpPort.IN: ConnectionState(1, 50)},
+        {VariablePumpPort.IN: ThermalState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(False, 5),
         simulation_time,
@@ -34,7 +34,7 @@ def test_variable_pump_off(variable_pump, simulation_time):
 
 def test_variable_pump_minimum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
-        {VariablePumpPort.IN: ConnectionState(1, 50)},
+        {VariablePumpPort.IN: ThermalState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure),
         simulation_time,
@@ -45,7 +45,7 @@ def test_variable_pump_minimum(variable_pump, simulation_time):
 
 def test_variable_pump_maximum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
-        {VariablePumpPort.IN: ConnectionState(1, 50)},
+        {VariablePumpPort.IN: ThermalState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure),
         simulation_time,
@@ -56,7 +56,7 @@ def test_variable_pump_maximum(variable_pump, simulation_time):
 
 def test_variable_pump_over_maximum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
-        {VariablePumpPort.IN: ConnectionState(1, 50)},
+        {VariablePumpPort.IN: ThermalState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.max_pressure + 10),
         simulation_time,
@@ -67,7 +67,7 @@ def test_variable_pump_over_maximum(variable_pump, simulation_time):
 
 def test_variable_pump_under_minimum(variable_pump, simulation_time):
     _, outputs = variable_pump.simulate(
-        {VariablePumpPort.IN: ConnectionState(1, 50)},
+        {VariablePumpPort.IN: ThermalState(1, 50)},
         VariablePumpState(),
         VariablePumpControl(True, variable_pump.min_pressure - 10),
         simulation_time,

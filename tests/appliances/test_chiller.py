@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from pytest import fixture
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances import (
     Chiller,
     ChillerPort,
@@ -18,8 +18,8 @@ def chiller():
 def test_chiller(chiller):
     _, outputs = chiller.simulate(
         {
-            ChillerPort.CHILLED_IN: ConnectionState(1, 10),
-            ChillerPort.COOLING_IN: ConnectionState(1, 20),
+            ChillerPort.CHILLED_IN: ThermalState(1, 10),
+            ChillerPort.COOLING_IN: ThermalState(1, 20),
         },
         ChillerState(),
         ChillerControl(on=True),

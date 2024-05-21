@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -27,7 +27,9 @@ class VariablePumpControl(ApplianceControl):
 
 
 @dataclass(frozen=True, eq=True)
-class VariablePump(Appliance[VariablePumpState, VariablePumpControl, VariablePumpPort]):
+class VariablePump(
+    ThermalAppliance[VariablePumpState, VariablePumpControl, VariablePumpPort]
+):
     min_pressure: float
     max_pressure: float
     min_flow: LiterPerSecond
@@ -35,16 +37,16 @@ class VariablePump(Appliance[VariablePumpState, VariablePumpControl, VariablePum
 
     def simulate(
         self,
-        inputs: dict[VariablePumpPort, ConnectionState],
+        inputs: dict[VariablePumpPort, ThermalState],
         previous_state: VariablePumpState,
         control: VariablePumpControl,
         simulation_time: ProcessTime,
-    ) -> tuple[VariablePumpState, dict[VariablePumpPort, ConnectionState]]:
+    ) -> tuple[VariablePumpState, dict[VariablePumpPort, ThermalState]]:
         input = inputs[VariablePumpPort.IN]
 
         if not control.on:
             return VariablePumpState(), {
-                VariablePumpPort.OUT: ConnectionState(0, input.temperature)
+                VariablePumpPort.OUT: ThermalState(0, input.temperature)
             }
 
         pressure = max(
@@ -55,5 +57,5 @@ class VariablePump(Appliance[VariablePumpState, VariablePumpControl, VariablePum
         flow = self.min_flow + (self.max_flow - self.min_flow) * ratio
 
         return VariablePumpState(), {
-            VariablePumpPort.OUT: ConnectionState(flow, input.temperature)
+            VariablePumpPort.OUT: ThermalState(flow, input.temperature)
         }

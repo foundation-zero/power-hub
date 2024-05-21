@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pytest import fixture
 
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import WaterState
 from energy_box_control.appliances.water_tank import (
     WaterTank,
     WaterTankPort,
@@ -24,9 +24,9 @@ def test_water_tank(simulation_time):
 
     state, _ = water_tank.simulate(
         {
-            WaterTankPort.IN_0: ConnectionState(water_maker_in, 1),
-            WaterTankPort.IN_1: ConnectionState(water_treatment_in, 1),
-            WaterTankPort.CONSUMPTION: ConnectionState(consumption, 1),
+            WaterTankPort.IN_0: WaterState(water_maker_in),
+            WaterTankPort.IN_1: WaterState(water_treatment_in),
+            WaterTankPort.CONSUMPTION: WaterState(consumption),
         },
         WaterTankState(initial_fill),
         None,

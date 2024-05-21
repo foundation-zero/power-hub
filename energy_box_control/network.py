@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -17,18 +18,25 @@ from typing import (
 import uuid
 
 from energy_box_control.appliances import (
-    Appliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
+)
+from energy_box_control.appliances.base import (
+    Appliance,
+    has_appliance_state,
+    port_for_appliance,
 )
 from energy_box_control.time import ProcessTime
 from energy_box_control.linearize import linearize
 
 # This file uses some fancy Self type hints to ensure the Appliance and ApplianceState are kept in sync
-AnyAppliance = Appliance[Any, Any, Any]
-SpecificAppliance = Appliance[ApplianceState, ApplianceControl | None, Port]
+AnyAppliance = Appliance[Any, Any, Any, Any, Any]
+SpecificAppliance = Appliance[
+    ApplianceState | None, ApplianceControl | None, Port, Any, Any
+]
+GenericState = ApplianceState | None
 GenericControl = ApplianceControl | None
 App = TypeVar("App", bound=AnyAppliance, covariant=True)
 Prev = TypeVarTuple("Prev")
@@ -42,13 +50,17 @@ ToControl = TypeVar("ToControl", bound=GenericControl)
 
 class StateGetter[App: AnyAppliance]:
     def __init__[
-        State: ApplianceState, Control: GenericControl, TPort: Port
-    ](self: "StateGetter[Appliance[State, Control, TPort]]", _: App, state: State):
+        State: GenericState, Control: GenericControl, TPort: Port
+    ](
+        self: "StateGetter[Appliance[State, Control, TPort, Any, Any]]",
+        _: App,
+        state: State,
+    ):
         self._state = state
 
     def get[
-        State: ApplianceState, Control: GenericControl, TPort: Port
-    ](self: "StateGetter[Appliance[State, Control, TPort]]") -> State:
+        State: GenericState, Control: GenericControl, TPort: Port
+    ](self: "StateGetter[Appliance[State, Control, TPort, Any, Any]]") -> State:
         return cast(
             State, self._state
         )  # cast should be safe; State and App are bound together
@@ -58,46 +70,46 @@ class NetworkState(Generic[Net]):
     def __init__(
         self,
         time: ProcessTime,
-        appliance_state: dict[Appliance[Any, Any, Any], ApplianceState],
-        connection_state: dict[
-            tuple[Appliance[Any, Any, Any], Port], ConnectionState
-        ] = {},
+        appliance_state: dict[AnyAppliance, ApplianceState | None],
+        signals: dict[tuple[AnyAppliance, Port], Any] = {},
     ):
         self._appliance_state = appliance_state
-        self._connection_state = connection_state
+        self._signals = signals
         self._time = time
 
-    def get_appliances_states(self) -> dict[Appliance[Any, Any, Any], ApplianceState]:
+    def get_appliances_states(
+        self,
+    ) -> dict[AnyAppliance, ApplianceState | None]:
         return self._appliance_state
 
-    def get_connections_states(
+    def get_signal(
         self,
-    ) -> dict[tuple[Appliance[Any, Any, Any], Port], ConnectionState]:
-        return self._connection_state
+    ) -> dict[tuple[AnyAppliance, Port], Any]:
+        return self._signals
 
     def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
     def has_connection(self, appliance: AnyAppliance, port: Port) -> bool:
-        return (appliance, port) in self._connection_state
+        return (appliance, port) in self._signals
 
     @overload
-    def connection(self, appliance: AnyAppliance, port: Port) -> ConnectionState: ...
+    def connection(self, appliance: AnyAppliance, port: Port) -> ThermalState: ...
 
     @overload
     def connection[
         T
-    ](self, appliance: AnyAppliance, port: Port, default: T) -> ConnectionState | T: ...
+    ](self, appliance: AnyAppliance, port: Port, default: T) -> ThermalState | T: ...
 
     def connection[
         T
     ](self, appliance: AnyAppliance, port: Port, default: T | None = None) -> (
-        ConnectionState | T
+        ThermalState | T
     ):
         if default:
-            return self._connection_state.get((appliance, port), default)
+            return self._signals.get((appliance, port), default)
 
-        return self._connection_state[(appliance, port)]
+        return self._signals[(appliance, port)]
 
     @property
     def time(self) -> ProcessTime:
@@ -110,11 +122,11 @@ class NetworkStateConnectionBuilder(Generic[Net, App, ToPort, *Prev]):
         self._connection = connection
         self._prev = prev
 
-    def value(
-        self, connection_state: ConnectionState
-    ) -> "NetworkStateBuilder[Net, *Prev, tuple[App, ToPort, ConnectionState]]":
+    def value[
+        T
+    ](self, signal: T) -> "NetworkStateBuilder[Net, *Prev, tuple[App, ToPort, T]]":
         return NetworkStateBuilder(
-            self._network, *self._prev, (*self._connection, connection_state)
+            self._network, *self._prev, (*self._connection, signal)
         )
 
 
@@ -136,16 +148,20 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
                         SpecificAppliance,
                         ApplianceState,
                     ]
-                    | tuple[SpecificAppliance, Port, ConnectionState]
+                    | tuple[SpecificAppliance, Port, ThermalState]
                 ],
                 self._prev,
             )
         )
-        appliance_state = dict(entry for entry in state if len(entry) == 2)
+        order = self._network.connections().execution_order()
 
-        missing_appliances = set(self._network.connections().execution_order()) - set(
-            appliance_state.keys()
-        )
+        without_states = {app: None for app in order if not has_appliance_state(app)}
+        appliance_states: dict[SpecificAppliance, GenericState] = {
+            **dict(entry for entry in state if len(entry) == 2),
+            **without_states,
+        }
+
+        missing_appliances = set(order) - set(appliance_states.keys())
         if missing_appliances:
             raise Exception(
                 f"missing states for {[self._network.find_appliance_name_by_id(missing.id) for missing in missing_appliances]}"
@@ -159,7 +175,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
         if missing_feedbacks:
             raise Exception(f"missing feedback states for {missing_feedbacks}")
 
-        return NetworkState(time, appliance_state, feedbacks)
+        return NetworkState[Net](time, appliance_states, feedbacks)
 
 
 class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
@@ -169,9 +185,9 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, TPort: Port
+        State: GenericState, Control: GenericControl, TPort: Port
     ](
-        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort], *Prev]",
+        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort, Any, Any], *Prev]",
         port: TPort,
     ) -> NetworkStateConnectionBuilder[Net, App, TPort, *Prev]:
         return cast(
@@ -186,7 +202,7 @@ class NetworkStateValueBuilder(Generic[Net, App, *Prev]):
     def value[
         State: ApplianceState, Control: GenericControl, TPort: Port
     ](
-        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort], *Prev]",
+        self: "NetworkStateValueBuilder[Net, Appliance[State, Control, TPort, Any, Any], *Prev]",
         state: State,
     ) -> NetworkStateBuilder[Net, *Prev, App, State]:
         return cast(
@@ -211,9 +227,9 @@ class PortToConnector(Generic[Net, From, FromPort, To, ToControl, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, ToPort: Port
+        State: GenericState, ToPort: Port
     ](
-        self: "PortToConnector[Net, From, FromPort, Appliance[State, ToControl, ToPort], ToControl, *Prev]",
+        self: "PortToConnector[Net, From, FromPort, Appliance[State, ToControl, ToPort, Any, Any], ToControl, *Prev]",
         to_port: ToPort,
     ) -> "NetworkConnector[Net, *Prev, Connection[Net, From, FromPort, To, ToPort]]":
         new_connection = cast(
@@ -247,9 +263,9 @@ class ApplianceConnector(Generic[Net, From, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, TPort: Port
+        State: GenericState, Control: GenericControl, TPort: Port
     ](
-        self: "ApplianceConnector[Net, Appliance[State, Control, TPort], *Prev]",
+        self: "ApplianceConnector[Net, Appliance[State, Control, TPort, Any, Any], *Prev]",
         from_port: TPort,
     ) -> PortFromConnector[Net, From, TPort, *Prev]:
         return cast(
@@ -356,7 +372,7 @@ class ControlGetter[App: AnyAppliance]:
     def __init__[
         Control: GenericControl
     ](
-        self: "ControlGetter[Appliance[ApplianceState, Control, Port]]",
+        self: "ControlGetter[Appliance[GenericState, Control, Port, Any, Any]]",
         _: App,
         control: Control,
     ):
@@ -364,7 +380,9 @@ class ControlGetter[App: AnyAppliance]:
 
     def get[
         Control: GenericControl
-    ](self: "ControlGetter[Appliance[ApplianceState, Control, Port]]") -> Control:
+    ](
+        self: "ControlGetter[Appliance[GenericState, Control, Port, Any, Any]]"
+    ) -> Control:
         return cast(
             Control, self._control
         )  # cast should be safe; Control and App are bound together
@@ -423,9 +441,9 @@ class ControlApplianceBuilder[Net: "Network[Any]", App: AnyAppliance, *Prev]:
         self._app = app
 
     def value[
-        State: ApplianceState, Control: GenericControl, TPort: Port
+        State: GenericState, Control: GenericControl, TPort: Port
     ](
-        self: "ControlApplianceBuilder[Net, Appliance[State, Control, TPort], *Prev]",
+        self: "ControlApplianceBuilder[Net, Appliance[State, Control, TPort, Any, Any], *Prev]",
         control: Control,
     ) -> ControlBuilder[Net, tuple[App, Control], *Prev]:
         return cast(
@@ -442,9 +460,9 @@ class PortToFeedback(Generic[Net, From, FromPort, To, ToControl, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, ToPort: Port
+        State: GenericState, ToPort: Port
     ](
-        self: "PortToFeedback[Net, From, FromPort, Appliance[State, ToControl, ToPort], ToControl, *Prev]",
+        self: "PortToFeedback[Net, From, FromPort, Appliance[State, ToControl, ToPort, Any, Any], ToControl, *Prev]",
         to_port: ToPort,
     ) -> "NetworkFeedback[Net, *Prev, Connection[Net, From, FromPort, To, ToPort]]":
         to_app = cast(To, self._to_app)
@@ -480,9 +498,9 @@ class ApplianceFeedback(Generic[Net, From, *Prev]):
         self._prev = prev
 
     def at[
-        State: ApplianceState, Control: GenericControl, TPort: Port
+        State: GenericState, Control: GenericControl, TPort: Port
     ](
-        self: "ApplianceFeedback[Net, Appliance[State, Control, TPort], *Prev]",
+        self: "ApplianceFeedback[Net, Appliance[State, Control, TPort, Any, Any], *Prev]",
         from_port: TPort,
     ) -> PortFromFeedback[Net, From, TPort, *Prev]:
         return cast(
@@ -539,6 +557,21 @@ class NetworkFeedbacks[Net: "Network[Any]"]:
         return NetworkConnections(self._feedbacks).port_mapping()
 
 
+class EnummedDict[T: Enum]:
+    def __init__(self, source: dict[T, Any], enum: type[T]) -> None:
+        self._source = source
+        self._enum = enum
+
+    def __getitem__(self, key: T | str) -> Any:
+        if key in self._source:
+            return self._source[key]
+        else:
+            return self._source[self._enum(key)]  # type: ignore
+
+    def __contains__(self, key: T | str) -> bool:
+        return key in self._source or self._enum(key) in self._source
+
+
 class Network[Sensors](ABC):
     def __init__(self):
         connections = self.connections()
@@ -558,13 +591,13 @@ class Network[Sensors](ABC):
 
     def _map_feedback(
         self, state: NetworkState[Self]
-    ) -> dict[SpecificAppliance, dict[Port, ConnectionState]]:
-        inputs: dict[SpecificAppliance, dict[Port, ConnectionState]] = {}
+    ) -> dict[SpecificAppliance, dict[Port, ThermalState]]:
+        inputs: dict[SpecificAppliance, dict[Port, ThermalState]] = {}
         for (from_app, from_port), (
             to_app,
             to_port,
         ) in self._feedback_port_mapping.items():
-            input: dict[Port, ConnectionState] | None = inputs.get(to_app, None)
+            input: dict[Port, ThermalState] | None = inputs.get(to_app, None)
             if input is None:
                 input = {}
                 inputs[to_app] = input
@@ -582,7 +615,7 @@ class Network[Sensors](ABC):
     @staticmethod
     def check_temperatures(
         min_max_temperature: tuple[int, int],
-        connection_state: ConnectionState,
+        signal: ThermalState,
         appliance_name: str | None,
         port: Port,
     ):
@@ -590,9 +623,9 @@ class Network[Sensors](ABC):
             min_temperature,
             max_temperature,
         ) = min_max_temperature
-        if not min_temperature < connection_state.temperature < max_temperature:
+        if not min_temperature < signal.temperature < max_temperature:
             raise Exception(
-                f"{connection_state} is not within {min_temperature} and {max_temperature}, at appliance {appliance_name} and port {port.value}"
+                f"{signal} is not within {min_temperature} and {max_temperature}, at appliance {appliance_name} and port {port.value}"
             )
 
     def simulate(
@@ -601,32 +634,35 @@ class Network[Sensors](ABC):
         controls: NetworkControl[Self],
         min_max_temperature: tuple[int, int] | None = None,
     ) -> NetworkState[Self]:
-        port_inputs: dict[SpecificAppliance, dict[Port, ConnectionState]] = (
+        port_inputs: dict[SpecificAppliance, dict[Port, ThermalState]] = (
             self._map_feedback(state)
         )
-        appliance_states: dict[SpecificAppliance, ApplianceState] = {}
-        connection_states: dict[tuple[SpecificAppliance, Port], ConnectionState] = {}
+        appliance_states: dict[SpecificAppliance, GenericState] = {}
+        signals: dict[tuple[SpecificAppliance, Port], Any] = {}
 
         # copy feedback into connection states
         for appliance, mapping in port_inputs.items():
-            for port, connection_state in mapping.items():
-                connection_states[(appliance, port)] = connection_state
+            for port, signal in mapping.items():
+                signals[(appliance, port)] = signal
 
         for appliance in self._execution_order:
             appliance_state = state.appliance(appliance).get()
+            port_class = port_for_appliance(appliance)
             new_appliance_state, outputs = appliance.simulate(
-                port_inputs.get(appliance, {}),
+                EnummedDict(port_inputs.get(appliance, {}), port_class),
                 appliance_state,
                 controls.appliance(appliance).get(),
                 state.time,
             )
             appliance_states[appliance] = new_appliance_state
-            for port, connection_state in outputs.items():
-                connection_states[(appliance, port)] = connection_state
-                if min_max_temperature is not None:
+            for port, signal in outputs.items():
+                if not isinstance(port, port_class):
+                    port = port_class(port)
+                signals[(appliance, port)] = signal
+                if min_max_temperature is not None and isinstance(signal, ThermalState):
                     self.check_temperatures(
                         min_max_temperature,
-                        connection_state,
+                        signal,
                         self.find_appliance_name_by_id(appliance.id),
                         port,
                     )
@@ -638,14 +674,14 @@ class Network[Sensors](ABC):
                         raise Exception(
                             f"{to_app} at port {to_port} already has an input"
                         )
-                    to_mapping[to_port] = connection_state
+                    to_mapping[to_port] = signal
                     port_inputs[to_app] = to_mapping
-                    connection_states[(to_app, to_port)] = connection_state
+                    signals[(to_app, to_port)] = signal
 
         return NetworkState(
             replace(state.time, step=state.time.step + 1),
             appliance_states,
-            connection_states,
+            signals,
         )
 
     def define_state[

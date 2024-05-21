@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.schedules import Schedule
@@ -16,18 +16,18 @@ class PVPanelState(ApplianceState):
 
 
 @dataclass(frozen=True, eq=True)
-class PVPanel(Appliance[PVPanelState, None, Port]):
+class PVPanel(ThermalAppliance[PVPanelState, None, Port]):
     global_irradiance_schedule: Schedule[WattPerMeterSquared]
     surface_area: MeterSquared
     efficiency: float
 
     def simulate(
         self,
-        inputs: dict[Port, ConnectionState],
+        inputs: dict[Port, ThermalState],
         previous_state: PVPanelState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[PVPanelState, dict[Port, ConnectionState]]:
+    ) -> tuple[PVPanelState, dict[Port, ThermalState]]:
         return (
             PVPanelState(
                 self.global_irradiance_schedule.at(simulation_time)
