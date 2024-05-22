@@ -1,0 +1,14 @@
+replicaCount: 1
+
+nameOverride: "power-hub-simulation"
+
+image:
+  tag: latest
+  pullPolicy: Always
+container:
+  commands: 
+  - "/app/env/bin/python"
+  - "-m"
+  - "energy_box_control.simulation"
+  env:
+    MQTT_USERNAME: power-hub

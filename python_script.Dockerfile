@@ -28,7 +28,7 @@ RUN python -m venv env \
 FROM python:3.12-slim-bookworm as run
 
 WORKDIR /app
-COPY . /app
+COPY energy_box_control /app/energy_box_control
 
 COPY --from=builder /app/env /app/env
 COPY --from=poetry /app/requirements.txt /app/requirements.txt
