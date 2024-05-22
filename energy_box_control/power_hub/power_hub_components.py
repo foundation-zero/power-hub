@@ -8,7 +8,6 @@ from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
-    Liter,
     LiterPerSecond,
     Watt,
     WattPerMeterSquared,
@@ -184,7 +183,7 @@ fresh_water_tank = WaterTank(100)
 
 
 def water_demand(
-    water_demand_flow_schedule: Schedule[Liter],
+    water_demand_flow_schedule: Schedule[LiterPerSecond],
 ) -> WaterDemand:
     return WaterDemand(water_demand_flow_schedule)
 
