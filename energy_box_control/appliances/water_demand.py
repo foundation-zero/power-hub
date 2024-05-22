@@ -7,7 +7,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import Liter
+from energy_box_control.units import LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -22,7 +22,7 @@ class WaterDemandPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class WaterDemand(WaterAppliance[WaterDemandState, None, WaterDemandPort]):
-    water_demand_flow_schedule: Schedule[Liter]
+    water_demand_flow_schedule: Schedule[LiterPerSecond]
 
     def simulate(
         self,
