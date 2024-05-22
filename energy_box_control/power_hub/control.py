@@ -16,6 +16,7 @@ from energy_box_control.power_hub.power_hub_components import (
     HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_OPEN_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
@@ -71,10 +72,6 @@ class ChillControlState:
 class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
-
-
-PREHEAT_BYPASS_CLOSED_POSITION = 0.0
-PREHEAT_BYPASS_OPEN_POSITION = 1.0
 
 
 @dataclass
@@ -581,7 +578,7 @@ def waste_control(
         power_hub.control(power_hub.outboard_pump)
         .value(SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD))
         .control(power_hub.preheat_switch_valve)
-        .value(ValveControl(PREHEAT_BYPASS_CLOSED_POSITION)),
+        .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION)),
     )
 
 
