@@ -17,7 +17,7 @@ def simulation_time():
 
 def test_water_demand(simulation_time):
     demand = 1
-    water_demand = WaterDemand(ConstSchedule(demand), ConstSchedule(1))
+    water_demand = WaterDemand(ConstSchedule(demand))
 
     _, output = water_demand.simulate(
         {},

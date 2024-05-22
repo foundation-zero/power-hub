@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
     Celsius,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -34,7 +34,7 @@ class PcmPort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Pcm(Appliance[PcmState, None, PcmPort]):
+class Pcm(ThermalAppliance[PcmState, None, PcmPort]):
     latent_heat: Joule
     phase_change_temperature: Celsius
     sensible_capacity: JoulePerKelvin
@@ -62,11 +62,11 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
 
     def simulate(
         self,
-        inputs: dict[PcmPort, ConnectionState],
+        inputs: dict[PcmPort, ThermalState],
         previous_state: PcmState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[PcmState, dict[PcmPort, ConnectionState]]:
+    ) -> tuple[PcmState, dict[PcmPort, ThermalState]]:
         pcm_heat = (
             self.sensible_capacity * previous_state.temperature
             + self.latent_heat * previous_state.state_of_charge
@@ -125,7 +125,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
         return PcmState(actual_soc, actual_temp), {
             **(
                 {
-                    PcmPort.CHARGE_OUT: ConnectionState(
+                    PcmPort.CHARGE_OUT: ThermalState(
                         inputs[PcmPort.CHARGE_IN].flow,
                         (
                             (charge_heat - transferred_charge_heat) / charge_capacity
@@ -139,7 +139,7 @@ class Pcm(Appliance[PcmState, None, PcmPort]):
             ),
             **(
                 {
-                    PcmPort.DISCHARGE_OUT: ConnectionState(
+                    PcmPort.DISCHARGE_OUT: ThermalState(
                         inputs[PcmPort.DISCHARGE_IN].flow,
                         (
                             (discharge_heat - transferred_discharge_heat)

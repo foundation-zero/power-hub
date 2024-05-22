@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances import HeatPipes, HeatPipesState, HeatPipesPort
 from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime
@@ -16,7 +16,7 @@ def test_equal_temps(simulation_time):
     heat_pipes = HeatPipes(0.50, 0.1, 0.1, 1, 1, ConstSchedule(1), ConstSchedule(10))
     _, outputs = heat_pipes.simulate(
         {
-            HeatPipesPort.IN: ConnectionState(1, 10),
+            HeatPipesPort.IN: ThermalState(1, 10),
         },
         HeatPipesState(10),
         None,
@@ -30,7 +30,7 @@ def test_differential_temp(simulation_time):
     heat_pipes = HeatPipes(0.50, 0.1, 0.1, 1, 1, ConstSchedule(1), ConstSchedule(9))
     new_state, outputs = heat_pipes.simulate(
         {
-            HeatPipesPort.IN: ConnectionState(1, 10),
+            HeatPipesPort.IN: ThermalState(1, 10),
         },
         HeatPipesState(10),
         None,
@@ -49,7 +49,7 @@ def hub_heat_pipes():
 
 
 def test_hub_stagnation_temp(hub_heat_pipes, simulation_time):
-    inputs = {HeatPipesPort.IN: ConnectionState(1, 100)}
+    inputs = {HeatPipesPort.IN: ThermalState(1, 100)}
     pipes_state = HeatPipesState(100)
 
     temp_diff = None

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -31,7 +31,7 @@ class BoilerControl(ApplianceControl):
 
 
 @dataclass(frozen=True, eq=True)
-class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
+class Boiler(ThermalAppliance[BoilerState, BoilerControl, BoilerPort]):
     volume: Liter
     heater_power: Watt
     heat_loss: Watt
@@ -45,11 +45,11 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
 
     def simulate(
         self,
-        inputs: dict[BoilerPort, ConnectionState],
+        inputs: dict[BoilerPort, ThermalState],
         previous_state: BoilerState,
         control: BoilerControl,
         simulation_time: ProcessTime,
-    ) -> tuple[BoilerState, dict[BoilerPort, ConnectionState]]:
+    ) -> tuple[BoilerState, dict[BoilerPort, ThermalState]]:
 
         # assuming constant specific heat capacities with the temperature ranges
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
@@ -102,7 +102,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
         connection_states = {
             **(
                 {
-                    BoilerPort.HEAT_EXCHANGE_OUT: ConnectionState(
+                    BoilerPort.HEAT_EXCHANGE_OUT: ThermalState(
                         inputs[BoilerPort.HEAT_EXCHANGE_IN].flow,
                         equilibrium_temperature,
                     )
@@ -112,7 +112,7 @@ class Boiler(Appliance[BoilerState, BoilerControl, BoilerPort]):
             ),
             **(
                 {
-                    BoilerPort.FILL_OUT: ConnectionState(
+                    BoilerPort.FILL_OUT: ThermalState(
                         inputs[BoilerPort.FILL_IN].flow, equilibrium_temperature
                     )
                 }

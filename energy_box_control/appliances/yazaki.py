@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 
@@ -72,18 +72,18 @@ _heat_input_interpolator = RegularGridInterpolator(
 
 
 @dataclass(frozen=True, eq=True)
-class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
+class Yazaki(ThermalAppliance[YazakiState, YazakiControl, YazakiPort]):
     specific_heat_capacity_hot: JoulePerLiterKelvin
     specific_heat_capacity_cooling: JoulePerLiterKelvin
     specific_heat_capacity_chilled: JoulePerLiterKelvin
 
     def simulate(
         self,
-        inputs: dict[YazakiPort, ConnectionState],
+        inputs: dict[YazakiPort, ThermalState],
         previous_state: YazakiState,
         control: YazakiControl,
         simulation_time: ProcessTime,
-    ) -> tuple[YazakiState, dict[YazakiPort, ConnectionState]]:
+    ) -> tuple[YazakiState, dict[YazakiPort, ThermalState]]:
         if not control.on:
             return YazakiState(), {
                 YazakiPort.HOT_OUT: inputs[YazakiPort.HOT_IN],
@@ -150,13 +150,13 @@ class Yazaki(Appliance[YazakiState, YazakiControl, YazakiPort]):
             )
 
         return YazakiState(), {
-            YazakiPort.HOT_OUT: ConnectionState(
+            YazakiPort.HOT_OUT: ThermalState(
                 inputs[YazakiPort.HOT_IN].flow, hot_temp_out
             ),
-            YazakiPort.COOLING_OUT: ConnectionState(
+            YazakiPort.COOLING_OUT: ThermalState(
                 inputs[YazakiPort.COOLING_IN].flow, cooling_temp_out
             ),
-            YazakiPort.CHILLED_OUT: ConnectionState(
+            YazakiPort.CHILLED_OUT: ThermalState(
                 inputs[YazakiPort.CHILLED_IN].flow, chilled_temp_out
             ),
         }

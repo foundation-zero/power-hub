@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Self
 from pytest import approx
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.network import (
     Network,
     NetworkConnections,
@@ -82,7 +82,7 @@ def test_circular_network():
                 .value(BoilerState(100))
                 .define_state(self.boiler)
                 .at(BoilerPort.HEAT_EXCHANGE_OUT)
-                .value(ConnectionState(1, 100))
+                .value(ThermalState(1, 100))
                 .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
             )
 

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -28,20 +28,20 @@ class SwitchPumpControl(ApplianceControl):
 
 
 @dataclass(frozen=True, eq=True)
-class SwitchPump(Appliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
+class SwitchPump(ThermalAppliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
     flow: LiterPerSecond
     electrical_power: Watt
 
     def simulate(
         self,
-        inputs: dict[SwitchPumpPort, ConnectionState],
+        inputs: dict[SwitchPumpPort, ThermalState],
         previous_state: SwitchPumpState,
         control: SwitchPumpControl,
         simulation_time: ProcessTime,
-    ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ConnectionState]]:
+    ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ThermalState]]:
         input = inputs[SwitchPumpPort.IN]
         return SwitchPumpState(), {
-            SwitchPumpPort.OUT: ConnectionState(
+            SwitchPumpPort.OUT: ThermalState(
                 self.flow if control.on else 0, input.temperature
             )
         }

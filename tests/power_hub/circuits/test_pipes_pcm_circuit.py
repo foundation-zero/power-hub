@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pytest import approx, fixture
 from energy_box_control.appliances.base import (
     ApplianceState,
-    ConnectionState,
+    ThermalState,
 )
 from energy_box_control.appliances.heat_pipes import HeatPipesPort, HeatPipesState
 from energy_box_control.appliances.mix import MixPort
@@ -41,7 +41,7 @@ def initial_state_without_valve(pipes_pcm_circuit):
         .value(PcmState(0, AMBIENT_TEMPERATURE))
         .define_state(pipes_pcm_circuit.heat_pipes_pump)
         .at(SwitchPumpPort.OUT)
-        .value(ConnectionState(0, AMBIENT_TEMPERATURE))
+        .value(ThermalState(0, AMBIENT_TEMPERATURE))
     )
 
 
@@ -73,7 +73,7 @@ def initial_state_pipes_to_pcm_warm(
         .value(PcmState(0, 75))
         .define_state(pipes_pcm_circuit.heat_pipes_pump)
         .at(SwitchPumpPort.OUT)
-        .value(ConnectionState(0, AMBIENT_TEMPERATURE))
+        .value(ThermalState(0, AMBIENT_TEMPERATURE))
         .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
     )
 
