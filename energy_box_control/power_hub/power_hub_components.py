@@ -44,7 +44,8 @@ WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
-HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.a_position()
+HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.b_position()
+HEAT_PIPES_BYPASS_CLOSED_POSITION = ValveControl.a_position()
 
 PV_PANEL_SURFACE_AREA = 200
 PV_PANEL_EFFICIENCY = (
@@ -70,7 +71,7 @@ def heat_pipes(
 
 
 heat_pipes_valve = Valve()
-heat_pipes_pump = SwitchPump(15 / 60, SWITCH_PUMP_POWER)
+heat_pipes_pump = SwitchPump(15 / 60, 60)
 heat_pipes_mix = Mix()
 
 
