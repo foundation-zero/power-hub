@@ -13,6 +13,7 @@ from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.power_hub_components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
     WASTE_BYPASS_VALVE_OPEN_POSITION,
@@ -211,9 +212,9 @@ ready_for_pcm = Fn.pred(
         HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
     )
 )
-sun_present = Fn.sensors(lambda sensors: sensors.weather.global_irradiance) > Fn.state(
-    lambda state: state.setpoints.minimum_global_irradiance
-)
+sufficient_sunlight = Fn.sensors(
+    lambda sensors: sensors.weather.global_irradiance
+) > Fn.state(lambda state: state.setpoints.minimum_global_irradiance)
 hot_transitions: dict[
     tuple[HotControlMode, HotControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
@@ -245,10 +246,13 @@ hot_transitions: dict[
     | cannot_heat_pcm.holds_true(
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
     ),
-    (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (~sun_present).holds_true(
-        Marker("Global irradiance below treshold"), timedelta(minutes=10)
-    ),
-    (HotControlMode.WAITING_FOR_SUN, HotControlMode.IDLE): sun_present.holds_true(
+    (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (
+        ~sufficient_sunlight
+    ).holds_true(Marker("Global irradiance below treshold"), timedelta(minutes=10)),
+    (
+        HotControlMode.WAITING_FOR_SUN,
+        HotControlMode.IDLE,
+    ): sufficient_sunlight.holds_true(
         Marker("Global irradiance above treshold"), timedelta(minutes=10)
     )
     & (should_heat_reservoir | should_heat_pcm),
@@ -278,7 +282,7 @@ def hot_control(
         hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
         run_heat_pipes_pump = True
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = 1
+        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
     elif hot_control_mode == HotControlMode.HEAT_RESERVOIR:
         heat_setpoint = (
             sensors.hot_reservoir.temperature
@@ -295,7 +299,7 @@ def hot_control(
         hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = 1
+        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
     elif hot_control_mode == HotControlMode.HEAT_PCM:
         heat_setpoint = (
             sensors.pcm.temperature
@@ -310,12 +314,12 @@ def hot_control(
         run_heat_pipes_pump = True
     elif hot_control_mode == HotControlMode.IDLE:
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = 1
+        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
         hot_switch_valve_position = control_state.hot_control.hot_switch_valve_position
         run_heat_pipes_pump = True
     else:  # hot_control_mode == HotControlMode.WAITING_FOR_SUN:
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = 1
+        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
         hot_switch_valve_position = control_state.hot_control.hot_switch_valve_position
         run_heat_pipes_pump = False
 
@@ -334,7 +338,7 @@ def hot_control(
         .control(power_hub.hot_switch_valve)
         .value(ValveControl(hot_switch_valve_position))
         .control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=False))  # extend control
+        .value(BoilerControl(heater_on=False))
     )
     return hot_control_state, control
 
