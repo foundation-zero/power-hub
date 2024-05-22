@@ -1,4 +1,4 @@
-name: Test
+name: Test and deploy
 on:
   push:
 
@@ -99,10 +99,15 @@ jobs:
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
           . -f python_script.Dockerfile
 
-      - name: 'Docker push sha & latest'
+      - name: 'Docker push sha'
         run: >
-          docker push --all-tags
+          docker push
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
+
+      - name: 'Docker push latest'
+        run: >
+          docker push
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-infra:
     if: github.ref == 'refs/heads/main'
