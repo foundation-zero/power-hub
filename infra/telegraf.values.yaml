@@ -1,0 +1,16 @@
+replicaCount: 1
+
+config: 
+  outputs:
+    - file:
+        files: 
+        - "stdout"
+  inputs:
+    - mqtt_consumer:
+        topics:
+          - "power_hub/#"
+        data_format: "json"
+        json_time_key: "timestamp"
+        json_time_format: "unix"
+service:
+  enabled: false

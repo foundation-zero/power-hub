@@ -1,0 +1,26 @@
+replicaCount: 3
+
+nameOverride: "power-hub-api"
+
+image:
+  tag: latest
+  pullPolicy: Always
+container:
+  commands: 
+  - "/app/env/bin/python"
+  - "-m"
+  - "energy_box_control.api.api"
+
+initialDelaySeconds: 10
+
+ingress:
+  enabled: true
+  tls: false
+  annotations:
+    kubernetes.io/ingress.allow-http: "true"
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 5001
+  portName: http

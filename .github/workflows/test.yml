@@ -52,3 +52,87 @@ jobs:
         env:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: ${{ github.workflow }}-deploy
+      cancel-in-progress: true
+    
+    env:
+      PROJECT_ID: power-hub-423312
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.SERVICE_ACCOUNT}}
+
+      - id: 'login-art-registry'
+        name: 'Login to Artifact Registry'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{env.GAR}}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: 'Docker build'
+        run: >
+          docker build
+          --platform linux/amd64
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
+          . -f python_script.Dockerfile
+
+      - name: 'Docker push sha & latest'
+        run: >
+          docker push --all-tags
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
+
+  deploy-infra:
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: ${{ github.workflow }}-deploy
+      cancel-in-progress: true
+
+    needs: deploy
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.7.1
+      
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.SERVICE_ACCOUNT}}
+      
+      - run: tofu init
+        working-directory: ./infra
+
+      - run: tofu apply --auto-approve
+        working-directory: ./infra
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}

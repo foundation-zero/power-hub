@@ -1,0 +1,13 @@
+ingress:
+  enabled: true
+  tls: false
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8086
+  annotations: {}
+  labels: {}
+  portName: http
