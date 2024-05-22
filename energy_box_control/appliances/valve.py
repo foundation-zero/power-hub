@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -34,15 +34,15 @@ class ValvePort(Port):
 
 
 @dataclass(eq=True, frozen=True)
-class Valve(Appliance[ValveState, ValveControl, ValvePort]):
+class Valve(ThermalAppliance[ValveState, ValveControl, ValvePort]):
 
     def simulate(
         self,
-        inputs: dict[ValvePort, ConnectionState],
+        inputs: dict[ValvePort, ThermalState],
         previous_state: ValveState,
         control: ValveControl | None,
         simulation_time: ProcessTime,
-    ) -> tuple[ValveState, dict[ValvePort, ConnectionState]]:
+    ) -> tuple[ValveState, dict[ValvePort, ThermalState]]:
 
         input = inputs[ValvePort.AB]
         position = control.position if control else previous_state.position
@@ -50,10 +50,8 @@ class Valve(Appliance[ValveState, ValveControl, ValvePort]):
         return ValveState(
             position,
         ), {
-            ValvePort.A: ConnectionState(
-                (1 - position) * input.flow, input.temperature
-            ),
-            ValvePort.B: ConnectionState(position * input.flow, input.temperature),
+            ValvePort.A: ThermalState((1 - position) * input.flow, input.temperature),
+            ValvePort.B: ThermalState(position * input.flow, input.temperature),
         }
 
 

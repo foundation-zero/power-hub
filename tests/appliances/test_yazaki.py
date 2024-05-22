@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from hypothesis import HealthCheck, given, settings
 from pytest import approx
 import pytest
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.source import Source
 from energy_box_control.appliances.yazaki import (
     Yazaki,
@@ -56,9 +56,9 @@ def test_yazaki_outside_ref_values(hot_in, chilled_in, cooling_in, caplog):
     chilled_in = 0
     cooling_in = 0
     connections = {
-        YazakiPort.HOT_IN: ConnectionState(1, hot_in),
-        YazakiPort.CHILLED_IN: ConnectionState(1, chilled_in),
-        YazakiPort.COOLING_IN: ConnectionState(1, cooling_in),
+        YazakiPort.HOT_IN: ThermalState(1, hot_in),
+        YazakiPort.CHILLED_IN: ThermalState(1, chilled_in),
+        YazakiPort.COOLING_IN: ThermalState(1, cooling_in),
     }
 
     _, outputs = yazaki.simulate(

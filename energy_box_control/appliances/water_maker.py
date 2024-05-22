@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    WaterAppliance,
     ApplianceState,
-    ConnectionState,
+    WaterState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -20,19 +20,18 @@ class WaterMakerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterMaker(Appliance[WaterMakerState, None, WaterMakerPort]):
+class WaterMaker(WaterAppliance[WaterMakerState, None, WaterMakerPort]):
     efficiency: float
 
     def simulate(
         self,
-        inputs: dict[WaterMakerPort, ConnectionState],
+        inputs: dict[WaterMakerPort, WaterState],
         previous_state: WaterMakerState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterMakerState, dict[WaterMakerPort, ConnectionState]]:
+    ) -> tuple[WaterMakerState, dict[WaterMakerPort, WaterState]]:
         return WaterMakerState(), {
-            WaterMakerPort.DESALINATED_OUT: ConnectionState(
+            WaterMakerPort.DESALINATED_OUT: WaterState(
                 inputs[WaterMakerPort.IN].flow * self.efficiency,
-                inputs[WaterMakerPort.IN].temperature,
             )
         }

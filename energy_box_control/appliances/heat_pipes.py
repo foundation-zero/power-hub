@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.schedules import Schedule
@@ -26,7 +26,7 @@ class HeatPipesPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
+class HeatPipes(ThermalAppliance[HeatPipesState, None, HeatPipesPort]):
     optical_efficiency: float
     first_order_loss_coefficient: float
     second_order_loss_coefficient: float
@@ -37,11 +37,11 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
 
     def simulate(
         self,
-        inputs: dict[HeatPipesPort, ConnectionState],
+        inputs: dict[HeatPipesPort, ThermalState],
         previous_state: HeatPipesState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[HeatPipesState, dict[HeatPipesPort, ConnectionState]]:
+    ) -> tuple[HeatPipesState, dict[HeatPipesPort, ThermalState]]:
 
         input = inputs[HeatPipesPort.IN]
 
@@ -64,4 +64,4 @@ class HeatPipes(Appliance[HeatPipesState, None, HeatPipesPort]):
 
         new_state = HeatPipesState((temp_out + input.temperature) / 2)
 
-        return new_state, {HeatPipesPort.OUT: ConnectionState(input.flow, temp_out)}
+        return new_state, {HeatPipesPort.OUT: ThermalState(input.flow, temp_out)}

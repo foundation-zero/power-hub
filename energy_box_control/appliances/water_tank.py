@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    WaterAppliance,
     ApplianceState,
-    ConnectionState,
+    WaterState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -26,16 +26,16 @@ class TankFullException(Exception):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterTank(Appliance[WaterTankState, None, WaterTankPort]):
+class WaterTank(WaterAppliance[WaterTankState, None, WaterTankPort]):
     capacity: Liter
 
     def simulate(
         self,
-        inputs: dict[WaterTankPort, ConnectionState],
+        inputs: dict[WaterTankPort, WaterState],
         previous_state: WaterTankState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterTankState, dict[WaterTankPort, ConnectionState]]:
+    ) -> tuple[WaterTankState, dict[WaterTankPort, WaterState]]:
         new_fill = (
             previous_state.fill
             + (inputs[WaterTankPort.IN_0].flow * simulation_time.step_seconds)
@@ -48,8 +48,4 @@ class WaterTank(Appliance[WaterTankState, None, WaterTankPort]):
                 f"The water tank has a new fill ({new_fill}) that exceeds the capacity ({self.capacity}) or is lower than 0"
             )
 
-        return WaterTankState(new_fill), {
-            WaterTankPort.OUT: ConnectionState(
-                0, inputs[WaterTankPort.IN_0].temperature
-            )
-        }
+        return WaterTankState(new_fill), {WaterTankPort.OUT: WaterState(0)}

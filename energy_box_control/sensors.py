@@ -6,9 +6,10 @@ from uuid import UUID
 
 from energy_box_control.appliances.base import (
     Appliance,
+    ThermalAppliance,
     ApplianceControl,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from inspect import getmembers, isclass
@@ -70,7 +71,7 @@ class FromState(Protocol):
     ](
         cls: type[Cls],
         context: "SensorContext[Any]",
-        appliance: Appliance[State, Control, TPort],
+        appliance: ThermalAppliance[State, Control, TPort],
         state: NetworkState[Any],
     ) -> Cls: ...
 
@@ -126,7 +127,7 @@ class SensorContext[T]:
         state: NetworkState[Any],
         klass: FromState,
         _location: Any,
-        appliance: Appliance[State, Control, TPort],
+        appliance: ThermalAppliance[State, Control, TPort],
     ):
         key = self._accessed.pop()
         instance = klass.from_state(self, appliance, state)
@@ -143,7 +144,7 @@ class SensorContext[T]:
         values: dict[str, float | int | bool],
         cls: Any,
         _location: Any,
-        appliance: Appliance[ApplianceState, ApplianceControl | None, Port],
+        appliance: ThermalAppliance[ApplianceState, ApplianceControl | None, Port],
     ):
         key = self._accessed.pop()
         instance = cls(self, appliance, **values)
@@ -184,7 +185,7 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
         def _init_from_appliance(
             self: Any,
             context: SensorContext[Any],
-            appliance: Appliance[Any, Any, Any],
+            appliance: ThermalAppliance[Any, Any, Any],
             **kwargs: dict[str, Any],
         ):
             for name, annotation in get_type_hints(cls).items():
@@ -215,7 +216,7 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
 
         def _from_state(
             context: SensorContext[Any],
-            appliance: Appliance[Any, Any, Any],
+            appliance: ThermalAppliance[Any, Any, Any],
             state: NetworkState[Any],
         ):
             appliance_state = state.appliance(appliance).get()
@@ -228,7 +229,9 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
                 (
                     name,
                     state.connection(
-                        appliance, description.from_port, ConnectionState(nan, nan)
+                        appliance,
+                        description.from_port,
+                        ThermalState(nan, nan),
                     ),
                     description,
                 )
