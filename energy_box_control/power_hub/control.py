@@ -31,7 +31,7 @@ from energy_box_control.simulation_json import encoder
 from energy_box_control.network import NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
-from energy_box_control.units import Celsius, Watt, WattPerMeterSquared
+from energy_box_control.units import Celsius, WattPerMeterSquared
 
 
 class HotControlMode(State):
@@ -97,6 +97,9 @@ class Setpoints:
     pcm_min_temperature: Celsius = setpoint(
         "minimum temperature of pcm to be maintained"
     )
+    pcm_max_temperature: Celsius = setpoint(
+        "maximum temperature of pcm to be maintained"
+    )
     target_charging_temperature_offset: Celsius = setpoint(
         "target offset to target temperature of temperature of charging medium"
     )
@@ -140,7 +143,8 @@ def initial_control_state() -> PowerHubControlState:
         setpoints=Setpoints(
             hot_reservoir_max_temperature=65,  # hot reservoir not connected, does not need to be heated
             hot_reservoir_min_temperature=60,
-            pcm_min_temperature=95,
+            pcm_min_temperature=90,
+            pcm_max_temperature=95,
             target_charging_temperature_offset=5,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=0,
@@ -192,6 +196,9 @@ should_heat_pcm = (
     Fn.sensors(lambda sensors: sensors.pcm.temperature)
     < Fn.state(lambda state: state.setpoints.pcm_min_temperature)
 ) & ~should_heat_reservoir
+stop_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
+    lambda state: state.setpoints.pcm_max_temperature
+)
 cannot_heat_pcm = Fn.pred(
     lambda control_state, sensors: sensors.heat_pipes.output_temperature
     < (
@@ -207,7 +214,6 @@ ready_for_pcm = Fn.pred(
 sun_present = Fn.sensors(lambda sensors: sensors.weather.global_irradiance) > Fn.state(
     lambda state: state.setpoints.minimum_global_irradiance
 )
-
 hot_transitions: dict[
     tuple[HotControlMode, HotControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
@@ -235,7 +241,8 @@ hot_transitions: dict[
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
     ),
     (HotControlMode.HEAT_PCM, HotControlMode.HEAT_RESERVOIR): should_heat_reservoir,
-    (HotControlMode.HEAT_PCM, HotControlMode.IDLE): cannot_heat_pcm.holds_true(
+    (HotControlMode.HEAT_PCM, HotControlMode.IDLE): stop_heat_pcm
+    | cannot_heat_pcm.holds_true(
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
     ),
     (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (~sun_present).holds_true(
