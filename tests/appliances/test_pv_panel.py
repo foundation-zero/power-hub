@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-from pytest import approx, fixture
-from energy_box_control.appliances.base import ThermalState
+from pytest import fixture
 from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime

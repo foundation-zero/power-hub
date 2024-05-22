@@ -94,18 +94,14 @@ class NetworkState(Generic[Net]):
         return (appliance, port) in self._signals
 
     @overload
-    def connection(self, appliance: AnyAppliance, port: Port) -> ThermalState: ...
+    def connection(self, appliance: AnyAppliance, port: Port) -> Any: ...
 
     @overload
-    def connection[
-        T
-    ](self, appliance: AnyAppliance, port: Port, default: T) -> ThermalState | T: ...
+    def connection[T](self, appliance: AnyAppliance, port: Port, default: T) -> T: ...
 
     def connection[
         T
-    ](self, appliance: AnyAppliance, port: Port, default: T | None = None) -> (
-        ThermalState | T
-    ):
+    ](self, appliance: AnyAppliance, port: Port, default: T | None = None) -> Any | T:
         if default:
             return self._signals.get((appliance, port), default)
 
@@ -148,7 +144,7 @@ class NetworkStateBuilder(Generic[Net, *Prev]):
                         SpecificAppliance,
                         ApplianceState,
                     ]
-                    | tuple[SpecificAppliance, Port, ThermalState]
+                    | tuple[SpecificAppliance, Port, Any]
                 ],
                 self._prev,
             )
@@ -591,13 +587,13 @@ class Network[Sensors](ABC):
 
     def _map_feedback(
         self, state: NetworkState[Self]
-    ) -> dict[SpecificAppliance, dict[Port, ThermalState]]:
-        inputs: dict[SpecificAppliance, dict[Port, ThermalState]] = {}
+    ) -> dict[SpecificAppliance, dict[Port, Any]]:
+        inputs: dict[SpecificAppliance, dict[Port, Any]] = {}
         for (from_app, from_port), (
             to_app,
             to_port,
         ) in self._feedback_port_mapping.items():
-            input: dict[Port, ThermalState] | None = inputs.get(to_app, None)
+            input: dict[Port, Any] | None = inputs.get(to_app, None)
             if input is None:
                 input = {}
                 inputs[to_app] = input
@@ -634,8 +630,8 @@ class Network[Sensors](ABC):
         controls: NetworkControl[Self],
         min_max_temperature: tuple[int, int] | None = None,
     ) -> NetworkState[Self]:
-        port_inputs: dict[SpecificAppliance, dict[Port, ThermalState]] = (
-            self._map_feedback(state)
+        port_inputs: dict[SpecificAppliance, dict[Port, Any]] = self._map_feedback(
+            state
         )
         appliance_states: dict[SpecificAppliance, GenericState] = {}
         signals: dict[tuple[SpecificAppliance, Port], Any] = {}
