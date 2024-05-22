@@ -1,0 +1,54 @@
+replicaCount: 3
+
+image:
+  repository: vernemq/vernemq
+  tag: 1.13.0-alpine
+
+service:
+  enabled: true
+  type: LoadBalancer
+  mqtt:
+    enabled: false
+    port: 1883
+    nodePort: 1883
+  mqtts:
+    enabled: true
+    port: 8883
+    nodePort: 8883
+  ws:
+    enabled: false
+    port: 8080
+    nodePort: 8080
+  wss:
+    enabled: true
+    port: 8443
+    nodePort: 8443
+  api:
+    enabled: true
+    port: 8888
+    nodePort: 38888
+    annotations: {}
+        
+## Node tolerations for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+tolerations:
+    - key: kubernetes.io/arch
+      operator: Equal
+      value: arm64
+      effect: NoSchedule
+
+
+statefulset:
+  livenessProbe:
+    initialDelaySeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 30
+
+acl:
+  enabled: true
+  content: |-
+    topic read #
+
+    user power-hub
+    topic read #
+    topic write #
