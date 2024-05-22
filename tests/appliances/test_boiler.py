@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from hypothesis import assume, example, given, reproduce_failure
 from hypothesis.strategies import floats
 from pytest import approx, fixture
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.boiler import (
     Boiler,
     BoilerControl,
@@ -92,11 +92,7 @@ def test_boiler_exchange(
         volume * specific_heat_capacity_fill / specific_heat_capacity_exchange
     )  # to have equal heat capacities
     state, _ = boiler.simulate(
-        {
-            BoilerPort.HEAT_EXCHANGE_IN: ConnectionState(
-                exchange_in_flow, exchange_in_temp
-            )
-        },
+        {BoilerPort.HEAT_EXCHANGE_IN: ThermalState(exchange_in_flow, exchange_in_temp)},
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
         ProcessTime(timedelta(seconds=1), 0, datetime.now()),
@@ -132,7 +128,7 @@ def test_boiler_fill(
         ConstSchedule(ambient_temp),
     )
     state, _ = boiler.simulate(
-        {BoilerPort.FILL_IN: ConnectionState(fill_in_flow, fill_in_temp)},
+        {BoilerPort.FILL_IN: ThermalState(fill_in_flow, fill_in_temp)},
         BoilerState(boiler_temp),
         BoilerControl(heater_on=False),
         ProcessTime(timedelta(seconds=1), 0, datetime.now()),

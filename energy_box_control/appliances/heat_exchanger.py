@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    ThermalAppliance,
     ApplianceState,
-    ConnectionState,
+    ThermalState,
     Port,
 )
 from energy_box_control.time import ProcessTime
@@ -17,18 +17,18 @@ class HeatExchangerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
+class HeatExchanger(ThermalAppliance[ApplianceState, None, HeatExchangerPort]):
     specific_heat_capacity_A: JoulePerLiterKelvin
     specific_heat_capacity_B: JoulePerLiterKelvin
 
     # assuming a perfect heat exchange, reaching thermal equilibrium in every time step
     def simulate(
         self,
-        inputs: dict[HeatExchangerPort, ConnectionState],
+        inputs: dict[HeatExchangerPort, ThermalState],
         previous_state: ApplianceState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[ApplianceState, dict[HeatExchangerPort, ConnectionState]]:
+    ) -> tuple[ApplianceState, dict[HeatExchangerPort, ThermalState]]:
 
         heat_A = (
             inputs[HeatExchangerPort.A_IN].flow
@@ -46,11 +46,11 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
             or inputs[HeatExchangerPort.B_IN].flow == 0
         ):
             return ApplianceState(), {
-                HeatExchangerPort.A_OUT: ConnectionState(
+                HeatExchangerPort.A_OUT: ThermalState(
                     inputs[HeatExchangerPort.A_IN].flow,
                     inputs[HeatExchangerPort.A_IN].temperature,
                 ),
-                HeatExchangerPort.B_OUT: ConnectionState(
+                HeatExchangerPort.B_OUT: ThermalState(
                     inputs[HeatExchangerPort.B_IN].flow,
                     inputs[HeatExchangerPort.B_IN].temperature,
                 ),
@@ -62,11 +62,11 @@ class HeatExchanger(Appliance[ApplianceState, None, HeatExchangerPort]):
         )
 
         return ApplianceState(), {
-            HeatExchangerPort.A_OUT: ConnectionState(
+            HeatExchangerPort.A_OUT: ThermalState(
                 inputs[HeatExchangerPort.A_IN].flow,
                 equilibrium_temperature,
             ),
-            HeatExchangerPort.B_OUT: ConnectionState(
+            HeatExchangerPort.B_OUT: ThermalState(
                 inputs[HeatExchangerPort.B_IN].flow,
                 equilibrium_temperature,
             ),

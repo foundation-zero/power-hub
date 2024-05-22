@@ -185,9 +185,8 @@ fresh_water_tank = WaterTank(100)
 
 def water_demand(
     water_demand_flow_schedule: Schedule[Liter],
-    water_demand_temp_schedule: Schedule[Celsius],
 ) -> WaterDemand:
-    return WaterDemand(water_demand_flow_schedule, water_demand_temp_schedule)
+    return WaterDemand(water_demand_flow_schedule)
 
 
 water_treatment = WaterTreatment(0.5)

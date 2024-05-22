@@ -27,12 +27,17 @@ from energy_box_control.appliances import (
 )
 from energy_box_control.appliances.base import (
     ApplianceState,
-    ConnectionState,
+    ThermalState,
+    WaterState,
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
 from energy_box_control.appliances.heat_pipes import HeatPipesState
+from energy_box_control.appliances.ignore_temperature import (
+    IgnoreTemperature,
+    IgnoreTemperaturePort,
+)
 from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.appliances.source import SourceState
@@ -90,7 +95,7 @@ class PowerHubSchedules:
     global_irradiance: Schedule[WattPerMeterSquared]
     ambient_temperature: Schedule[Celsius]
     cooling_demand: Schedule[Watt]
-    seawater_temperatue: Schedule[Celsius]
+    seawater_temperature: Schedule[Celsius]
     freshwater_temperature: Schedule[Celsius]
     water_demand: Schedule[LiterPerSecond]
 
@@ -174,6 +179,7 @@ class PowerHub(Network[PowerHubSensors]):
     cooling_demand: CoolingSink
     pv_panel: PVPanel
     sea_water_source: Source
+    sea_water_temperature_filter: IgnoreTemperature
     water_maker_pump: SwitchPump
     water_maker: WaterMaker
     fresh_water_tank: WaterTank
@@ -219,15 +225,16 @@ class PowerHub(Network[PowerHubSensors]):
             phc.fresh_water_source(schedules.freshwater_temperature),
             phc.outboard_exchange,
             phc.outboard_pump,
-            phc.outboard_source(schedules.seawater_temperatue),
+            phc.outboard_source(schedules.seawater_temperature),
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
             phc.pv_panel(schedules.global_irradiance),
-            phc.sea_water_source(schedules.seawater_temperatue),
+            phc.sea_water_source(schedules.seawater_temperature),
+            IgnoreTemperature(),
             phc.water_maker_pump,
             phc.water_maker,
             phc.fresh_water_tank,
-            phc.water_demand(schedules.water_demand, schedules.seawater_temperatue),
+            phc.water_demand(schedules.water_demand),
             phc.water_treatment,
             schedules,
         )
@@ -300,22 +307,22 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SourceState())
             .define_state(power_hub.heat_pipes_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.cooling_demand_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.cooling_demand_pump)
             .value(SwitchPumpState())
-            .define_state(power_hub.cooling_demand)
+            .define_state(power_hub.sea_water_temperature_filter)
             .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
@@ -399,25 +406,25 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SourceState())
             .define_state(self.heat_pipes_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.pcm_to_yazaki_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.chilled_loop_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.cooling_demand_pump)
             .at(SwitchPumpPort.OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.outboard_exchange)
             .at(HeatExchangerPort.A_OUT)
-            .value(ConnectionState(0, phc.AMBIENT_TEMPERATURE))
+            .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.cooling_demand_pump)
             .value(SwitchPumpState())
-            .define_state(self.cooling_demand)
-            .value(ApplianceState())
             .define_state(self.pv_panel)
             .value(PVPanelState(0))
+            .define_state(self.sea_water_temperature_filter)
+            .value(ApplianceState())
             .define_state(self.sea_water_source)
             .value(SourceState())
             .define_state(self.water_maker_pump)
@@ -432,7 +439,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(WaterTreatmentState())
             .define_state(self.water_treatment)
             .at(WaterTreatmentPort.OUT)
-            .value(ConnectionState(10, phc.AMBIENT_TEMPERATURE))
+            .value(WaterState(10))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -744,6 +751,7 @@ class PowerHub(Network[PowerHubSensors]):
         # fmt: on
 
     def _water_maker_connections(self):
+
         # fmt: off
         return (
             self.connect(self.sea_water_source)
@@ -753,6 +761,11 @@ class PowerHub(Network[PowerHubSensors]):
 
             .connect(self.water_maker_pump)
             .at(SwitchPumpPort.OUT)
+            .to(self.sea_water_temperature_filter)
+            .at(IgnoreTemperaturePort.INPUT)
+
+            .connect(self.sea_water_temperature_filter)
+            .at(IgnoreTemperaturePort.OUTPUT)
             .to(self.water_maker)
             .at(WaterMakerPort.IN)
 

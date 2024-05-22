@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from pytest import fixture
 
 from energy_box_control.appliances import Pcm, PcmState, PcmPort
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.time import ProcessTime
 
 
@@ -45,7 +45,10 @@ def test_nothing(pcm, simulation_time):
 def test_zero_flow(pcm, simulation_time):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(0, 0)}, initial_state, None, simulation_time
+        {PcmPort.CHARGE_IN: ThermalState(0, 0)},
+        initial_state,
+        None,
+        simulation_time,
     )
 
     assert state == initial_state
@@ -55,7 +58,7 @@ def test_zero_flow(pcm, simulation_time):
 def test_charge_pre_phase(pcm, simulation_time):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 10)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 10)},
         initial_state,
         None,
         simulation_time,
@@ -69,7 +72,7 @@ def test_charge_pre_phase(pcm, simulation_time):
 def test_charge_transfer_limit(pcm, simulation_time):
     initial_state = PcmState(0, 0)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 40)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 40)},
         initial_state,
         None,
         simulation_time,
@@ -83,7 +86,7 @@ def test_charge_transfer_limit(pcm, simulation_time):
 def test_charge_phase(pcm, simulation_time):
     initial_state = PcmState(0, pcm.phase_change_temperature)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, pcm.phase_change_temperature + 10)},
+        {PcmPort.CHARGE_IN: ThermalState(1, pcm.phase_change_temperature + 10)},
         initial_state,
         None,
         simulation_time,
@@ -98,7 +101,7 @@ def test_charge_phase(pcm, simulation_time):
 def test_charge_phase_double_step(pcm):
     initial_state = PcmState(0, pcm.phase_change_temperature)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, pcm.phase_change_temperature + 10)},
+        {PcmPort.CHARGE_IN: ThermalState(1, pcm.phase_change_temperature + 10)},
         initial_state,
         None,
         ProcessTime(timedelta(seconds=2), 0, datetime.now()),
@@ -113,7 +116,7 @@ def test_charge_phase_double_step(pcm):
 def test_charge_post_phase(pcm, simulation_time):
     initial_state = PcmState(1, 50)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 60)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 60)},
         initial_state,
         None,
         simulation_time,
@@ -127,7 +130,7 @@ def test_charge_post_phase(pcm, simulation_time):
 def test_charge_post_phase_double_step(pcm):
     initial_state = PcmState(1, 50)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 80)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 80)},
         initial_state,
         None,
         ProcessTime(timedelta(seconds=2), 0, datetime.now()),
@@ -141,7 +144,7 @@ def test_charge_post_phase_double_step(pcm):
 def test_charge_through_phase(high_transfer_pcm, simulation_time):
     initial_state = PcmState(0, 0)
     state, outputs = high_transfer_pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 300)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 300)},
         initial_state,
         None,
         simulation_time,
@@ -160,7 +163,7 @@ def test_charge_through_phase(high_transfer_pcm, simulation_time):
 def test_discharge_pre_phase(pcm, simulation_time):
     initial_state = PcmState(0, 50)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 40)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 40)},
         initial_state,
         None,
         simulation_time,
@@ -174,7 +177,7 @@ def test_discharge_pre_phase(pcm, simulation_time):
 def test_discharge_phase(high_transfer_pcm, simulation_time):
     initial_state = PcmState(1, 50)
     state, outputs = high_transfer_pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(10, 40)},
+        {PcmPort.CHARGE_IN: ThermalState(10, 40)},
         initial_state,
         None,
         simulation_time,
@@ -189,7 +192,7 @@ def test_discharge_phase(high_transfer_pcm, simulation_time):
 def test_discharge_post_phase(pcm, simulation_time):
     initial_state = PcmState(1, 70)
     state, outputs = pcm.simulate(
-        {PcmPort.CHARGE_IN: ConnectionState(1, 60)},
+        {PcmPort.CHARGE_IN: ThermalState(1, 60)},
         initial_state,
         None,
         simulation_time,
@@ -204,8 +207,8 @@ def test_charge_and_discharge(pcm, simulation_time):
     initial_state = PcmState(0.5, 50)
     state, outputs = pcm.simulate(
         {
-            PcmPort.CHARGE_IN: ConnectionState(1, 40),
-            PcmPort.DISCHARGE_IN: ConnectionState(1, 60),
+            PcmPort.CHARGE_IN: ThermalState(1, 40),
+            PcmPort.DISCHARGE_IN: ThermalState(1, 60),
         },
         initial_state,
         None,
@@ -224,8 +227,8 @@ def test_limited_charge_and_discharge(pcm, simulation_time):
     initial_state = PcmState(0.5, 50)
     state, outputs = pcm.simulate(
         {
-            PcmPort.CHARGE_IN: ConnectionState(10, 40),
-            PcmPort.DISCHARGE_IN: ConnectionState(10, 60),
+            PcmPort.CHARGE_IN: ThermalState(10, 40),
+            PcmPort.DISCHARGE_IN: ThermalState(10, 60),
         },
         initial_state,
         None,

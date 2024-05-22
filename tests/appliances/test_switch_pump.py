@@ -7,7 +7,7 @@ from energy_box_control.appliances import (
     SwitchPumpState,
     SwitchPumpControl,
 )
-from energy_box_control.appliances.base import ConnectionState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.time import ProcessTime
 
 from energy_box_control.power_hub.power_hub_components import SWITCH_PUMP_POWER
@@ -25,7 +25,7 @@ def simulation_time():
 
 def test_switch_pump_off(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
-        {SwitchPumpPort.IN: ConnectionState(1, 50)},
+        {SwitchPumpPort.IN: ThermalState(1, 50)},
         SwitchPumpState(),
         SwitchPumpControl(False),
         simulation_time,
@@ -35,7 +35,7 @@ def test_switch_pump_off(switch_pump, simulation_time):
 
 def test_switch_pump_on(switch_pump, simulation_time):
     _, outputs = switch_pump.simulate(
-        {SwitchPumpPort.IN: ConnectionState(0, 50)},
+        {SwitchPumpPort.IN: ThermalState(0, 50)},
         SwitchPumpState(),
         SwitchPumpControl(True),
         simulation_time,

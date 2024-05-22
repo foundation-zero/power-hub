@@ -3,7 +3,7 @@ from pytest import fixture
 from energy_box_control.appliances import (
     Mix,
     MixPort,
-    ConnectionState,
+    ThermalState,
     ApplianceState,
 )
 from energy_box_control.time import ProcessTime
@@ -19,15 +19,15 @@ def test_mix(simulation_time):
 
     _, output = mix.simulate(
         {
-            MixPort.A: ConnectionState(4, 25),
-            MixPort.B: ConnectionState(2, 10),
+            MixPort.A: ThermalState(4, 25),
+            MixPort.B: ThermalState(2, 10),
         },
         ApplianceState(),
         None,
         simulation_time,
     )
 
-    assert output[MixPort.AB] == ConnectionState(6, 20)
+    assert output[MixPort.AB] == ThermalState(6, 20)
 
 
 def test_zero_flow_mix(simulation_time):
@@ -35,8 +35,8 @@ def test_zero_flow_mix(simulation_time):
 
     _, output = mix.simulate(
         {
-            MixPort.A: ConnectionState(0, 0),
-            MixPort.B: ConnectionState(0, 100),
+            MixPort.A: ThermalState(0, 0),
+            MixPort.B: ThermalState(0, 100),
         },
         ApplianceState(),
         None,

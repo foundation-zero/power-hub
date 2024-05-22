@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
-    ApplianceState,
-    ConnectionState,
+    ThermalAppliance,
+    ThermalState,
     Port,
 )
 from energy_box_control.schedules import Schedule
@@ -16,17 +15,17 @@ class CoolingSinkPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class CoolingSink(Appliance[ApplianceState, None, CoolingSinkPort]):
+class CoolingSink(ThermalAppliance[None, None, CoolingSinkPort]):
     specific_heat_capacity: JoulePerLiterKelvin
     cooling_demand_schedule: Schedule[Watt]
 
     def simulate(
         self,
-        inputs: dict[CoolingSinkPort, ConnectionState],
-        previous_state: ApplianceState,
+        inputs: dict[CoolingSinkPort, ThermalState],
+        previous_state: None,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[ApplianceState, dict[CoolingSinkPort, ConnectionState]]:
+    ) -> tuple[None, dict[CoolingSinkPort, ThermalState]]:
 
         output_temperature = (
             inputs[CoolingSinkPort.INPUT].temperature
@@ -38,8 +37,8 @@ class CoolingSink(Appliance[ApplianceState, None, CoolingSinkPort]):
             else inputs[CoolingSinkPort.INPUT].temperature
         )
 
-        return ApplianceState(), {
-            CoolingSinkPort.OUTPUT: ConnectionState(
+        return None, {
+            CoolingSinkPort.OUTPUT: ThermalState(
                 inputs[CoolingSinkPort.INPUT].flow, output_temperature
             )
         }

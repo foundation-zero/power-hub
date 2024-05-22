@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    Appliance,
+    WaterAppliance,
     ApplianceState,
-    ConnectionState,
+    WaterState,
     Port,
 )
 from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import Celsius, Liter
+from energy_box_control.units import Liter
 
 
 @dataclass(frozen=True, eq=True)
@@ -21,25 +21,22 @@ class WaterDemandPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterDemand(Appliance[WaterDemandState, None, WaterDemandPort]):
+class WaterDemand(WaterAppliance[WaterDemandState, None, WaterDemandPort]):
     water_demand_flow_schedule: Schedule[Liter]
-    water_demand_temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
-        inputs: dict[WaterDemandPort, ConnectionState],
+        inputs: dict[WaterDemandPort, WaterState],
         previous_state: WaterDemandState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterDemandState, dict[WaterDemandPort, ConnectionState]]:
+    ) -> tuple[WaterDemandState, dict[WaterDemandPort, WaterState]]:
 
         return WaterDemandState(), {
-            WaterDemandPort.DEMAND_OUT: ConnectionState(
+            WaterDemandPort.DEMAND_OUT: WaterState(
                 self.water_demand_flow_schedule.at(simulation_time),
-                self.water_demand_temperature_schedule.at(simulation_time),
             ),
-            WaterDemandPort.GREY_WATER_OUT: ConnectionState(
+            WaterDemandPort.GREY_WATER_OUT: WaterState(
                 self.water_demand_flow_schedule.at(simulation_time),
-                self.water_demand_temperature_schedule.at(simulation_time),
             ),
         }
