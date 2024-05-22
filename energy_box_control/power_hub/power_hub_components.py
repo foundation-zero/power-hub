@@ -71,7 +71,7 @@ def heat_pipes(
 
 
 heat_pipes_valve = Valve()
-heat_pipes_pump = SwitchPump(15 / 60, SWITCH_PUMP_POWER)
+heat_pipes_pump = SwitchPump(15 / 60, 60)
 heat_pipes_mix = Mix()
 
 

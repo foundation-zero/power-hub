@@ -147,7 +147,7 @@ def initial_control_state() -> PowerHubControlState:
             pcm_max_temperature=95,
             target_charging_temperature_offset=5,
             minimum_charging_temperature_offset=1,
-            minimum_global_irradiance=0,
+            minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
             pcm_discharged=78,
             pcm_charged=78,
             cold_reservoir_min_temperature=8,
