@@ -13,13 +13,9 @@ import type { Position } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-export const SLIDE_DURATION_IN_MS = 7000;
-
-const numberOfSlides: Record<Journey, number> = {
-  heat: 1,
-  electrical: 1,
-  water: 1,
-};
+import Base from "@/components/slides/water/BaseWater.vue";
+import slidesWater from "./slides/water";
+import slidesElectrical from "./slides/electrical";
 
 const componentStateFn = (component: PowerHubComponent): ComponentElement => ({
   component,
@@ -31,8 +27,14 @@ const streamStateFn = (): StreamState => ({});
 const createStreams = (amountOfStreams: number) =>
   new Array(amountOfStreams).fill(null).map(streamStateFn);
 
+const journeyComponents: Record<Journey, [duration: number, ...slides: (typeof Base)[]][]> = {
+  electrical: slidesElectrical,
+  heat: [],
+  water: slidesWater,
+};
+
 export const usePresentationStore = defineStore("presentation", () => {
-  const slides = ref<string[]>([]);
+  const slides = ref<(typeof Base)[]>([]);
   const isRunning = ref(false);
   const showWidgets = ref(false);
   const showWaves = ref(true);
@@ -95,11 +97,12 @@ export const usePresentationStore = defineStore("presentation", () => {
   const startSlideShow = async (journey: Journey) => {
     isRunning.value = true;
 
-    for (let slide = 0; slide < numberOfSlides[journey]; slide++) {
+    for (const [duration, ...currentSlides] of journeyComponents[journey]) {
       if (!isRunning.value) break;
 
-      slides.value = [`/slides/${journey}/${slide + 1}.svg`];
-      await sleep(SLIDE_DURATION_IN_MS);
+      slides.value = currentSlides;
+
+      await sleep(duration);
       slides.value = [];
     }
 

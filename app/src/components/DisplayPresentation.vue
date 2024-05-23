@@ -125,7 +125,7 @@ const start = async () => {
     showAll();
     await toggleWaves(true);
     await toggleWidgets(true);
-    await deactivateAll("water");
+    await deactivateAll("heat");
     await activateStream("heat");
     await sleep(3000);
     await toggleWidgets(false);
