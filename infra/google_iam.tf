@@ -47,6 +47,17 @@ resource "google_service_account_iam_binding" "power_hub_iam_binding" {
   ]
 }
 
+resource "google_project_iam_member" "project_access" {
+  project = var.project_id
+  role    = "roles/editor"
+  member  = google_service_account.service_account.member
+}
+resource "google_project_iam_member" "workload_federation_access" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = google_service_account.service_account.member
+}
+
 resource "google_project_iam_member" "tofu_state_bucket_access" {
   project = var.project_id
   role    = "roles/storage.admin"
