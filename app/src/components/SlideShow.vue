@@ -1,13 +1,13 @@
 <template>
   <div v-show="store.isRunning">
     <TransitionGroup name="slideshow">
-      <v-img
+      <div
         v-for="slide in store.slides"
-        :key="slide"
-        :src="slide"
-        width="1920"
-        height="1080"
-      />
+        :key="slide.name"
+        class="slide"
+      >
+        <component :is="slide" />
+      </div>
     </TransitionGroup>
   </div>
 </template>
@@ -27,10 +27,7 @@ div {
   bottom: 0;
 }
 
-.v-img {
-  position: absolute;
-  top: 0;
-  left: 0;
+.slide {
   will-change: opacity;
   transition: opacity 1000ms ease;
 }
