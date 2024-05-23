@@ -47,6 +47,18 @@ resource "google_service_account_iam_binding" "power_hub_iam_binding" {
   ]
 }
 
+resource "google_project_iam_member" "tofu_state_bucket_access" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = google_service_account.service_account.member
+}
+
+resource "google_project_iam_member" "tofu_state_key_access" {
+  project = var.project_id
+  role    = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member  = google_service_account.service_account.member
+}
+
 resource "google_project_iam_binding" "power_hub_gak_binding" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
