@@ -117,7 +117,9 @@ def publish_to_mqtt(
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
         logger.info(f"Send `{json_str}` to topic `{topic}`")
     else:
-        logger.error(f"Failed to send message to topic {topic}")
+        logger.error(
+            f"Failed to send message to topic {topic} with error code: {result.rc}"
+        )
     return result
 
 
