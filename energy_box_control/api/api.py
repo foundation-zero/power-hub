@@ -1,4 +1,5 @@
 import os
+from pydantic import ValidationError
 from quart import Quart, request, make_response, Response
 from quart.typing import ResponseTypes
 from dataclasses import dataclass, field
@@ -45,8 +46,10 @@ QuartSchema(
 @app.errorhandler(RequestSchemaValidationError)
 async def handle_request_validation_error(
     error: RequestSchemaValidationError,
-) -> dict[str, str]:
-    return error.validation_error.json(), 400  # type: ignore
+) -> Response:
+    if isinstance(error.validation_error, ValidationError):
+        return Response(error.validation_error.json(), HTTPStatus.UNPROCESSABLE_ENTITY)
+    return Response("Internal error", HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 ApplianceName = str
@@ -56,13 +59,15 @@ ApplianceSensorFieldValue = float
 
 
 def timedelta_from_string(interval: str) -> timedelta:
-    if interval == "min":
-        return timedelta(minutes=1)
-    elif interval == "h":
-        return timedelta(hours=1)
-    elif interval == "d":
-        return timedelta(days=1)
-    return timedelta(seconds=1)
+    match interval:
+        case "min":
+            return timedelta(minutes=1)
+        case "h":
+            return timedelta(hours=1)
+        case "d":
+            return timedelta(days=1)
+        case _:
+            return timedelta(seconds=1)
 
 
 @dataclass
@@ -179,7 +184,7 @@ def limit_query_result(f):
         )
         if (stop - start) / interval > MAX_ROWS:
             return await make_response(
-                "Requested dataframe is too large", HTTPStatus.UNPROCESSABLE_ENTITY
+                "Requested too many rows", HTTPStatus.UNPROCESSABLE_ENTITY
             )
         return await f(*args, query_args=query_args, **kwargs)
 
@@ -197,9 +202,9 @@ def serialize_dataframe(columns: list[str]):
             *args: list[Any], **kwargs: dict[str, Any]
         ) -> list[Any] | Response:
             response: df = await fn(*args, **kwargs)
-            if not isinstance(response, df):
-                if isinstance(response, Response):
-                    return response
+            if isinstance(response, Response):
+                return response
+            elif not isinstance(response, df):
                 raise Exception("serialize_dataframe requires a dataframe")
             if response.empty:
                 return []

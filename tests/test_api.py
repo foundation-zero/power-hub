@@ -90,6 +90,14 @@ async def test_get_last_values_for_appliance_minutes_back():
     )
 
 
+async def test_get_last_values_for_appliance_invalid_minutes_back():
+    response = await app.test_client().get(
+        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=wrong",
+        headers=HEADERS,
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 async def test_get_mean_for_appliance():
     await assert_single_value_response(
         await app.test_client().get(
