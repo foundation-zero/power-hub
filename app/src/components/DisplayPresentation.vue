@@ -11,6 +11,7 @@
     <InnerWaves />
     <OuterWaves />
     <PhaseLanes />
+    <MapLegend v-show="showWidgets" />
     <FZLogo />
     <PipeLines />
     <PipeStreams />
@@ -19,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import MapLegend from "./presentation/MapLegend.vue";
 import FZLogo from "./presentation/FZLogo.vue";
 import InnerWaves from "./presentation/InnerWaves.vue";
 import OuterWaves from "./presentation/OuterWaves.vue";
@@ -38,7 +40,7 @@ const COMPONENT_ANIMATION_IN_MS = 750;
 const isRunning = ref(false);
 const sleep = useSleep(isRunning);
 
-const { startSlideShow, stopSlideShow, getFlow } = usePresentationStore();
+const { startSlideShow, stopSlideShow, getFlow, setJourney } = usePresentationStore();
 const { componentStates, streamStates, root, showWidgets, showWaves, pipes } =
   toRefs(usePresentationStore());
 
@@ -115,6 +117,7 @@ const start = async () => {
     toggleWidgets(true);
     activateAllComponents();
     await sleep(5000);
+    setJourney("electrical");
     await deactivateAll("electrical");
     await activateStream("electrical");
     await sleep(3000);
@@ -125,6 +128,7 @@ const start = async () => {
     showAll();
     await toggleWaves(true);
     await toggleWidgets(true);
+    setJourney("heat");
     await deactivateAll("heat");
     await activateStream("heat");
     await sleep(3000);
@@ -135,6 +139,7 @@ const start = async () => {
     showAll();
     await toggleWaves(true);
     await toggleWidgets(true);
+    setJourney("water");
     await deactivateAll("water");
     await activateStream("water");
     startWaterFlow("water");

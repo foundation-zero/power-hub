@@ -8,50 +8,14 @@ import SavedEnergy from "@/components/slides/water/SavedEnergy.vue";
 import WeCanReuseIt from "@/components/slides/water/WeCanReuseIt.vue";
 import ByReusingIt from "@/components/slides/water/ByReusingIt.vue";
 import GreyWaterIsUsed from "@/components/slides/water/GreyWaterIsUsed.vue";
-import GraphicShower from "@/components/slides/water/GraphicShower.vue";
-import GraphicBoatWash from "@/components/slides/water/GraphicBoatWash.vue";
-import GraphicToilet from "@/components/slides/water/GraphicToilet.vue";
 
 export default [
   [1000, Base],
-  [1000, Base, RecycleTriangle],
-  [1000, Base, RecycleTriangle, ThreeTimes],
-  [1000, Base, RecycleTriangle, ThreeTimes, SavedDots],
-  [5000, Base, RecycleTriangle, ThreeTimes, SavedDots, WaterHowDoesItWork],
-  [5000, Base, RecycleTriangle, ThreeTimes, SavedEnergy, ReusingWater],
-  [5000, Base, RecycleTriangle, ThreeTimes, SavedEnergy, WeCanReuseIt, ByReusingIt],
-  [3000, Base, RecycleTriangle, ThreeTimes, SavedEnergy, GreyWaterIsUsed, ByReusingIt],
-  [
-    500,
-    Base,
-    RecycleTriangle,
-    ThreeTimes,
-    SavedEnergy,
-    GreyWaterIsUsed,
-    ByReusingIt,
-    GraphicShower,
-  ],
-  [
-    500,
-    Base,
-    RecycleTriangle,
-    ThreeTimes,
-    SavedEnergy,
-    GreyWaterIsUsed,
-    ByReusingIt,
-    GraphicShower,
-    GraphicToilet,
-  ],
-  [
-    3000,
-    Base,
-    RecycleTriangle,
-    ThreeTimes,
-    SavedEnergy,
-    GreyWaterIsUsed,
-    ByReusingIt,
-    GraphicShower,
-    GraphicToilet,
-    GraphicBoatWash,
-  ],
+  [500, RecycleTriangle, Base],
+  [500, RecycleTriangle, Base, ThreeTimes],
+  [1000, RecycleTriangle, Base, ThreeTimes, SavedDots],
+  [5000, RecycleTriangle, Base, ThreeTimes, SavedDots, WaterHowDoesItWork],
+  [5000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, ReusingWater],
+  [5000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, WeCanReuseIt, ByReusingIt],
+  [7000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, GreyWaterIsUsed, ByReusingIt],
 ] as [duration: number, ...slides: (typeof Base)[]][];
