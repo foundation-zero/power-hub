@@ -1,3 +1,7 @@
+variable "python_app_image_tag" {
+  default = "latest"
+}
+
 resource "helm_release" "power_hub_simulation" {
   name   = "power-hub-simulation"
   chart  = "./charts/python-app"
@@ -10,6 +14,11 @@ resource "helm_release" "power_hub_simulation" {
   set {
     name  = "image.repository"
     value = "${local.power_hub_repo}/python-app"
+  }
+
+  set {
+    name = "image.tag"
+    value = var.python_app_image_tag
   }
 
   set {
