@@ -54,7 +54,7 @@ jobs:
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
 
   deploy:
-    if: github.ref == 'refs/heads/fix/tags'
+    if: github.ref == 'refs/heads/main'
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy
@@ -111,7 +111,7 @@ jobs:
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-infra:
-    if: github.ref == 'refs/heads/fix/tags'
+    if: github.ref == 'refs/heads/main'
     concurrency:
       group: ${{ github.workflow }}-deploy
       cancel-in-progress: true
