@@ -78,7 +78,7 @@ jobs:
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
@@ -86,7 +86,7 @@ jobs:
 
       - id: 'login-art-registry'
         name: 'Login to Artifact Registry'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{env.GAR}}
           username: oauth2accesstoken
@@ -133,7 +133,7 @@ jobs:
       
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
