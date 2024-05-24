@@ -3,7 +3,6 @@ replicaCount: 3
 nameOverride: "power-hub-api"
 
 image:
-  tag: latest
   pullPolicy: Always
 container:
   commands: 

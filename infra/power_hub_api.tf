@@ -59,6 +59,11 @@ resource "helm_release" "power_hub_api" {
   }
 
   set {
+    name  = "image.tag"
+    value = var.python_app_image_tag
+  }
+
+  set {
     name  = "ingress.hosts[0].host"
     value = local.power_hub_api_hostname
   }
