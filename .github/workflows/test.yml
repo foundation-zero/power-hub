@@ -55,6 +55,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
+    needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy
       cancel-in-progress: true
@@ -77,7 +78,7 @@ jobs:
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
@@ -85,7 +86,7 @@ jobs:
 
       - id: 'login-art-registry'
         name: 'Login to Artifact Registry'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{env.GAR}}
           username: oauth2accesstoken
@@ -132,7 +133,7 @@ jobs:
       
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
@@ -150,3 +151,4 @@ jobs:
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
+          TF_VAR_python_app_image_tag: ${{github.sha}}
