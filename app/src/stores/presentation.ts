@@ -38,6 +38,7 @@ export const usePresentationStore = defineStore("presentation", () => {
   const isRunning = ref(false);
   const showWidgets = ref(false);
   const showWaves = ref(true);
+  const currentJourney = ref<Journey>("electrical");
 
   const root = ref<SVGSVGElement>();
 
@@ -140,12 +141,17 @@ export const usePresentationStore = defineStore("presentation", () => {
     return { streams, components: components.map(getComponentState) };
   };
 
+  const setJourney = (journey: Journey) => {
+    currentJourney.value = journey;
+  };
+
   return {
     startSlideShow,
     slides,
     isRunning,
     stopSlideShow,
     components,
+    currentJourney,
     componentStates,
     journeys,
     streamStates,
@@ -153,6 +159,7 @@ export const usePresentationStore = defineStore("presentation", () => {
     root,
     showWidgets,
     showWaves,
+    setJourney,
     getFlow,
     getComponent,
     getComponentState,
