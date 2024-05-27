@@ -35,7 +35,8 @@ def test_hello_world():
 @pytest.mark.integration
 def test_thermal_circuit(headers):
     response = requests.get(
-        f"{BASE_URL}/appliance_sensors/heat_pipes/power/last_values", headers=headers
+        f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/last_values",
+        headers=headers,
     )
     assert response.status_code == HTTPStatus.OK
     assert len(json.loads(response.text)) > 0
@@ -44,7 +45,7 @@ def test_thermal_circuit(headers):
 @pytest.mark.integration
 def test_water_circuit(headers):
     response = requests.get(
-        f"{BASE_URL}/appliance_sensors/fresh_water_tank/fill/last_values",
+        f"{BASE_URL}/power_hub/appliance_sensors/fresh_water_tank/fill/last_values",
         headers=headers,
     )
     assert response.status_code == HTTPStatus.OK

@@ -2,9 +2,15 @@ from asyncio import Future
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import pytest
 from quart import Response
-from energy_box_control.api.api import app, build_query_range, build_get_values_query
+from energy_box_control.api.api import (
+    app,
+    build_query_range,
+    values_query,
+    mean_values_query,
+    ValuesQuery,
+)
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from freezegun import freeze_time
 import fluxy
 import os
@@ -46,7 +52,7 @@ async def test_hello_world():
 
 
 async def test_get_all_appliance_names():
-    response = await app.test_client().get("/appliances", headers=HEADERS)
+    response = await app.test_client().get("/power_hub/appliances", headers=HEADERS)
     response_data = json.loads((await response.get_data()).decode("utf-8"))
     assert response.status_code == 200
     assert "appliances" in response_data
@@ -60,10 +66,16 @@ async def assert_row_response(response: Response):
     assert len(result) == 3
 
 
+async def assert_single_value_response(response: Response):
+    assert response.content_type == "application/json"
+    result = json.loads(await response.get_data())
+    assert type(result) == float or int
+
+
 async def test_get_last_values_for_appliance():
     await assert_row_response(
         await app.test_client().get(
-            f"/appliance_sensors/chiller_switch_valve/position/last_values",
+            f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values",
             headers=HEADERS,
         )
     )
@@ -72,22 +84,96 @@ async def test_get_last_values_for_appliance():
 async def test_get_last_values_for_appliance_minutes_back():
     await assert_row_response(
         await app.test_client().get(
-            f"/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=60",
+            f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=60",
             headers=HEADERS,
         )
     )
 
 
+async def test_get_last_values_for_appliance_invalid_minutes_back():
+    response = await app.test_client().get(
+        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=wrong",
+        headers=HEADERS,
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+async def test_get_mean_for_appliance():
+    await assert_single_value_response(
+        await app.test_client().get(
+            f"/power_hub/appliance_sensors/chiller_switch_valve/position/mean",
+            headers=HEADERS,
+        )
+    )
+
+
+async def test_get_total_for_appliance():
+    await assert_single_value_response(
+        await app.test_client().get(
+            f"/power_hub/appliance_sensors/chiller_switch_valve/position/total",
+            headers=HEADERS,
+        )
+    )
+
+
+async def test_get_electrical_power_consumption():
+    await assert_row_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/consumption/over/time",
+            headers=HEADERS,
+        )
+    )
+
+
+async def test_get_mean_electrical_power_consumption():
+    await assert_single_value_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/consumption/mean",
+            headers=HEADERS,
+        )
+    )
+
+
+async def test_get_electrical_power_production():
+    await assert_row_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/production/over/time",
+            headers=HEADERS,
+        )
+    )
+
+
+async def test_get_electrical_power_production_non_pv_panel():
+    response = await app.test_client().get(
+        f"/power_hub/electric/power/production/over/time?appliances=test",
+        headers=HEADERS,
+    )
+
+    assert response.status_code == 422
+    assert (await response.get_data()).decode(
+        "utf-8"
+    ) == "Please only provide pv_panel(s)"
+
+
+@pytest.fixture
+def query_args():
+    return ValuesQuery(60)
+
+
 @freeze_time("2012-01-01")
-async def test_build_query_range():
-    start_datetime, stop_datetime = build_query_range(60)
+async def test_build_query_range_minutes_back(query_args):
+    start_datetime, stop_datetime = build_query_range(query_args)
     assert start_datetime == datetime.now(timezone.utc) - timedelta(minutes=60)
     assert stop_datetime == datetime.now(timezone.utc)
 
 
 @freeze_time("2012-01-01")
-async def test_build_get_appliance_values_query():
-    query = build_get_values_query(60, "chiller_switch_valve", "position")
+async def test_build_get_values_query(query_args):
+    query = values_query(
+        lambda r: r.topic
+        == f"power_hub/appliance_sensors/chiller_switch_valve/position",
+        build_query_range(query_args),
+    )
     assert (
         len(
             [
@@ -106,6 +192,47 @@ async def test_build_get_appliance_values_query():
         )
         in query.operations
     )
+    assert query.range == fluxy.range(
+        datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
+    )
+
+
+async def test_build_query_range_start_stop():
+    query_args = ValuesQuery(60, "01-01-2000T00:00:00,01-01-2000T00:00:01")
+    start_datetime, stop_datetime = build_query_range(query_args)
+    assert start_datetime == datetime(2000, 1, 1, 0, 0, 0, 0, timezone.utc)
+    assert stop_datetime == datetime(2000, 1, 1, 0, 0, 1, 0, timezone.utc)
+
+
+@freeze_time("2012-01-01")
+async def test_build_get_mean_values_query(query_args):
+    interval = timedelta(seconds=1)
+    query = mean_values_query(
+        lambda r: r.topic
+        == f"power_hub/appliance_sensors/chiller_switch_valve/position",
+        interval,
+        build_query_range(query_args),
+    )
+    assert (
+        len(
+            [
+                operation
+                for operation in query.operations
+                if type(operation) == fluxy.Filter
+            ]
+        )
+        == 3
+    )
+
+    assert (
+        fluxy.aggregate_window(
+            interval,
+            fluxy.WindowOperation.MEAN,
+            False,
+        )
+        in query.operations
+    )
+
     assert query.range == fluxy.range(
         datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
     )
@@ -163,12 +290,3 @@ async def test_weather_location_whitelist(forecast_window):
     assert (await response.data).decode(
         "utf-8"
     ) == f"(Lat, Lon) combination of ({lat}, {lon}) is not on the whitelist."
-
-
-async def test_get_total_electrical_power():
-    await assert_row_response(
-        await app.test_client().get(
-            f"/power_hub/electrical_power/last_values",
-            headers=HEADERS,
-        ),
-    )
