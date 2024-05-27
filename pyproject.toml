@@ -20,6 +20,7 @@ pandas = "^2.2.1"
 aiohttp = "^3.9.5"
 dacite = "^1.8.1"
 schedule = "^1.2.1"
+graphviz = "^0.20.3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
