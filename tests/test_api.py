@@ -187,7 +187,7 @@ async def test_build_query_range_start_stop():
     assert stop_datetime == datetime(2000, 1, 1, 0, 0, 1, 0, timezone.utc)
 
 
-INVALID_VALUES_ERROR_MESSAGE = "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop adhere to the ISO format and stop > start."
+INVALID_VALUES_ERROR_MESSAGE = "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'."
 
 
 async def test_equal_start_stop():

@@ -183,7 +183,7 @@ def limit_query_result(f):
             start, stop = build_query_range(query_args)
         except ValueError:
             return await make_response(
-                "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop adhere to the ISO format and stop > start.",
+                "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'.",
                 HTTPStatus.UNPROCESSABLE_ENTITY,
             )
         interval = (
