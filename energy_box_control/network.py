@@ -362,6 +362,12 @@ class NetworkConnections[Net: "Network[Any]"]:
             for connection in self._connections
         }
 
+    @property
+    def connections(
+        self,
+    ) -> list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]]:
+        return self._connections
+
 
 class ControlGetter[App: AnyAppliance]:
 
@@ -551,6 +557,12 @@ class NetworkFeedbacks[Net: "Network[Any]"]:
         self,
     ) -> dict[tuple[SpecificAppliance, Port], tuple[AnyAppliance, Port]]:
         return NetworkConnections(self._feedbacks).port_mapping()
+
+    @property
+    def feedbacks(
+        self,
+    ) -> list[Connection[Net, AnyAppliance, Port, AnyAppliance, Port]]:
+        return self._feedbacks
 
 
 class EnummedDict[T: Enum]:
