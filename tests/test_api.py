@@ -81,23 +81,6 @@ async def test_get_last_values_for_appliance():
     )
 
 
-async def test_get_last_values_for_appliance_minutes_back():
-    await assert_row_response(
-        await app.test_client().get(
-            f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=60",
-            headers=HEADERS,
-        )
-    )
-
-
-async def test_get_last_values_for_appliance_invalid_minutes_back():
-    response = await app.test_client().get(
-        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?minutes_back=wrong",
-        headers=HEADERS,
-    )
-    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-
-
 async def test_get_mean_for_appliance():
     await assert_single_value_response(
         await app.test_client().get(
@@ -157,7 +140,7 @@ async def test_get_electrical_power_production_non_pv_panel():
 
 @pytest.fixture
 def query_args():
-    return ValuesQuery(60)
+    return ValuesQuery()
 
 
 @freeze_time("2012-01-01")
@@ -198,10 +181,43 @@ async def test_build_get_values_query(query_args):
 
 
 async def test_build_query_range_start_stop():
-    query_args = ValuesQuery(60, "01-01-2000T00:00:00,01-01-2000T00:00:01")
+    query_args = ValuesQuery("2000-01-01T00:00:00,2000-01-01T00:00:01")
     start_datetime, stop_datetime = build_query_range(query_args)
     assert start_datetime == datetime(2000, 1, 1, 0, 0, 0, 0, timezone.utc)
     assert stop_datetime == datetime(2000, 1, 1, 0, 0, 1, 0, timezone.utc)
+
+
+INVALID_VALUES_ERROR_MESSAGE = "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'."
+
+
+async def test_equal_start_stop():
+
+    response = await app.test_client().get(
+        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?between=2000-01-01T00:00:00,2000-01-01T00:00:00",
+        headers=HEADERS,
+    )
+    assert response.status_code == 422
+    assert (await response.get_data()).decode("utf-8") == INVALID_VALUES_ERROR_MESSAGE
+
+
+async def test_start_bigger_than_stop():
+
+    response = await app.test_client().get(
+        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?between=2000-01-01T00:00:01,2000-01-01T00:00:00",
+        headers=HEADERS,
+    )
+    assert response.status_code == 422
+    assert (await response.get_data()).decode("utf-8") == INVALID_VALUES_ERROR_MESSAGE
+
+
+async def test_invalid_between():
+
+    response = await app.test_client().get(
+        f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values?between=test",
+        headers=HEADERS,
+    )
+    assert response.status_code == 422
+    assert (await response.get_data()).decode("utf-8") == INVALID_VALUES_ERROR_MESSAGE
 
 
 @freeze_time("2012-01-01")
