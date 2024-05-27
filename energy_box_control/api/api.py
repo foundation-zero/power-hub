@@ -104,11 +104,10 @@ class WeatherQuery:
 
 def build_query_range(query_args: ValuesQuery) -> tuple[datetime, datetime]:
     if query_args.between:
-        start, stop = tuple(query_args.between.split(","))
-        time_format = "%d-%m-%YT%H:%M:%S"
+        start, stop = query_args.between.split(",")
 
-        start = datetime.strptime(start, time_format).replace(tzinfo=timezone.utc)
-        stop = datetime.strptime(stop, time_format).replace(tzinfo=timezone.utc)
+        start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
+        stop = datetime.fromisoformat(stop).replace(tzinfo=timezone.utc)
 
         if start >= stop:
             raise ValueError
@@ -184,7 +183,7 @@ def limit_query_result(f):
             start, stop = build_query_range(query_args)
         except ValueError:
             return await make_response(
-                "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop have the format %d-%m-%YT%H:%M:%S and stop > start.",
+                "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop adhere to the ISO format and stop > start.",
                 HTTPStatus.UNPROCESSABLE_ENTITY,
             )
         interval = (

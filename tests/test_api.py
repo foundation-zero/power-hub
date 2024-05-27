@@ -181,13 +181,13 @@ async def test_build_get_values_query(query_args):
 
 
 async def test_build_query_range_start_stop():
-    query_args = ValuesQuery("01-01-2000T00:00:00,01-01-2000T00:00:01")
+    query_args = ValuesQuery("2000-01-01T00:00:00,2000-01-01T00:00:01")
     start_datetime, stop_datetime = build_query_range(query_args)
     assert start_datetime == datetime(2000, 1, 1, 0, 0, 0, 0, timezone.utc)
     assert stop_datetime == datetime(2000, 1, 1, 0, 0, 1, 0, timezone.utc)
 
 
-INVALID_VALUES_ERROR_MESSAGE = "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop have the format %d-%m-%YT%H:%M:%S and stop > start."
+INVALID_VALUES_ERROR_MESSAGE = "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop adhere to the ISO format and stop > start."
 
 
 async def test_equal_start_stop():
