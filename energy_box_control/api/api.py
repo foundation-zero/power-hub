@@ -5,7 +5,7 @@ from quart.typing import ResponseTypes
 from dataclasses import dataclass, field
 from quart_schema import QuartSchema, validate_response, validate_querystring, RequestSchemaValidationError  # type: ignore
 from dotenv import load_dotenv
-from typing import Any, Callable, List, Literal, Tuple
+from typing import Any, Callable, List, Literal, Optional, Tuple
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
@@ -83,8 +83,7 @@ class ReturnedAppliances:
 
 @dataclass
 class ValuesQuery:
-    minutes_back: int = DEFAULT_MINUTES_BACK
-    start_stop: str | None = None
+    between: Optional[str] = None
 
 
 @dataclass
@@ -104,15 +103,20 @@ class WeatherQuery:
 
 
 def build_query_range(query_args: ValuesQuery) -> tuple[datetime, datetime]:
-    if query_args.start_stop:
-        start, stop = tuple(query_args.start_stop.split(","))
+    if query_args.between:
+        start, stop = tuple(query_args.between.split(","))
         time_format = "%d-%m-%YT%H:%M:%S"
-        return (
-            datetime.strptime(start, time_format).replace(tzinfo=timezone.utc)
-        ), datetime.strptime(stop, time_format).replace(tzinfo=timezone.utc)
+
+        start = datetime.strptime(start, time_format).replace(tzinfo=timezone.utc)
+        stop = datetime.strptime(stop, time_format).replace(tzinfo=timezone.utc)
+
+        if start >= stop:
+            raise ValueError
+
+        return (start, stop)
 
     return (
-        datetime.now(timezone.utc) - timedelta(minutes=query_args.minutes_back),
+        datetime.now(timezone.utc) - timedelta(minutes=DEFAULT_MINUTES_BACK),
         datetime.now(timezone.utc),
     )
 
@@ -176,7 +180,13 @@ def limit_query_result(f):
     @wraps(f)
     @no_type_check
     async def decorator(*args, query_args: ValuesQuery, **kwargs):
-        start, stop = build_query_range(query_args)
+        try:
+            start, stop = build_query_range(query_args)
+        except ValueError:
+            return await make_response(
+                "Invalid values for between. Please make sure that it is structured in the format '?between=start,stop', where start & stop have the format %d-%m-%YT%H:%M:%S and stop > start.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+            )
         interval = (
             timedelta_from_string(query_args.interval)
             if hasattr(query_args, "interval")
