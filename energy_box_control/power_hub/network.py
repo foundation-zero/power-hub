@@ -364,7 +364,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.yazaki_hot_bypass_valve)
             .value(
-                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION)
+                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION)
             )  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -556,12 +556,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.AB)
 
             .connect(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.yazaki_bypass_mix)
             .at(MixPort.A)
 
             .connect(self.yazaki_hot_bypass_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.pcm)
             .at(PcmPort.DISCHARGE_IN)
         )

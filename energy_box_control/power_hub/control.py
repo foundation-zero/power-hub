@@ -20,7 +20,7 @@ from energy_box_control.power_hub.power_hub_components import (
     WASTE_BYPASS_VALVE_OPEN_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
-    YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION,
+    YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION,
 )
 from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
@@ -65,6 +65,7 @@ class ChillControlMode(State):
 class ChillControlState:
     context: Context
     control_mode: ChillControlMode
+    yazaki_feedback_valve_controller: Pid
     chiller_switch_valve_position: float
     waste_switch_valve_position: float
 
@@ -111,6 +112,9 @@ class Setpoints:
         "maximum temperature at which pcm is fully discharged"
     )
     pcm_charged: Celsius = setpoint("minimum temperature at which pcm is fully charged")
+    yazaki_inlet_target_temperature: Celsius = setpoint(
+        "target temperature for Yazaki hot water inlet"
+    )
     cold_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of cold reservoir to be maintained by chillers"
     )
@@ -148,6 +152,7 @@ def initial_control_state() -> PowerHubControlState:
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
             pcm_discharged=78,
             pcm_charged=78,
+            yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
             preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
@@ -162,6 +167,7 @@ def initial_control_state() -> PowerHubControlState:
         chill_control=ChillControlState(
             context=Context(),
             control_mode=ChillControlMode.NO_CHILL,
+            yazaki_feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
             chiller_switch_valve_position=CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
@@ -428,6 +434,11 @@ def chill_control(
     #   ensure waste heat take away is flowing
     #   PID chill pump at speed at which e-chiller chill output is -3 degrees from chill reservoir
 
+    yazaki_feedback_valve_controller = (
+        control_state.chill_control.yazaki_feedback_valve_controller
+    )
+    yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
+
     chill_control_mode, context = chill_control_state_machine.run(
         control_state.chill_control.control_mode,
         control_state.chill_control.context,
@@ -447,22 +458,17 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(False))
+        .control(power_hub.yazaki_hot_bypass_valve)
+        .value(ValveControl(yazaki_feedback_valve_control))
     )
+
     run_waste_chill = (
         power_hub.control(power_hub.waste_pump)
         .value(SwitchPumpControl(True))
         .control(power_hub.chilled_loop_pump)
         .value(SwitchPumpControl(True))
     )
-    run_yazaki = (
-        power_hub.control(power_hub.pcm_to_yazaki_pump)
-        .value(SwitchPumpControl(True))
-        .control(power_hub.yazaki)
-        .value(YazakiControl(True))
-        .control(power_hub.chiller)
-        .value(ChillerControl(False))
-        .combine(run_waste_chill)
-    )
+
     run_chiller = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
         .value(SwitchPumpControl(False))
@@ -470,19 +476,37 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(True))
+        .control(power_hub.yazaki_hot_bypass_valve)
+        .value(ValveControl(yazaki_feedback_valve_control))
         .combine(run_waste_chill)
     )
 
-    if chill_control_mode in [
-        ChillControlMode.PREPARE_CHILL_YAZAKI,
-        ChillControlMode.CHILL_YAZAKI,
-    ]:
+    if chill_control_mode == ChillControlMode.PREPARE_CHILL_YAZAKI:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+        running = no_run
+
+    elif chill_control_mode == ChillControlMode.CHILL_YAZAKI:
+        chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+        waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+
+        yazaki_feedback_valve_controller, yazaki_feedback_valve_control = (
+            control_state.chill_control.yazaki_feedback_valve_controller.run(
+                control_state.setpoints.yazaki_inlet_target_temperature,
+                sensors.yazaki.hot_input_temperature,
+            )
+        )
+
         running = (
-            run_yazaki
-            if chill_control_mode == ChillControlMode.CHILL_YAZAKI
-            else no_run
+            power_hub.control(power_hub.pcm_to_yazaki_pump)
+            .value(SwitchPumpControl(True))
+            .control(power_hub.yazaki)
+            .value(YazakiControl(True))
+            .control(power_hub.chiller)
+            .value(ChillerControl(False))
+            .control(power_hub.yazaki_hot_bypass_valve)
+            .value(ValveControl(yazaki_feedback_valve_control))
+            .combine(run_waste_chill)
         )
 
     elif chill_control_mode in [
@@ -509,6 +533,7 @@ def chill_control(
     return ChillControlState(
         context,
         chill_control_mode,
+        yazaki_feedback_valve_controller,
         chiller_switch_valve_position,
         waste_switch_valve_position,
     ), (
@@ -517,7 +542,7 @@ def chill_control(
         .control(power_hub.waste_switch_valve)
         .value(ValveControl(waste_switch_valve_position))
         .control(power_hub.yazaki_hot_bypass_valve)
-        .value(ValveControl(YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION))
+        .value(ValveControl(yazaki_feedback_valve_control))
         .control(power_hub.waste_bypass_valve)
         .value(ValveControl(WASTE_BYPASS_VALVE_OPEN_POSITION))
         .combine(running)
