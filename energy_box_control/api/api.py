@@ -1,14 +1,16 @@
 import os
+from pydantic import ValidationError
 from quart import Quart, request, make_response, Response
-from dataclasses import dataclass
-from quart_schema import QuartSchema, validate_response, validate_querystring  # type: ignore
+from quart.typing import ResponseTypes
+from dataclasses import dataclass, field
+from quart_schema import QuartSchema, validate_response, validate_querystring, RequestSchemaValidationError  # type: ignore
 from dotenv import load_dotenv
-from typing import Any, Callable, Literal
+from typing import Any, Callable, List, Literal, Tuple
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
 from datetime import datetime, timezone, timedelta
-from functools import reduce, wraps
+from functools import wraps
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
@@ -18,16 +20,17 @@ from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentW
 from energy_box_control.custom_logging import get_logger
 
 
-logger = get_logger(__name__)
-
 dotenv_path = os.path.normpath(
     os.path.join(os.path.realpath(__file__), "../../../", ".env")
 )
 load_dotenv(dotenv_path)
 
+logger = get_logger(__name__)
+
+
 TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
-DEFAULT_POWER_INTERVAL_SECONDS = 1
+MAX_ROWS = 10000
 
 app = Quart(__name__)
 QuartSchema(
@@ -40,10 +43,31 @@ QuartSchema(
 )
 
 
+@app.errorhandler(RequestSchemaValidationError)
+async def handle_request_validation_error(
+    error: RequestSchemaValidationError,
+) -> Response:
+    if isinstance(error.validation_error, ValidationError):
+        return Response(error.validation_error.json(), HTTPStatus.UNPROCESSABLE_ENTITY)
+    return Response("Internal error", HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
 ApplianceName = str
 ApplianceSensorTypeName = str
 SensorName = str
 ApplianceSensorFieldValue = float
+
+
+def timedelta_from_string(interval: str) -> timedelta:
+    match interval:
+        case "min":
+            return timedelta(minutes=1)
+        case "h":
+            return timedelta(hours=1)
+        case "d":
+            return timedelta(days=1)
+        case _:
+            return timedelta(seconds=1)
 
 
 @dataclass
@@ -60,11 +84,17 @@ class ReturnedAppliances:
 @dataclass
 class ValuesQuery:
     minutes_back: int = DEFAULT_MINUTES_BACK
+    start_stop: str | None = None
 
 
 @dataclass
-class ComputedValuesQuery(ValuesQuery):
-    interval_seconds: int = DEFAULT_POWER_INTERVAL_SECONDS
+class AppliancesQuery(ValuesQuery):
+    appliances: List[str] | str = field(default_factory=list)
+
+
+@dataclass
+class ComputedValuesQuery(AppliancesQuery):
+    interval: Literal["s", "min", "h", "d"] = "s"
 
 
 @dataclass
@@ -73,25 +103,47 @@ class WeatherQuery:
     lon: float
 
 
-def build_query_range(minutes_back: float) -> tuple[datetime, datetime]:
+def build_query_range(query_args: ValuesQuery) -> tuple[datetime, datetime]:
+    if query_args.start_stop:
+        start, stop = tuple(query_args.start_stop.split(","))
+        time_format = "%d-%m-%YT%H:%M:%S"
+        return (
+            datetime.strptime(start, time_format).replace(tzinfo=timezone.utc)
+        ), datetime.strptime(stop, time_format).replace(tzinfo=timezone.utc)
+
     return (
-        datetime.now(timezone.utc) - timedelta(minutes=minutes_back),
+        datetime.now(timezone.utc) - timedelta(minutes=query_args.minutes_back),
         datetime.now(timezone.utc),
     )
 
 
-def build_get_values_query(
-    minutes_back: int, appliance_name: str, field_name: str
+def values_query(
+    topic_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
 ) -> fluxy.Query:
-    topic = f"power_hub/appliance_sensors/{appliance_name}/{field_name}"
 
+    start, stop = query_range
     return fluxy.pipe(
         fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
-        fluxy.range(*build_query_range(minutes_back)),
+        fluxy.range(start, stop),
         fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
         fluxy.filter(lambda r: r._field == "value"),
-        fluxy.filter(lambda r: r.topic == topic),
-        fluxy.keep(["_value", "_time", "topic"]),
+        fluxy.filter(topic_filter),
+        fluxy.keep(["_value", "_time"]),
+    )
+
+
+def mean_values_query(
+    topic_filter: fluxy.FilterCallback,
+    interval: timedelta,
+    query_range: Tuple[datetime, datetime],
+) -> fluxy.Query:
+    return fluxy.pipe(
+        values_query(topic_filter, query_range),
+        fluxy.aggregate_window(
+            timedelta(seconds=interval.total_seconds()),
+            fluxy.WindowOperation.MEAN,
+            False,
+        ),
     )
 
 
@@ -120,6 +172,26 @@ def token_required(f):
 
 
 @no_type_check
+def limit_query_result(f):
+    @wraps(f)
+    @no_type_check
+    async def decorator(*args, query_args: ValuesQuery, **kwargs):
+        start, stop = build_query_range(query_args)
+        interval = (
+            timedelta_from_string(query_args.interval)
+            if hasattr(query_args, "interval")
+            else timedelta(seconds=1)
+        )
+        if (stop - start) / interval > MAX_ROWS:
+            return await make_response(
+                "Requested too many rows", HTTPStatus.UNPROCESSABLE_ENTITY
+            )
+        return await f(*args, query_args=query_args, **kwargs)
+
+    return decorator
+
+
+@no_type_check
 def serialize_dataframe(columns: list[str]):
     @no_type_check
     def _serialize_dataframe[T: type](fn: T) -> Callable[[T], T]:
@@ -130,7 +202,9 @@ def serialize_dataframe(columns: list[str]):
             *args: list[Any], **kwargs: dict[str, Any]
         ) -> list[Any] | Response:
             response: df = await fn(*args, **kwargs)
-            if not isinstance(response, df):
+            if isinstance(response, Response):
+                return response
+            elif not isinstance(response, df):
                 raise Exception("serialize_dataframe requires a dataframe")
             if response.empty:
                 return []
@@ -142,6 +216,29 @@ def serialize_dataframe(columns: list[str]):
         return decorator
 
     return _serialize_dataframe
+
+
+@no_type_check
+def serialize_single_cell(column: str):
+    @no_type_check
+    def _serialize_single_cell[T: type](fn: T) -> Callable[[T], T]:
+        @wraps(fn)
+        @no_type_check
+        async def decorator(
+            *args: list[Any], **kwargs: dict[str, Any]
+        ) -> list[Any] | Response:
+            response: df = await fn(*args, **kwargs)
+            if not isinstance(response, df):
+                raise Exception("serialize_single_cell requires a dataframe")
+            if len(response) == 0:
+                return await make_response("No mean value found", HTTPStatus.NOT_FOUND)
+            return Response(
+                response.iloc[0][column].astype(str), content_type="application/json"
+            )
+
+        return decorator
+
+    return _serialize_single_cell
 
 
 def get_influx_client() -> InfluxDBClientAsync:
@@ -173,14 +270,13 @@ async def hello_world() -> str:
     return "Hello World!"
 
 
-@app.route("/appliances")  # type: ignore
+@app.route("/power_hub/appliances")  # type: ignore
 @validate_response(ReturnedAppliances)  # type: ignore
 @token_required
 async def get_all_appliance_names() -> dict[
     Literal["appliances"],
     dict[ApplianceName, dict[Literal["sensors", "sensors_type"], set[SensorName]]],
 ]:
-
     return {
         "appliances": {
             appliance_field.name: {
@@ -192,83 +288,163 @@ async def get_all_appliance_names() -> dict[
     }
 
 
-@app.route("/appliance_sensors/<appliance_name>/<field_name>/last_values")
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/last_values")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
+@limit_query_result
 @serialize_dataframe(["time", "value"])
-async def get_last_values_for_appliance_sensor(
+async def get_values_for_appliance_sensor(
     appliance_name: str, field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceSensorFieldValue]]:
+
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                field_name,
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(query_args),
             ),
         )
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
-@app.route("/appliance_sensors/<appliance_name>/<field_name>/total")
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/mean")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-async def get_values_total(
+@limit_query_result
+@serialize_single_cell("_value")
+async def get_mean_value_for_appliance_sensor(
+    appliance_name: str, field_name: str, query_args: ValuesQuery
+) -> list[list[ApplianceSensorFieldValue]]:
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        fluxy.pipe(
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(query_args),
+            ),
+            fluxy.mean(column="_value"),
+        ),
+    )
+
+
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/total")
+@token_required
+@validate_querystring(ValuesQuery)  # type: ignore
+@limit_query_result
+@serialize_single_cell("_value")
+async def get_total_value_for_appliance_sensor(
     appliance_name: str,
     field_name: str,
     query_args: ValuesQuery,
 ) -> str:
-    query_result = await execute_influx_query(
+
+    return await execute_influx_query(
         app.influx,  # type: ignore
         query=fluxy.pipe(
-            build_get_values_query(
-                query_args.minutes_back,
-                appliance_name,
-                field_name,
+            values_query(
+                lambda r: r.topic
+                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                build_query_range(query_args),
             ),
             fluxy.sum("_value"),
         ),
     )
-    return Response(query_result.iloc[0]["_value"].astype(str) if len(query_result) > 0 else "0.0", mimetype="application/json")  # type: ignore
 
 
-@app.route("/power_hub/electrical_power/last_values")
+@app.route("/power_hub/electric/power/consumption/over/time")
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
+@limit_query_result
 @serialize_dataframe(["time", "value"])
-async def get_total_power(
+async def get_electrical_power_consumption(
     query_args: ComputedValuesQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
+    appliance_names = request.args.getlist("appliances") or [
+        field.name for field in fields(PowerHubSensors) if "pump" in field.name
+    ]
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_values_query(
+                fluxy.any(
+                    fluxy.conform,
+                    [
+                        {
+                            "topic": f"power_hub/appliance_sensors/{appliance_name}/electrical_power"
+                        }
+                        for appliance_name in appliance_names
+                    ],
+                ),
+                timedelta_from_string(query_args.interval),
+                build_query_range(query_args),
+            ),
+        )
+    ).rename(columns={"_value": "value", "_time": "time"})
 
-    def _pump_consumption(r: fluxy.Row):
-        pump_names = [
-            field.name for field in fields(PowerHubSensors) if "pump" in field.name
-        ]
-        exps = [
-            r.topic == f"power_hub/appliance_sensors/{pump_name}/electrical_power"
-            for pump_name in pump_names
-        ]
-        return reduce(lambda prev, cur: prev | cur, exps)
+
+@app.route("/power_hub/electric/power/consumption/mean")
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+@serialize_single_cell("_value")
+async def get_electrical_power_consumption_mean(
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+    appliance_names = request.args.getlist("appliances") or [
+        field.name for field in fields(PowerHubSensors) if "pump" in field.name
+    ]
+
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        fluxy.pipe(
+            mean_values_query(
+                fluxy.any(
+                    fluxy.conform,
+                    [
+                        {
+                            "topic": f"power_hub/appliance_sensors/{appliance_name}/electrical_power"
+                        }
+                        for appliance_name in appliance_names
+                    ],
+                ),
+                timedelta(seconds=1),
+                build_query_range(query_args),
+            ),
+            fluxy.mean(column="_value"),
+        ),
+    )
+
+
+@app.route("/power_hub/electric/power/production/over/time")
+@token_required
+@validate_querystring(ComputedValuesQuery)  # type: ignore
+@limit_query_result
+@serialize_dataframe(["time", "value"])
+async def get_electrical_power_production(
+    query_args: ComputedValuesQuery,
+) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
+    appliance_names = request.args.getlist("appliances") or ["pv_panel"]
+
+    if any("pv_panel" not in item for item in appliance_names):
+        return await make_response(
+            "Please only provide pv_panel(s)", HTTPStatus.UNPROCESSABLE_ENTITY
+        )
 
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
-            fluxy.pipe(
-                fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
-                fluxy.range(*build_query_range(query_args.minutes_back)),
-                fluxy.filter(_pump_consumption),
-                fluxy.aggregate_window(
-                    timedelta(seconds=query_args.interval_seconds),
-                    fluxy.WindowOperation.MEAN,
-                    False,
+            mean_values_query(
+                fluxy.any(
+                    fluxy.conform,
+                    [
+                        {"topic": f"power_hub/appliance_sensors/{appliance_name}/power"}
+                        for appliance_name in appliance_names
+                    ],
                 ),
-                fluxy.keep(["_value", "_time"]),
-                fluxy.aggregate_window(
-                    timedelta(seconds=query_args.interval_seconds),
-                    fluxy.WindowOperation.SUM,
-                    False,
-                ),
+                timedelta_from_string(query_args.interval),
+                build_query_range(query_args),
             ),
         )
     ).rename(columns={"_value": "value", "_time": "time"})

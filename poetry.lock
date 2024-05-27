@@ -853,7 +853,7 @@ pyright = "^1.1.318"
 type = "git"
 url = "https://github.com/foundation-zero/fluxy.git"
 reference = "main"
-resolved_reference = "f7fb9831b4a82cfab5e7d049dc422807cf359d57"
+resolved_reference = "b9444e7dc9955ffcd9030f3a9050fcb5ec05952f"
 
 [[package]]
 name = "fonttools"
@@ -1376,6 +1376,7 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
+    {file = "jsonpointer-2.4.tar.gz", hash = "sha256:585cee82b70211fa9e6043b7bb89db6e1aa49524340dde8ad6b63206ea689d88"},
 ]
 
 [[package]]
@@ -3070,7 +3071,7 @@ dotenv = ["python-dotenv"]
 
 [[package]]
 name = "quart-schema"
-version = "0.19.1"
+version = "0.20.0"
 description = "A Quart extension to provide schema validation"
 optional = false
 python-versions = ">=3.8"
@@ -3091,7 +3092,7 @@ pydantic = ["pydantic (>=2)"]
 type = "git"
 url = "https://github.com/pgjones/quart-schema.git"
 reference = "main"
-resolved_reference = "de59ee62f04030d2191c0b635472ea7b83bfad9b"
+resolved_reference = "4ff2aa54f9a3fd76c3801b3fa2b411192b8d9543"
 
 [[package]]
 name = "reactivex"
