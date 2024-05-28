@@ -119,7 +119,7 @@ async def run(steps: int = 0):
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    power_hub = PowerHub.power_hub(PowerHubSchedules.schedules_from_data())
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),

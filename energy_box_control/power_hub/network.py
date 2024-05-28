@@ -85,7 +85,7 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.power_hub_components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import ConstSchedule, GivenSchedule, Schedule
+from energy_box_control.schedules import ConstSchedule, PeriodicSchedule, Schedule
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import LiterPerSecond, WattPerMeterSquared, Celsius, Watt
 
@@ -132,9 +132,9 @@ class PowerHubSchedules:
         cooling_demand_values = cast(list[Watt], data["Cooling Demand"].to_list())  # type: ignore
 
         return PowerHubSchedules(
-            GivenSchedule(start, end, tuple(global_irradiance_values)),
-            GivenSchedule(start, end, tuple(ambient_temperature_values)),
-            GivenSchedule(start, end, tuple(cooling_demand_values)),
+            PeriodicSchedule(start, end - start, tuple(global_irradiance_values)),
+            PeriodicSchedule(start, end - start, tuple(ambient_temperature_values)),
+            PeriodicSchedule(start, end - start, tuple(cooling_demand_values)),
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
             ConstSchedule(phc.WATER_DEMAND),
@@ -773,12 +773,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(WaterMakerPort.DESALINATED_OUT)
             .to(self.fresh_water_tank)
             .at(WaterTankPort.IN_0)
-
+ 
             .connect(self.water_demand)
             .at(WaterDemandPort.DEMAND_OUT)
             .to(self.fresh_water_tank)
             .at(WaterTankPort.CONSUMPTION)
-
+            
             .connect(self.water_demand)
             .at(WaterDemandPort.GREY_WATER_OUT)
             .to(self.water_treatment)
