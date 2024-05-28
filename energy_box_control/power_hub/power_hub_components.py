@@ -40,7 +40,7 @@ CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
 CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
 WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
 WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
+WASTE_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
 YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
 
@@ -147,8 +147,6 @@ waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 waste_switch_valve = Valve()
 waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
-chiller_waste_bypass_valve = Valve()
-chiller_waste_mix = Mix()
 fresh_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
 
 

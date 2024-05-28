@@ -17,7 +17,7 @@ from energy_box_control.power_hub.power_hub_components import (
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
-    WASTE_BYPASS_VALVE_OPEN_POSITION,
+    WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION,
@@ -545,7 +545,7 @@ def chill_control(
         .control(power_hub.yazaki_hot_bypass_valve)
         .value(ValveControl(yazaki_feedback_valve_control))
         .control(power_hub.waste_bypass_valve)
-        .value(ValveControl(WASTE_BYPASS_VALVE_OPEN_POSITION))
+        .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
         .combine(running)
         .combine(
             power_hub.control(power_hub.yazaki_hot_bypass_valve).value(

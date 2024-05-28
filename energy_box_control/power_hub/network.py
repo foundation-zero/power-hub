@@ -168,8 +168,6 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
     waste_pump: SwitchPump  # P-1004
-    chiller_waste_bypass_valve: Valve  # CV-1009
-    chiller_waste_mix: Mix
     fresh_water_pump: SwitchPump
     fresh_water_source: Source
     outboard_exchange: HeatExchanger  # W-1007
@@ -219,8 +217,6 @@ class PowerHub(Network[PowerHubSensors]):
             phc.preheat_reservoir(schedules.ambient_temperature),
             phc.preheat_mix,
             phc.waste_pump,
-            phc.chiller_waste_bypass_valve,
-            phc.chiller_waste_mix,
             phc.fresh_water_pump,
             phc.fresh_water_source(schedules.freshwater_temperature),
             phc.outboard_exchange,
@@ -378,7 +374,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.waste_bypass_valve)
             .value(
-                ValveState(phc.WASTE_BYPASS_VALVE_OPEN_POSITION)
+                ValveState(phc.WASTE_BYPASS_VALVE_CLOSED_POSITION)
             )  # no bypass, all to chillers
             .define_state(self.waste_bypass_mix)
             .value(ApplianceState())
@@ -641,12 +637,12 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.waste_bypass_mix)
             .at(MixPort.B)
 
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
 
