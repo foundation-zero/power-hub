@@ -20,6 +20,8 @@ from energy_box_control.power_hub.power_hub_components import (
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+    WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION,
+    WATER_FILTER_BYPASS_VALVE_FILTER_POSITION,
     YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION,
 )
 from energy_box_control.appliances.boiler import BoilerControl
@@ -80,6 +82,17 @@ class WasteControlState:
     control_mode: WasteControlMode
 
 
+class WaterControlMode(State):
+    READY = "ready"
+    FILTER_TANK = "filter_tank"
+
+
+@dataclass
+class WaterControlState:
+    context: Context
+    control_mode: WaterControlMode
+
+
 def setpoint(description: str):
     return field(metadata={"description": description})
 
@@ -126,6 +139,7 @@ class Setpoints:
     preheat_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of the preheat reservoir"
     )
+    filter_water_tank: ProcessTime = setpoint("trigger filtering of water tank")
 
 
 @dataclass
@@ -133,6 +147,7 @@ class PowerHubControlState:
     hot_control: HotControlState
     chill_control: ChillControlState
     waste_control: WasteControlState
+    water_control: WaterControlState
     setpoints: Setpoints
 
 
@@ -156,6 +171,9 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
             preheat_reservoir_min_temperature=25,
+            filter_water_tank=ProcessTime(
+                timedelta(seconds=60), 10, datetime(2017, 6, 1, 0, 0, 0)
+            ),
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -173,6 +191,9 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
+        ),
+        water_control=WaterControlState(
+            context=Context(), control_mode=WaterControlMode.READY
         ),
     )
 
@@ -612,6 +633,52 @@ def waste_control(
     )
 
 
+# make as state machine with UI input as setpoint as timestamp? requires having access to time in predicate. Need a Fn.time(lambda time: ...)
+# make as state machine with UI input as setpoint as bool? then can use holds_true for state
+# make without state machine...
+
+water_transitions: dict[
+    tuple[WaterControlMode, WaterControlMode],
+    Predicate[PowerHubControlState, PowerHubSensors],
+] = {
+    (WaterControlMode.READY, WaterControlMode.FILTER_TANK): Fn.state(
+        lambda state: state.setpoints.filter_water_tank
+    ).elapsed(timedelta(minutes=30)),
+    (WaterControlMode.FILTER_TANK, WaterControlMode.READY): Fn.const_pred(
+        True
+    ).holds_true(
+        Marker("filter tank"), timedelta(minutes=30)
+    ),  # 35 l/min pump
+}
+
+water_control_machine = StateMachine(WaterControlMode, water_transitions)
+
+
+def water_control(
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: ProcessTime,
+):
+
+    water_control_mode, context = water_control_machine.run(
+        control_state.water_control.control_mode,
+        control_state.water_control.context,
+        control_state,
+        sensors,
+        time,
+    )
+
+    return (
+        WaterControlState(context, water_control_mode),
+        power_hub.control(power_hub.water_filter_bypass_valve).value(
+            ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION)
+            if WaterControlMode.FILTER_TANK
+            else ValveControl(WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION)
+        ),
+    )
+
+
 def control_power_hub(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
@@ -625,6 +692,7 @@ def control_power_hub(
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
+    water_control_state, water = water_control(power_hub, control_state, sensors, time)
 
     control = (
         power_hub.control(power_hub.hot_reservoir)
@@ -642,6 +710,7 @@ def control_power_hub(
         .combine(hot)
         .combine(chill)
         .combine(waste)
+        .combine(water)
         .build()
     )
 
@@ -650,6 +719,7 @@ def control_power_hub(
             hot_control=hot_control_state,
             chill_control=chill_control_state,
             waste_control=waste_control_state,
+            water_control=water_control_state,
             setpoints=control_state.setpoints,
         ),
         control,

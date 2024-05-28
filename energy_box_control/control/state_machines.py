@@ -153,6 +153,22 @@ class TimedPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
             return False
 
 
+@dataclass
+class ElapsedPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
+    since: "Value[ControlState, Sensors, datetime]"
+    duration: timedelta
+
+    def resolve(
+        self,
+        context: Context,
+        control_state: ControlState,
+        sensors: Sensors,
+        time: datetime,
+    ) -> bool:
+        since = self.since.fn(control_state, sensors, time)
+        return timedelta(seconds=0) < (time - since) < self.duration
+
+
 def _comp[
     ControlState, Sensors, R: float | int
 ](
@@ -162,8 +178,13 @@ def _comp[
 
 
 @dataclass(eq=False)
-class Value[ControlState, Sensors, V: float | int]:
+class Value[ControlState, Sensors, V: float | int | datetime]:
     fn: Callable[[ControlState, Sensors, datetime], V]
+
+    def elapsed(
+        self: "Value[ControlState, Sensors, datetime]", duration: timedelta
+    ) -> ElapsedPredicate[ControlState, Sensors]:
+        return ElapsedPredicate(self, duration)
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
@@ -178,7 +199,7 @@ class Functions[ControlState, Sensors]:
         pass
 
     def state[
-        V: float | int
+        V: float | int | datetime
     ](self, fn: Callable[[ControlState], V]) -> Value[ControlState, Sensors, V]:
         return Value(lambda control_state, _sensors, _time: fn(control_state))
 
