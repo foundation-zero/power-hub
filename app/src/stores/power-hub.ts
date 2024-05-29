@@ -9,6 +9,10 @@ import type { SnakeCase } from "type-fest";
 
 const DEFAULT_POLLING_INTERVAL = 60 * 1000;
 
+const DEFAULT_HEADERS = {
+  Authorization: `Bearer ${import.meta.env.VITE_API_BEARER_TOKEN}`,
+};
+
 let client: MqttClient;
 
 type PathFn = (path: string) => string;
@@ -19,7 +23,12 @@ const useTotals =
     topic: K,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax.getJSON<V>(`/api/${endpointFn(topic)}/total`).pipe(repeat({ delay: pollingInterval }));
+    ajax
+      .get<V>(`${import.meta.env.VITE_API}/power_hub/${endpointFn(topic)}/total`, DEFAULT_HEADERS)
+      .pipe(
+        repeat({ delay: pollingInterval }),
+        map(({ response }) => response),
+      );
 
 const useHistory =
   <T>(endpointFn: PathFn) =>
@@ -27,12 +36,18 @@ const useHistory =
     topic: K,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax.getJSON<HistoricalData<string, V>[]>(`/api/${endpointFn(topic)}/last_values`).pipe(
-      repeat({ delay: pollingInterval }),
-      map((data) =>
-        data.map(({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>),
-      ),
-    );
+    ajax
+      .get<
+        HistoricalData<string, V>[]
+      >(`${import.meta.env.VITE_API}/power_hub/${endpointFn(topic)}/last_values`, DEFAULT_HEADERS)
+      .pipe(
+        repeat({ delay: pollingInterval }),
+        map(({ response }) =>
+          response.map(
+            ({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>,
+          ),
+        ),
+      );
 
 const useMqtt =
   <K extends keyof Tree, T = Tree[K]>(topicPath: SnakeCase<K>) =>
@@ -50,7 +65,10 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   };
 
   const connect = async () => {
-    client ??= await MqttClient.connect(`ws://${location.host}/mqtt`);
+    client ??= await MqttClient.connect(
+      import.meta.env.VITE_MQTT?.replace("%HOST%", location.host),
+      { username: import.meta.env.VITE_MQTT_USER, password: import.meta.env.VITE_MQTT_PASSWORD },
+    );
 
     return {
       sensors,

@@ -7,6 +7,11 @@ type Message = {
   message: string;
 };
 
+type Authentication = {
+  username?: string;
+  password?: string;
+};
+
 export class MqttClient {
   private messages: Observable<Message>;
   private constructor(private client: mqtt.MqttClient) {
@@ -16,9 +21,10 @@ export class MqttClient {
     })).pipe(share());
   }
 
-  static async connect(url: string): Promise<MqttClient> {
+  static async connect(url: string, auth: Authentication = {}): Promise<MqttClient> {
     const clientId = `powerhub-${Math.random().toString(16).substring(2, 8)}`;
     const client = await mqtt.connectAsync(url, {
+      ...auth,
       clientId,
       will: {
         topic: `health/${clientId}`,
