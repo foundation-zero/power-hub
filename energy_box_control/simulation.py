@@ -110,7 +110,9 @@ class SimulationResult:
         return SimulationResult(self.power_hub, state, control_state)
 
 
-async def run(steps: int = 0):
+async def run(
+    steps: int = 0, schedules: PowerHubSchedules = PowerHubSchedules.const_schedules()
+):
     mqtt_client = create_and_connect_client()
     await run_listener(
         CONTROL_VALUES_TOPIC, partial(queue_on_message, control_values_queue)
@@ -119,7 +121,7 @@ async def run(steps: int = 0):
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    power_hub = PowerHub.power_hub(PowerHubSchedules.schedules_from_data())
+    power_hub = PowerHub.power_hub(schedules)
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
@@ -158,7 +160,7 @@ async def run(steps: int = 0):
 
 
 def main():
-    asyncio.run(run())
+    asyncio.run(run(schedules=PowerHubSchedules.schedules_from_data()))
 
 
 if __name__ == "__main__":
