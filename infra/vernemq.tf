@@ -107,37 +107,57 @@ resource "helm_release" "vernemq" {
 
   set {
     name  = "additionalEnv[3].name"
-    value = "DOCKER_VERNEMQ_ALLOW_ANONYMOUS"
+    value = "DOCKER_VERNEMQ_LISTENER__WSS__CAFILE"
   }
   set {
     name  = "additionalEnv[3].value"
-    value = "on"
-    type  = "string"
+    value = "${local.vernemq_certificate_path}/tls.crt"
   }
-
   set {
     name  = "additionalEnv[4].name"
-    value = "DOCKER_VERNEMQ_ACCEPT_EULA"
+    value = "DOCKER_VERNEMQ_LISTENER__WSS__CERTFILE"
   }
   set {
     name  = "additionalEnv[4].value"
+    value = "${local.vernemq_certificate_path}/tls.crt"
+  }
+  set {
+    name  = "additionalEnv[5].name"
+    value = "DOCKER_VERNEMQ_LISTENER__WSS__KEYFILE"
+  }
+  set {
+    name  = "additionalEnv[5].value"
+    value = "${local.vernemq_certificate_path}/tls.key"
+  }
+  set {
+    name  = "additionalEnv[6].name"
+    value = "DOCKER_VERNEMQ_ALLOW_ANONYMOUS"
+  }
+  set {
+    name  = "additionalEnv[6].value"
+    value = "on"
+    type  = "string"
+  }
+  set {
+    name  = "additionalEnv[7].name"
+    value = "DOCKER_VERNEMQ_ACCEPT_EULA"
+  }
+  set {
+    name  = "additionalEnv[7].value"
     value = "yes"
     type  = "string"
   }
-
   set {
-    name  = "additionalEnv[5].name"
+    name  = "additionalEnv[8].name"
     value = "DOCKER_VERNEMQ_USER_power-hub"
   }
-
   set {
-    name  = "additionalEnv[5].valueFrom.secretKeyRef.name"
+    name  = "additionalEnv[8].valueFrom.secretKeyRef.name"
     value = kubernetes_secret.vernemq_auth.metadata.0.name
     type  = "string"
   }
-
   set {
-    name  = "additionalEnv[5].valueFrom.secretKeyRef.key"
+    name  = "additionalEnv[8].valueFrom.secretKeyRef.key"
     value = "password"
   }
 

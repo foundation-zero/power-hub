@@ -29,9 +29,6 @@ jobs:
       - name: Test
         run: poetry run pytest
 
-      - name: Run simulation notebook
-        run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
-
       - run: docker-compose up -d telegraf
 
       - name: Integration tests
@@ -52,7 +49,10 @@ jobs:
         env:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
-
+      
+      - name: Run simulation notebook
+        run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
+  
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: test
