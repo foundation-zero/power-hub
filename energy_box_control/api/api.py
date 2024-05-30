@@ -1,10 +1,8 @@
-import os
 from pydantic import ValidationError
 from quart import Quart, request, make_response, Response
 from quart.typing import ResponseTypes
 from dataclasses import dataclass, field
 from quart_schema import QuartSchema, validate_response, validate_querystring, RequestSchemaValidationError  # type: ignore
-from dotenv import load_dotenv
 from typing import Any, Callable, List, Literal, Optional, Tuple
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
@@ -19,16 +17,11 @@ from energy_box_control.sensors import sensor_fields
 from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
 from energy_box_control.custom_logging import get_logger
 
-
-dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", ".env")
-)
-load_dotenv(dotenv_path)
+from energy_box_control.config import CONFIG
 
 logger = get_logger(__name__)
 
 
-TOKEN = os.environ["API_TOKEN"]
 DEFAULT_MINUTES_BACK = 60
 MAX_ROWS = 10000
 
@@ -126,7 +119,7 @@ def values_query(
 
     start, stop = query_range
     return fluxy.pipe(
-        fluxy.from_bucket(os.environ["INFLUXDB_TELEGRAF_BUCKET"]),
+        fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
         fluxy.range(start, stop),
         fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
         fluxy.filter(lambda r: r._field == "value"),
@@ -164,7 +157,7 @@ def token_required(f):
     async def decorator(*args, **kwargs):
         if (
             "Authorization" not in request.headers
-            or request.headers["Authorization"] != f"Bearer {TOKEN}"
+            or request.headers["Authorization"] != f"Bearer {CONFIG.api_token}"
         ):
             return await make_response(
                 "A valid token is missing!", HTTPStatus.UNAUTHORIZED
@@ -252,9 +245,9 @@ def serialize_single_cell(column: str):
 
 def get_influx_client() -> InfluxDBClientAsync:
     return InfluxDBClientAsync(
-        os.environ["INFLUXDB_URL"],
-        os.environ["INFLUXDB_TOKEN"],
-        org=os.environ["INFLUXDB_ORGANISATION"],
+        CONFIG.influxdb_url,
+        CONFIG.influxdb_token,
+        org=CONFIG.influxdb_organisation,
     )
 
 

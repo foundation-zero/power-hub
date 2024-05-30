@@ -10,8 +10,9 @@ from energy_box_control.units import (
     Degree,
 )
 from datetime import datetime, timedelta
-import os
 import json
+
+from energy_box_control.config import CONFIG
 
 
 class CacheMissError(Exception):
@@ -106,7 +107,7 @@ class WeatherClient:
     async def _fetch_weather(self, lat: float, lon: float) -> WeatherResponse:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={os.environ['OPEN_WEATHER_API_KEY']}&units={UNIT_SYSTEM}"
+                f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={CONFIG.open_weather_api_key}&units={UNIT_SYSTEM}"
             ) as response:
                 if response.status != HTTPStatus.OK:
                     raise Exception(

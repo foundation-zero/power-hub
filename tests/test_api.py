@@ -18,9 +18,10 @@ import pandas as pd
 import json
 import unittest.mock as mock
 from energy_box_control.api.weather import *
+from energy_box_control.config import CONFIG
 
 
-HEADERS = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
+HEADERS = {"Authorization": f"Bearer {CONFIG.api_token}"}
 
 
 @pytest.fixture(autouse=True)
