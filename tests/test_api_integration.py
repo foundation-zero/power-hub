@@ -13,18 +13,16 @@ from energy_box_control.api.api import (
     build_query_range,
     ValuesQuery,
 )
-from dotenv import load_dotenv
 from http import HTTPStatus
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from energy_box_control.custom_logging import get_logger
+from energy_box_control.config import CONFIG
+
 
 logger = get_logger(__name__)
 
 
 BASE_URL = "http://0.0.0.0:5001"
-
-dotenv_path = os.path.normpath(os.path.join(os.path.realpath(__file__), "../", ".env"))
-load_dotenv(dotenv_path)
 
 
 def api_is_up():
@@ -96,7 +94,7 @@ def test_hello_world():
 
 @pytest.fixture()
 def headers():
-    return {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
+    return {"Authorization": f"Bearer {CONFIG.api_token}"}
 
 
 @pytest.mark.integration

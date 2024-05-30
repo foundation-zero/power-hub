@@ -1,11 +1,9 @@
 from functools import partial
-import os
 from typing import Any, Callable, Dict
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import MQTTMessageInfo
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
 from paho.mqtt.reasoncodes import ReasonCode
-from dotenv import load_dotenv
 import asyncio
 
 import random
@@ -14,20 +12,14 @@ import json
 import time
 from energy_box_control.custom_logging import get_logger
 
+from energy_box_control.config import CONFIG
+
 logger = get_logger(__name__)
 
-dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../", ".env")
-)
-load_dotenv(dotenv_path)
 
-
-HOST = os.environ["MQTT_HOST"]
 PORT = 1883
 MIN_CLIENT_ID_INT = 0
 MAX_CLIEND_ID_INT = 1000000000
-USERNAME = os.getenv("MQTT_USERNAME", default="")
-PASSWORD = os.getenv("MQTT_PASSWORD", default="")
 
 ClientID = str
 
@@ -80,12 +72,14 @@ def create_and_connect_client(
     on_connect_callback: Callable[..., None] | None = None
 ) -> mqtt_client.Client:
     client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
-    logger.info(f"Connecting to {HOST}:{PORT} for client {client_id}")
+    logger.info(f"Connecting to {CONFIG.mqtt_host}:{PORT} for client {client_id}")
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
     client.on_connect = partial(on_connect, client_id, on_connect_callback)
-    client.connect(HOST, PORT)
-    if USERNAME and PASSWORD:
-        client.username_pw_set(username=USERNAME, password=PASSWORD)
+    client.connect(CONFIG.mqtt_host, PORT)
+    if CONFIG.mqtt_username and CONFIG.mqtt_password:
+        client.username_pw_set(
+            username=CONFIG.mqtt_username, password=CONFIG.mqtt_password
+        )
     client.loop_start()
     return client
 
