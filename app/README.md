@@ -62,3 +62,11 @@ pnpm run test:e2e -- --debug
 ```sh
 pnpm run lint
 ```
+
+### Put this in your `.env.local`
+
+```sh
+VITE_MQTT=ws://%HOST%/mqtt
+VITE_API=/api
+VITE_API_BEARER_TOKEN=s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4
+```

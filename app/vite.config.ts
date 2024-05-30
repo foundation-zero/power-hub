@@ -24,9 +24,6 @@ export default defineConfig({
       "/api": {
         target: "http://0.0.0.0:5001",
         rewrite: (path) => path.replace(/^\/api/, ""),
-        headers: {
-          Authorization: "Bearer s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4",
-        },
       },
     },
   },
