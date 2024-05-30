@@ -3,14 +3,7 @@ import logging.config
 from logging import Logger
 import sys
 from types import TracebackType
-import os
-from dotenv import load_dotenv
-
-
-dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../../", ".env")
-)
-load_dotenv(dotenv_path)
+from energy_box_control.config import CONFIG
 
 
 def uncaught_exception_hook(
@@ -28,5 +21,5 @@ def get_logger(logger_name: str) -> Logger:
         stream=sys.stdout,
     )
     logger = logging.getLogger(logger_name)
-    logger.setLevel(os.getenv("LOGGING_LEVEL", "INFO"))
+    logger.setLevel(CONFIG.logging_level)
     return logger
