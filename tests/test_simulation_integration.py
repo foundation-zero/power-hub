@@ -1,21 +1,18 @@
 from http import HTTPStatus
 import json
 import os
-from dotenv import load_dotenv
 import pytest
 import requests
 from tests.test_api_integration import check_api_is_up, check_simulation_entries
+from energy_box_control.config import CONFIG
+
 
 BASE_URL = "http://0.0.0.0:5001"
 
 
-dotenv_path = os.path.normpath(os.path.join(os.path.realpath(__file__), "../", ".env"))
-load_dotenv(dotenv_path)
-
-
 @pytest.fixture()
 def headers():
-    return {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
+    return {"Authorization": f"Bearer {CONFIG.api_token}"}
 
 
 @pytest.fixture(scope="session", autouse=True)
