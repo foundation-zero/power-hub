@@ -12,6 +12,9 @@ export type Yazaki = Port<"hot"> &
   Port<"cooling"> &
   Port<"chilled"> & {
     efficiency: number;
+    wastePower: number;
+    chillPower: number;
+    usedPower: number;
   };
 
 export type PCM = Port<"charge"> &
@@ -22,7 +25,7 @@ export type PCM = Port<"charge"> &
 
 export type Chiller = Port<"cooling"> &
   Port<"chilled"> & {
-    chilledPower: number;
+    chillPower: number;
   };
 
 export type HeatPipes = Port & {
@@ -35,7 +38,23 @@ export type Reservoir = Port<"heat"> &
   Port<"fill"> & {
     temperature: number;
     usedPower: number;
+    fillPower: number;
   };
+
+export type PVPanel = {
+  power: number;
+};
+
+export interface WaterTank {
+  fill: number;
+  waterTreatmentFlowIn: number;
+  waterMakerFlowIn: number;
+  waterDemand: number;
+}
+
+export interface WaterProcessor {
+  outFlow: number;
+}
 
 export interface SensorsTree {
   heatPipes: HeatPipes;
@@ -54,10 +73,26 @@ export interface SensorsTree {
   wasteSwitchValve: Valve;
   hotReservoirPcmValve: Valve;
   chillerWasteBypassValve: Valve;
+  pvPanel: PVPanel;
+  freshWaterTank: WaterTank;
+  waterTreatment: WaterProcessor;
+  waterMaker: WaterProcessor;
+}
+
+export type Watt = number;
+export type Joule = number;
+
+export interface ElectricPower {
+  consumption: Watt;
+  production: Watt;
+}
+
+export interface Electric {
+  power: ElectricPower;
 }
 
 export interface SumTree {
-  electricalPower: number;
+  electric: Electric;
 }
 
 export interface Tree {
@@ -80,3 +115,7 @@ export type PowerHubComponent =
   | "water-storage"
   | "water-treatment"
   | "water-demand";
+
+export type DateRange = [from: number, to: number];
+
+export type TimeInterval = "d" | "h" | "min" | "s";

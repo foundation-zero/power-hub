@@ -15,7 +15,9 @@
     <FZLogo />
     <PipeLines />
     <PipeStreams />
-    <PowerHubComponents />
+    <Suspense>
+      <PowerHubComponents />
+    </Suspense>
   </svg>
 </template>
 
