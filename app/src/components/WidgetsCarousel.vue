@@ -5,8 +5,10 @@
   >
     <SensorWidgets>
       <ProductionChartWidget />
-      <WaterDemandWidget :power-hub="powerHub" />
-      <CoolingDemandWidget :power-hub="powerHub" />
+      <ValueGauge
+        component="heat-tubes"
+        :value="17"
+      />
     </SensorWidgets>
   </section>
 </template>
@@ -15,15 +17,14 @@
 import { usePowerHubStore } from "@/stores/power-hub";
 import SensorWidgets from "@/components/SensorWidgets.vue";
 
-import WaterDemandWidget from "@/components/widgets/WaterDemandWidget.vue";
-import CoolingDemandWidget from "./widgets/CoolingDemandWidget.vue";
 import ProductionChartWidget from "./widgets/ProductionChartWidget.vue";
+import ValueGauge from "@/components/ValueGauge.vue";
 import { usePresentationStore } from "@/stores/presentation";
 
 const presentation = usePresentationStore();
 
 const store = usePowerHubStore();
-const powerHub = await store.connect();
+await store.connect();
 </script>
 
 <style lang="scss" scoped>
