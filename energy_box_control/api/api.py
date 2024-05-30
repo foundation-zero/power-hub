@@ -233,7 +233,9 @@ def serialize_single_cell(column: str):
             if not isinstance(response, df):
                 raise Exception("serialize_single_cell requires a dataframe")
             if len(response) == 0:
-                return await make_response("No mean value found", HTTPStatus.NOT_FOUND)
+                return await make_response(
+                    "No mean/total value found", HTTPStatus.NOT_FOUND
+                )
             return Response(
                 response.iloc[0][column].astype(str), content_type="application/json"
             )
