@@ -18,6 +18,7 @@ from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentW
 from energy_box_control.custom_logging import get_logger
 
 from energy_box_control.config import CONFIG
+from quart_cors import cors  # type: ignore
 
 logger = get_logger(__name__)
 
@@ -26,6 +27,8 @@ DEFAULT_MINUTES_BACK = 60
 MAX_ROWS = 10000
 
 app = Quart(__name__)
+app = cors(app, allow_origin="*")
+
 QuartSchema(
     app,
     security=[{"power_hub_api": []}],
