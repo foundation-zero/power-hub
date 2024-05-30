@@ -3105,6 +3105,20 @@ docs = ["pydata_sphinx_theme"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "quart-cors"
+version = "0.7.0"
+description = "A Quart extension to provide Cross Origin Resource Sharing, access control, support"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "quart_cors-0.7.0-py3-none-any.whl", hash = "sha256:fa872cc94a2ae6b51a35b028ebca65c14069d7121d63a4caa3526ebbfb7c5a99"},
+    {file = "quart_cors-0.7.0.tar.gz", hash = "sha256:d667a0f13b4ce6d9e926489de5d819780844fbff5b2cdea156bd8867dd426a37"},
+]
+
+[package.dependencies]
+quart = ">=0.15"
+
+[[package]]
 name = "quart-schema"
 version = "0.20.0"
 description = "A Quart extension to provide schema validation"
@@ -3809,4 +3823,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "fe2e80eb2c83a47fd83fc8759532dd6d2ef3db4ba30c1d2294edd2acef93ab46"
+content-hash = "5f4367e472bb8201eec2bc0b64b0b37488e78b1cb3ec1c21882c14fdc1099a2c"
