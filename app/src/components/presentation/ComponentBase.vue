@@ -5,7 +5,17 @@
     class="component"
     :class="state"
   >
-    <slot />
+    <svg
+      :height="height"
+      :width="width"
+      :x="x"
+      :y="y"
+      :viewBox="viewBox"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <slot />
+    </svg>
   </g>
 </template>
 
@@ -15,7 +25,14 @@ import { usePresentationStore } from "@/stores/presentation";
 import type { PowerHubComponent } from "@/types/power-hub";
 import { toRefs } from "vue";
 
-const { component } = defineProps<{ component: PowerHubComponent }>();
+const { component } = defineProps<{
+  component: PowerHubComponent;
+  width: string;
+  height: string;
+  x: string;
+  y: string;
+  viewBox: string;
+}>();
 
 const el = ref<HTMLElement>();
 const { getComponentState, setPosition } = usePresentationStore();
@@ -74,12 +91,11 @@ $ttime: 750ms;
   }
 
   &:not(.active) {
-    .fill[fill] {
+    .fill[fill]:not([fill="white"]) {
       fill: rgba(229, 229, 229);
     }
 
-    .fill[stroke]:not([fill]) {
-      stroke-opacity: 1;
+    .fill[stroke]:not([stroke="white"]) {
       stroke: rgb(229, 229, 229);
     }
 

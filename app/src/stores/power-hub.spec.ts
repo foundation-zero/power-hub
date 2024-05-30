@@ -45,16 +45,16 @@ describe("PowerHubStore", async () => {
       });
     });
 
-    describe("historical data", () => {
+    describe("last values", () => {
       const mockAndCall = (
-        path: Parameters<typeof store.sensors.useHistory>[0],
+        path: Parameters<typeof store.sensors.useLastValues>[0],
         time: string = new Date().toString(),
         value = 5,
       ) => {
         vi.spyOn(ajax, "get").mockReturnValue(
           of({ response: [{ time, value }] } as AjaxResponse<HistoricalData[]>),
         );
-        return useObservable(store.sensors.useHistory(path));
+        return useObservable(store.sensors.useLastValues(path));
       };
 
       it("parses the time value to Date object", () => {
@@ -73,9 +73,9 @@ describe("PowerHubStore", async () => {
     });
 
     describe("totals", () => {
-      const mockAndCall = (path: Parameters<typeof store.sensors.useTotals>[0], value = 5) => {
+      const mockAndCall = (path: Parameters<typeof store.sensors.useTotal>[0], value = 5) => {
         vi.spyOn(ajax, "get").mockReturnValue(of({ response: value } as AjaxResponse<number>));
-        return useObservable(store.sensors.useTotals(path));
+        return useObservable(store.sensors.useTotal(path));
       };
 
       it("returns the value untouched", () => {

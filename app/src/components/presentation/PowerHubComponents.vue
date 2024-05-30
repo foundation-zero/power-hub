@@ -1,19 +1,19 @@
 <template>
   <g id="power-hub-components">
     <TheSun />
-    <HeatTubes />
-    <HeatStorage />
-    <AbsorbtionChiller />
-    <CompressionChiller />
-    <CoolingDemand />
-    <SolarPanels />
-    <PowerBattery />
-    <SystemDemand />
+    <HeatTubes :power-hub="powerHub" />
+    <HeatStorage :power-hub="powerHub" />
+    <AbsorbtionChiller :power-hub="powerHub" />
+    <CompressionChiller :power-hub="powerHub" />
+    <CoolingDemand :power-hub="powerHub" />
+    <SolarPanels :power-hub="powerHub" />
+    <PowerBattery :power-hub="powerHub" />
+    <SystemDemand :power-hub="powerHub" />
     <SeaWater />
-    <WaterMaker />
-    <WaterStorage />
-    <WaterTreatment />
-    <WaterDemand />
+    <WaterMaker :power-hub="powerHub" />
+    <WaterStorage :power-hub="powerHub" />
+    <WaterTreatment :power-hub="powerHub" />
+    <WaterDemand :power-hub="powerHub" />
     <defs>
       <clipPath id="clip0_481_1610">
         <rect
@@ -67,4 +67,9 @@ import WaterMaker from "./WaterMaker.vue";
 import WaterStorage from "./WaterStorage.vue";
 import WaterTreatment from "./WaterTreatment.vue";
 import WaterDemand from "./WaterDemand.vue";
+
+import { usePowerHubStore } from "@/stores/power-hub";
+
+const store = usePowerHubStore();
+const powerHub = await store.connect();
 </script>

@@ -1,5 +1,5 @@
 import type { Activatable, Flowable, Muteable } from "@/types";
-import { watch, type Ref } from "vue";
+import { computed, watch, type Ref } from "vue";
 
 export const parseValue = <T>(val: string | number) =>
   (isNaN(Number(val)) ? val : Number(val)) as T;
@@ -57,3 +57,12 @@ export const stopFlow = <T extends Flowable>(item: T) => (item.flowing = false);
 
 export const mapFn = <T, K>(fn: (item: T) => K, ...items: T[]): K[] =>
   items.map((item) => fn(item));
+
+export const useAsWatts = (value: Ref<number>) => ({
+  value: computed(() => {
+    if (!value.value) return 0;
+
+    return value.value / (value.value < 1000 ? 1 : 1000);
+  }),
+  unit: computed(() => (value.value < 1000 ? "W" : "kW")),
+});
