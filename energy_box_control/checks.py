@@ -1,6 +1,15 @@
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional
+from typing import Callable
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from enum import Enum
+
+
+class Severity(Enum):
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
 
 
 def value_check[
@@ -10,8 +19,10 @@ def value_check[
 ]:
 
     def _check(sensor_values: A) -> str | None:
-        if check_fn(sensor_fn(sensor_values)):
-            return f"{name} is outside normal bounds: {sensor_fn(sensor_values)}"
+        if not check_fn(sensor_fn(sensor_values)):
+            return (
+                f"{name} is outside valid bounds with value: {sensor_fn(sensor_values)}"
+            )
 
     return _check
 
@@ -20,17 +31,24 @@ def value_check[
 class Check:
     name: str
     check: Callable[[PowerHubSensors], str | None]
-    severity: Optional[Literal["critical", "error", "warning", "info"]] = None
+    severity: Severity
 
 
-def valid_temp(name: str, value_fn: Callable[[PowerHubSensors], float]) -> Check:
-    temp_alert_low = 5
-    temp_alert_high = 100
+def valid_temp(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], float],
+    lower_bound: int = 5,
+    upper_bound: int = 100,
+    severity: Severity = Severity.ERROR,
+) -> Check:
     return Check(
         name,
         value_check(
-            name, value_fn, lambda value: not temp_alert_low < value < temp_alert_high
+            name,
+            value_fn,
+            lambda value: lower_bound < value < upper_bound,
         ),
+        severity,
     )
 
 

@@ -1,11 +1,11 @@
 import math
 
 from dataclasses import dataclass
-from dotenv import load_dotenv
 import schedule
 from energy_box_control.monitoring import (
     Monitor,
-    PagerDutyNotificationAgent,
+    Notifier,
+    PagerDutyNotificationChannel,
 )
 from energy_box_control.custom_logging import get_logger
 import queue
@@ -38,15 +38,9 @@ from functools import partial
 from energy_box_control.sensors import sensors_to_json
 
 import asyncio
-import os
+from energy_box_control.config import CONFIG
 
 logger = get_logger(__name__)
-
-dotenv_path = os.path.normpath(
-    os.path.join(os.path.realpath(__file__), "../../", ".env")
-)
-
-load_dotenv(dotenv_path)
 
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -86,15 +80,17 @@ class SimulationResult:
     control_state: PowerHubControlState
 
     def step(
-        self, mqtt_client: mqtt_client.Client, monitor: Monitor
+        self, mqtt_client: mqtt_client.Client, monitor: Monitor, notifier: Notifier
     ) -> "SimulationResult":
         power_hub_sensors = self.power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )
 
-        monitor.run_sensor_values_checks(
-            power_hub_sensors,
-            "power_hub_simulation",
+        notifier.send_events(
+            monitor.run_sensor_values_checks(
+                power_hub_sensors,
+                "power_hub_simulation",
+            )
         )
 
         control_state, control_values = control_power_hub(
@@ -105,7 +101,7 @@ class SimulationResult:
             mqtt_client,
             CONTROL_VALUES_TOPIC,
             control_to_json(self.power_hub, control_values),
-            monitor.notification_agent,
+            notifier,
         )
         control_values = control_from_json(
             self.power_hub, control_values_queue.get(block=True)
@@ -142,9 +138,9 @@ async def run(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    monitor = Monitor(
-        PagerDutyNotificationAgent(os.getenv("PAGERDUTY_KEY", default=None)), checks
-    )
+    notifier = Notifier(PagerDutyNotificationChannel(CONFIG.pagerduty_key))
+    monitor = Monitor(checks)
+
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
     state = power_hub.simulate(
@@ -156,9 +152,7 @@ async def run(
     power_hub_sensors = power_hub.sensors_from_state(state)
 
     publish_to_mqtt(
-        mqtt_client,
-        SENSOR_VALUES_TOPIC,
-        sensors_to_json(power_hub_sensors),
+        mqtt_client, SENSOR_VALUES_TOPIC, sensors_to_json(power_hub_sensors), notifier
     )
 
     result = SimulationResult(power_hub, state, control_state)
@@ -174,7 +168,7 @@ async def run(
         schedule.run_pending()
         try:
             run_queue.get_nowait()
-            result = result.step(mqtt_client, monitor)
+            result = result.step(mqtt_client, monitor, notifier)
             if steps and steps < result.state.time.step:
                 schedule.cancel_job(step)
                 break

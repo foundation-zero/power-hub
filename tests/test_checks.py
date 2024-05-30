@@ -4,13 +4,11 @@ from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 
 
 def test_value_check():
-    a = 1
-    increment = 1
-    value_fn = lambda value: value + increment
-    check_fn = lambda value: value == a + increment
+    value_fn = lambda _value: 0
+    check_fn = lambda value: value == 1
     name = "testing"
     value_check_fn = value_check(name, value_fn, check_fn)
-    assert value_check_fn(a) == f"{name} is outside normal bounds: {a + increment}"
+    assert value_check_fn(100) == f"{name} is outside valid bounds with value: {0}"
 
 
 def test_valid_temp():
