@@ -22,6 +22,7 @@ from energy_box_control.power_hub.power_hub_components import (
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
+    PCM_ZERO_TEMPERATURE,
 )
 from energy_box_control.units import (
     Celsius,
@@ -154,7 +155,7 @@ class PcmSensors(FromState):
     @property
     def heat(self) -> Joule:
         return (
-            self.spec.sensible_capacity * self.temperature
+            self.spec.sensible_capacity * (self.temperature - PCM_ZERO_TEMPERATURE)
             + self.spec.latent_heat * self.state_of_charge
         )
 
