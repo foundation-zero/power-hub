@@ -68,5 +68,6 @@ pnpm run lint
 ```sh
 VITE_MQTT=ws://%HOST%/mqtt
 VITE_API=/api
+VITE_API_TARGET=http://0.0.0.0:5001
 VITE_API_BEARER_TOKEN=s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4
 ```

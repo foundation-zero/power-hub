@@ -1,6 +1,6 @@
 import type { NestedPath, PathValue, HistoricalData } from "@/types";
 import type { DateRange, TimeInterval } from "@/types/power-hub";
-import { map, repeat } from "rxjs";
+import { map, repeat, retry, timer } from "rxjs";
 import { ajax } from "rxjs/ajax";
 
 export const DEFAULT_POLLING_INTERVAL = 60 * 1000;
@@ -17,8 +17,19 @@ export const getQueryParams = (between?: DateRange, interval?: TimeInterval): st
   if (between) values.between = between.join(",");
   if (interval) values.interval = interval;
 
-  return new URLSearchParams(values).toString();
+  const params = new URLSearchParams(values).toString();
+
+  return params ? `?${params}` : "";
 };
+
+const useApi = <T>(endpoint: string, pollingInterval: number) =>
+  ajax.get<T>(`${import.meta.env.VITE_API}${endpoint}`, DEFAULT_HEADERS).pipe(
+    repeat({ delay: pollingInterval }),
+    retry({
+      delay: (error, count) => timer(Math.min(60000, 2 ^ (count * 1000))),
+    }),
+    map(({ response }) => response),
+  );
 
 export const useMean =
   <T>(endpointFn: PathFn) =>
@@ -27,15 +38,7 @@ export const useMean =
     between?: DateRange,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .get<V>(
-        `${import.meta.env.VITE_API}/${endpointFn(topic)}/mean${getQueryParams(between)}`,
-        DEFAULT_HEADERS,
-      )
-      .pipe(
-        repeat({ delay: pollingInterval }),
-        map(({ response }) => response),
-      );
+    useApi<V>(`/${endpointFn(topic)}/mean${getQueryParams(between)}`, pollingInterval);
 
 export const useTotal =
   <T>(endpointFn: PathFn) =>
@@ -44,15 +47,10 @@ export const useTotal =
     between?: DateRange,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .get<V>(
-        `${import.meta.env.VITE_API}/${endpointFn(topic)}/total${getQueryParams(between)}`,
-        DEFAULT_HEADERS,
-      )
-      .pipe(
-        repeat({ delay: pollingInterval }),
-        map(({ response }) => response),
-      );
+    useApi<V>(`/${endpointFn(topic)}/total${getQueryParams(between)}`, pollingInterval);
+
+const toHistoricalData = <V>({ time, value }: HistoricalData<string, V>) =>
+  ({ time: new Date(time), value }) as HistoricalData<Date, V>;
 
 export const useLastValues =
   <T>(endpointFn: PathFn) =>
@@ -61,18 +59,10 @@ export const useLastValues =
     between?: DateRange,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .get<
-        HistoricalData<string, V>[]
-      >(`${import.meta.env.VITE_API}/${endpointFn(topic)}/last_values${getQueryParams(between)}`, DEFAULT_HEADERS)
-      .pipe(
-        repeat({ delay: pollingInterval }),
-        map(({ response }) =>
-          response.map(
-            ({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>,
-          ),
-        ),
-      );
+    useApi<HistoricalData<string, V>[]>(
+      `/${endpointFn(topic)}/last_values${getQueryParams(between)}`,
+      pollingInterval,
+    ).pipe(map((values) => values.map(toHistoricalData)));
 
 export const useOverTime =
   <T>(endpointFn: PathFn) =>
@@ -82,15 +72,7 @@ export const useOverTime =
     interval: TimeInterval = "h",
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    ajax
-      .get<
-        HistoricalData<string, V>[]
-      >(`${import.meta.env.VITE_API}/${endpointFn(topic)}/over/time${getQueryParams(between, interval)}`, DEFAULT_HEADERS)
-      .pipe(
-        repeat({ delay: pollingInterval }),
-        map(({ response }) =>
-          response.map(
-            ({ time, value }) => ({ time: new Date(time), value }) as HistoricalData<Date, V>,
-          ),
-        ),
-      );
+    useApi<HistoricalData<string, V>[]>(
+      `/${endpointFn(topic)}/over/time${getQueryParams(between, interval)}`,
+      pollingInterval,
+    ).pipe(map((values) => values.map(toHistoricalData)));

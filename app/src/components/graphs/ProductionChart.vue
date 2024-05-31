@@ -25,9 +25,9 @@ use([SVGRenderer, BarChart, LineChart]);
 
 const colorMode = useColorMode();
 
-const { sensors } = usePowerHubStore();
+const { sum } = usePowerHubStore();
 
-const production = useObservable(sensors.useLastValues("pv_panel/power"));
+const production = useObservable(sum.useOverTime("electric/power/production", undefined, "h"));
 
 watch(production, (val) => console.log("production", val));
 

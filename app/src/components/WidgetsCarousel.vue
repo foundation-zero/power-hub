@@ -5,10 +5,6 @@
   >
     <SensorWidgets>
       <ProductionChartWidget />
-      <ValueGauge
-        component="heat-tubes"
-        :value="17"
-      />
     </SensorWidgets>
   </section>
 </template>
@@ -18,7 +14,6 @@ import { usePowerHubStore } from "@/stores/power-hub";
 import SensorWidgets from "@/components/SensorWidgets.vue";
 
 import ProductionChartWidget from "./widgets/ProductionChartWidget.vue";
-import ValueGauge from "@/components/ValueGauge.vue";
 import { usePresentationStore } from "@/stores/presentation";
 
 const presentation = usePresentationStore();

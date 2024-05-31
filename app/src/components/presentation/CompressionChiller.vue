@@ -64,7 +64,7 @@
         text-anchor="end"
         x="56"
         y="85.91"
-        :from="value"
+        :to="value"
         :format="formattedInt"
       />
     </text>

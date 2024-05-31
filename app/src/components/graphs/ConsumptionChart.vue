@@ -22,7 +22,7 @@ use([SVGRenderer, BarChart, LineChart]);
 
 const { sum } = usePowerHubStore();
 
-const consumption = useObservable(sum.useOverTime("electric/power/consumption"));
+const consumption = useObservable(sum.useOverTime("electric/power/consumption", undefined, "h"));
 
 watch(consumption, (val) => console.log("consumption", val));
 
