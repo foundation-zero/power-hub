@@ -5,6 +5,9 @@ import ZeroPercent from "@/components/slides/thermal/ZeroPercent.vue";
 import HeatRadiation from "@/components/slides/thermal/HeatRadiation.vue";
 import HeatTubes from "@/components/slides/thermal/HeatTubes.vue";
 import HeatPipesGauge from "@/components/slides/thermal/HeatPipesGauge.vue";
+import ChillPowerGauge from "@/components/slides/thermal/ChillPower.vue";
+import CompoundTemperature from "@/components/slides/thermal/CompoundTemperature.vue";
+import BatteryGauge from "@/components/slides/thermal/BatteryGauge.vue";
 import FiftyPercent from "@/components/slides/thermal/FiftyPercent.vue";
 import EfficientAt from "@/components/slides/thermal/EfficientAt.vue";
 
@@ -23,6 +26,6 @@ export default [
     HeatTubes,
     FiftyPercent,
     EfficientAt,
-    HeatPipesGauge,
+    CompoundTemperature,
   ],
 ] as [duration: number, ...slides: (typeof Base)[]][];

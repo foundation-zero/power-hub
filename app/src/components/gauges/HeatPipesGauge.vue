@@ -45,7 +45,7 @@
         y="117.1"
       >
         <AnimatedNumber
-          :to="temperatureDiffernce"
+          :to="temperatureDifference"
           :format="formattedInt"
           tag="tspan"
         />
@@ -350,12 +350,11 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt } from "@/utils/numbers";
-import { ref } from "vue";
+import { formattedInt, useRandomNumber } from "@/utils/numbers";
 import AnimatedNumber from "vue-number-animation";
 
-const heatPipePower = ref(12);
-const temperatureDiffernce = ref(12);
-const outputTemperature = ref(80);
-const sunPower = ref(24);
+const heatPipePower = useRandomNumber(4, 12);
+const temperatureDifference = useRandomNumber(10, 20);
+const outputTemperature = useRandomNumber(70, 90);
+const sunPower = useRandomNumber(0, 40);
 </script>
