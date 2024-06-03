@@ -2,6 +2,10 @@ variable "python_app_image_tag" {
   default = "latest"
 }
 
+variable "pagerduty_key" {
+  description = "PagerDuty key"
+}
+
 resource "helm_release" "power_hub_simulation" {
   name   = "power-hub-simulation"
   chart  = "./charts/python-app"
@@ -20,6 +24,11 @@ resource "helm_release" "power_hub_simulation" {
     name = "image.tag"
     value = var.python_app_image_tag
   }
+
+  set {
+    name = "container.env.PAGERDUTY_KEY"
+    value = var.pagerduty_key
+  } 
 
   set {
     name  = "container.envFromSecrets.MQTT_PASSWORD.secretName"
