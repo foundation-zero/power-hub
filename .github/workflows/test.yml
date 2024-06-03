@@ -38,11 +38,14 @@ jobs:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
           OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
+          PAGERDUTY_KEY: ${{ secrets.PAGERDUTY_KEY}}
       
       - name: Clear docker volumes
         run: docker-compose down -v
 
       - run: docker-compose up -d
+        env:
+          PAGERDUTY_KEY: ${{ secrets.PAGERDUTY_KEY}}
   
       - name: Simulation integration tests
         run: poetry run pytest -s --runintegration tests/test_simulation_integration.py
