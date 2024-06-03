@@ -823,4 +823,5 @@ class PowerHub(Network[PowerHubSensors]):
                     getattr(context.subject, sensor.name),
                     appliance,
                 )
-        return context.result()
+
+        return context.result(datetime.fromisoformat(sensors["time"]))
