@@ -2340,6 +2340,20 @@ files = [
 ]
 
 [[package]]
+name = "pdpyras"
+version = "5.2.0"
+description = "PagerDuty Python REST API Sessions"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pdpyras-5.2.0.tar.gz", hash = "sha256:e1c9fed3be5d4ec532de62a493b21eff3d04210a6b0d6bba47b637c3bf4ecf88"},
+]
+
+[package.dependencies]
+requests = "*"
+urllib3 = "*"
+
+[[package]]
 name = "pexpect"
 version = "4.9.0"
 description = "Pexpect allows easy control of interactive console applications."
@@ -3823,4 +3837,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "5f4367e472bb8201eec2bc0b64b0b37488e78b1cb3ec1c21882c14fdc1099a2c"
+content-hash = "40f6b6ccb4d00297cc9e2bae15fe2a7ef92c5f86dad5ef2ee5468b87b931c873"
