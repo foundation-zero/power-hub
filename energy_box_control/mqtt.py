@@ -10,7 +10,9 @@ import random
 from datetime import datetime
 import json
 import time
+from energy_box_control.checks import Severity
 from energy_box_control.custom_logging import get_logger
+from energy_box_control.monitoring import NotificationEvent, Notifier
 
 from energy_box_control.config import CONFIG
 
@@ -89,6 +91,7 @@ def publish_value_to_mqtt(
     topic: str,
     value: float,
     value_timestamp: datetime,
+    notifier: Notifier,
 ):
 
     result = publish_to_mqtt(
@@ -97,6 +100,7 @@ def publish_value_to_mqtt(
         json.dumps(
             {"value": value, "timestamp": time.mktime(value_timestamp.timetuple())}
         ),
+        notifier,
     )
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
         logger.info(
@@ -105,7 +109,10 @@ def publish_value_to_mqtt(
 
 
 def publish_to_mqtt(
-    client: mqtt_client.Client, topic: str, json_str: str
+    client: mqtt_client.Client,
+    topic: str,
+    json_str: str,
+    notifier: Notifier,
 ) -> MQTTMessageInfo:
     result = client.publish(topic, json_str, qos=1)
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
@@ -114,6 +121,18 @@ def publish_to_mqtt(
         logger.error(
             f"Failed to send message to topic {topic} with error code: {result.rc}, client connected: {client.is_connected()}"
         )
+
+        notifier.send_events(
+            [
+                NotificationEvent(
+                    f"Failed to publish to MQTT: {result.rc}, please check the logs.",
+                    "power_hub_simulation_mqtt",
+                    "mqtt_publish",
+                    Severity.ERROR,
+                )
+            ]
+        )
+
     return result
 
 

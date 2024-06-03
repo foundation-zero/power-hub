@@ -2,6 +2,11 @@ import math
 
 from dataclasses import dataclass
 import schedule
+from energy_box_control.monitoring import (
+    Monitor,
+    Notifier,
+    PagerDutyNotificationChannel,
+)
 from energy_box_control.custom_logging import get_logger
 import queue
 from energy_box_control.network import NetworkState
@@ -16,6 +21,7 @@ from energy_box_control.power_hub.control import (
 
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.power_hub.sensors import sensor_values
+from energy_box_control.checks import checks
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
@@ -32,6 +38,7 @@ from functools import partial
 from energy_box_control.sensors import sensors_to_json
 
 import asyncio
+from energy_box_control.config import CONFIG
 
 logger = get_logger(__name__)
 
@@ -48,11 +55,14 @@ def publish_sensor_values(
     appliance_sensor_values: dict[str, float],
     mqtt_client: mqtt_client.Client,
     simulation_timestamp: datetime,
+    notifier: Notifier,
 ):
     for field_name, value in appliance_sensor_values.items():
         if not math.isnan(value):
             topic = f"{MQTT_TOPIC_BASE}/appliance_sensors/{appliance_name}/{field_name}"
-            publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
+            publish_value_to_mqtt(
+                mqtt_client, topic, value, simulation_timestamp, notifier
+            )
 
 
 def queue_on_message(
@@ -72,9 +82,18 @@ class SimulationResult:
     state: NetworkState[PowerHub]
     control_state: PowerHubControlState
 
-    def step(self, mqtt_client: mqtt_client.Client) -> "SimulationResult":
+    def step(
+        self, mqtt_client: mqtt_client.Client, monitor: Monitor, notifier: Notifier
+    ) -> "SimulationResult":
         power_hub_sensors = self.power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
+        )
+
+        notifier.send_events(
+            monitor.run_sensor_values_checks(
+                power_hub_sensors,
+                "power_hub_simulation",
+            )
         )
 
         control_state, control_values = control_power_hub(
@@ -85,6 +104,7 @@ class SimulationResult:
             mqtt_client,
             CONTROL_VALUES_TOPIC,
             control_to_json(self.power_hub, control_values),
+            notifier,
         )
         control_values = control_from_json(
             self.power_hub, control_values_queue.get(block=True)
@@ -97,6 +117,7 @@ class SimulationResult:
             mqtt_client,
             SENSOR_VALUES_TOPIC,
             sensors_to_json(power_hub_sensors),
+            notifier,
         )
 
         for sensor_field in fields(power_hub_sensors):
@@ -105,6 +126,7 @@ class SimulationResult:
                 sensor_values(sensor_field.name, power_hub_sensors),
                 mqtt_client,
                 state.time.timestamp,
+                notifier,
             )
 
         return SimulationResult(self.power_hub, state, control_state)
@@ -121,7 +143,10 @@ async def run(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    power_hub = PowerHub.power_hub(schedules)
+    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
+    monitor = Monitor(checks)
+
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
@@ -132,9 +157,7 @@ async def run(
     power_hub_sensors = power_hub.sensors_from_state(state)
 
     publish_to_mqtt(
-        mqtt_client,
-        SENSOR_VALUES_TOPIC,
-        sensors_to_json(power_hub_sensors),
+        mqtt_client, SENSOR_VALUES_TOPIC, sensors_to_json(power_hub_sensors), notifier
     )
 
     result = SimulationResult(power_hub, state, control_state)
@@ -150,7 +173,7 @@ async def run(
         schedule.run_pending()
         try:
             run_queue.get_nowait()
-            result = result.step(mqtt_client)
+            result = result.step(mqtt_client, monitor, notifier)
             if steps and steps < result.state.time.step:
                 schedule.cancel_job(step)
                 break
