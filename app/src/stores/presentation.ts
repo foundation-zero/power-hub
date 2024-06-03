@@ -16,6 +16,7 @@ import { computed, ref } from "vue";
 import Base from "@/components/slides/water/BaseWater.vue";
 import slidesWater from "./slides/water";
 import slidesElectrical from "./slides/electrical";
+import slidesThermal from "./slides/thermal";
 
 const componentStateFn = (component: PowerHubComponent): ComponentElement => ({
   component,
@@ -29,7 +30,7 @@ const createStreams = (amountOfStreams: number) =>
 
 const journeyComponents: Record<Journey, [duration: number, ...slides: (typeof Base)[]][]> = {
   electrical: slidesElectrical,
-  heat: [],
+  heat: slidesThermal,
   water: slidesWater,
 };
 

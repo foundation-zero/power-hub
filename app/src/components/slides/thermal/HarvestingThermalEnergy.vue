@@ -7,22 +7,27 @@
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
+      font-family="Five Gothic"
       font-size="40"
       letter-spacing="0em"
-      transform="translate(410, 500)"
     >
       <tspan
-        x="-1"
-        y="28.2"
+        x="396"
+        y="736.7"
       >
-        Reusing water is more
+        Harvesting thermal&#10;
       </tspan>
       <tspan
-        x="-1"
-        y="74.2"
+        x="396"
+        y="782.7"
       >
-        efficient than making new
+        energy from sunlight using &#10;
+      </tspan>
+      <tspan
+        x="396"
+        y="828.7"
+      >
+        heat tubes
       </tspan>
     </text>
   </AnimatedSlide>
@@ -32,7 +37,7 @@
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "ReusingWater",
+  name: "HarvestingThermalEnergy",
   components: { AnimatedSlide },
 };
 </script>

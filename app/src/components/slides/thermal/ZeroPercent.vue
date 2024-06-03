@@ -1,20 +1,21 @@
 <template>
   <AnimatedSlide fade>
     <text
-      fill="#D4D4D4"
+      fill="#E6E6E6"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
+      font-family="Five Gothic"
       font-size="270"
       font-weight="bold"
       letter-spacing="0em"
-      transform="translate(938, 146)"
-      ><tspan
-        x="-7"
-        y="187.1"
-        >3x</tspan
-      ></text
     >
+      <tspan
+        x="1176"
+        y="413.6"
+      >
+        0%
+      </tspan>
+    </text>
   </AnimatedSlide>
 </template>
 
@@ -22,7 +23,7 @@
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "ThreeTimes",
+  name: "ZeroPercent",
   components: { AnimatedSlide },
 };
 </script>

@@ -1,5 +1,8 @@
 <template>
-  <AnimatedSlide fade>
+  <AnimatedSlide
+    fade
+    delay
+  >
     <text
       fill="black"
       xml:space="preserve"

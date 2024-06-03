@@ -57,7 +57,7 @@
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "WaterBase",
+  name: "BaseWater",
   components: { AnimatedSlide },
 };
 </script>

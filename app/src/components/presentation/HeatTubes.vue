@@ -102,10 +102,13 @@ import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
 import { map } from "rxjs";
+import { ref } from "vue";
 
-const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
+const { powerHub } = defineProps<{ powerHub?: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMqtt("heat_pipes/power").pipe(map(({ value }) => value))),
+  powerHub
+    ? useObservable(powerHub.sensors.useMqtt("heat_pipes/power").pipe(map(({ value }) => value)))
+    : ref(0),
 );
 </script>

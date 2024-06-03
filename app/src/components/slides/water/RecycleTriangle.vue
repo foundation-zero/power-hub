@@ -23,15 +23,3 @@ export default {
   components: { AnimatedSlide },
 };
 </script>
-
-<style scoped lang="scss">
-div {
-  will-change: transform;
-  transition: transform 750ms ease;
-
-  &.slide-leave-to,
-  &.slide-enter-from {
-    transform: scale(2, 2);
-  }
-}
-</style>

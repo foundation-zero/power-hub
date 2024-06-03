@@ -116,24 +116,24 @@ const start = async () => {
   if (!isRunning.value) return;
 
   try {
-    toggleWidgets(true);
-    activateAllComponents();
-    await sleep(5000);
-    setJourney("electrical");
-    await deactivateAll("electrical");
-    await activateStream("electrical");
-    await sleep(3000);
-    await toggleWidgets(false);
-    hideAll("electrical");
-    await toggleWaves(false);
-    await startSlideShow("electrical");
-    showAll();
-    await toggleWaves(true);
-    await toggleWidgets(true);
+    // toggleWidgets(true);
+    // activateAllComponents();
+    // await sleep(5000);
+    // setJourney("electrical");
+    // await deactivateAll("electrical");
+    // await activateStream("electrical");
+    // await sleep(3000);
+    // await toggleWidgets(false);
+    // hideAll("electrical");
+    // await toggleWaves(false);
+    // await startSlideShow("electrical");
+    // showAll();
+    // await toggleWaves(true);
+    // await toggleWidgets(true);
     setJourney("heat");
-    await deactivateAll("heat");
-    await activateStream("heat");
-    await sleep(3000);
+    // await deactivateAll("heat");
+    // await activateStream("heat");
+    // await sleep(3000);
     await toggleWidgets(false);
     hideAll("heat");
     await toggleWaves(false);
@@ -141,20 +141,20 @@ const start = async () => {
     showAll();
     await toggleWaves(true);
     await toggleWidgets(true);
-    setJourney("water");
-    await deactivateAll("water");
-    await activateStream("water");
-    startWaterFlow("water");
-    await sleep(5000);
-    await toggleWidgets(false);
-    hideAll("water");
-    await toggleWaves(false);
-    await startSlideShow("water");
-    showAll();
-    await toggleWaves(true);
-    await toggleWidgets(true);
+    // setJourney("water");
+    // await deactivateAll("water");
+    // await activateStream("water");
+    // startWaterFlow("water");
+    // await sleep(5000);
+    // await toggleWidgets(false);
+    // hideAll("water");
+    // await toggleWaves(false);
+    // await startSlideShow("water");
+    // showAll();
+    // await toggleWaves(true);
+    // await toggleWidgets(true);
 
-    deactivateAll("electrical");
+    // deactivateAll("electrical");
 
     setTimeout(start);
   } catch (e) {

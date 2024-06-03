@@ -1,28 +1,24 @@
 <template>
-  <AnimatedSlide
-    fade
-    delay
-  >
+  <AnimatedSlide fade>
     <text
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
-      font-size="40"
+      font-family="Five Gothic"
+      font-size="50"
       letter-spacing="0em"
-      transform="translate(410, 500)"
     >
       <tspan
-        x="-1"
-        y="28.2"
+        x="396"
+        y="724.5"
       >
-        Reusing water is more
+        How does &#10;
       </tspan>
       <tspan
-        x="-1"
-        y="74.2"
+        x="396"
+        y="781.5"
       >
-        efficient than making new
+        it work?
       </tspan>
     </text>
   </AnimatedSlide>
@@ -32,7 +28,7 @@
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "ReusingWater",
+  name: "HowDoesItWork",
   components: { AnimatedSlide },
 };
 </script>
