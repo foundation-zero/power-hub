@@ -55,11 +55,14 @@ def publish_sensor_values(
     appliance_sensor_values: dict[str, float],
     mqtt_client: mqtt_client.Client,
     simulation_timestamp: datetime,
+    notifier: Notifier,
 ):
     for field_name, value in appliance_sensor_values.items():
         if not math.isnan(value):
             topic = f"{MQTT_TOPIC_BASE}/appliance_sensors/{appliance_name}/{field_name}"
-            publish_value_to_mqtt(mqtt_client, topic, value, simulation_timestamp)
+            publish_value_to_mqtt(
+                mqtt_client, topic, value, simulation_timestamp, notifier
+            )
 
 
 def queue_on_message(
@@ -114,6 +117,7 @@ class SimulationResult:
             mqtt_client,
             SENSOR_VALUES_TOPIC,
             sensors_to_json(power_hub_sensors),
+            notifier,
         )
 
         for sensor_field in fields(power_hub_sensors):
@@ -122,6 +126,7 @@ class SimulationResult:
                 sensor_values(sensor_field.name, power_hub_sensors),
                 mqtt_client,
                 state.time.timestamp,
+                notifier,
             )
 
         return SimulationResult(self.power_hub, state, control_state)
@@ -138,7 +143,7 @@ async def run(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    notifier = Notifier(PagerDutyNotificationChannel(CONFIG.pagerduty_key))
+    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
     monitor = Monitor(checks)
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())

@@ -4,7 +4,7 @@ from energy_box_control.checks import Check, Severity
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
-from typing import Optional, Protocol
+from typing import Protocol
 from energy_box_control.config import CONFIG
 
 
@@ -25,10 +25,9 @@ class NotificationChannel(Protocol):
 
 class PagerDutyNotificationChannel(NotificationChannel):
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
-        if api_key:
-            self._events_session = pdpyras.EventsAPISession(api_key)
-            self._events_session.url = "https://events.eu.pagerduty.com/"
+    def __init__(self, api_key: str) -> None:
+        self._events_session = pdpyras.EventsAPISession(api_key)
+        self._events_session.url = "https://events.eu.pagerduty.com/"
 
     def send_event(self, event: NotificationEvent):
         logger.info("Sending alert to PagerDuty")
@@ -37,12 +36,13 @@ class PagerDutyNotificationChannel(NotificationChannel):
 
 
 class Notifier:
-    def __init__(self, notification_channel: NotificationChannel):
-        self._notification_channel = notification_channel
+    def __init__(self, notification_channels: list[NotificationChannel] = []):
+        self._notification_channels = notification_channels
 
     def send_events(self, events: list[NotificationEvent]):
         for event in events:
-            self._notification_channel.send_event(event)
+            for channel in self._notification_channels:
+                channel.send_event(event)
 
 
 class Monitor:

@@ -69,6 +69,8 @@ services:
       - power_hub_simulation
     env_file:
       - .env
+    environment:
+      - PAGERDUTY_KEY=$PAGERDUTY_KEY
     restart: on-failure:5
 
   power_hub_api:

@@ -21,3 +21,11 @@ def test_run_sensor_values_checks():
         dedup_key="pcm_temperature_check",
         severity=Severity.ERROR,
     )
+
+
+def test_send_events(mocker):
+    channel = PagerDutyNotificationChannel("test")
+    mocker.patch.object(channel, "send_event")
+    notifier = Notifier([channel])
+    notifier.send_events([NotificationEvent("test", "test", "test", Severity.CRITICAL)])
+    channel.send_event.assert_called_once()  # type: ignore
