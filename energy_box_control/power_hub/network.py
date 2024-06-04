@@ -171,9 +171,9 @@ class PowerHub(Network[PowerHubSensors]):
     fresh_water_pump: SwitchPump
     fresh_water_source: Source
     outboard_exchange: HeatExchanger  # W-1007
-    outboard_pump: SwitchPump  # P-1004
+    outboard_pump: SwitchPump  # P-1002
     outboard_source: Source
-    cooling_demand_pump: SwitchPump
+    cooling_demand_pump: SwitchPump  # P-1007
     cooling_demand: CoolingSink
     pv_panel: PVPanel
     sea_water_source: Source
