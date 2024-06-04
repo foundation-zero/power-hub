@@ -139,7 +139,8 @@ class Setpoints:
     preheat_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of the preheat reservoir"
     )
-    filter_water_tank: ProcessTime = setpoint("trigger filtering of water tank")
+    trigger_filter_water_tank: ProcessTime = setpoint("trigger filtering of water tank")
+    stop_filter_water_tank: ProcessTime = setpoint("stop filtering of water tank")
 
 
 @dataclass
@@ -171,8 +172,11 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
             preheat_reservoir_min_temperature=25,
-            filter_water_tank=ProcessTime(
-                timedelta(seconds=60), 10, datetime(2017, 6, 1, 0, 0, 0)
+            trigger_filter_water_tank=ProcessTime(
+                timedelta(seconds=1), 10, datetime(2017, 6, 1, 0, 0, 0)
+            ),
+            stop_filter_water_tank=ProcessTime(
+                timedelta(seconds=1), 25, datetime(2017, 6, 1, 0, 0, 0)
             ),
         ),
         hot_control=HotControlState(
@@ -642,12 +646,13 @@ water_transitions: dict[
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
     (WaterControlMode.READY, WaterControlMode.FILTER_TANK): Fn.state(
-        lambda state: state.setpoints.filter_water_tank
-    ).elapsed(timedelta(minutes=30)),
+        lambda state: state.setpoints.trigger_filter_water_tank
+    ).elapsed(timedelta(seconds=5)),
     (WaterControlMode.FILTER_TANK, WaterControlMode.READY): Fn.const_pred(
         True
-    ).holds_true(
-        Marker("filter tank"), timedelta(minutes=30)
+    ).holds_true(Marker("filter tank"), timedelta(minutes=30))
+    | Fn.state(lambda state: state.setpoints.stop_filter_water_tank).elapsed(
+        timedelta(seconds=5)
     ),  # 35 l/min pump
 }
 
