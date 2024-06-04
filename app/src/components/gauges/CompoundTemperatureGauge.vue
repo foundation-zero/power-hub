@@ -109,7 +109,7 @@
     >
       <tspan
         text-anchor="end"
-        x="156"
+        x="158"
         y="142.4"
       >
         <AnimatedNumber

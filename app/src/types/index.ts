@@ -1,5 +1,7 @@
 import type { CamelCase, SnakeCase } from "type-fest";
 import type { PowerHubComponent } from "./power-hub";
+import type BaseWater from "@/components/slides/water/BaseWater.vue";
+import type { PresentationStore } from "@/stores/presentation";
 export * as PowerHub from "./power-hub";
 
 //@see https://stackoverflow.com/questions/58434389/typescript-deep-keyof-of-a-nested-object/76131375#76131375
@@ -34,6 +36,7 @@ export type ComponentState = {
   active?: boolean;
   muted?: boolean;
   highlighted?: boolean;
+  dashed?: boolean;
 };
 
 export type ComponentElement = {
@@ -59,6 +62,7 @@ export type StreamState = {
   active?: boolean;
   muted?: boolean;
   flowing?: boolean;
+  dashed?: boolean;
 };
 
 export type PipeState = {
@@ -76,3 +80,11 @@ export type Muteable = {
 export type Flowable = {
   flowing?: boolean;
 };
+
+export type PresentationComponent = typeof BaseWater;
+
+export type PresentationAction = (store: PresentationStore) => void | Promise<void>;
+
+export type PresentationItem =
+  | PresentationAction
+  | [duration: number, ...components: PresentationComponent[]];

@@ -12,7 +12,7 @@ import CompoundTemperatureGague from "../../gauges/CompoundTemperatureGauge.vue"
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "HeatPipesGaugeAnimated",
+  name: "CompoundTemperatureAnimated",
   components: { AnimatedSlide, CompoundTemperatureGague },
 };
 </script>

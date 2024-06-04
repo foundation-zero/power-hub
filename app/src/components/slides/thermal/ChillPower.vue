@@ -12,7 +12,7 @@ import ChillPowerGauge from "../../gauges/ChillPowerGauge.vue";
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "HeatPipesGaugeAnimated",
+  name: "ChillPowerGaugeAnimated",
   components: { AnimatedSlide, ChillPowerGauge },
 };
 </script>

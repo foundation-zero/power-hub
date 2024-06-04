@@ -6,16 +6,10 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <path
-      d="M345 102H453.617L481 126.5L453.617 151H345"
-      stroke="#D4999D"
-      stroke-width="2"
-    />
     <text
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="14"
       letter-spacing="0em"
     >
@@ -30,7 +24,6 @@
       fill="#5A5A5A"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="18"
       font-weight="600"
       letter-spacing="0em"
@@ -66,14 +59,13 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="80"
       font-weight="bold"
       letter-spacing="0em"
     >
       <tspan
         text-anchor="end"
-        x="140"
+        x="138"
         y="137.4"
       >
         <AnimatedNumber
@@ -87,7 +79,6 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="25"
       letter-spacing="0em"
     >
@@ -135,7 +126,6 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="20"
       font-weight="600"
       letter-spacing="0em"
@@ -162,7 +152,6 @@
       fill="#5A5A5A"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="14"
       font-weight="600"
       letter-spacing="0em"
@@ -211,7 +200,6 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="20"
       font-weight="600"
       letter-spacing="0em"
@@ -238,7 +226,6 @@
       fill="#5A5A5A"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="14"
       font-weight="600"
       letter-spacing="0em"
@@ -293,7 +280,6 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="20"
       font-weight="600"
       letter-spacing="0em"
@@ -333,7 +319,6 @@
       fill="#5A5A5A"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="14"
       font-weight="600"
       letter-spacing="0em"
@@ -362,6 +347,8 @@
 import { formattedInt, useRandomNumber } from "@/utils/numbers";
 import { computed } from "vue";
 import AnimatedNumber from "vue-number-animation";
+
+defineProps<{ outline?: boolean }>();
 
 const charging = useRandomNumber(4, 12);
 const discharging = useRandomNumber(10, 20);

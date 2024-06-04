@@ -5,18 +5,17 @@ import type {
   JourneyFlow,
   JourneyFlowWithState,
   PipeState,
+  PresentationComponent,
   StreamState,
 } from "@/types";
 import type { PowerHubComponent } from "@/types/power-hub";
-import { mapFn, sleep } from "@/utils";
-import type { Position } from "@vueuse/core";
+import { mapFn, useSleep } from "@/utils";
+import { type Position } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-import Base from "@/components/slides/water/BaseWater.vue";
-import slidesWater from "./slides/water";
-import slidesElectrical from "./slides/electrical";
-import slidesThermal from "./slides/thermal";
+import journeyItems from "./slides";
+import { isFunction } from "rxjs/internal/util/isFunction";
 
 const componentStateFn = (component: PowerHubComponent): ComponentElement => ({
   component,
@@ -28,14 +27,8 @@ const streamStateFn = (): StreamState => ({});
 const createStreams = (amountOfStreams: number) =>
   new Array(amountOfStreams).fill(null).map(streamStateFn);
 
-const journeyComponents: Record<Journey, [duration: number, ...slides: (typeof Base)[]][]> = {
-  electrical: slidesElectrical,
-  heat: slidesThermal,
-  water: slidesWater,
-};
-
 export const usePresentationStore = defineStore("presentation", () => {
-  const slides = ref<(typeof Base)[]>([]);
+  const slides = ref<PresentationComponent[]>([]);
   const isRunning = ref(false);
   const showWidgets = ref(false);
   const showWaves = ref(true);
@@ -96,23 +89,39 @@ export const usePresentationStore = defineStore("presentation", () => {
     },
   });
 
-  const startSlideShow = async (journey: Journey) => {
-    isRunning.value = true;
+  const sleep = useSleep(isRunning);
 
-    for (const [duration, ...currentSlides] of journeyComponents[journey]) {
-      if (!isRunning.value) break;
+  const run = async () => {
+    if (!isRunning.value) return;
 
-      slides.value = currentSlides;
+    try {
+      for (const item of journeyItems) {
+        if (isFunction(item)) {
+          await item(usePresentationStore());
+        } else {
+          const [duration, ...components] = item;
+          slides.value = components;
 
-      await sleep(duration);
+          await sleep(duration);
+        }
+      }
+
       slides.value = [];
+      setTimeout(run);
+    } catch (e) {
+      if (e !== "aborted") {
+        console.log(e);
+        isRunning.value = false;
+      }
     }
-
-    await sleep(750);
-    isRunning.value = false;
   };
 
-  const stopSlideShow = () => {
+  const start = async () => {
+    isRunning.value = true;
+    run();
+  };
+
+  const stop = () => {
     isRunning.value = false;
     slides.value = [];
   };
@@ -147,10 +156,10 @@ export const usePresentationStore = defineStore("presentation", () => {
   };
 
   return {
-    startSlideShow,
+    start,
     slides,
     isRunning,
-    stopSlideShow,
+    stop,
     components,
     currentJourney,
     componentStates,
@@ -166,5 +175,8 @@ export const usePresentationStore = defineStore("presentation", () => {
     getComponentState,
     getPosition,
     setPosition,
+    sleep,
   };
 });
+
+export type PresentationStore = ReturnType<typeof usePresentationStore>;
