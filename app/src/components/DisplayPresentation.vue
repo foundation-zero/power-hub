@@ -21,14 +21,14 @@
 </template>
 
 <script setup lang="ts">
-import MapLegend from "./presentation/MapLegend.vue";
-import FZLogo from "./presentation/FZLogo.vue";
-import InnerWaves from "./presentation/InnerWaves.vue";
-import OuterWaves from "./presentation/OuterWaves.vue";
-import PhaseLanes from "./presentation/PhaseLanes.vue";
-import PipeLines from "./presentation/PipeLines.vue";
-import PipeStreams from "./presentation/PipeStreams.vue";
-import PowerHubComponents from "./presentation/PowerHubComponents.vue";
+import MapLegend from "./map/MapLegend.vue";
+import FZLogo from "./map/FZLogo.vue";
+import InnerWaves from "./map/InnerWaves.vue";
+import OuterWaves from "./map/OuterWaves.vue";
+import PhaseLanes from "./map/PhaseLanes.vue";
+import PipeLines from "./map/PipeLines.vue";
+import PipeStreams from "./map/PipeStreams.vue";
+import PowerHubComponents from "./map/PowerHubComponents.vue";
 
 import { usePresentationStore } from "@/stores/presentation";
 import { onMounted, onDeactivated } from "vue";

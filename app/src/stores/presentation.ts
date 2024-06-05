@@ -58,16 +58,18 @@ export const usePresentationStore = defineStore("presentation", () => {
 
   const pipes = ref<PipeState>({
     active: true,
+    muted: false,
   });
 
   const journeys = ref<Record<Journey, JourneyFlow>>({
     heat: {
-      streams: createStreams(5),
+      streams: createStreams(7),
       components: [
         "sun",
         "heat-tubes",
         "heat-storage",
         "absorption-chiller",
+        "power-battery",
         "compression-chiller",
         "cooling-demand",
       ],
@@ -88,6 +90,8 @@ export const usePresentationStore = defineStore("presentation", () => {
       components: ["sun", "solar-panels", "power-battery", "system-demand"],
     },
   });
+
+  journeys.value.heat.streams[3].skip = true;
 
   const sleep = useSleep(isRunning);
 

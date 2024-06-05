@@ -1,5 +1,5 @@
 import type { Journey, PresentationAction } from "@/types";
-import { activate, deactivate, mute, stopFlow, unmute } from "@/utils";
+import { activate, deactivate, dehighlight, hide, highlight, reset, show, stopFlow } from "@/utils";
 import { zip } from "lodash";
 import { toRefs } from "vue";
 
@@ -16,12 +16,11 @@ export const deactivateAll = (nextJourney: Journey) =>
     componentStates.forEach(deactivate);
     activate(components[0]);
 
-    streamStates.forEach(mute);
+    streamStates.forEach(hide);
 
     await sleep(COMPONENT_ANIMATION_IN_MS);
 
     streamStates.forEach(deactivate);
-    streamStates.forEach(unmute);
     streamStates.forEach(stopFlow);
   });
 
@@ -30,17 +29,18 @@ export const activateStream = (journey: Journey) =>
     const { streams, components } = getFlow(journey);
 
     for (const [component, stream] of zip(components, streams)) {
-      if (component) {
-        component.active = true;
-        component.highlighted = true;
+      if (!component) return;
 
-        await sleep(COMPONENT_ANIMATION_IN_MS);
+      activate(component);
+      highlight(component);
 
-        component.highlighted = false;
-      }
+      await sleep(COMPONENT_ANIMATION_IN_MS);
 
-      if (stream) {
-        stream.active = true;
+      dehighlight(component);
+
+      if (stream && !stream.skip) {
+        show(stream);
+        activate(stream);
         await sleep(500);
       }
     }
@@ -48,15 +48,15 @@ export const activateStream = (journey: Journey) =>
 
 export const hideAll = (nextJourney: Journey) =>
   actionFn(({ componentStates, getFlow, pipes }) => {
-    componentStates.forEach(mute);
+    componentStates.forEach(hide);
     const { components } = getFlow(nextJourney);
-    components.forEach(unmute);
+    components.forEach(show);
     deactivate(pipes);
   });
 
 export const showAll = actionFn(({ componentStates, pipes }) => {
-  componentStates.forEach(unmute);
-  pipes.active = true;
+  componentStates.forEach(show);
+  activate(pipes);
 });
 
 export const toggleWaves = (show: boolean) =>
@@ -74,3 +74,9 @@ export const toggleWidgets = (show: boolean) =>
 export const activateAllComponents = actionFn(({ componentStates }) =>
   componentStates.forEach(activate),
 );
+
+export const resetAll = actionFn(({ pipes, componentStates, streamStates }) => {
+  componentStates.forEach(reset);
+  streamStates.forEach(reset);
+  pipes.muted = false;
+});

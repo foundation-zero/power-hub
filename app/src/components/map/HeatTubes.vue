@@ -112,3 +112,15 @@ const { value, unit } = useAsWatts(
     : ref(0),
 );
 </script>
+
+<style scoped lang="scss">
+#heat-tubes {
+  will-change: transform;
+  transition: transform 750ms ease;
+
+  &.outlined {
+    transition-duration: 3000ms;
+    transform: scale(1.5, 1.5);
+  }
+}
+</style>

@@ -109,3 +109,9 @@ const { value, unit } = useAsWatts(
   ),
 );
 </script>
+
+<style scoped lang="scss">
+.component.outlined circle {
+  stroke: #afe7eb;
+}
+</style>

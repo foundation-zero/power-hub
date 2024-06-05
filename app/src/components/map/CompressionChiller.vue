@@ -8,10 +8,12 @@
     viewBox="0 0 120 112"
   >
     <rect
-      x="1"
+      x="112"
+      y="112.001"
       width="111"
       height="112"
       rx="55.5"
+      transform="rotate(180 112 112.001)"
       class="fill"
       fill="#ECD2D4"
     />
@@ -105,6 +107,20 @@
       />
     </g>
     <defs>
+      <linearGradient
+        id="paint0_linear_505_2356"
+        x1="112"
+        y1="169.563"
+        x2="223"
+        y2="166.439"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stop-color="#AFE7EB" />
+        <stop
+          offset="1"
+          stop-color="#FFEFB9"
+        />
+      </linearGradient>
       <clipPath id="clip0_518_1913">
         <rect
           width="15"
@@ -133,3 +149,9 @@ const { value, unit } = useAsWatts(
   useObservable(powerHub.sensors.useMqtt("chiller/chill_power").pipe(map(({ value }) => value))),
 );
 </script>
+
+<style scoped lang="scss">
+.outlined rect {
+  fill: url(#paint0_linear_505_2356);
+}
+</style>

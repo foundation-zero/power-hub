@@ -82,12 +82,12 @@ $ttime: 750ms;
     will-change: fill, stroke;
   }
 
-  &.muted {
-    opacity: 0;
-  }
-
   &.highlighted {
     animation: pulse 750ms ease-out;
+  }
+
+  &.hidden {
+    opacity: 0;
   }
 
   &:not(.active) {

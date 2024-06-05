@@ -8,9 +8,12 @@
     viewBox="0 0 114 112"
   >
     <rect
+      x="115"
+      y="112.001"
       width="111"
       height="112"
       rx="55.5"
+      transform="rotate(180 113 112.001)"
       class="fill"
       fill="#ECD2D4"
     />
@@ -113,6 +116,23 @@
       stroke="#6D6D6D"
       stroke-linecap="round"
     />
+
+    <defs>
+      <linearGradient
+        id="paint0_linear_512_1595"
+        x1="224"
+        y1="168.001"
+        x2="113"
+        y2="168.001"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stop-color="#ECD2D4" />
+        <stop
+          offset="1"
+          stop-color="#ABE8EC"
+        />
+      </linearGradient>
+    </defs>
   </ComponentBase>
 </template>
 
@@ -132,3 +152,9 @@ const { value, unit } = useAsWatts(
   useObservable(powerHub.sensors.useMqtt("yazaki/chill_power").pipe(map(({ value }) => value))),
 );
 </script>
+
+<style scoped lang="scss">
+.outlined rect {
+  fill: url(#paint0_linear_512_1595);
+}
+</style>

@@ -62,11 +62,6 @@
     />
 
     <path
-      d="M600 423.5L775 499.5"
-      stroke="white"
-      stroke-width="4"
-    />
-    <path
       :class="journeys.electrical.streams[0]"
       d="M 280 494 H319 L 376.5 458.5"
       stroke="#EAD17E"
@@ -78,6 +73,7 @@
       stroke="#F9E297"
       stroke-width="4"
     />
+
     <path
       :class="journeys.electrical.streams[2]"
       d="M 668 423 H 940"
@@ -88,35 +84,57 @@
     <path
       :class="journeys.heat.streams[0]"
       d="M 280 494 H 319 L 375 529.5"
-      stroke="#EAD17E"
+      stroke="url(#paint0_linear_481_1151)"
       stroke-width="4"
     />
 
     <path
       :class="journeys.heat.streams[1]"
       d="M480 562L521 562L557 562"
-      stroke="#DCACB0"
+      stroke="#D4999D"
       stroke-width="4"
+    />
+
+    <path
+      :class="{ flowing: journeys.heat.streams[1].flowing }"
+      data-flow
+      d="M480 562L521 562L557 562"
     />
 
     <path
       :class="journeys.heat.streams[2]"
       d="M664.5 585.5L764 629.5"
-      stroke="#DCACB0"
+      stroke="#D4999D"
       stroke-width="4"
     />
 
     <path
+      :class="{ flowing: journeys.heat.streams[2].flowing }"
+      data-flow
+      d="M664.5 585.5L764 629.5"
+    />
+
+    <path
       :class="journeys.heat.streams[4]"
+      d="M611 429L772 496.5"
+      stroke="#FFF0BA"
+      stroke-width="4"
+      fill="rgba(229, 229, 229)"
+    />
+
+    <path
+      :class="journeys.heat.streams[5]"
+      class="chilled"
       d="M 863 536 L 965 581.5 L1067 580"
-      stroke="#DCACB0"
+      stroke="#D4999D"
       stroke-width="4"
     />
 
     <path
-      :class="journeys.heat.streams[4]"
+      :class="journeys.heat.streams[5]"
+      class="chilled"
       d="M 869 628.5 L 965 581.5 L1067 580"
-      stroke="#DCACB0"
+      stroke="#D4999D"
       stroke-width="4"
     />
 
@@ -209,21 +227,37 @@ $ttime: 750ms;
 }
 
 path {
-  will-change: stroke-dashoffset, opacity;
-  transition: opacity $ttime ease;
-  opacity: 0;
+  will-change: stroke-dashoffset, opacity, stroke;
+  transition:
+    opacity $ttime ease,
+    stroke $ttime ease;
+
+  &.chilled.outlined {
+    stroke: #afe7eb;
+  }
 
   &.active {
     opacity: 1;
     animation: snake 500ms linear forwards;
   }
 
-  &.muted {
+  &.hidden {
     opacity: 0;
   }
 
+  &.dashed {
+    opacity: 1;
+    stroke-dasharray: 5 !important;
+  }
+
+  &.outlined {
+    opacity: 1;
+  }
+
   &[data-flow] {
+    opacity: 0;
     stroke-dasharray: 5;
+    stroke-width: 4;
     stroke: white;
 
     &.flowing {
