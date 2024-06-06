@@ -117,16 +117,17 @@ def build_query_range(query_args: ValuesQuery) -> tuple[datetime, datetime]:
 
 
 def values_query(
-    topic_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
+    field_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
 ) -> fluxy.Query:
 
+    # TODO change the way we query topics -> fields
     start, stop = query_range
     return fluxy.pipe(
         fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
         fluxy.range(start, stop),
         fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
-        fluxy.filter(lambda r: r._field == "value"),
-        fluxy.filter(topic_filter),
+        fluxy.filter(field_filter),
+        fluxy.filter(lambda r: r.topic == "power_hub/sensor_values"),
         fluxy.keep(["_value", "_time"]),
     )
 
@@ -308,8 +309,7 @@ async def get_values_for_appliance_sensor(
         await execute_influx_query(
             app.influx,  # type: ignore
             values_query(
-                lambda r: r.topic
-                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                lambda r: r._field == f"{appliance_name}_{field_name}",
                 build_query_range(query_args),
             ),
         )
@@ -328,8 +328,7 @@ async def get_mean_value_for_appliance_sensor(
         app.influx,  # type: ignore
         fluxy.pipe(
             values_query(
-                lambda r: r.topic
-                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                lambda r: r._field == f"{appliance_name}_{field_name}",
                 build_query_range(query_args),
             ),
             fluxy.mean(column="_value"),
@@ -352,8 +351,7 @@ async def get_total_value_for_appliance_sensor(
         app.influx,  # type: ignore
         query=fluxy.pipe(
             values_query(
-                lambda r: r.topic
-                == f"power_hub/appliance_sensors/{appliance_name}/{field_name}",
+                lambda r: r._field == f"{appliance_name}_{field_name}",
                 build_query_range(query_args),
             ),
             fluxy.sum("_value"),
@@ -379,9 +377,7 @@ async def get_electrical_power_consumption(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {
-                            "topic": f"power_hub/appliance_sensors/{appliance_name}/electrical_power"
-                        }
+                        {"_field": f"{appliance_name}_electrical_power"}
                         for appliance_name in appliance_names
                     ],
                 ),
@@ -410,9 +406,7 @@ async def get_electrical_power_consumption_mean(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {
-                            "topic": f"power_hub/appliance_sensors/{appliance_name}/electrical_power"
-                        }
+                        {"_field": f"{appliance_name}_electrical_power"}
                         for appliance_name in appliance_names
                     ],
                 ),
@@ -446,7 +440,7 @@ async def get_electrical_power_production(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {"topic": f"power_hub/appliance_sensors/{appliance_name}/power"}
+                        {"_field": f"{appliance_name}_power"}
                         for appliance_name in appliance_names
                     ],
                 ),

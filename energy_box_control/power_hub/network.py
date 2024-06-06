@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 
 from typing import Self, cast
@@ -120,8 +120,10 @@ class PowerHubSchedules:
             parse_dates=True,
         )
 
-        start = cast(datetime, data.index[0].to_pydatetime())  # type: ignore
-        end = cast(datetime, data.index[-1].to_pydatetime())  # type: ignore
+        start = cast(datetime, data.index[0].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
+
+        end = cast(datetime, data.index[-1].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
+        end.replace(tzinfo=timezone.utc)
 
         global_irradiance_values = cast(
             list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore

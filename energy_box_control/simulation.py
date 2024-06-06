@@ -1,5 +1,3 @@
-import math
-
 from dataclasses import dataclass
 import schedule
 from energy_box_control.monitoring import (
@@ -20,18 +18,15 @@ from energy_box_control.power_hub.control import (
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
-from energy_box_control.power_hub.sensors import sensor_values
 from energy_box_control.checks import checks
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
-    publish_value_to_mqtt,
     publish_to_mqtt,
     run_listener,
 )
 from paho.mqtt import client as mqtt_client
-from dataclasses import fields
-from datetime import datetime
+from datetime import datetime, timezone
 
 from functools import partial
 
@@ -48,21 +43,6 @@ CONTROL_VALUES_TOPIC = "power_hub/control_values"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
 control_values_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
-
-
-def publish_sensor_values(
-    appliance_name: str,
-    appliance_sensor_values: dict[str, float],
-    mqtt_client: mqtt_client.Client,
-    simulation_timestamp: datetime,
-    notifier: Notifier,
-):
-    for field_name, value in appliance_sensor_values.items():
-        if not math.isnan(value):
-            topic = f"{MQTT_TOPIC_BASE}/appliance_sensors/{appliance_name}/{field_name}"
-            publish_value_to_mqtt(
-                mqtt_client, topic, value, simulation_timestamp, notifier
-            )
 
 
 def queue_on_message(
@@ -123,15 +103,6 @@ class SimulationResult:
             notifier,
         )
 
-        for sensor_field in fields(power_hub_sensors):
-            publish_sensor_values(
-                sensor_field.name,
-                sensor_values(sensor_field.name, power_hub_sensors),
-                mqtt_client,
-                state.time.timestamp,
-                notifier,
-            )
-
         return SimulationResult(self.power_hub, state, control_state)
 
 
@@ -152,7 +123,7 @@ async def run(
     power_hub = PowerHub.power_hub(schedules)
 
     state = power_hub.simulate(
-        power_hub.simple_initial_state(start_time=datetime.now()),
+        power_hub.simple_initial_state(start_time=datetime.now(timezone.utc)),
         no_control(power_hub),
     )
 
