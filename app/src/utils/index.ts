@@ -1,11 +1,10 @@
 import type {
   Activatable,
-  Dashable,
   Flowable,
   Hideable,
   Highlightable,
   Muteable,
-  Outlineable,
+  Customizable,
 } from "@/types";
 import { computed, watch, type Ref } from "vue";
 
@@ -56,8 +55,6 @@ export const useSleep = (isRunning: Ref<boolean>) => {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const dash = <T extends Dashable>(item: T) => (item.dashed = true);
-export const undash = <T extends Dashable>(item: T) => (item.dashed = false);
 export const hide = <T extends Hideable>(item: T) => (item.hidden = true);
 export const show = <T extends Hideable>(item: T) => (item.hidden = false);
 export const activate = <T extends Activatable>(item: T) => (item.active = true);
@@ -66,8 +63,8 @@ export const mute = <T extends Muteable>(item: T) => (item.muted = true);
 export const unmute = <T extends Muteable>(item: T) => (item.muted = false);
 export const startFlow = <T extends Flowable>(item: T) => (item.flowing = true);
 export const stopFlow = <T extends Flowable>(item: T) => (item.flowing = false);
-export const outline = <T extends Outlineable>(item: T) => (item.outlined = true);
-export const deoutline = <T extends Outlineable>(item: T) => (item.outlined = false);
+export const customize = <T extends Customizable>(item: T) => (item.custom = true);
+export const decustomize = <T extends Customizable>(item: T) => (item.custom = false);
 export const highlight = <T extends Highlightable>(item: T) => (item.highlighted = true);
 export const dehighlight = <T extends Highlightable>(item: T) => (item.highlighted = false);
 export const reset = <T extends Record<string, boolean>>(item: T) => {

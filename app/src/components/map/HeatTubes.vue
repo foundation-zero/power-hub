@@ -115,10 +115,7 @@ const { value, unit } = useAsWatts(
 
 <style scoped lang="scss">
 #heat-tubes {
-  will-change: transform;
-  transition: transform 750ms ease;
-
-  &.outlined {
+  &.custom {
     transition-duration: 3000ms;
     transform: scale(1.5, 1.5);
   }

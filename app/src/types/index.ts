@@ -32,7 +32,7 @@ export type HistoricalData<T extends string | Date = string, V = string | number
 
 export type Journey = "electrical" | "heat" | "water";
 
-export type ComponentState = Activatable & Highlightable & Hideable & Dashable & Outlineable;
+export type ComponentState = Activatable & Highlightable & Hideable & Flowable & Customizable;
 
 export type ComponentElement = {
   component: PowerHubComponent;
@@ -56,9 +56,8 @@ export type JourneyFlowWithState = {
 export type StreamState = Activatable &
   Hideable &
   Muteable &
-  Flowable &
-  Dashable &
-  Outlineable & {
+  Customizable &
+  Flowable & {
     skip?: boolean;
   };
 
@@ -83,12 +82,8 @@ export type Flowable = {
   flowing?: boolean;
 };
 
-export type Outlineable = {
-  outlined?: boolean;
-};
-
-export type Dashable = {
-  dashed?: boolean;
+export type Customizable = {
+  custom?: boolean;
 };
 
 export type Highlightable = {

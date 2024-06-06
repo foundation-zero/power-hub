@@ -1,6 +1,7 @@
 <template>
   <ComponentBase
     component="absorption-chiller"
+    class="gradient"
     x="761"
     y="591"
     width="114"
@@ -9,13 +10,13 @@
   >
     <rect
       x="115"
-      y="112.001"
+      y="111"
       width="111"
       height="112"
       rx="55.5"
       transform="rotate(180 113 112.001)"
-      class="fill"
-      fill="#ECD2D4"
+      class="fill gradient"
+      fill="url(#paint0_linear_512_1595)"
     />
     <circle
       cx="56"
@@ -126,10 +127,14 @@
         y2="168.001"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="#ECD2D4" />
+        <stop
+          stop-color="#ECD2D4"
+          class="from"
+        />
         <stop
           offset="1"
-          stop-color="#ABE8EC"
+          class="to"
+          stop-color="#abe8ec"
         />
       </linearGradient>
     </defs>
@@ -152,9 +157,3 @@ const { value, unit } = useAsWatts(
   useObservable(powerHub.sensors.useMqtt("yazaki/chill_power").pipe(map(({ value }) => value))),
 );
 </script>
-
-<style scoped lang="scss">
-.outlined rect {
-  fill: url(#paint0_linear_512_1595);
-}
-</style>

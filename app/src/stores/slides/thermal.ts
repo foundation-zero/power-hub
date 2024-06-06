@@ -1,13 +1,12 @@
 import Base from "@/components/slides/thermal/BaseThermal.vue";
 import HowDoesItWork from "@/components/slides/thermal/HowDoesItWork.vue";
 import HarvestingThermalEnergy from "@/components/slides/thermal/HarvestingThermalEnergy.vue";
-import ZeroPercent from "@/components/slides/thermal/ZeroPercent.vue";
+import ZeroPercent from "@/components/slides/thermal/ZeroToFiftyPercent.vue";
 import HeatRadiation from "@/components/slides/thermal/HeatRadiation.vue";
 import HeatPipesGauge from "@/components/slides/thermal/HeatPipesGauge.vue";
 import ChillPowerGauge from "@/components/slides/thermal/ChillPower.vue";
 import CompoundTemperature from "@/components/slides/thermal/CompoundTemperature.vue";
 import BatteryGauge from "@/components/slides/thermal/BatteryGauge.vue";
-import FiftyPercent from "@/components/slides/thermal/FiftyPercent.vue";
 import EfficientAt from "@/components/slides/thermal/EfficientAt.vue";
 import StoringThermalEnergy from "@/components/slides/thermal/StoringThermalEnergy.vue";
 import KiloWattHoursStored from "@/components/slides/thermal/KiloWattHoursStored.vue";
@@ -19,17 +18,16 @@ import SeventyPercent from "@/components/slides/thermal/SeventyPercent.vue";
 import EfficientAtTurningHeatIntoCold from "@/components/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
 import {
   activate,
-  dash,
   deactivate,
-  deoutline,
+  decustomize,
   hide,
   highlight,
   mute,
-  outline,
+  customize,
   show,
   startFlow,
   stopFlow,
-  undash,
+  dehighlight,
 } from "@/utils";
 import type { PresentationItem } from "@/types";
 import {
@@ -70,12 +68,12 @@ const activateHeatPipes = actionFn(async ({ getFlow, getComponentState, sleep })
   await sleep(500);
 
   activate(heatTubes);
-  outline(heatTubes);
+  customize(heatTubes);
 });
 
-const deactivateHeatPipes = actionFn(async ({ getComponentState }) => {
+const decustomizeHeatPipes = actionFn(async ({ getComponentState }) => {
   const heatTubes = getComponentState("heat-tubes");
-  deoutline(heatTubes);
+  decustomize(heatTubes);
 });
 
 const activateHeatBattery = actionFn(async ({ getComponentState, getFlow, sleep }) => {
@@ -87,8 +85,8 @@ const activateHeatBattery = actionFn(async ({ getComponentState, getFlow, sleep 
 
   await sleep(500);
 
-  outline(heatBattery);
-  dash(heatBattery);
+  customize(heatBattery);
+  startFlow(heatBattery);
   activate(heatBattery);
   highlight(heatBattery);
 
@@ -100,12 +98,12 @@ const activateAbsorptionChiller = actionFn(async ({ getComponentState, getFlow, 
   const absorptionChiller = getComponentState("absorption-chiller");
   const { streams } = getFlow("heat");
 
-  undash(heatBattery);
+  stopFlow(heatBattery);
   stopFlow(streams[1]);
   startFlow(streams[2]);
   activate(streams[2]);
 
-  await sleep(750);
+  await sleep(500);
 
   activate(absorptionChiller);
   highlight(absorptionChiller);
@@ -114,7 +112,8 @@ const activateAbsorptionChiller = actionFn(async ({ getComponentState, getFlow, 
 const triggerAbsorptionChiller = actionFn(({ getComponentState }) => {
   const absorptionChiller = getComponentState("absorption-chiller");
 
-  outline(absorptionChiller);
+  highlight(absorptionChiller);
+  customize(absorptionChiller);
 });
 
 const activateBattery = actionFn(async ({ getComponentState, sleep, getFlow }) => {
@@ -123,6 +122,18 @@ const activateBattery = actionFn(async ({ getComponentState, sleep, getFlow }) =
 
   stopFlow(streams[2]);
   activate(battery);
+  highlight(battery);
+
+  await sleep(750);
+});
+
+const deactivateHeatPipesAndBattery = actionFn(async ({ getComponentState, sleep }) => {
+  const heatBattery = getComponentState("heat-storage");
+  const heatPipes = getComponentState("heat-tubes");
+
+  deactivate(heatBattery);
+  deactivate(heatPipes);
+  decustomize(heatBattery);
 
   await sleep(750);
 });
@@ -135,9 +146,10 @@ const activateCompressionChiller = actionFn(async ({ getComponentState, getFlow,
 
   await sleep(750);
 
+  customize(streams[5]);
   activate(chiller);
   highlight(chiller);
-  outline(chiller);
+  customize(chiller);
 
   await sleep(750);
 });
@@ -147,13 +159,12 @@ const activateDemand = actionFn(async ({ getComponentState, getFlow, sleep }) =>
   const { streams } = getFlow("heat");
 
   activate(streams[5]);
-  outline(streams[5]);
 
   await sleep(750);
 
   activate(demand);
   highlight(demand);
-  outline(demand);
+  customize(demand);
 });
 
 export default [
@@ -165,15 +176,14 @@ export default [
   hideAll("heat"),
   toggleWaves(false),
   [500, Base],
-  [500, Base, ZeroPercent],
-  [5000, Base, HowDoesItWork, ZeroPercent],
+  [0, Base, HowDoesItWork],
   disableAll,
   activateHeatPipes,
-  [2000, Base, HeatRadiation, HarvestingThermalEnergy],
-  [1000, Base, HeatRadiation, HarvestingThermalEnergy, FiftyPercent],
-  [1000, Base, HeatRadiation, HarvestingThermalEnergy, FiftyPercent, EfficientAt],
-  [7000, Base, HeatRadiation, HarvestingThermalEnergy, FiftyPercent, EfficientAt, HeatPipesGauge],
-  deactivateHeatPipes,
+  [750, Base, HeatRadiation, HeatPipesGauge],
+  [1000, Base, HeatRadiation, HarvestingThermalEnergy, HeatPipesGauge],
+  [1000, Base, HeatRadiation, HarvestingThermalEnergy, ZeroPercent, HeatPipesGauge],
+  [7000, Base, HeatRadiation, HarvestingThermalEnergy, ZeroPercent, EfficientAt, HeatPipesGauge],
+  decustomizeHeatPipes,
   [1000, Base],
   activateHeatBattery,
   [2000, Base, StoringThermalEnergy],
@@ -182,6 +192,7 @@ export default [
   [7000, Base, StoringThermalEnergy, KiloWattHoursStored, HeatStored, BatteryGauge],
   activateAbsorptionChiller,
   [7000, Base, FromTheBattery, KiloWattHoursStored, HeatStored, BatteryGauge, BatteryGaugeOutline],
+  ({ getComponentState }) => dehighlight(getComponentState("absorption-chiller")),
   [1000, Base],
   triggerAbsorptionChiller,
   [2000, Base, UsingAbsorption],
@@ -189,9 +200,11 @@ export default [
   [1000, Base, UsingAbsorption, SeventyPercent, EfficientAtTurningHeatIntoCold],
   [7000, Base, UsingAbsorption, SeventyPercent, EfficientAtTurningHeatIntoCold, ChillPowerGauge],
   [0, Base, ThisIsUsed, SeventyPercent, EfficientAtTurningHeatIntoCold],
+  deactivateHeatPipesAndBattery,
   activateBattery,
   activateCompressionChiller,
+  [0, Base, ThisIsUsed, SeventyPercent, EfficientAtTurningHeatIntoCold, CompoundTemperature],
   activateDemand,
-  [7000, Base, ThisIsUsed, SeventyPercent, EfficientAtTurningHeatIntoCold, CompoundTemperature],
+  sleep(7000),
   [1000, Base],
 ] as PresentationItem[];

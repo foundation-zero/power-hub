@@ -23,7 +23,7 @@ export default {
   transition:
     transform 750ms,
     opacity 750ms ease;
-  transform: translate(1350px, 700px);
+  transform: translate(1250px, 700px);
 }
 
 .slide-leave-to,

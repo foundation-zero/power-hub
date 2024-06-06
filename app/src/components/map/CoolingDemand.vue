@@ -21,7 +21,7 @@
       r="44"
       fill="white"
       class="fill"
-      stroke="#ECD2D4"
+      stroke="#afe7eb"
       stroke-width="4"
     />
     <text
@@ -109,9 +109,3 @@ const { value, unit } = useAsWatts(
   ),
 );
 </script>
-
-<style scoped lang="scss">
-.component.outlined circle {
-  stroke: #afe7eb;
-}
-</style>

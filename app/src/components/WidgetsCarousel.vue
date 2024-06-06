@@ -5,6 +5,8 @@
   >
     <SensorWidgets>
       <ProductionChartWidget />
+      <CoolingDemandWidget :power-hub="powerhub" />
+      <WaterDemandWidget :power-hub="powerhub" />
     </SensorWidgets>
   </section>
 </template>
@@ -14,12 +16,14 @@ import { usePowerHubStore } from "@/stores/power-hub";
 import SensorWidgets from "@/components/SensorWidgets.vue";
 
 import ProductionChartWidget from "./widgets/ProductionChartWidget.vue";
+import CoolingDemandWidget from "./widgets/CoolingDemandWidget.vue";
+import WaterDemandWidget from "./widgets/WaterDemandWidget.vue";
 import { usePresentationStore } from "@/stores/presentation";
 
 const presentation = usePresentationStore();
 
 const store = usePowerHubStore();
-await store.connect();
+const powerhub = await store.connect();
 </script>
 
 <style lang="scss" scoped>

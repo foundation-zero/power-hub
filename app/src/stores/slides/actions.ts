@@ -1,5 +1,15 @@
 import type { Journey, PresentationAction } from "@/types";
-import { activate, deactivate, dehighlight, hide, highlight, reset, show, stopFlow } from "@/utils";
+import {
+  activate,
+  deactivate,
+  dehighlight,
+  hide,
+  highlight,
+  reset,
+  show,
+  stopFlow,
+  unmute,
+} from "@/utils";
 import { zip } from "lodash";
 import { toRefs } from "vue";
 
@@ -78,5 +88,5 @@ export const activateAllComponents = actionFn(({ componentStates }) =>
 export const resetAll = actionFn(({ pipes, componentStates, streamStates }) => {
   componentStates.forEach(reset);
   streamStates.forEach(reset);
-  pipes.muted = false;
+  unmute(pipes);
 });

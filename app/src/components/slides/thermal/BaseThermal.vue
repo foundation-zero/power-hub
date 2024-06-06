@@ -1,5 +1,13 @@
 <template>
   <AnimatedSlide fade>
+    <line
+      x1="906"
+      y1="86"
+      x2="906"
+      y2="202"
+      stroke="#A7A7A7"
+      stroke-width="1"
+    />
     <text
       fill="black"
       xml:space="preserve"

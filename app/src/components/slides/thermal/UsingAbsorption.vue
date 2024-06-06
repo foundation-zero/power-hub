@@ -4,7 +4,6 @@
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five Gothic"
       font-size="38"
       letter-spacing="0em"
     >

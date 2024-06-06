@@ -126,7 +126,7 @@
       :class="journeys.heat.streams[5]"
       class="chilled"
       d="M 863 536 L 965 581.5 L1067 580"
-      stroke="#D4999D"
+      stroke="#afe7eb"
       stroke-width="4"
     />
 
@@ -134,7 +134,7 @@
       :class="journeys.heat.streams[5]"
       class="chilled"
       d="M 869 628.5 L 965 581.5 L1067 580"
-      stroke="#D4999D"
+      stroke="#afe7eb"
       stroke-width="4"
     />
 
@@ -232,10 +232,6 @@ path {
     opacity $ttime ease,
     stroke $ttime ease;
 
-  &.chilled.outlined {
-    stroke: #afe7eb;
-  }
-
   &.active {
     opacity: 1;
     animation: snake 500ms linear forwards;
@@ -250,7 +246,7 @@ path {
     stroke-dasharray: 5 !important;
   }
 
-  &.outlined {
+  &.custom {
     opacity: 1;
   }
 

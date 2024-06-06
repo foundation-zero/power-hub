@@ -1,6 +1,7 @@
 <template>
   <ComponentBase
     component="compression-chiller"
+    class="gradient"
     x="759"
     y="452"
     width="120"
@@ -14,8 +15,8 @@
       height="112"
       rx="55.5"
       transform="rotate(180 112 112.001)"
-      class="fill"
-      fill="#ECD2D4"
+      class="fill gradient"
+      fill="url(#paint0_linear_505_2356)"
     />
     <circle
       cx="57"
@@ -115,9 +116,13 @@
         y2="166.439"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="#AFE7EB" />
+        <stop
+          stop-color="#AFE7EB"
+          class="from"
+        />
         <stop
           offset="1"
+          class="to"
           stop-color="#FFEFB9"
         />
       </linearGradient>
@@ -149,9 +154,3 @@ const { value, unit } = useAsWatts(
   useObservable(powerHub.sensors.useMqtt("chiller/chill_power").pipe(map(({ value }) => value))),
 );
 </script>
-
-<style scoped lang="scss">
-.outlined rect {
-  fill: url(#paint0_linear_505_2356);
-}
-</style>

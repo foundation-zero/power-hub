@@ -6,6 +6,20 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <circle
+      cx="130"
+      cy="130"
+      r="104"
+      stroke="#D4999D"
+      stroke-width="8"
+    />
+    <circle
+      cx="130"
+      cy="130"
+      r="129"
+      stroke="#E0E0E0"
+      stroke-width="2"
+    />
     <path
       d="M301 1L300 254"
       stroke="#9A9A9A"
@@ -200,20 +214,7 @@
         />
       </tspan>
     </text>
-    <circle
-      cx="130"
-      cy="130"
-      r="104"
-      stroke="#F4DA98"
-      stroke-width="8"
-    />
-    <circle
-      cx="130"
-      cy="130"
-      r="129"
-      stroke="#E0E0E0"
-      stroke-width="2"
-    />
+
     <text
       fill="#756B61"
       xml:space="preserve"

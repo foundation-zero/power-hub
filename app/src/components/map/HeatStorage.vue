@@ -33,7 +33,7 @@
       stroke="white"
       stroke-dasharray="5"
       stroke-width="4"
-      class="dash"
+      class="flow"
     />
 
     <circle
@@ -136,18 +136,18 @@ import ComponentBase from "./ComponentBase.vue";
   }
 }
 
-.dash {
+.flow {
   animation: stream 2500ms linear infinite;
 }
 
-.dash,
+.flow,
 .outline {
   will-change: opacity;
   transition: opacity 750ms ease;
 }
 
-.component:not(.dashed) .dash,
-.component:not(.outlined) .outline {
+.component:not(.flowing) .flow,
+.component:not(.custom) .outline {
   opacity: 0;
 }
 </style>

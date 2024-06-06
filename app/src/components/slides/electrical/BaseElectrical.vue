@@ -22,7 +22,7 @@
       x2="1018"
       y2="226"
       stroke="#A7A7A7"
-      stroke-width="4"
+      stroke-width="1"
     />
     <text
       fill="black"
