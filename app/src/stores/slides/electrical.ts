@@ -21,6 +21,7 @@ export default [
   deactivateAll("electrical"),
   activateStream("electrical"),
   sleep(3000),
+  [0],
   toggleWidgets(false),
   hideAll("electrical"),
   toggleWaves(false),

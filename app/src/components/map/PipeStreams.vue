@@ -124,7 +124,6 @@
 
     <path
       :class="journeys.heat.streams[5]"
-      class="chilled"
       d="M 863 536 L 965 581.5 L1067 580"
       stroke="#afe7eb"
       stroke-width="4"
@@ -132,7 +131,6 @@
 
     <path
       :class="journeys.heat.streams[5]"
-      class="chilled"
       d="M 869 628.5 L 965 581.5 L1067 580"
       stroke="#afe7eb"
       stroke-width="4"

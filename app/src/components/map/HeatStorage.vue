@@ -48,7 +48,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -98,11 +98,10 @@
     >
       <tspan
         text-anchor="end"
-        x="60"
+        x="56"
         y="82.91"
+        >20</tspan
       >
-        20
-      </tspan>
     </text>
     <text
       fill="#756B61"

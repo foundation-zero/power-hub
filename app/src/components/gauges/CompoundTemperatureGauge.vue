@@ -99,7 +99,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="80"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -133,7 +133,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="25"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -148,7 +148,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="15"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan

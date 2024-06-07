@@ -4,7 +4,7 @@
     fade
   >
     <path
-      transform="translate(0, -23)"
+      transform="translate(-98, -23)"
       d="M1690 825H1798.62L1826 849.5L1798.62 874H1690"
       stroke="#D4999D"
       stroke-width="2"

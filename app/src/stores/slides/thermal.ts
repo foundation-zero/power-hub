@@ -94,11 +94,9 @@ const activateHeatBattery = actionFn(async ({ getComponentState, getFlow, sleep 
 });
 
 const activateAbsorptionChiller = actionFn(async ({ getComponentState, getFlow, sleep }) => {
-  const heatBattery = getComponentState("heat-storage");
   const absorptionChiller = getComponentState("absorption-chiller");
   const { streams } = getFlow("heat");
 
-  stopFlow(heatBattery);
   stopFlow(streams[1]);
   startFlow(streams[2]);
   activate(streams[2]);
@@ -109,18 +107,13 @@ const activateAbsorptionChiller = actionFn(async ({ getComponentState, getFlow, 
   highlight(absorptionChiller);
 });
 
-const triggerAbsorptionChiller = actionFn(({ getComponentState }) => {
-  const absorptionChiller = getComponentState("absorption-chiller");
-
-  highlight(absorptionChiller);
-  customize(absorptionChiller);
-});
-
 const activateBattery = actionFn(async ({ getComponentState, sleep, getFlow }) => {
+  const heatBattery = getComponentState("heat-storage");
   const battery = getComponentState("power-battery");
   const { streams } = getFlow("heat");
 
   stopFlow(streams[2]);
+  stopFlow(heatBattery);
   activate(battery);
   highlight(battery);
 
@@ -144,9 +137,8 @@ const activateCompressionChiller = actionFn(async ({ getComponentState, getFlow,
 
   activate(streams[4]);
 
-  await sleep(750);
+  await sleep(500);
 
-  customize(streams[5]);
   activate(chiller);
   highlight(chiller);
   customize(chiller);
@@ -160,7 +152,7 @@ const activateDemand = actionFn(async ({ getComponentState, getFlow, sleep }) =>
 
   activate(streams[5]);
 
-  await sleep(750);
+  await sleep(500);
 
   activate(demand);
   highlight(demand);
@@ -172,6 +164,7 @@ export default [
   deactivateAll("heat"),
   activateStream("heat"),
   sleep(3000),
+  [0],
   toggleWidgets(false),
   hideAll("heat"),
   toggleWaves(false),
@@ -194,7 +187,6 @@ export default [
   [7000, Base, FromTheBattery, KiloWattHoursStored, HeatStored, BatteryGauge, BatteryGaugeOutline],
   ({ getComponentState }) => dehighlight(getComponentState("absorption-chiller")),
   [1000, Base],
-  triggerAbsorptionChiller,
   [2000, Base, UsingAbsorption],
   [1000, Base, UsingAbsorption, SeventyPercent],
   [1000, Base, UsingAbsorption, SeventyPercent, EfficientAtTurningHeatIntoCold],
@@ -206,5 +198,4 @@ export default [
   [0, Base, ThisIsUsed, SeventyPercent, EfficientAtTurningHeatIntoCold, CompoundTemperature],
   activateDemand,
   sleep(7000),
-  [1000, Base],
 ] as PresentationItem[];

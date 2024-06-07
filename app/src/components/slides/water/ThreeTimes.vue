@@ -4,9 +4,7 @@
       fill="#D4D4D4"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="270"
-      font-weight="bold"
       letter-spacing="0em"
       transform="translate(938, 146)"
       ><tspan

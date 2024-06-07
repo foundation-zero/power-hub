@@ -7,7 +7,6 @@
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="40"
       letter-spacing="0em"
       transform="translate(413, 534)"

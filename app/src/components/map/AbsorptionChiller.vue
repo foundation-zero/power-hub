@@ -5,8 +5,8 @@
     x="761"
     y="591"
     width="114"
-    height="112"
-    viewBox="0 0 114 112"
+    height="114"
+    viewBox="0 0 114 114"
   >
     <rect
       x="115"
@@ -29,7 +29,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -44,7 +44,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan

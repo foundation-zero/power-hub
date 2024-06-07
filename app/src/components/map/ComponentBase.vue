@@ -67,7 +67,7 @@ $ttime: 750ms;
   }
 }
 
-@keyframes greydient {
+@keyframes greydientTo {
   to {
     stop-color: rgba(229, 229, 229);
   }
@@ -80,7 +80,9 @@ $ttime: 750ms;
 }
 
 .component {
-  transition: opacity 1500ms ease;
+  transition:
+    opacity 1500ms ease,
+    transform 750ms ease;
   will-change: transform, opacity;
   transform: scale(1, 1);
   opacity: 1;
@@ -117,7 +119,7 @@ $ttime: 750ms;
     &.gradient {
       .from,
       .to {
-        animation: greydient 750ms ease forwards;
+        animation: greydientTo 750ms ease forwards;
       }
     }
 

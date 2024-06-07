@@ -4,7 +4,7 @@
       fill="#E6E6E6"
       xml:space="preserve"
       style="white-space: pre"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
     >
       <tspan
         x="1177"
