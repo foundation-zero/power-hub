@@ -25,16 +25,19 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="18"
+      width="300"
       font-weight="600"
       letter-spacing="0em"
     >
       <tspan
-        x="93.1797"
+        text-anchor="middle"
+        x="135"
         y="170.44"
       >
-        Charging
+        {{ state }}
       </tspan>
       <tspan
+        v-if="netValue !== 0"
         x="101.512"
         y="193.44"
       >
@@ -83,10 +86,10 @@
       letter-spacing="0em"
     >
       <tspan
-        x="139"
+        x="141"
         y="106.25"
       >
-        kW
+        {{ netValueUnit }}
       </tspan>
     </text>
     <rect
@@ -139,12 +142,12 @@
           :format="formattedInt"
           tag="tspan"
         />
+
         <tspan
           font-size="16"
-          width="30"
-          text-anchor="end"
+          transform="translate(30,0)"
         >
-          kW
+          &thinsp;{{ chargingUnit }}
         </tspan>
       </tspan>
     </text>
@@ -218,7 +221,7 @@
           width="30"
           text-anchor="end"
         >
-          kW
+          &thinsp;{{ dischargingUnit }}
         </tspan>
       </tspan>
     </text>
@@ -293,12 +296,7 @@
           :to="internalTemperature"
           :format="formattedInt"
         />
-        <tspan
-          width="30"
-          text-anchor="end"
-        >
-          &#8451;
-        </tspan>
+        &#8451;
       </tspan>
     </text>
     <g clip-path="url(#clip0_910_2529)">
@@ -344,14 +342,32 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { usePowerHubStore } from "@/stores/power-hub";
+import { useAsWatts } from "@/utils";
+import { formattedInt } from "@/utils/numbers";
+import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
 import AnimatedNumber from "vue-number-animation";
 
-defineProps<{ outline?: boolean }>();
+const { sensors } = usePowerHubStore();
 
-const charging = useRandomNumber(4, 12);
-const discharging = useRandomNumber(10, 20);
-const netValue = computed(() => Math.abs(charging.value - discharging.value));
-const internalTemperature = useRandomNumber(30, 60);
+const { value: charging, unit: chargingUnit } = useAsWatts(
+  useObservable(sensors.useMean("pcm/charge_power")),
+);
+const { value: discharging, unit: dischargingUnit } = useAsWatts(
+  useObservable(sensors.useMean("pcm/discharge_power")),
+);
+const { value: netValue, unit: netValueUnit } = useAsWatts(
+  useObservable(sensors.useMean("pcm/net_charge")),
+);
+const internalTemperature = useObservable(sensors.useMean("pcm/temperature"));
+
+const state = computed(() => {
+  if (netValue.value === undefined) return "";
+
+  if (netValue.value > 0) return "Charging";
+  if (netValue.value < 0) return "Discharging";
+
+  return "Idle";
+});
 </script>

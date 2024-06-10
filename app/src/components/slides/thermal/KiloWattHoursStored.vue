@@ -14,7 +14,7 @@
           letter-spacing="-0.05em"
           font-size="270"
         >
-          {{ heatStored }}
+          {{ value }}
         </tspan>
         <tspan
           text-anchor="end"
@@ -22,7 +22,7 @@
           font-size="150"
           letter-spacing="0em"
         >
-          kWh
+          &thinsp;{{ unit }}
         </tspan>
       </tspan>
     </text>
@@ -30,13 +30,22 @@
 </template>
 
 <script lang="ts">
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
 import AnimatedSlide from "../AnimatedSlide.vue";
+import { usePowerHubStore } from "@/stores/power-hub";
+import { useObservable } from "@vueuse/rxjs";
+import { useAsWattHours } from "@/utils";
 
 export default {
   name: "KiloWattHoursStored",
   components: { AnimatedSlide },
-  data: () => ({ heatStored: useRandomNumber(10, 20) }),
-  methods: { formattedInt },
+  setup() {
+    const { sensors } = usePowerHubStore();
+    const { value, unit } = useAsWattHours(useObservable(sensors.useMean("pcm/state_of_charge")));
+
+    return {
+      value,
+      unit,
+    };
+  },
 };
 </script>

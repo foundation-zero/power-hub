@@ -1,6 +1,6 @@
-import { useLastValues, useMean, useOverTime, useTotal, type PathFn } from "@/api";
+import { usePollingApi, useLastValues, useMean, useOverTime, useTotal, type PathFn } from "@/api";
 import { MqttClient } from "@/mqtt";
-import type { HistoricalData, NestedPath } from "@/types";
+import type { HistoricalData, NestedPath, WeatherInfo } from "@/types";
 import { type SumTree, type SensorsTree, type Tree } from "@/types/power-hub";
 import { pick } from "@/utils";
 import { defineStore } from "pinia";
@@ -8,6 +8,11 @@ import { map } from "rxjs";
 import type { SnakeCase } from "type-fest";
 
 let client: MqttClient;
+
+const defaultLocation = {
+  lat: 41.3874,
+  lon: 2.1686,
+};
 
 const useMqtt =
   <K extends keyof Tree, T = Tree[K]>(topicPath: SnakeCase<K>) =>
@@ -35,6 +40,11 @@ export const usePowerHubStore = defineStore("powerHub", () => {
     useMqtt: useMqtt("power_hub"),
   };
 
+  const weather = {
+    current: (pollingInterval?: number) =>
+      usePollingApi<WeatherInfo>("/weather/current", pollingInterval, defaultLocation),
+  };
+
   const connect = async () => {
     client ??= await MqttClient.connect(
       import.meta.env.VITE_MQTT.replace("%HOST%", location.host),
@@ -44,6 +54,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
     return {
       sensors,
       sum,
+      weather,
     };
   };
 
@@ -51,6 +62,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
     connect,
     sensors: pick(sensors, "useLastValues", "useTotal", "useMean"),
     sum: pick(sum, "useMean", "useOverTime"),
+    weather,
   };
 });
 

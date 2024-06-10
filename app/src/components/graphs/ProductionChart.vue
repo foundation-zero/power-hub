@@ -17,9 +17,9 @@ import VChart from "vue-echarts";
 import { ref } from "vue";
 import { computed } from "vue";
 import { toKiloWattHours } from "@/utils/formatters";
+import { oneDayAgo } from "@/utils";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
-import { watch } from "vue";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -27,17 +27,16 @@ const colorMode = useColorMode();
 
 const { sum } = usePowerHubStore();
 
-const production = useObservable(sum.useOverTime("electric/power/production", undefined, "h"));
-
-watch(production, (val) => console.log("production", val));
-
 const hours = [
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 ];
 
-const values = [
-  1, 1, 1, 1, 1, 2, 5, 10, 20, 30, 30, 35, 36, 35, 30, 30, 28, 25, 20, 10, 5, 3, 1, 1, 1,
-];
+const values = useObservable(
+  sum.useOverTime("electric/power/production", () => ({
+    interval: "h",
+    between: [oneDayAgo().toISOString(), new Date().toISOString()].join(","),
+  })),
+);
 
 const batteryValues = [
   50, 45, 42, 50, 60, 80, 90, 100, 100, 100, 100, 99, 98, 96, 92, 80, 70, 68, 66, 64, 60, 58, 56,
@@ -122,31 +121,22 @@ const option = ref({
     {
       name: "Production",
       type: "bar",
-      itemStyle: {
-        color: new graphic.LinearGradient(
-          0,
-          0,
-          1,
-          0,
-          colorsOfTheDay.map((color, index) => ({ color, offset: index * (1 / 24) })),
-        ),
-      },
       barWidth: "50%",
       data: computed(() =>
-        values
-          .filter((_, index) => index % 2 === 0)
+        values.value
+          ?.filter((_, index) => index % 2 === 0)
           .slice(0, 12)
           .map((value, index) => ({
-            value: value + (values[index * 2 + 1] ?? 0),
+            value: value.value + (values.value?.[index * 2 + 1]?.value ?? 0),
             itemStyle: {
               color: new graphic.LinearGradient(0, 0, 1, 0, [
                 {
                   offset: 0,
-                  color: colorsOfTheDay[index * 2],
+                  color: colorsOfTheDay[new Date(value.time).getHours()],
                 },
                 {
                   offset: 1,
-                  color: colorsOfTheDay[index * 2],
+                  color: colorsOfTheDay[new Date(value.time).getHours()],
                 },
               ]),
             },

@@ -5,6 +5,7 @@ import type {
   Highlightable,
   Muteable,
   Customizable,
+  HistoricalData,
 } from "@/types";
 import { computed, watch, type Ref } from "vue";
 
@@ -76,11 +77,25 @@ export const reset = <T extends Record<string, boolean>>(item: T) => {
 export const mapFn = <T, K>(fn: (item: T) => K, ...items: T[]): K[] =>
   items.map((item) => fn(item));
 
-export const useAsWatts = (value: Ref<number>) => ({
-  value: computed(() => {
-    if (!value.value) return 0;
+export const useAsValueWithUnit =
+  (baseUnit: string) =>
+  (value: Ref<number | undefined>, cutoff: number = 1000) => ({
+    value: computed(() => {
+      if (!value.value) return 0;
 
-    return value.value / (value.value < 1000 ? 1 : 1000);
-  }),
-  unit: computed(() => (value.value < 1000 ? "W" : "kW")),
-});
+      return value.value / (value.value < cutoff ? 1 : 1000);
+    }),
+    unit: computed(() => ((value.value ?? 0) < cutoff ? baseUnit : `k${baseUnit}`)),
+  });
+
+export const useAsWatts = useAsValueWithUnit("W");
+export const useAsWattHours = useAsValueWithUnit("Wh");
+
+export const oneDayAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date;
+};
+
+export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
+  values.length ? values[values.length - 1].value : "";

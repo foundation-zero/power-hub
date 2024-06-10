@@ -63,7 +63,7 @@ pnpm run test:e2e -- --debug
 pnpm run lint
 ```
 
-### Put this in your `.env.local`
+### Put this in your `.env.local` for local backend
 
 ```sh
 VITE_MQTT=ws://%HOST%/mqtt

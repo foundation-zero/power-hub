@@ -16,25 +16,24 @@ import { BarChart, LineChart } from "echarts/charts";
 import VChart from "vue-echarts";
 import { ref } from "vue";
 import { useObservable } from "@vueuse/rxjs";
-import { watch } from "vue";
+import { oneDayAgo } from "@/utils";
+import { computed } from "vue";
 
 use([SVGRenderer, BarChart, LineChart]);
 
 const { sum } = usePowerHubStore();
 
-const consumption = useObservable(sum.useOverTime("electric/power/consumption", undefined, "h"));
-
-watch(consumption, (val) => console.log("consumption", val));
+const consumption = useObservable(
+  sum.useOverTime("electric/power/consumption", {
+    interval: "h",
+    between: [oneDayAgo().toISOString(), new Date().toISOString()].join(","),
+  }),
+);
 
 const colorMode = useColorMode();
 
 const hours = [
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-];
-
-const values = [
-  -12, -10, -10, -10, -15, -35, -36, -37, -36, -35, -32, -26, -24, -28, -30, -32, -28, -25, -26,
-  -24, -22, -20, -15, -30,
 ];
 
 const option = ref({
@@ -67,22 +66,6 @@ const option = ref({
         show: false,
       },
     },
-    {
-      type: "value",
-      name: "%",
-      min: 0,
-      max: 100,
-      splitLine: {
-        show: false,
-      },
-      interval: 25,
-      nameTextStyle: {
-        show: false,
-      },
-      axisLabel: {
-        show: false,
-      },
-    },
   ],
   series: [
     {
@@ -93,9 +76,12 @@ const option = ref({
         borderRadius: 20,
       },
       barWidth: "40%",
-      data: values
-        .filter((_, index) => index % 2 === 0)
-        .map((val, index) => val + values[index * 2 + 1]),
+      data: computed(() =>
+        consumption.value
+          ?.filter((_, index) => index % 2 === 0)
+          .map((val, index) => val.value + (consumption.value?.[index * 2 + 1]?.value ?? 0))
+          .map((val) => -Math.abs(val)),
+      ),
     },
   ],
 });

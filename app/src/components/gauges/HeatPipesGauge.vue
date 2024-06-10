@@ -84,7 +84,7 @@
         y="56.6"
       >
         <AnimatedNumber
-          :to="sunPower"
+          :to="sunPower ?? 0"
           :format="formattedInt"
           tag="tspan"
         />
@@ -93,7 +93,7 @@
           font-size="16"
           width="30"
         >
-          kW
+          {{ sunPowerUnit }}
         </tspan>
       </tspan>
     </text>
@@ -208,7 +208,7 @@
         y="136.4"
       >
         <AnimatedNumber
-          :to="heatPipePower"
+          :to="heatPipesPower"
           :format="formattedInt"
           tag="tspan"
         />
@@ -226,7 +226,7 @@
         x="158"
         y="104.25"
       >
-        kW
+        {{ heatPipesPowerUnit }}
       </tspan>
     </text>
     <g clip-path="url(#clip0_910_2498)">
@@ -351,11 +351,30 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { usePowerHubStore } from "@/stores/power-hub";
+import { useAsWatts } from "@/utils";
+import { formattedInt } from "@/utils/numbers";
+import { useObservable } from "@vueuse/rxjs";
+import { map } from "rxjs";
+import { computed } from "vue";
 import AnimatedNumber from "vue-number-animation";
 
-const heatPipePower = useRandomNumber(4, 12);
-const temperatureDifference = useRandomNumber(10, 20);
-const outputTemperature = useRandomNumber(70, 90);
-const sunPower = useRandomNumber(0, 40);
+const { sensors } = usePowerHubStore();
+
+const { value: heatPipesPower, unit: heatPipesPowerUnit } = useAsWatts(
+  useObservable(sensors.useMean("heat_pipes/power")),
+);
+
+const temperatureDifference = computed(() =>
+  Math.abs((outputTemperature.value ?? 0) - (inputTemperature.value ?? 0)),
+);
+const inputTemperature = useObservable(sensors.useMean("heat_pipes/input_temperature"));
+const outputTemperature = useObservable(sensors.useMean("heat_pipes/output_temperature"));
+const { value: sunPower, unit: sunPowerUnit } = useAsWatts(
+  useObservable(
+    sensors
+      .useLastValues("weather/global_irradience")
+      .pipe(map((values) => values[values.length - 1]?.value)),
+  ),
+);
 </script>

@@ -181,9 +181,17 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { usePowerHubStore } from "@/stores/power-hub";
+import { useLastOrNone } from "@/utils";
+import { formattedInt } from "@/utils/numbers";
+import { useObservable } from "@vueuse/rxjs";
+import { map } from "rxjs";
 import AnimatedNumber from "vue-number-animation";
 
-const compundTemperature = useRandomNumber(18, 23);
-const outdoorTemperature = useRandomNumber(20, 40);
+const { sensors, weather } = usePowerHubStore();
+
+const compundTemperature = useObservable(
+  sensors.useLastValues("compound/overall_temperature").pipe(map(useLastOrNone)),
+);
+const outdoorTemperature = useObservable(weather.current().pipe(map((val) => val.temp)));
 </script>

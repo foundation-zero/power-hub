@@ -72,7 +72,7 @@
         x="157.018"
         y="108.25"
       >
-        kW
+        {{ chillingPowerUnit }}
       </tspan>
     </text>
     <path
@@ -242,10 +242,17 @@
 </template>
 
 <script setup lang="ts">
+import { usePowerHubStore } from "@/stores/power-hub";
+import { useAsWatts } from "@/utils";
 import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { useObservable } from "@vueuse/rxjs";
 import AnimatedNumber from "vue-number-animation";
 
-const chillingPower = useRandomNumber(4, 12);
-const heatPower = useRandomNumber(10, 20);
-const outputTemperature = useRandomNumber(30, 60);
+const { sensors } = usePowerHubStore();
+
+const { value: chillingPower, unit: chillingPowerUnit } = useAsWatts(
+  useObservable(sensors.useMean("yazaki/chill_power")),
+);
+const heatPower = useAsWatts(useRandomNumber(0, 5000));
+const outputTemperature = useObservable(sensors.useMean("yazaki/chilled_output_temperature"));
 </script>
