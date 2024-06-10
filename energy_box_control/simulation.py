@@ -2,7 +2,7 @@ import math
 
 from dataclasses import dataclass
 import schedule
-from energy_box_control.monitoring import (
+from energy_box_control.monitoring.monitoring import (
     Monitor,
     Notifier,
     PagerDutyNotificationChannel,
@@ -21,7 +21,7 @@ from energy_box_control.power_hub.control import (
 
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.power_hub.sensors import sensor_values
-from energy_box_control.checks import checks
+from energy_box_control.monitoring.checks import sensor_checks
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
@@ -144,7 +144,7 @@ async def run(
     )
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
-    monitor = Monitor(checks)
+    monitor = Monitor(sensor_checks)
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
 
