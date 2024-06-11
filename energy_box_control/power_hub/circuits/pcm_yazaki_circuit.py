@@ -120,7 +120,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
         control_state: PcmYazakiControlState,
         sensors: PcmYazakiSensors,
         _time: ProcessTime,
-    ) -> tuple[(PcmYazakiControlState, NetworkControl[Self])]:
+    ) -> tuple[(PcmYazakiControlState, NetworkControl[Self], None)]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
             sensors.yazaki_hot_bypass_valve_position,
@@ -138,6 +138,7 @@ class PcmYazakiNetwork(Network[PcmYazakiSensors]):
             .control(self.yazaki)
             .value(YazakiControl(True))
             .build(),
+            None,
         )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PcmYazakiSensors:

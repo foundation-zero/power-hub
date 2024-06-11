@@ -1,3 +1,4 @@
+import json
 import math
 
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from datetime import datetime
 from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
+from energy_box_control.power_hub.control import ControlModesEncoder
 
 import asyncio
 from energy_box_control.config import CONFIG
@@ -45,6 +47,7 @@ logger = get_logger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
+CONTROL_MODES_TOPIC = "power_hub/control_modes"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
 control_values_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
@@ -96,8 +99,15 @@ class SimulationResult:
             )
         )
 
-        control_state, control_values = control_power_hub(
+        control_state, control_values, control_modes = control_power_hub(
             self.power_hub, self.control_state, power_hub_sensors, self.state.time
+        )
+
+        publish_to_mqtt(
+            mqtt_client,
+            CONTROL_MODES_TOPIC,
+            json.dumps(control_modes, cls=ControlModesEncoder),
+            notifier,
         )
 
         publish_to_mqtt(

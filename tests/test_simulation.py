@@ -37,7 +37,7 @@ def run_simulation(
             return SimulationFailure(e, i, state)
         sensors = network.sensors_from_state(state)
         if control_function:
-            control_state, control_values = control_function(
+            control_state, control_values, _ = control_function(
                 control_state, sensors, state.time
             )
     return SimulationSuccess(state)
