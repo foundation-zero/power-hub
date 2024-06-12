@@ -2,13 +2,13 @@
   <WidgetBase
     title="Water demand"
     unit="liter"
-    :value="total"
+    :value="waterDemand"
     :format="formattedInt"
   >
     <StackedBarChart
       class="mt-3"
       :height="36"
-      :values="[recycled, total]"
+      :values="[waterMakerOut ?? 0, (waterDemand ?? 0) - (waterMakerOut ?? 0)]"
       :series="series"
     />
   </WidgetBase>
@@ -17,10 +17,11 @@
 <script setup lang="ts">
 import WidgetBase from "./WidgetBase.vue";
 import type { PowerHubStore } from "@/stores/power-hub";
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { formattedInt } from "@/utils/numbers";
 import StackedBarChart, { type BarSeries } from "../graphs/FillBarChart.vue";
+import { useObservable } from "@vueuse/rxjs";
 
-defineProps<{
+const { powerHub } = defineProps<{
   powerHub: PowerHubStore;
 }>();
 
@@ -29,6 +30,6 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-water", color: "#00bcd4" },
 ];
 
-const recycled = useRandomNumber(300, 2000);
-const total = useRandomNumber(300, 2000);
+const waterDemand = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand"));
+const waterMakerOut = useObservable(powerHub.sensors.useMean("water_maker/out_flow"));
 </script>

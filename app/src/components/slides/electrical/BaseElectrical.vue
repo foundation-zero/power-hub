@@ -22,13 +22,12 @@
       x2="1018"
       y2="226"
       stroke="#A7A7A7"
-      stroke-width="4"
+      stroke-width="1"
     />
     <text
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="50"
       letter-spacing="0em"
       transform="translate(1072, 126)"

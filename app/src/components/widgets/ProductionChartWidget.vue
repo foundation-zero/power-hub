@@ -5,18 +5,28 @@
     class="pt-4 pb-10"
   >
     <div class="text-h6 text-uppercase font-weight-medium px-6">Production</div>
-    <ProductionChart class="mt-5" />
-    <DailyWeather />
+    <div class="background mt-3">
+      <ChartLegend class="px-6 py-3" />
+      <ProductionChart />
+      <ConsumptionChart />
+      <DayNightCycle class="px-6" />
+    </div>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import DailyWeather from "../DayNightCycle.vue";
+import DayNightCycle from "../DayNightCycle.vue";
 import ProductionChart from "../graphs/ProductionChart.vue";
+import ConsumptionChart from "../graphs/ConsumptionChart.vue";
+import ChartLegend from "../ChartLegend.vue";
 </script>
 
 <style lang="scss" scoped>
 .v-card {
   position: relative;
+}
+
+.background {
+  background-color: #f9f8f8;
 }
 </style>

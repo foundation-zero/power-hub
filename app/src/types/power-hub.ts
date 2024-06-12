@@ -21,6 +21,9 @@ export type PCM = Port<"charge"> &
   Port<"discharge"> & {
     temperature: number;
     stateOfCharge: number;
+    chargePower: number;
+    dischargePower: number;
+    netCharge: number;
   };
 
 export type Chiller = Port<"cooling"> &
@@ -56,6 +59,14 @@ export interface WaterProcessor {
   outFlow: number;
 }
 
+export interface Weather {
+  globalIrradience: number;
+}
+
+export interface Compound {
+  overallTemperature: number;
+}
+
 export interface SensorsTree {
   heatPipes: HeatPipes;
   heatPipesValve: Valve;
@@ -77,6 +88,8 @@ export interface SensorsTree {
   freshWaterTank: WaterTank;
   waterTreatment: WaterProcessor;
   waterMaker: WaterProcessor;
+  weather: Weather;
+  compound: Compound;
 }
 
 export type Watt = number;
@@ -116,6 +129,6 @@ export type PowerHubComponent =
   | "water-treatment"
   | "water-demand";
 
-export type DateRange = [from: number, to: number];
+export type DateRange = [from: string, to: string];
 
 export type TimeInterval = "d" | "h" | "min" | "s";

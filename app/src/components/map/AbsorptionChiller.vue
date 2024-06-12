@@ -1,18 +1,22 @@
 <template>
   <ComponentBase
     component="absorption-chiller"
+    class="gradient"
     x="761"
     y="591"
     width="114"
-    height="112"
-    viewBox="0 0 114 112"
+    height="114"
+    viewBox="0 0 114 114"
   >
     <rect
+      x="115"
+      y="111"
       width="111"
       height="112"
       rx="55.5"
-      class="fill"
-      fill="#ECD2D4"
+      transform="rotate(180 113 112.001)"
+      class="fill gradient"
+      fill="url(#paint0_linear_512_1595)"
     />
     <circle
       cx="56"
@@ -25,7 +29,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -40,7 +44,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -113,6 +117,27 @@
       stroke="#6D6D6D"
       stroke-linecap="round"
     />
+
+    <defs>
+      <linearGradient
+        id="paint0_linear_512_1595"
+        x1="224"
+        y1="168.001"
+        x2="113"
+        y2="168.001"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop
+          stop-color="#ECD2D4"
+          class="from"
+        />
+        <stop
+          offset="1"
+          class="to"
+          stop-color="#abe8ec"
+        />
+      </linearGradient>
+    </defs>
   </ComponentBase>
 </template>
 

@@ -5,7 +5,6 @@
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="150"
       letter-spacing="0em"
       transform="translate(1122, 216)"
