@@ -21,7 +21,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -37,7 +37,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -59,9 +59,9 @@
       <AnimatedNumber
         tag="tspan"
         text-anchor="end"
-        x="56"
+        x="58"
         y="85.8"
-        :from="value"
+        :to="value"
         :format="formattedInt"
       />
     </text>

@@ -1,6 +1,7 @@
 <template>
   <ComponentBase
     component="compression-chiller"
+    class="gradient"
     x="759"
     y="452"
     width="120"
@@ -8,12 +9,14 @@
     viewBox="0 0 120 112"
   >
     <rect
-      x="1"
+      x="112"
+      y="112.001"
       width="111"
       height="112"
       rx="55.5"
-      class="fill"
-      fill="#ECD2D4"
+      transform="rotate(180 112 112.001)"
+      class="fill gradient"
+      fill="url(#paint0_linear_505_2356)"
     />
     <circle
       cx="57"
@@ -26,7 +29,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -41,7 +44,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -64,7 +67,7 @@
         text-anchor="end"
         x="56"
         y="85.91"
-        :from="value"
+        :to="value"
         :format="formattedInt"
       />
     </text>
@@ -105,6 +108,24 @@
       />
     </g>
     <defs>
+      <linearGradient
+        id="paint0_linear_505_2356"
+        x1="112"
+        y1="169.563"
+        x2="223"
+        y2="166.439"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop
+          stop-color="#AFE7EB"
+          class="from"
+        />
+        <stop
+          offset="1"
+          class="to"
+          stop-color="#FFEFB9"
+        />
+      </linearGradient>
       <clipPath id="clip0_518_1913">
         <rect
           width="15"

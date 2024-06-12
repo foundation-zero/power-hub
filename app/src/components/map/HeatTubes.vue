@@ -57,7 +57,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -102,10 +102,22 @@ import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
 import { map } from "rxjs";
+import { ref } from "vue";
 
-const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
+const { powerHub } = defineProps<{ powerHub?: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMqtt("heat_pipes/power").pipe(map(({ value }) => value))),
+  powerHub
+    ? useObservable(powerHub.sensors.useMqtt("heat_pipes/power").pipe(map(({ value }) => value)))
+    : ref(0),
 );
 </script>
+
+<style scoped lang="scss">
+#heat-tubes {
+  &.custom {
+    transition-duration: 3000ms;
+    transform: scale(1.5, 1.5);
+  }
+}
+</style>

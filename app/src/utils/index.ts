@@ -1,4 +1,12 @@
-import type { Activatable, Flowable, Muteable } from "@/types";
+import type {
+  Activatable,
+  Flowable,
+  Hideable,
+  Highlightable,
+  Muteable,
+  Customizable,
+  HistoricalData,
+} from "@/types";
 import { computed, watch, type Ref } from "vue";
 
 export const parseValue = <T>(val: string | number) =>
@@ -48,21 +56,46 @@ export const useSleep = (isRunning: Ref<boolean>) => {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const deactivate = <T extends Activatable>(item: T) => (item.active = false);
+export const hide = <T extends Hideable>(item: T) => (item.hidden = true);
+export const show = <T extends Hideable>(item: T) => (item.hidden = false);
 export const activate = <T extends Activatable>(item: T) => (item.active = true);
+export const deactivate = <T extends Activatable>(item: T) => (item.active = false);
 export const mute = <T extends Muteable>(item: T) => (item.muted = true);
 export const unmute = <T extends Muteable>(item: T) => (item.muted = false);
 export const startFlow = <T extends Flowable>(item: T) => (item.flowing = true);
 export const stopFlow = <T extends Flowable>(item: T) => (item.flowing = false);
+export const customize = <T extends Customizable>(item: T) => (item.custom = true);
+export const decustomize = <T extends Customizable>(item: T) => (item.custom = false);
+export const highlight = <T extends Highlightable>(item: T) => (item.highlighted = true);
+export const dehighlight = <T extends Highlightable>(item: T) => (item.highlighted = false);
+export const reset = <T extends Record<string, boolean>>(item: T) => {
+  Object.entries(item).forEach(([key, val]) => {
+    if (key !== "skip" && typeof val === "boolean") delete item[key];
+  });
+};
 
 export const mapFn = <T, K>(fn: (item: T) => K, ...items: T[]): K[] =>
   items.map((item) => fn(item));
 
-export const useAsWatts = (value: Ref<number>) => ({
-  value: computed(() => {
-    if (!value.value) return 0;
+export const useAsValueWithUnit =
+  (baseUnit: string) =>
+  (value: Ref<number | undefined>, cutoff: number = 1000) => ({
+    value: computed(() => {
+      if (!value.value) return 0;
 
-    return value.value / (value.value < 1000 ? 1 : 1000);
-  }),
-  unit: computed(() => (value.value < 1000 ? "W" : "kW")),
-});
+      return value.value / (value.value < cutoff ? 1 : 1000);
+    }),
+    unit: computed(() => ((value.value ?? 0) < cutoff ? baseUnit : `k${baseUnit}`)),
+  });
+
+export const useAsWatts = useAsValueWithUnit("W");
+export const useAsWattHours = useAsValueWithUnit("Wh");
+
+export const oneDayAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date;
+};
+
+export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
+  values.length ? values[values.length - 1].value : "";
