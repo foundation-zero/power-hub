@@ -21,7 +21,7 @@
       r="44"
       fill="white"
       class="fill"
-      stroke="#ECD2D4"
+      stroke="#afe7eb"
       stroke-width="4"
     />
     <text
@@ -29,7 +29,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -44,7 +44,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan

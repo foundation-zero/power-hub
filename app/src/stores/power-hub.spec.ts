@@ -4,7 +4,8 @@ import { MqttClient } from "@/mqtt";
 import { of } from "rxjs";
 import { usePowerHubStore, type PowerHubStore } from "./power-hub";
 import { useObservable } from "@vueuse/rxjs";
-import { AjaxResponse, ajax } from "rxjs/ajax";
+import * as Ajax from "rxjs/ajax";
+import { AjaxResponse } from "rxjs/ajax";
 import type { HistoricalData } from "@/types";
 
 const HEADERS = {
@@ -51,7 +52,7 @@ describe("PowerHubStore", async () => {
         time: string = new Date().toString(),
         value = 5,
       ) => {
-        vi.spyOn(ajax, "get").mockReturnValue(
+        vi.spyOn(Ajax, "ajax").mockReturnValue(
           of({ response: [{ time, value }] } as AjaxResponse<HistoricalData[]>),
         );
         return useObservable(store.sensors.useLastValues(path));
@@ -64,17 +65,18 @@ describe("PowerHubStore", async () => {
 
       it("calls the correct endpoint", () => {
         mockAndCall("chiller_switch_valve/position");
-        expect(ajax.get).toBeCalledTimes(1);
-        expect(ajax.get).toBeCalledWith(
-          `${import.meta.env.VITE_API}/power_hub/appliance_sensors/chiller_switch_valve/position/last_values`,
-          HEADERS,
-        );
+        expect(Ajax.ajax).toBeCalledTimes(1);
+        expect(Ajax.ajax).toBeCalledWith({
+          url: `${import.meta.env.VITE_API}/power_hub/appliance_sensors/chiller_switch_valve/position/last_values`,
+          headers: HEADERS,
+          params: undefined,
+        });
       });
     });
 
     describe("totals", () => {
       const mockAndCall = (path: Parameters<typeof store.sensors.useTotal>[0], value = 5) => {
-        vi.spyOn(ajax, "get").mockReturnValue(of({ response: value } as AjaxResponse<number>));
+        vi.spyOn(Ajax, "ajax").mockReturnValue(of({ response: value } as AjaxResponse<number>));
         return useObservable(store.sensors.useTotal(path));
       };
 
@@ -85,11 +87,12 @@ describe("PowerHubStore", async () => {
 
       it("calls the correct endpoint", () => {
         mockAndCall("heat_pipes/power");
-        expect(ajax.get).toBeCalledTimes(1);
-        expect(ajax.get).toBeCalledWith(
-          `${import.meta.env.VITE_API}/power_hub/appliance_sensors/heat_pipes/power/total`,
-          HEADERS,
-        );
+        expect(Ajax.ajax).toBeCalledTimes(1);
+        expect(Ajax.ajax).toBeCalledWith({
+          url: `${import.meta.env.VITE_API}/power_hub/appliance_sensors/heat_pipes/power/total`,
+          headers: HEADERS,
+          queryParams: undefined,
+        });
       });
     });
   });
