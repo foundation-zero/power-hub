@@ -146,7 +146,7 @@ async def run(
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
     monitor = Monitor(checks)
 
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    power_hub = PowerHub.power_hub(schedules)
 
     state = power_hub.simulate(
         power_hub.simple_initial_state(start_time=datetime.now()),
