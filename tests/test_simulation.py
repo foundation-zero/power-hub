@@ -38,7 +38,7 @@ def run_simulation(
         sensors = network.sensors_from_state(state)
         if control_function:
             control_state, control_values = control_function(
-                control_state, sensors, state.time
+                control_state, sensors, state.time.timestamp
             )
     return SimulationSuccess(state)
 

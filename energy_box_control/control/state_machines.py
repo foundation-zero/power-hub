@@ -1,9 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Callable
-from energy_box_control.time import ProcessTime
 
 
 class State(Enum):
@@ -17,14 +16,14 @@ class Marker:
 
 class Context:
 
-    def __init__(self, markers: dict[Marker, ProcessTime] = {}):
+    def __init__(self, markers: dict[Marker, datetime] = {}):
         self._past = markers
-        self._new: dict[Marker, ProcessTime] = {}
+        self._new: dict[Marker, datetime] = {}
 
-    def previous(self, marker: Marker) -> ProcessTime | None:
+    def previous(self, marker: Marker) -> datetime | None:
         return self._past.get(marker, None)
 
-    def next(self, marker: Marker, time: ProcessTime):
+    def next(self, marker: Marker, time: datetime):
         if marker in self._new:
             raise Exception(f"{marker} already in context")
         self._new[marker] = time
@@ -47,7 +46,7 @@ class Predicate[ControlState, Sensors](ABC):
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool: ...
 
     __or__ = _op(lambda a, b: a or b)
@@ -73,7 +72,7 @@ class BooleanOpPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool:
         return self.op(
             self.left.resolve(context, control_state, sensors, time),
@@ -94,7 +93,7 @@ class CompareOpPredicate[ControlState, Sensors, V: float | int](
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool:
         return self.op(
             self.left.fn(control_state, sensors, time),
@@ -111,7 +110,7 @@ class NegatePredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool:
         return not self.source.resolve(context, control_state, sensors, time)
 
@@ -125,7 +124,7 @@ class FnPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool:
         return self.fn(control_state, sensors)
 
@@ -141,14 +140,14 @@ class TimedPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> bool:
         holds = self.source.resolve(context, control_state, sensors, time)
         if not holds:
             return False
         elif marked := context.previous(self.marker):
             context.next(self.marker, marked)
-            return (time.timestamp - marked.timestamp) >= self.duration
+            return (time - marked) >= self.duration
         else:
             context.next(self.marker, time)
             return False
@@ -164,7 +163,7 @@ def _comp[
 
 @dataclass(eq=False)
 class Value[ControlState, Sensors, V: float | int]:
-    fn: Callable[[ControlState, Sensors, ProcessTime], V]
+    fn: Callable[[ControlState, Sensors, datetime], V]
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
@@ -221,7 +220,7 @@ class StateMachine[States: State, ControlState, Sensors]:
         context: Context,
         control_state: ControlState,
         sensors: Sensors,
-        time: ProcessTime,
+        time: datetime,
     ) -> tuple[States, Context]:
         for next_state, pred in self._state_transitions[current_state]:
             if pred.resolve(context, control_state, sensors, time):
