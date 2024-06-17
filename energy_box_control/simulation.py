@@ -16,7 +16,6 @@ from energy_box_control.power_hub.control import (
     control_power_hub,
     control_to_json,
     initial_control_state,
-    no_control,
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
@@ -150,12 +149,7 @@ async def run(
     monitor = Monitor(checks)
 
     power_hub = PowerHub.power_hub(schedules)
-
-    state = power_hub.simulate(
-        power_hub.simple_initial_state(start_time=datetime.now()),
-        no_control(power_hub),
-    )
-
+    state = power_hub.simple_initial_state()
     control_state = initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
