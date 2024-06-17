@@ -4,7 +4,7 @@ import queue
 from paho.mqtt import client as mqtt_client
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
-from energy_box_control.monitoring import (
+from energy_box_control.monitoring.monitoring import (
     Monitor,
     Notifier,
     PagerDutyNotificationChannel,
@@ -14,7 +14,7 @@ from energy_box_control.mqtt import (
     publish_to_mqtt,
     run_listener,
 )
-from energy_box_control.checks import checks
+from energy_box_control.monitoring.checks import service_checks
 from energy_box_control.power_hub.control import (
     control_power_hub,
     control_to_json,
@@ -51,7 +51,7 @@ async def run():
     )
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
-    monitor = Monitor(checks)
+    monitor = Monitor(url_health_checks=service_checks)
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     control_state = initial_control_state()

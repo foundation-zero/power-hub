@@ -1,5 +1,5 @@
-from energy_box_control.checks import checks, Severity
-from energy_box_control.monitoring import (
+from energy_box_control.monitoring.checks import sensor_checks, Severity
+from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
     PagerDutyNotificationChannel,
     Monitor,
@@ -13,7 +13,7 @@ def test_run_sensor_values_checks():
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     pcm_fake_value = 1000
     sensors.pcm.temperature = pcm_fake_value
-    monitor = Monitor(checks)
+    monitor = Monitor(sensor_checks)
     source = "test"
     assert monitor.run_sensor_values_checks(sensors, source)[0] == NotificationEvent(
         message=f"pcm_temperature_check is outside valid bounds with value: {pcm_fake_value}",
