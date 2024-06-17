@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from energy_box_control.control.state_machines import (
     Context,
@@ -172,8 +172,10 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
             preheat_reservoir_min_temperature=25,
-            trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0),
-            stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0),
+            trigger_filter_water_tank=datetime(
+                2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
+            ),
+            stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
         ),
         hot_control=HotControlState(
             context=Context(),
