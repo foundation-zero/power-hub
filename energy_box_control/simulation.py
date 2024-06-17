@@ -1,7 +1,10 @@
+import dataclasses
+import enum
 import json
 import math
 
 from dataclasses import dataclass
+from typing import Any
 import schedule
 from energy_box_control.monitoring import (
     Monitor,
@@ -13,7 +16,10 @@ import queue
 from queue import Empty
 from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
+    ChillControlMode,
+    HotControlMode,
     PowerHubControlState,
+    WasteControlMode,
     Setpoints,
     control_from_json,
     control_power_hub,
@@ -47,6 +53,7 @@ logger = get_logger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
+CONTROL_MODES_TOPIC = "power_hub/control_modes"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
 SETPOINTS_TOPIC = "power_hub/setpoints"
 control_values_queue: queue.Queue[str] = queue.Queue()
@@ -78,6 +85,22 @@ def queue_on_message(
     decoded_message = str(message.payload.decode("utf-8"))
     logger.debug(f"Received message: {decoded_message}")
     queue.put(decoded_message)
+
+
+@dataclass
+class ControlModes:
+    hot: HotControlMode
+    chill: ChillControlMode
+    waste: WasteControlMode
+
+    class ControlModesEncoder(json.JSONEncoder):
+        def default(self, o: Any):
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            if issubclass(type(o), enum.Enum):
+                return o.value
+            else:
+                return json.JSONEncoder.default(self, o)
 
 
 @dataclass
@@ -121,6 +144,20 @@ class SimulationResult:
             self.control_state,
             power_hub_sensors,
             self.state.time.timestamp,
+        )
+
+        publish_to_mqtt(
+            mqtt_client,
+            CONTROL_MODES_TOPIC,
+            json.dumps(
+                ControlModes(
+                    control_state.hot_control.control_mode,
+                    control_state.chill_control.control_mode,
+                    control_state.waste_control.control_mode,
+                ),
+                cls=ControlModes.ControlModesEncoder,
+            ),
+            notifier,
         )
 
         publish_to_mqtt(
