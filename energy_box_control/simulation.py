@@ -37,7 +37,7 @@ from datetime import datetime
 from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
-from energy_box_control.power_hub.control import ControlModesEncoder
+from energy_box_control.power_hub.control import ControlModes
 
 import asyncio
 from energy_box_control.config import CONFIG
@@ -106,7 +106,7 @@ class SimulationResult:
         publish_to_mqtt(
             mqtt_client,
             CONTROL_MODES_TOPIC,
-            json.dumps(control_modes, cls=ControlModesEncoder),
+            json.dumps(control_modes, cls=ControlModes.ControlModesEncoder),
             notifier,
         )
 

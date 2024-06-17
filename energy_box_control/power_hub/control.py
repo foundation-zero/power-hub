@@ -84,22 +84,20 @@ class WasteControlState:
     control_mode: WasteControlMode
 
 
-class ControlModesEncoder(json.JSONEncoder):
-
-    def default(self, o: Any):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        if issubclass(type(o), enum.Enum):
-            return o.value
-        else:
-            return json.JSONEncoder.default(self, o)
-
-
 @dataclass
 class ControlModes:
     hot: HotControlMode
     chill: ChillControlMode
     waste: WasteControlMode
+
+    class ControlModesEncoder(json.JSONEncoder):
+        def default(self, o: Any):
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            if issubclass(type(o), enum.Enum):
+                return o.value
+            else:
+                return json.JSONEncoder.default(self, o)
 
 
 def setpoint(description: str):
@@ -156,6 +154,13 @@ class PowerHubControlState:
     chill_control: ChillControlState
     waste_control: WasteControlState
     setpoints: Setpoints
+
+    def control_modes(self) -> ControlModes:
+        return ControlModes(
+            self.hot_control.control_mode,
+            self.chill_control.control_mode,
+            self.waste_control.control_mode,
+        )
 
 
 Fn = Functions(PowerHubControlState, PowerHubSensors)
@@ -364,7 +369,7 @@ def hot_control(
         .control(power_hub.hot_reservoir)
         .value(BoilerControl(heater_on=False))
     )
-    return hot_control_state, control, hot_control_mode
+    return hot_control_state, control
 
 
 should_chill = Fn.sensors(
@@ -576,7 +581,6 @@ def chill_control(
                 )
             )
         ),
-        chill_control_mode,
     )
 
 
@@ -635,7 +639,6 @@ def waste_control(
         .value(SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD))
         .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION)),
-        waste_control_mode,
     )
 
 
@@ -649,15 +652,9 @@ def control_power_hub(
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
     # Waste: run outboard / no run outboard
-    hot_control_state, hot, hot_control_mode = hot_control(
-        power_hub, control_state, sensors, time
-    )
-    chill_control_state, chill, chill_control_mode = chill_control(
-        power_hub, control_state, sensors, time
-    )
-    waste_control_state, waste, waste_control_mode = waste_control(
-        power_hub, control_state, sensors, time
-    )
+    hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
+    chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
+    waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
 
     control = (
         power_hub.control(power_hub.hot_reservoir)
@@ -678,15 +675,17 @@ def control_power_hub(
         .build()
     )
 
+    new_control_state = PowerHubControlState(
+        hot_control=hot_control_state,
+        chill_control=chill_control_state,
+        waste_control=waste_control_state,
+        setpoints=control_state.setpoints,
+    )
+
     return (
-        PowerHubControlState(
-            hot_control=hot_control_state,
-            chill_control=chill_control_state,
-            waste_control=waste_control_state,
-            setpoints=control_state.setpoints,
-        ),
+        new_control_state,
         control,
-        ControlModes(hot_control_mode, chill_control_mode, waste_control_mode),
+        new_control_state.control_modes(),
     )
 
 
