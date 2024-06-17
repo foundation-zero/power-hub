@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
-import dataclasses
 from datetime import timedelta
 import json
-from typing import Any
 from energy_box_control.control.state_machines import (
     Context,
     Functions,
@@ -36,7 +34,6 @@ from energy_box_control.network import NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, WattPerMeterSquared
-import enum
 
 
 class HotControlMode(State):
@@ -82,22 +79,6 @@ class WasteControlMode(State):
 class WasteControlState:
     context: Context
     control_mode: WasteControlMode
-
-
-@dataclass
-class ControlModes:
-    hot: HotControlMode
-    chill: ChillControlMode
-    waste: WasteControlMode
-
-    class ControlModesEncoder(json.JSONEncoder):
-        def default(self, o: Any):
-            if dataclasses.is_dataclass(o):
-                return dataclasses.asdict(o)
-            if issubclass(type(o), enum.Enum):
-                return o.value
-            else:
-                return json.JSONEncoder.default(self, o)
 
 
 def setpoint(description: str):
@@ -154,13 +135,6 @@ class PowerHubControlState:
     chill_control: ChillControlState
     waste_control: WasteControlState
     setpoints: Setpoints
-
-    def control_modes(self) -> ControlModes:
-        return ControlModes(
-            self.hot_control.control_mode,
-            self.chill_control.control_mode,
-            self.waste_control.control_mode,
-        )
 
 
 Fn = Functions(PowerHubControlState, PowerHubSensors)
@@ -557,30 +531,27 @@ def chill_control(
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
 
-    return (
-        ChillControlState(
-            context,
-            chill_control_mode,
-            yazaki_feedback_valve_controller,
-            chiller_switch_valve_position,
-            waste_switch_valve_position,
-        ),
-        (
-            power_hub.control(power_hub.chiller_switch_valve)
-            .value(ValveControl(chiller_switch_valve_position))
-            .control(power_hub.waste_switch_valve)
-            .value(ValveControl(waste_switch_valve_position))
-            .control(power_hub.yazaki_hot_bypass_valve)
-            .value(ValveControl(yazaki_feedback_valve_control))
-            .control(power_hub.waste_bypass_valve)
-            .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
-            .combine(running)
-            .combine(
-                power_hub.control(power_hub.yazaki_hot_bypass_valve).value(
-                    ValveControl(yazaki_feedback_valve_control)
-                )
+    return ChillControlState(
+        context,
+        chill_control_mode,
+        yazaki_feedback_valve_controller,
+        chiller_switch_valve_position,
+        waste_switch_valve_position,
+    ), (
+        power_hub.control(power_hub.chiller_switch_valve)
+        .value(ValveControl(chiller_switch_valve_position))
+        .control(power_hub.waste_switch_valve)
+        .value(ValveControl(waste_switch_valve_position))
+        .control(power_hub.yazaki_hot_bypass_valve)
+        .value(ValveControl(yazaki_feedback_valve_control))
+        .control(power_hub.waste_bypass_valve)
+        .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
+        .combine(running)
+        .combine(
+            power_hub.control(power_hub.yazaki_hot_bypass_valve).value(
+                ValveControl(yazaki_feedback_valve_control)
             )
-        ),
+        )
     )
 
 
@@ -647,7 +618,7 @@ def control_power_hub(
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
     time: ProcessTime,
-) -> tuple[(PowerHubControlState, NetworkControl[PowerHub], ControlModes)]:
+) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     # Control modes
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
@@ -675,17 +646,14 @@ def control_power_hub(
         .build()
     )
 
-    new_control_state = PowerHubControlState(
-        hot_control=hot_control_state,
-        chill_control=chill_control_state,
-        waste_control=waste_control_state,
-        setpoints=control_state.setpoints,
-    )
-
     return (
-        new_control_state,
+        PowerHubControlState(
+            hot_control=hot_control_state,
+            chill_control=chill_control_state,
+            waste_control=waste_control_state,
+            setpoints=control_state.setpoints,
+        ),
         control,
-        new_control_state.control_modes(),
     )
 
 

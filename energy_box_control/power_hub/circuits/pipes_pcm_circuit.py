@@ -117,7 +117,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
         control_state: PipesPcmControlState,
         sensors: PipesPcmSensors,
         _time: ProcessTime,
-    ) -> tuple[(PipesPcmControlState, NetworkControl[Self], None)]:
+    ) -> tuple[(PipesPcmControlState, NetworkControl[Self])]:
 
         new_valve_position = dummy_bypass_valve_temperature_control(
             sensors.heat_pipes_valve_position,
@@ -133,7 +133,6 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
             .control(self.heat_pipes_valve)
             .value(ValveControl(position=new_valve_position))
             .build(),
-            None,
         )
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PipesPcmSensors:

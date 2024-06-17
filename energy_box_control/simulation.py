@@ -1,7 +1,10 @@
+import dataclasses
+import enum
 import json
 import math
 
 from dataclasses import dataclass
+from typing import Any
 import schedule
 from energy_box_control.monitoring import (
     Monitor,
@@ -12,7 +15,10 @@ from energy_box_control.custom_logging import get_logger
 import queue
 from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
+    ChillControlMode,
+    HotControlMode,
     PowerHubControlState,
+    WasteControlMode,
     control_from_json,
     control_power_hub,
     control_to_json,
@@ -37,7 +43,6 @@ from datetime import datetime
 from functools import partial
 
 from energy_box_control.sensors import sensors_to_json
-from energy_box_control.power_hub.control import ControlModes
 
 import asyncio
 from energy_box_control.config import CONFIG
@@ -80,6 +85,22 @@ def queue_on_message(
 
 
 @dataclass
+class ControlModes:
+    hot: HotControlMode
+    chill: ChillControlMode
+    waste: WasteControlMode
+
+    class ControlModesEncoder(json.JSONEncoder):
+        def default(self, o: Any):
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            if issubclass(type(o), enum.Enum):
+                return o.value
+            else:
+                return json.JSONEncoder.default(self, o)
+
+
+@dataclass
 class SimulationResult:
     power_hub: PowerHub
     state: NetworkState[PowerHub]
@@ -99,14 +120,21 @@ class SimulationResult:
             )
         )
 
-        control_state, control_values, control_modes = control_power_hub(
+        control_state, control_values = control_power_hub(
             self.power_hub, self.control_state, power_hub_sensors, self.state.time
         )
 
         publish_to_mqtt(
             mqtt_client,
             CONTROL_MODES_TOPIC,
-            json.dumps(control_modes, cls=ControlModes.ControlModesEncoder),
+            json.dumps(
+                ControlModes(
+                    control_state.hot_control.control_mode,
+                    control_state.chill_control.control_mode,
+                    control_state.waste_control.control_mode,
+                ),
+                cls=ControlModes.ControlModesEncoder,
+            ),
             notifier,
         )
 
