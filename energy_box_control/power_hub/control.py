@@ -639,11 +639,11 @@ water_transitions: dict[
 ] = {
     (WaterControlMode.READY, WaterControlMode.FILTER_TANK): Fn.state(
         lambda state: state.setpoints.trigger_filter_water_tank
-    ).elapsed(timedelta(seconds=5)),
+    ).within(timedelta(seconds=5)),
     (WaterControlMode.FILTER_TANK, WaterControlMode.READY): Fn.const_pred(
         True
     ).holds_true(Marker("filter tank"), timedelta(minutes=30))
-    | Fn.state(lambda state: state.setpoints.stop_filter_water_tank).elapsed(
+    | Fn.state(lambda state: state.setpoints.stop_filter_water_tank).within(
         timedelta(seconds=5)
     ),  # 35 l/min pump
 }

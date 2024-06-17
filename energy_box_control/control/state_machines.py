@@ -154,7 +154,7 @@ class TimedPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
 
 
 @dataclass
-class ElapsedPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
+class WithinPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
     since: "Value[ControlState, Sensors, datetime]"
     duration: timedelta
 
@@ -181,10 +181,10 @@ def _comp[
 class Value[ControlState, Sensors, V: float | int | datetime]:
     fn: Callable[[ControlState, Sensors, datetime], V]
 
-    def elapsed(
+    def within(
         self: "Value[ControlState, Sensors, datetime]", duration: timedelta
-    ) -> ElapsedPredicate[ControlState, Sensors]:
-        return ElapsedPredicate(self, duration)
+    ) -> WithinPredicate[ControlState, Sensors]:
+        return WithinPredicate(self, duration)
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
