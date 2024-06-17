@@ -780,7 +780,7 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.water_demand)
             .at(WaterDemandPort.GREY_WATER_OUT)
             .to(self.water_treatment)
-            .at(WaterTreatmentPort.IN)
+            .at(WaterTreatmentPort.IN)     
         )
         # fmt: on
 

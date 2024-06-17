@@ -637,10 +637,6 @@ def waste_control(
     )
 
 
-# make as state machine with UI input as setpoint as timestamp? requires having access to time in predicate. Need a Fn.time(lambda time: ...)
-# make as state machine with UI input as setpoint as bool? then can use holds_true for state
-# make without state machine...
-
 water_transitions: dict[
     tuple[WaterControlMode, WaterControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
@@ -678,7 +674,7 @@ def water_control(
         WaterControlState(context, water_control_mode),
         power_hub.control(power_hub.water_filter_bypass_valve).value(
             ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION)
-            if WaterControlMode.FILTER_TANK
+            if water_control_mode == WaterControlMode.FILTER_TANK
             else ValveControl(WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION)
         ),
     )
@@ -759,6 +755,8 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(ChillerControl(on=False))
         .control(power_hub.water_maker_pump)
         .value(SwitchPumpControl(on=False))
+        .control(power_hub.water_filter_bypass_valve)
+        .value(ValveControl(position=WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION))
         .build()
     )
 

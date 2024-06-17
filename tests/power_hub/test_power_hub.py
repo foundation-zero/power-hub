@@ -18,10 +18,11 @@ from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
 from energy_box_control.network import NetworkState
 from energy_box_control.networks import ControlState
 from energy_box_control.power_hub import PowerHub
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from energy_box_control.power_hub.control import (
     PowerHubControlState,
+    WaterControlMode,
     control_power_hub,
     initial_control_all_off,
     initial_control_state,
@@ -183,3 +184,72 @@ def test_power_hub_schedules_from_data():
         )
         == data["Global Horizontal Radiation"].iloc[hour]
     )
+
+
+def test_water_filter_trigger(power_hub, min_max_temperature):
+
+    schedules = PowerHubSchedules.schedules_from_data()
+    power_hub = PowerHub.power_hub(schedules)
+    state = power_hub.simple_initial_state(datetime.now(), timedelta(seconds=1))
+    control_state = initial_control_state()
+    control_values = initial_control_all_off(power_hub)
+
+    sensors = power_hub.sensors_from_state(state)
+
+    control_state, control_values = control_power_hub(
+        power_hub, control_state, sensors, state.time
+    )
+
+    control_state.setpoints.trigger_filter_water_tank = replace(state.time, step=10)
+
+    for i in range(31 * 60):
+        control_state, control_values = control_power_hub(
+            power_hub, control_state, sensors, replace(state.time, step=i)
+        )
+
+        if i == 1:
+            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_state.water_control.control_mode == WaterControlMode.READY
+
+        if i == 11:
+            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
+            assert (
+                control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
+            )
+
+        if i == 12 + 30 * 60:
+            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_state.water_control.control_mode == WaterControlMode.READY
+
+
+def test_water_filter_stop(power_hub, min_max_temperature):
+
+    schedules = PowerHubSchedules.schedules_from_data()
+    power_hub = PowerHub.power_hub(schedules)
+    state = power_hub.simple_initial_state(datetime.now(), timedelta(seconds=1))
+    control_state = initial_control_state()
+    control_values = initial_control_all_off(power_hub)
+
+    sensors = power_hub.sensors_from_state(state)
+
+    control_state, control_values = control_power_hub(
+        power_hub, control_state, sensors, state.time
+    )
+
+    control_state.setpoints.trigger_filter_water_tank = replace(state.time, step=10)
+    control_state.setpoints.stop_filter_water_tank = replace(state.time, step=12)
+
+    for i in range(31 * 60):
+        control_state, control_values = control_power_hub(
+            power_hub, control_state, sensors, replace(state.time, step=i)
+        )
+
+        if i == 11:
+            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
+            assert (
+                control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
+            )
+
+        if i == 13:
+            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_state.water_control.control_mode == WaterControlMode.READY
