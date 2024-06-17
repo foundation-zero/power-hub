@@ -16,32 +16,46 @@ import { BarChart, LineChart } from "echarts/charts";
 import VChart from "vue-echarts";
 import { ref } from "vue";
 import { useObservable } from "@vueuse/rxjs";
-import { oneDayAgo } from "@/utils";
 import { computed } from "vue";
+import { isAfter, startOfToday, startOfTomorrow } from "date-fns";
+import { range } from "lodash";
+import { useStripes } from "@/utils/charts";
+import type { HistoricalData } from "@/types";
 
 use([SVGRenderer, BarChart, LineChart]);
 
 const { sum } = usePowerHubStore();
 
-const consumption = useObservable(
+const hours = range(0, 24);
+
+const currentConsumption = useObservable(
   sum.useOverTime("electric/power/consumption", {
     interval: "h",
-    between: [oneDayAgo().toISOString(), new Date().toISOString()].join(","),
+    between: [startOfToday().toISOString(), startOfTomorrow().toISOString()].join(","),
+  }),
+);
+
+const consumptionPerHour = computed(() =>
+  hours.map<HistoricalData<Date, number>>((hour) => {
+    const currentValue = currentConsumption.value?.find(({ time }) => time.getHours() === hour);
+
+    return (
+      currentValue ?? {
+        time: new Date(new Date().setHours(hour, 0, 0, 0)),
+        value: Math.random() * 1000,
+      }
+    );
   }),
 );
 
 const colorMode = useColorMode();
-
-const hours = [
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-];
 
 const option = ref({
   backgroundColor: "#f9f8f8",
   grid: {
     left: 37,
     top: 12,
-    right: 20,
+    right: 37,
     bottom: 10,
   },
   legend: {
@@ -72,15 +86,19 @@ const option = ref({
       name: "Consumption",
       type: "bar",
       itemStyle: {
-        color: "#8d8780",
+        color: "#756B61",
         borderRadius: 20,
       },
       barWidth: "40%",
       data: computed(() =>
-        consumption.value
+        consumptionPerHour.value
           ?.filter((_, index) => index % 2 === 0)
-          .map((val, index) => val.value + (consumption.value?.[index * 2 + 1]?.value ?? 0))
-          .map((val) => -Math.abs(val)),
+          .map((value, index) => ({
+            value: -Math.abs(value.value + (consumptionPerHour.value?.[index * 2 + 1]?.value ?? 0)),
+            itemStyle: {
+              decal: isAfter(value.time, new Date()) ? useStripes() : undefined,
+            },
+          })),
       ),
     },
   ],

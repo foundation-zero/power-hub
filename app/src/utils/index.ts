@@ -91,11 +91,5 @@ export const useAsValueWithUnit =
 export const useAsWatts = useAsValueWithUnit("W");
 export const useAsWattHours = useAsValueWithUnit("Wh");
 
-export const oneDayAgo = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date;
-};
-
 export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
   values[values.length - 1]?.value;

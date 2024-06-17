@@ -17,9 +17,11 @@ import VChart from "vue-echarts";
 import { ref } from "vue";
 import { computed } from "vue";
 import { toKiloWattHours } from "@/utils/formatters";
-import { oneDayAgo } from "@/utils";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
+import { range } from "lodash";
+import { isAfter, startOfToday, startOfTomorrow } from "date-fns";
+import { useStripes } from "@/utils/charts";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -27,21 +29,31 @@ const colorMode = useColorMode();
 
 const { sum } = usePowerHubStore();
 
-const hours = [
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-];
+const hours = range(0, 24);
 
-const values = useObservable(
+const currentProduction = useObservable(
   sum.useOverTime("electric/power/production", () => ({
     interval: "h",
-    between: [oneDayAgo().toISOString(), new Date().toISOString()].join(","),
+    between: [startOfToday().toISOString(), startOfTomorrow().toISOString()].join(","),
   })),
 );
 
-const batteryValues = [
-  50, 45, 42, 50, 60, 80, 90, 100, 100, 100, 100, 99, 98, 96, 92, 80, 70, 68, 66, 64, 60, 58, 56,
-  53,
-];
+const productionPerHour = computed(() =>
+  range(0, 24).map((hour) => {
+    const currentValue = currentProduction.value?.find(({ time }) => time.getHours() === hour);
+
+    if (!currentValue) {
+      return {
+        time: new Date(new Date().setHours(hour, 0, 0, 0)),
+        value: Math.random() * 1000,
+      };
+    }
+
+    return currentValue;
+  }),
+);
+
+const batteryValues = hours.map(() => 50 + Math.random() * 50);
 
 const colorsOfTheDay = [
   "#213b5d",
@@ -73,7 +85,7 @@ const colorsOfTheDay = [
 const option = ref({
   backgroundColor: "#f9f8f8",
   grid: {
-    left: 20,
+    left: 37,
     top: 5,
     right: 37,
     bottom: 0,
@@ -123,12 +135,13 @@ const option = ref({
       type: "bar",
       barWidth: "50%",
       data: computed(() =>
-        values.value
+        productionPerHour.value
           ?.filter((_, index) => index % 2 === 0)
           .slice(0, 12)
           .map((value, index) => ({
-            value: value.value + (values.value?.[index * 2 + 1]?.value ?? 0),
+            value: value.value + (productionPerHour.value?.[index * 2 + 1]?.value ?? 0),
             itemStyle: {
+              decal: isAfter(value.time, new Date()) ? useStripes() : undefined,
               color: new graphic.LinearGradient(0, 0, 1, 0, [
                 {
                   offset: 0,

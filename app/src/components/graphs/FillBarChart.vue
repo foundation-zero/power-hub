@@ -38,8 +38,10 @@ export type BarSeries = {
   color: string;
 };
 
-const fillPercentage = computed(
-  () => (props.values[0] / (props.values[0] + props.values[1])) * 100,
+const fillTotal = computed(() => props.values[0] + props.values[1]);
+
+const fillPercentage = computed(() =>
+  fillTotal.value === 0 ? 0 : (props.values[0] / (props.values[0] + props.values[1])) * 100,
 );
 
 const props = defineProps<{
