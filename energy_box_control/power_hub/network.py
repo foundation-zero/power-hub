@@ -326,7 +326,7 @@ class PowerHub(Network[PowerHubSensors]):
 
     def simple_initial_state(
         self,
-        start_time: datetime = datetime.now(),
+        start_time: datetime = datetime.now(tz=timezone.utc),
         step_size: timedelta = timedelta(seconds=1),
     ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature

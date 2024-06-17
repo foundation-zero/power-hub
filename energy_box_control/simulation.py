@@ -1,7 +1,7 @@
 import dataclasses
+from datetime import datetime, timezone
 import enum
 import json
-import math
 
 from dataclasses import dataclass
 from typing import Any
@@ -25,6 +25,7 @@ from energy_box_control.power_hub.control import (
     control_power_hub,
     control_to_json,
     initial_control_state,
+    no_control,
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
@@ -36,7 +37,6 @@ from energy_box_control.mqtt import (
     run_listener,
 )
 from paho.mqtt import client as mqtt_client
-from datetime import datetime, timezone
 
 from functools import partial
 
@@ -181,7 +181,10 @@ async def run(
     monitor = Monitor(checks)
 
     power_hub = PowerHub.power_hub(schedules)
-    state = power_hub.simple_initial_state()
+    state = power_hub.simulate(
+        power_hub.simple_initial_state(start_time=datetime.now(tz=timezone.utc)),
+        no_control(power_hub),
+    )
     control_state = initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
