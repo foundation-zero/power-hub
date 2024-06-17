@@ -101,9 +101,9 @@ class SimulationResult:
                     **json.loads(power_hub_control_setpoints_json)
                 )
                 logger.info(
-                    f"Processed new setpoints succesfully: {power_hub_control_setpoints_json}"
+                    f"Processed new setpoints successfully: {power_hub_control_setpoints_json}"
                 )
-            except Exception as e:
+            except TypeError as e:
                 logger.error(
                     f"Couldn't process received setpoints ({power_hub_control_setpoints_json}) with error: {e}"
                 )
