@@ -22,8 +22,12 @@ from energy_box_control.linearize import linearize
 from energy_box_control.network import NetworkState, Network
 
 
+class Timed(Protocol):
+    def __init__(self, time: datetime, **kwargs: Any): ...
+
+
 @dataclass
-class NetworkSensors:
+class NetworkSensors(Timed):
 
     @classmethod
     def context(cls) -> "SensorContext[Self]":
@@ -90,7 +94,7 @@ class WithoutAppliance(Protocol):
     def __init__(self, context: "SensorContext[Any]", **values: Any): ...
 
 
-class SensorContext[T]:
+class SensorContext[T: Timed]:
 
     def __init__(self, cls: type[T]) -> None:
         self._cls = cls
@@ -164,8 +168,7 @@ class SensorContext[T]:
         return self._sensors.get(name, None)
 
     def result(self, time: datetime) -> "T":
-        self._sensors["time"] = time
-        return self._cls(**self._sensors)
+        return self._cls(time=time, **self._sensors)
 
     def __enter__(self):
         return self
