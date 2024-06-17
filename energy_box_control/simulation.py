@@ -97,7 +97,10 @@ class SimulationResult:
         )
 
         control_state, control_values = control_power_hub(
-            self.power_hub, self.control_state, power_hub_sensors, self.state.time
+            self.power_hub,
+            self.control_state,
+            power_hub_sensors,
+            self.state.time.timestamp,
         )
 
         publish_to_mqtt(

@@ -9,12 +9,11 @@ from energy_box_control.control.state_machines import (
     State,
     StateMachine,
 )
-from energy_box_control.time import ProcessTime
 
 
 @fixture
 def epoch():
-    return ProcessTime(timedelta(seconds=1), 0, datetime(2024, 1, 1))
+    return datetime(2024, 1, 1)
 
 
 Fn = Functions(int, int)
@@ -102,9 +101,9 @@ def test_holds_true(epoch):
     context = Context()
     assert not pred.resolve(context, 0, 0, epoch)
     context = context.flip()
-    assert not pred.resolve(context, 0, 0, replace(epoch, step=4))
+    assert not pred.resolve(context, 0, 0, epoch + timedelta(seconds=4))
     context = context.flip()
-    assert pred.resolve(context, 0, 0, replace(epoch, step=5))
+    assert pred.resolve(context, 0, 0, epoch + timedelta(seconds=5))
 
 
 def test_state_machine_step(epoch):
@@ -173,7 +172,11 @@ def test_state_machine_holds(epoch):
     context = Context()
     state, context = state_machine.run(state, context, 0, 0, epoch)
     assert state == States.A
-    state, context = state_machine.run(state, context, 0, 0, replace(epoch, step=59))
+    state, context = state_machine.run(
+        state, context, 0, 0, epoch + timedelta(seconds=59)
+    )
     assert state == States.A
-    state, context = state_machine.run(state, context, 0, 0, replace(epoch, step=60))
+    state, context = state_machine.run(
+        state, context, 0, 0, epoch + timedelta(seconds=60)
+    )
     assert state == States.B

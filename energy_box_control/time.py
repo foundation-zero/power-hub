@@ -13,6 +13,7 @@ class ProcessTime:
 
     @cached_property
     def timestamp(self) -> datetime:
+
         return self.start + timedelta(
             seconds=self.step * self.step_size.total_seconds()
         )
