@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 from energy_box_control.control.state_machines import (
     Context,
@@ -22,7 +22,6 @@ from energy_box_control.power_hub.power_hub_components import (
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION,
 )
-from energy_box_control.time import ProcessTime
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
 from energy_box_control.appliances.switch_pump import SwitchPumpControl
@@ -268,7 +267,7 @@ def hot_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
-    time: ProcessTime,
+    time: datetime,
 ):
     # hot water usage
     # PID heat pipes feedback valve by ~ +5 degrees above the heat destination with max of 95 degrees (depending on the hot_switch_valve)
@@ -414,7 +413,7 @@ def chill_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
-    time: ProcessTime,
+    time: datetime,
 ):
     # Chill between cold reservoir min and max setpoints
     # Switch to Yazaki if PCM is full
@@ -586,7 +585,7 @@ def waste_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
-    time: ProcessTime,
+    time: datetime,
 ):
     # Waste
     #   if preheat reservoir > max preheat reservoir temperature: run outboard
@@ -617,7 +616,7 @@ def control_power_hub(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
-    time: ProcessTime,
+    time: datetime,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     # Control modes
     # Hot: heat boiler / heat PCM / off
