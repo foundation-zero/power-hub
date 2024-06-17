@@ -31,16 +31,16 @@
 </template>
 
 <script setup lang="ts">
-import WidgetsCarousel from "../components/WidgetsCarousel.vue";
-import SlideShow from "@/components/SlideShow.vue";
-import MapLegend from "../components/map/MapLegend.vue";
-import FZLogo from "../components/map/FZLogo.vue";
-import InnerWaves from "../components/map/landscape/InnerWaves.vue";
-import OuterWaves from "../components/map/landscape/OuterWaves.vue";
-import PhaseLanes from "../components/map/landscape/PhaseLanes.vue";
-import PipeLines from "../components/map/landscape/PipeLines.vue";
-import PipeStreams from "../components/map/landscape/PipeStreams.vue";
-import PowerHubComponents from "../components/map/landscape/PowerHubComponents.vue";
+import WidgetsCarousel from "../components/display/WidgetsCarousel.vue";
+import SlideShow from "../components/display/SlideShow.vue";
+import MapLegend from "../components/MapLegend.vue";
+import FZLogo from "../components/FZLogo.vue";
+import InnerWaves from "../components/landscape/map/InnerWaves.vue";
+import OuterWaves from "../components/landscape/map/OuterWaves.vue";
+import PhaseLanes from "../components/landscape/map/PhaseLanes.vue";
+import PipeLines from "../components/landscape/map/PipeLines.vue";
+import PipeStreams from "../components/landscape/map/PipeStreams.vue";
+import PowerHubComponents from "../components/landscape/map/PowerHubComponents.vue";
 
 import { usePresentationStore } from "@/stores/presentation";
 import { onMounted, onDeactivated } from "vue";

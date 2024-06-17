@@ -23,22 +23,38 @@
       </div>
     </v-main>
 
-    <ContentPanel />
+    <ContentPanel v-model:modelValue="show">
+      <JourneyContent />
+    </ContentPanel>
   </v-layout>
 </template>
 
 <script setup lang="ts">
-import PowerHubComponents from "../components/map/portrait/PowerHubComponents.vue";
-import InnerWaves from "../components/map/portrait/InnerWaves.vue";
-import PipeLines from "../components/map/portrait/PipeLines.vue";
-import PipeStreams from "@/components/map/portrait/PipeStreams.vue";
+import PowerHubComponents from "../components/portrait/map/PowerHubComponents.vue";
+import InnerWaves from "../components/portrait/map/InnerWaves.vue";
+import PipeLines from "../components/portrait/map/PipeLines.vue";
+import PipeStreams from "@/components/portrait/map/PipeStreams.vue";
 
 import { usePresentationStore } from "@/stores/presentation";
 import { toRefs } from "vue";
 import ContentPanel from "@/components/portrait/ContentPanel.vue";
 import AppBar from "@/components/portrait/AppBar.vue";
+import JourneyContent from "@/components/responsive/JourneyContent.vue";
+import { computed } from "vue";
 
-const { root } = toRefs(usePresentationStore());
+const { setJourney } = usePresentationStore();
+const { root, currentJourney } = toRefs(usePresentationStore());
+
+const show = computed({
+  get() {
+    return !!currentJourney.value;
+  },
+  set(val: boolean) {
+    if (!val) {
+      setJourney();
+    }
+  },
+});
 </script>
 
 <style>
