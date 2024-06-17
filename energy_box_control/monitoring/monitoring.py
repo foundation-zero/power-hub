@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
-from energy_box_control.checks import Check, Severity
+from energy_box_control.monitoring.checks import (
+    SensorValueCheck,
+    Severity,
+    UrlHealthCheck,
+)
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
@@ -30,7 +34,7 @@ class PagerDutyNotificationChannel(NotificationChannel):
         self._events_session.url = "https://events.eu.pagerduty.com/"
 
     def send_event(self, event: NotificationEvent):
-        logger.info("Sending alert to PagerDuty")
+        logger.info(f"Sending alert to PagerDuty: {event.message}")
         if CONFIG.send_notifications:
             self._events_session.trigger(event.message, event.source, event.dedup_key)  # type: ignore
 
@@ -46,14 +50,27 @@ class Notifier:
 
 
 class Monitor:
-    def __init__(self, checks: list[Check]):
-        self._checks = checks
+    def __init__(
+        self,
+        sensor_value_checks: list[SensorValueCheck] = [],
+        url_health_checks: list[UrlHealthCheck] = [],
+    ):
+        self._sensor_value_checks = sensor_value_checks
+        self._url_health_checks = url_health_checks
 
     def run_sensor_values_checks(
         self, sensor_values: PowerHubSensors, source: str
     ) -> list[NotificationEvent]:
         return [
             NotificationEvent(result, source, check.name, check.severity)
-            for check in self._checks
+            for check in self._sensor_value_checks
             if (result := check.check(sensor_values)) is not None
+        ]
+
+    async def run_url_health_checks(self, source: str) -> list[NotificationEvent]:
+
+        return [
+            NotificationEvent(result, source, check.name, check.severity)
+            for check in self._url_health_checks
+            if (result := await check.check()) is not None
         ]

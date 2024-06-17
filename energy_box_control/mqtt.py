@@ -10,9 +10,9 @@ import random
 from datetime import datetime
 import json
 import time
-from energy_box_control.checks import Severity
+from energy_box_control.monitoring.checks import Severity
 from energy_box_control.custom_logging import get_logger
-from energy_box_control.monitoring import NotificationEvent, Notifier
+from energy_box_control.monitoring.monitoring import NotificationEvent, Notifier
 
 from energy_box_control.config import CONFIG
 
