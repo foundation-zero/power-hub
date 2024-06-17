@@ -139,8 +139,8 @@ class Setpoints:
     preheat_reservoir_max_temperature: Celsius = setpoint(
         "maximum temperature of the preheat reservoir"
     )
-    trigger_filter_water_tank: ProcessTime = setpoint("trigger filtering of water tank")
-    stop_filter_water_tank: ProcessTime = setpoint("stop filtering of water tank")
+    trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
+    stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
 
 
 @dataclass
@@ -172,12 +172,8 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
             preheat_reservoir_min_temperature=25,
-            trigger_filter_water_tank=ProcessTime(
-                timedelta(seconds=1), 10, datetime(2017, 6, 1, 0, 0, 0)
-            ),
-            stop_filter_water_tank=ProcessTime(
-                timedelta(seconds=1), 25, datetime(2017, 6, 1, 0, 0, 0)
-            ),
+            trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0),
+            stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0),
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -659,7 +655,7 @@ def water_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
-    time: ProcessTime,
+    time: datetime,
 ):
 
     water_control_mode, context = water_control_machine.run(

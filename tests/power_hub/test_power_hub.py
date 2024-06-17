@@ -197,14 +197,16 @@ def test_water_filter_trigger(power_hub, min_max_temperature):
     sensors = power_hub.sensors_from_state(state)
 
     control_state, control_values = control_power_hub(
-        power_hub, control_state, sensors, state.time
+        power_hub, control_state, sensors, state.time.timestamp
     )
 
-    control_state.setpoints.trigger_filter_water_tank = replace(state.time, step=10)
+    control_state.setpoints.trigger_filter_water_tank = replace(
+        state.time, step=10
+    ).timestamp
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub, control_state, sensors, replace(state.time, step=i)
+            power_hub, control_state, sensors, replace(state.time, step=i).timestamp
         )
 
         if i == 1:
@@ -233,15 +235,19 @@ def test_water_filter_stop(power_hub, min_max_temperature):
     sensors = power_hub.sensors_from_state(state)
 
     control_state, control_values = control_power_hub(
-        power_hub, control_state, sensors, state.time
+        power_hub, control_state, sensors, state.time.timestamp
     )
 
-    control_state.setpoints.trigger_filter_water_tank = replace(state.time, step=10)
-    control_state.setpoints.stop_filter_water_tank = replace(state.time, step=12)
+    control_state.setpoints.trigger_filter_water_tank = replace(
+        state.time, step=10
+    ).timestamp
+    control_state.setpoints.stop_filter_water_tank = replace(
+        state.time, step=12
+    ).timestamp
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub, control_state, sensors, replace(state.time, step=i)
+            power_hub, control_state, sensors, replace(state.time, step=i).timestamp
         )
 
         if i == 11:

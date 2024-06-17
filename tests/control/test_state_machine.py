@@ -97,7 +97,7 @@ def test_not(resolve):
 
 
 def test_elapsed(resolve):
-    input_time = ProcessTime(timedelta(seconds=1), 0, datetime(2023, 12, 31))
+    input_time = datetime(2023, 12, 31)
     assert resolve(Fn.state(lambda time: input_time).elapsed(timedelta(days=2)))  # type: ignore
     assert not resolve(Fn.state(lambda time: input_time).elapsed(timedelta(hours=1)))  # type: ignore
 
