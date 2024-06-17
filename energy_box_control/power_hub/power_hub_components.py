@@ -44,6 +44,8 @@ WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
 WASTE_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
 YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
 YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
+WATER_FILTER_BYPASS_VALVE_FILTER_POSITION = ValveControl.b_position()
+WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION = ValveControl.a_position()
 
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
 PREHEAT_SWITCH_VALVE_BYPASS_POSITION = ValveControl.b_position()
@@ -191,3 +193,4 @@ def water_demand(
 
 
 water_treatment = WaterTreatment(0.5)
+water_filter_bypass_valve = Valve()

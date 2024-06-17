@@ -96,6 +96,12 @@ def test_not(resolve):
     assert not resolve(~Fn.const_pred(True))
 
 
+def test_within(resolve):
+    input_time = datetime(2023, 12, 31)
+    assert resolve(Fn.state(lambda time: input_time).within(timedelta(days=2)))  # type: ignore
+    assert not resolve(Fn.state(lambda time: input_time).within(timedelta(hours=1)))  # type: ignore
+
+
 def test_holds_true(epoch):
     pred = Fn.const_pred(True).holds_true(Marker("test"), timedelta(seconds=5))
     context = Context()
