@@ -251,11 +251,21 @@ def test_water_filter_stop(power_hub, min_max_temperature):
         )
 
         if i == 11:
-            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
+            assert (
+                control_values.appliance(power_hub.water_filter_bypass_valve)
+                .get()
+                .position
+                == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
+            )
             assert (
                 control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
             )
 
         if i == 13:
-            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert (
+                control_values.appliance(power_hub.water_filter_bypass_valve)
+                .get()
+                .position
+                == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
+            )
             assert control_state.water_control.control_mode == WaterControlMode.READY
