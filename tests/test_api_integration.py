@@ -134,6 +134,15 @@ def test_get_mean_value(headers):
 
 
 @pytest.mark.integration
+def test_get_current_pcm_fill(headers):
+    response = requests.get(
+        f"{BASE_URL}/power_hub/appliance_sensors/pcm/fill/current", headers=headers
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert json.loads(response.text) >= 0
+
+
+@pytest.mark.integration
 def test_get_electric_power_consumption(headers):
     response = requests.get(
         f"{BASE_URL}/power_hub/electric/power/consumption/over/time", headers=headers
