@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from hypothesis import example
 from numpy import power
@@ -190,7 +190,9 @@ def test_water_filter_trigger(power_hub, min_max_temperature):
 
     schedules = PowerHubSchedules.schedules_from_data()
     power_hub = PowerHub.power_hub(schedules)
-    state = power_hub.simple_initial_state(datetime.now(), timedelta(seconds=1))
+    state = power_hub.simple_initial_state(
+        datetime.now(timezone.utc), timedelta(seconds=1)
+    )
     control_state = initial_control_state()
     control_values = initial_control_all_off(power_hub)
 
@@ -228,7 +230,9 @@ def test_water_filter_stop(power_hub, min_max_temperature):
 
     schedules = PowerHubSchedules.schedules_from_data()
     power_hub = PowerHub.power_hub(schedules)
-    state = power_hub.simple_initial_state(datetime.now(), timedelta(seconds=1))
+    state = power_hub.simple_initial_state(
+        datetime.now(timezone.utc), timedelta(seconds=1)
+    )
     control_state = initial_control_state()
     control_values = initial_control_all_off(power_hub)
 
