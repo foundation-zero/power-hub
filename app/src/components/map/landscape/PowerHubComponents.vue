@@ -1,19 +1,73 @@
 <template>
   <g id="power-hub-components">
-    <TheSun />
-    <HeatTubes :power-hub="powerHub" />
-    <HeatStorage :power-hub="powerHub" />
-    <AbsorbtionChiller :power-hub="powerHub" />
-    <CompressionChiller :power-hub="powerHub" />
-    <CoolingDemand :power-hub="powerHub" />
-    <SolarPanels :power-hub="powerHub" />
-    <PowerBattery :power-hub="powerHub" />
-    <SystemDemand :power-hub="powerHub" />
-    <SeaWater />
-    <WaterMaker :power-hub="powerHub" />
-    <WaterStorage :power-hub="powerHub" />
-    <WaterTreatment :power-hub="powerHub" />
-    <WaterDemand :power-hub="powerHub" />
+    <TheSun
+      x="151"
+      y="428"
+    />
+    <HeatTubes
+      :power-hub="powerHub"
+      x="367"
+      y="508"
+    />
+    <HeatStorage
+      :power-hub="powerHub"
+      x="549"
+      y="508"
+    />
+    <AbsorptionChiller
+      :power-hub="powerHub"
+      x="761"
+      y="591"
+    />
+    <CompressionChiller
+      :power-hub="powerHub"
+      x="759"
+      y="452"
+    />
+    <CoolingDemand
+      :power-hub="powerHub"
+      x="1067"
+      y="521"
+    />
+    <SolarPanels
+      :power-hub="powerHub"
+      x="366"
+      y="368"
+    />
+    <PowerBattery
+      :power-hub="powerHub"
+      x="557"
+      y="364"
+    />
+    <SystemDemand
+      :power-hub="powerHub"
+      x="941"
+      y="368"
+    />
+    <SeaWater
+      x="152"
+      y="634"
+    />
+    <WaterMaker
+      :power-hub="powerHub"
+      x="365"
+      y="643"
+    />
+    <WaterStorage
+      :power-hub="powerHub"
+      x="557"
+      y="701"
+    />
+    <WaterTreatment
+      :power-hub="powerHub"
+      x="756"
+      y="795"
+    />
+    <WaterDemand
+      :power-hub="powerHub"
+      x="952"
+      y="706"
+    />
     <defs>
       <clipPath id="clip0_481_1610">
         <rect
@@ -57,7 +111,7 @@ import TheSun from "./TheSun.vue";
 import SolarPanels from "./SolarPanels.vue";
 import HeatTubes from "./HeatTubes.vue";
 import HeatStorage from "./HeatStorage.vue";
-import AbsorbtionChiller from "./AbsorptionChiller.vue";
+import AbsorptionChiller from "./AbsorptionChiller.vue";
 import CompressionChiller from "./CompressionChiller.vue";
 import CoolingDemand from "./CoolingDemand.vue";
 import PowerBattery from "./PowerBattery.vue";

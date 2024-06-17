@@ -98,4 +98,4 @@ export const oneDayAgo = () => {
 };
 
 export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
-  values.length ? values[values.length - 1].value : "";
+  values[values.length - 1]?.value;

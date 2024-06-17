@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="heat-storage"
-    x="549"
-    y="508"
+    journey="heat"
     width="128"
     height="128"
     viewBox="-8 -8 128 128"

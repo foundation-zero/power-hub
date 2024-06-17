@@ -21,7 +21,6 @@
       >
         <AnimatedNumber
           :to="chillingPower"
-          :format="formattedInt"
           tag="tspan"
         />
       </tspan>
@@ -110,7 +109,6 @@
       >
         <AnimatedNumber
           :to="heatPower"
-          :format="formattedInt"
           tag="tspan"
         />
         <tspan
@@ -118,7 +116,7 @@
           text-anchor="end"
           width="30"
         >
-          kW
+          {{ heatPowerUnit }}
         </tspan>
       </tspan>
     </text>
@@ -189,7 +187,6 @@
       >
         <AnimatedNumber
           :to="outputTemperature"
-          :format="formattedInt"
           tag="tspan"
         />
         <tspan
@@ -244,15 +241,15 @@
 <script setup lang="ts">
 import { usePowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { useRandomNumber } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
-import AnimatedNumber from "vue-number-animation";
+import AnimatedNumber from "@/components/AnimatedInt.vue";
 
 const { sensors } = usePowerHubStore();
 
 const { value: chillingPower, unit: chillingPowerUnit } = useAsWatts(
   useObservable(sensors.useMean("yazaki/chill_power")),
 );
-const heatPower = useAsWatts(useRandomNumber(0, 5000));
+const { value: heatPower, unit: heatPowerUnit } = useAsWatts(useRandomNumber(0, 5000));
 const outputTemperature = useObservable(sensors.useMean("yazaki/chilled_output_temperature"));
 </script>

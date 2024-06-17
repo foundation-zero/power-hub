@@ -1,7 +1,5 @@
 <template>
   <svg
-    width="498"
-    height="260"
     viewBox="0 0 498 260"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +71,6 @@
       >
         <AnimatedNumber
           :to="netValue"
-          :format="formattedInt"
           tag="tspan"
         />
       </tspan>
@@ -139,7 +136,6 @@
       >
         <AnimatedNumber
           :to="charging"
-          :format="formattedInt"
           tag="tspan"
         />
 
@@ -213,7 +209,6 @@
       >
         <AnimatedNumber
           :to="discharging"
-          :format="formattedInt"
           tag="tspan"
         />
         <tspan
@@ -294,7 +289,6 @@
         <AnimatedNumber
           tag="tspan"
           :to="internalTemperature"
-          :format="formattedInt"
         />
         &#8451;
       </tspan>
@@ -344,10 +338,9 @@
 <script setup lang="ts">
 import { usePowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
-import { formattedInt } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
-import AnimatedNumber from "vue-number-animation";
+import AnimatedNumber from "@/components/AnimatedInt.vue";
 
 const { sensors } = usePowerHubStore();
 

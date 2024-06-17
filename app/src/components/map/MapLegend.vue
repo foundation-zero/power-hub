@@ -1,5 +1,5 @@
 <template>
-  <g transform="translate(167, 884)">
+  <g>
     <line
       y1="12"
       x2="50"

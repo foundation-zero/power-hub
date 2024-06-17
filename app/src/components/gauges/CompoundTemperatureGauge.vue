@@ -20,15 +20,9 @@
       >
         <AnimatedNumber
           :to="outdoorTemperature"
-          :format="formattedInt"
           tag="tspan"
         />
-        <tspan
-          width="30"
-          text-anchor="end"
-        >
-          &#8451;
-        </tspan>
+        &thinsp; &#8451;
       </tspan>
     </text>
     <text
@@ -108,8 +102,7 @@
         y="142.4"
       >
         <AnimatedNumber
-          :to="compundTemperature"
-          :format="formattedInt"
+          :to="compoundTemperature"
           tag="tspan"
         />
       </tspan>
@@ -183,14 +176,13 @@
 <script setup lang="ts">
 import { usePowerHubStore } from "@/stores/power-hub";
 import { useLastOrNone } from "@/utils";
-import { formattedInt } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import { map } from "rxjs";
-import AnimatedNumber from "vue-number-animation";
+import AnimatedNumber from "@/components/AnimatedInt.vue";
 
 const { sensors, weather } = usePowerHubStore();
 
-const compundTemperature = useObservable(
+const compoundTemperature = useObservable(
   sensors.useLastValues("compound/overall_temperature").pipe(map(useLastOrNone)),
 );
 const outdoorTemperature = useObservable(weather.current().pipe(map((val) => val.temp)));

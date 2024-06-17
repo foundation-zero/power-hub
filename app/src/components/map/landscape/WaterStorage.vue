@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="water-storage"
-    x="557"
-    y="701"
+    journey="water"
     width="113"
     height="114"
     viewBox="-1 -1 113 114"

@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="cooling-demand"
-    x="1067"
-    y="521"
+    journey="heat"
     width="114"
     height="114"
     viewBox="-1 -1 114 114"

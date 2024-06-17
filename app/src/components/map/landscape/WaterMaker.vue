@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="water-maker"
-    x="365"
-    y="643"
+    journey="water"
     width="112"
     height="111"
     viewBox="0 0 112 111"

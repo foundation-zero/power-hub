@@ -1,9 +1,7 @@
 <template>
   <ComponentBase
     component="compression-chiller"
-    class="gradient"
-    x="759"
-    y="452"
+    journey="heat"
     width="120"
     height="112"
     viewBox="0 0 120 112"
@@ -15,7 +13,6 @@
       height="112"
       rx="55.5"
       transform="rotate(180 112 112.001)"
-      class="fill gradient"
       fill="url(#paint0_linear_505_2356)"
     />
     <circle
@@ -110,19 +107,16 @@
     <defs>
       <linearGradient
         id="paint0_linear_505_2356"
+        class="fill-gradient"
         x1="112"
         y1="169.563"
         x2="223"
         y2="166.439"
         gradientUnits="userSpaceOnUse"
       >
-        <stop
-          stop-color="#AFE7EB"
-          class="from"
-        />
+        <stop stop-color="#AFE7EB" />
         <stop
           offset="1"
-          class="to"
           stop-color="#FFEFB9"
         />
       </linearGradient>

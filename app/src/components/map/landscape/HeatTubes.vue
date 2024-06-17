@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="heat-tubes"
-    x="367"
-    y="508"
+    journey="heat"
     width="114"
     height="114"
     viewBox="-1 -1 114 114"

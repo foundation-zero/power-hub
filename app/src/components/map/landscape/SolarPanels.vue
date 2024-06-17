@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="solar-panels"
-    x="366"
-    y="368"
+    journey="electrical"
     width="114"
     height="114"
     viewBox="-1 -1 114 114"

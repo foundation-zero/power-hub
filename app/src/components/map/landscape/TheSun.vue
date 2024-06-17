@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="sun"
-    x="151"
-    y="428"
+    journey="electrical"
     width="130"
     height="130"
     viewBox="0 0 130 130"

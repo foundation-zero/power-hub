@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="power-battery"
-    x="557"
-    y="364"
+    journey="electrical"
     width="120"
     height="114"
     viewBox="-1 -1 120 114"

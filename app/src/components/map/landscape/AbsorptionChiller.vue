@@ -1,9 +1,7 @@
 <template>
   <ComponentBase
     component="absorption-chiller"
-    class="gradient"
-    x="761"
-    y="591"
+    journey="heat"
     width="114"
     height="114"
     viewBox="0 0 114 114"
@@ -15,7 +13,6 @@
       height="112"
       rx="55.5"
       transform="rotate(180 113 112.001)"
-      class="fill gradient"
       fill="url(#paint0_linear_512_1595)"
     />
     <circle
@@ -121,6 +118,7 @@
     <defs>
       <linearGradient
         id="paint0_linear_512_1595"
+        class="fill-gradient"
         x1="224"
         y1="168.001"
         x2="113"

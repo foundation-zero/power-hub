@@ -1,8 +1,7 @@
 <template>
   <ComponentBase
     component="sea-water"
-    x="152"
-    y="634"
+    journey="water"
     width="130"
     height="130"
     viewBox="0 0 130 130"
