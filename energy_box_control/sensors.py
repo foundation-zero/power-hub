@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 import json
 from math import nan
+import math
 from uuid import UUID
 
 from energy_box_control.appliances.base import (
@@ -315,12 +316,14 @@ class SensorEncoder(json.JSONEncoder):
     def default(self, o: Any):
         if type(o) == datetime:
             return o.isoformat()
-        if hasattr(o, "__dict__"):
+        if is_sensor(o):
             return {
-                attr: value
-                for attr, value in o.__dict__.items()
-                if attr != "spec" and not (is_sensor(value) and is_sensor(o))
+                field: getattr(o, field)
+                for field in sensor_fields(type(o))
+                if not math.isnan(getattr(o, field))
             }
+        if hasattr(o, "__dict__"):
+            return {attr: value for attr, value in o.__dict__.items()}
         if type(o) == UUID:
             return o.hex
         else:
