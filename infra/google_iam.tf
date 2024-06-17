@@ -52,6 +52,13 @@ resource "google_project_iam_member" "project_access" {
   role    = "roles/editor"
   member  = google_service_account.service_account.member
 }
+
+resource "google_project_iam_member" "gke_roles_access" {
+  project = var.project_id
+  role    = "roles/container.clusterAdmin"
+  member  = google_service_account.service_account.member
+}
+
 resource "google_project_iam_member" "workload_federation_access" {
   project = var.project_id
   role    = "roles/iam.workloadIdentityPoolAdmin"
