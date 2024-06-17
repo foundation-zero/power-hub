@@ -1,11 +1,11 @@
 <template>
   <ComponentBase
     component="heat-storage"
-    x="557"
+    x="549"
     y="508"
-    width="120"
-    height="114"
-    viewBox="-1 -1 120 114"
+    width="128"
+    height="128"
+    viewBox="-8 -8 128 128"
   >
     <rect
       width="112"
@@ -16,6 +16,26 @@
       stroke="white"
       stroke-width="1"
     />
+
+    <circle
+      cx="56"
+      cy="56"
+      r="62"
+      stroke="#D4999D"
+      stroke-width="4"
+      class="outline"
+    />
+
+    <circle
+      cx="56"
+      cy="56"
+      r="62"
+      stroke="white"
+      stroke-dasharray="5"
+      stroke-width="4"
+      class="flow"
+    />
+
     <circle
       cx="56"
       cy="56"
@@ -28,7 +48,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="12"
-      font-weight="bold"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -78,11 +98,10 @@
     >
       <tspan
         text-anchor="end"
-        x="60"
+        x="56"
         y="82.91"
+        >20</tspan
       >
-        20
-      </tspan>
     </text>
     <text
       fill="#756B61"
@@ -104,3 +123,30 @@
 <script setup lang="ts">
 import ComponentBase from "./ComponentBase.vue";
 </script>
+
+<style scoped lang="scss">
+@keyframes stream {
+  from {
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.flow {
+  animation: stream 2500ms linear infinite;
+}
+
+.flow,
+.outline {
+  will-change: opacity;
+  transition: opacity 750ms ease;
+}
+
+.component:not(.flowing) .flow,
+.component:not(.custom) .outline {
+  opacity: 0;
+}
+</style>

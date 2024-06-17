@@ -1,7 +1,9 @@
 from dataclasses import Field, dataclass, fields
+from datetime import datetime
 from enum import Enum
 import json
 from math import nan
+import math
 from uuid import UUID
 
 from energy_box_control.appliances.base import (
@@ -21,8 +23,12 @@ from energy_box_control.linearize import linearize
 from energy_box_control.network import NetworkState, Network
 
 
+class Timed(Protocol):
+    def __init__(self, time: datetime, **kwargs: Any): ...
+
+
 @dataclass
-class NetworkSensors:
+class NetworkSensors(Timed):
 
     @classmethod
     def context(cls) -> "SensorContext[Self]":
@@ -46,21 +52,30 @@ class NetworkSensors:
         )
 
     def to_dict(self) -> dict[str, dict[str, Any]]:
-
         return {
-            name: {
-                **{
-                    attr: val
-                    for attr, val in vars(subsensor).items()  # type: ignore
-                    if attr != "spec" and not is_sensor(val)
-                },
-                **{
-                    attr: p.__get__(subsensor)
-                    for attr, p in vars(type(subsensor)).items()  # type: ignore
-                    if isinstance(p, property)
-                },
-            }
-            for name, subsensor in vars(self).items()
+            **{
+                name: {
+                    **{
+                        attr: val
+                        for attr, val in vars(subsensor).items()  # type: ignore
+                        if attr != "spec"
+                        and not is_sensor(val)
+                        and not type(subsensor) == datetime
+                    },
+                    **{
+                        attr: p.__get__(subsensor)
+                        for attr, p in vars(type(subsensor)).items()  # type: ignore
+                        if isinstance(p, property) and not type(subsensor) == datetime
+                    },
+                }
+                for name, subsensor in vars(self).items()
+                if not type(subsensor) == datetime
+            },
+            **{
+                name: time.isoformat()
+                for name, time in vars(self).items()
+                if type(time) == datetime
+            },
         }
 
 
@@ -80,7 +95,7 @@ class WithoutAppliance(Protocol):
     def __init__(self, context: "SensorContext[Any]", **values: Any): ...
 
 
-class SensorContext[T]:
+class SensorContext[T: Timed]:
 
     def __init__(self, cls: type[T]) -> None:
         self._cls = cls
@@ -109,6 +124,7 @@ class SensorContext[T]:
         init_order = sensors.sensor_initialization_order()
 
         for sensor in init_order:
+
             appliance = getattr(network, sensor.name, None)
             if appliance:
                 self.from_state(
@@ -117,8 +133,7 @@ class SensorContext[T]:
                     getattr(self.subject, sensor.name),
                     appliance,
                 )
-
-        return self.result()
+        return self.result(state.time.timestamp)
 
     def from_state[
         State: ApplianceState, Control: ApplianceControl | None, TPort: Port
@@ -153,8 +168,8 @@ class SensorContext[T]:
     def sensor(self, name: str) -> Any | None:
         return self._sensors.get(name, None)
 
-    def result(self) -> "T":
-        return self._cls(**self._sensors)
+    def result(self, time: datetime) -> "T":
+        return self._cls(time=time, **self._sensors)
 
     def __enter__(self):
         return self
@@ -299,12 +314,16 @@ def is_sensor(cls: Any) -> bool:
 class SensorEncoder(json.JSONEncoder):
 
     def default(self, o: Any):
-        if hasattr(o, "__dict__"):
+        if type(o) == datetime:
+            return o.isoformat()
+        if is_sensor(o):
             return {
-                attr: value
-                for attr, value in o.__dict__.items()
-                if attr != "spec" and not (is_sensor(value) and is_sensor(o))
+                field: getattr(o, field)
+                for field in sensor_fields(type(o))
+                if not math.isnan(getattr(o, field))
             }
+        if hasattr(o, "__dict__"):
+            return {attr: value for attr, value in o.__dict__.items()}
         if type(o) == UUID:
             return o.hex
         else:

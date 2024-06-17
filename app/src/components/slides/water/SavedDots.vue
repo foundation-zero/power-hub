@@ -4,10 +4,9 @@
       fill="#6D6D6D"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="0em"
-      transform="translate(1263, 205)"
+      transform="translate(1263, 255)"
     >
       <tspan
         x="-3"

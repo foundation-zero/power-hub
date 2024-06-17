@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 
 from typing import Self, cast
@@ -120,8 +120,9 @@ class PowerHubSchedules:
             parse_dates=True,
         )
 
-        start = cast(datetime, data.index[0].to_pydatetime())  # type: ignore
-        end = cast(datetime, data.index[-1].to_pydatetime())  # type: ignore
+        start = cast(datetime, data.index[0].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
+
+        end = cast(datetime, data.index[-1].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
 
         global_irradiance_values = cast(
             list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore
@@ -325,7 +326,7 @@ class PowerHub(Network[PowerHubSensors]):
 
     def simple_initial_state(
         self,
-        start_time: datetime = datetime.now(),
+        start_time: datetime = datetime.now(tz=timezone.utc),
         step_size: timedelta = timedelta(seconds=1),
     ) -> NetworkState[Self]:
         # initial state with no hot reservoir, bypassing, heat recovery and electric chiller, and everything at ambient temperature
@@ -795,7 +796,7 @@ class PowerHub(Network[PowerHubSensors]):
         context.without_appliance(
             WeatherSensors,
             context.subject.weather,
-            ambient_temperature=phc.AMBIENT_TEMPERATURE,
+            ambient_temperature=self.schedules.ambient_temperature.at(state.time),
             global_irradiance=self.schedules.global_irradiance.at(state.time),
         )
 
@@ -823,4 +824,5 @@ class PowerHub(Network[PowerHubSensors]):
                     getattr(context.subject, sensor.name),
                     appliance,
                 )
-        return context.result()
+
+        return context.result(datetime.fromisoformat(sensors["time"]))

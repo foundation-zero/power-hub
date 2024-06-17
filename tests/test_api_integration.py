@@ -38,7 +38,7 @@ async def influx_has_entries(client: InfluxDBClientAsync):
         results = await execute_influx_query(
             client,
             values_query(
-                lambda r: r.topic == f"power_hub/appliance_sensors/heat_pipes/power",
+                lambda r: r._field == f"heat_pipes_power",
                 build_query_range(ValuesQuery()),
             ),
         )

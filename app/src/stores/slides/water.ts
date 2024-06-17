@@ -8,8 +8,27 @@ import SavedEnergy from "@/components/slides/water/SavedEnergy.vue";
 import WeCanReuseIt from "@/components/slides/water/WeCanReuseIt.vue";
 import ByReusingIt from "@/components/slides/water/ByReusingIt.vue";
 import GreyWaterIsUsed from "@/components/slides/water/GreyWaterIsUsed.vue";
+import type { PresentationItem } from "@/types";
+import {
+  activateStream,
+  deactivateAll,
+  hideAll,
+  sleep,
+  toggleWaves,
+  toggleWidgets,
+} from "./actions";
+import { startFlow } from "@/utils";
 
 export default [
+  ({ setJourney }) => setJourney("water"),
+  deactivateAll("water"),
+  activateStream("water"),
+  ({ getFlow }) => getFlow("water").streams.forEach(startFlow),
+  sleep(3000),
+  [0],
+  toggleWidgets(false),
+  hideAll("water"),
+  toggleWaves(false),
   [1000, Base],
   [500, RecycleTriangle, Base],
   [500, RecycleTriangle, Base, ThreeTimes],
@@ -18,4 +37,4 @@ export default [
   [5000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, ReusingWater],
   [5000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, WeCanReuseIt, ByReusingIt],
   [7000, RecycleTriangle, Base, ThreeTimes, SavedEnergy, GreyWaterIsUsed, ByReusingIt],
-] as [duration: number, ...slides: (typeof Base)[]][];
+] as PresentationItem[];

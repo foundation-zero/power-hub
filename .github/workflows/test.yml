@@ -62,7 +62,6 @@ jobs:
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy
-      cancel-in-progress: true
     
     env:
       PROJECT_ID: power-hub-423312
@@ -118,7 +117,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     concurrency:
       group: ${{ github.workflow }}-deploy
-      cancel-in-progress: true
 
     permissions:
       contents: 'read'

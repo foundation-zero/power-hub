@@ -80,7 +80,6 @@
       fill="#756B61"
       xml:space="preserve"
       style="white-space: pre"
-      font-family="Five-Gothic"
       font-size="14"
       letter-spacing="0em"
     >

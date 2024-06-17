@@ -1,5 +1,5 @@
 <template>
-  <div :class="{ fade }">
+  <div :class="{ fade, delay }">
     <svg
       width="1920"
       height="1080"
@@ -13,20 +13,25 @@
 </template>
 
 <script lang="ts" setup>
-const { fade } = defineProps<{ fade?: boolean | number }>();
+defineProps<{ fade?: boolean | number; delay?: boolean | number }>();
 </script>
 
 <style scoped lang="scss">
-svg {
+.slide-enter-active,
+.slide-leave-active {
   will-change: opacity;
   transition: opacity 750ms ease;
   opacity: 1;
 }
 
 .fade {
-  &.slide-leave-to svg,
-  &.slide-enter-from svg {
+  &.slide-leave-to,
+  &.slide-enter-from {
     opacity: 0;
   }
+}
+
+.slide-enter-active.delay {
+  transition-delay: 750ms;
 }
 </style>
