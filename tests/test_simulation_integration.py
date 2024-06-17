@@ -58,7 +58,7 @@ async def assert_get_url(url: str, headers: dict[str, str]):
 
 
 @pytest.mark.integration
-async def test_display_endpoints(headers):
+async def test_app_endpoints(headers):
     multiple_value_endpoints = [
         "/power_hub/appliance_sensors/fresh_water_tank/fill/last_values",
         "/power_hub/electric/power/production/over/time?interval=h",
@@ -83,11 +83,6 @@ async def test_display_endpoints(headers):
         "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean",
     ]
 
-    not_implemented_yet = [
-        "/power_hub/appliance_sensors/compound/overall_temperature/mean",
-        "/power_hub/weather_station/pyranometer/irradiance/mean",
-    ]
-
     for endpoint in multiple_value_endpoints:
         response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
         assert len(response) > 0
@@ -95,3 +90,15 @@ async def test_display_endpoints(headers):
     for endpoint in single_value_endpoints:
         response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
         assert type(response) == float or int
+
+
+@pytest.mark.skip
+async def test_remaining_endpoints(headers):
+    endpoints = [
+        "/power_hub/appliance_sensors/compound/overall_temperature/mean",
+        "/power_hub/weather_station/pyranometer/irradiance/mean",
+    ]
+
+    for endpoint in endpoints:
+        response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
+        assert len(response) > 0
