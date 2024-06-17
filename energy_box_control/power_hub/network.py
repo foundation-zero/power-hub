@@ -184,6 +184,7 @@ class PowerHub(Network[PowerHubSensors]):
     fresh_water_tank: WaterTank
     water_demand: WaterDemand
     water_treatment: WaterTreatment
+    water_filter_bypass_valve: Valve
 
     schedules: "PowerHubSchedules"
 
@@ -233,6 +234,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.fresh_water_tank,
             phc.water_demand(schedules.water_demand),
             phc.water_treatment,
+            phc.water_filter_bypass_valve,
             schedules,
         )
 
@@ -779,7 +781,7 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.water_demand)
             .at(WaterDemandPort.GREY_WATER_OUT)
             .to(self.water_treatment)
-            .at(WaterTreatmentPort.IN)
+            .at(WaterTreatmentPort.IN)     
         )
         # fmt: on
 

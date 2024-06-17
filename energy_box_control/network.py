@@ -372,19 +372,17 @@ class NetworkConnections[Net: "Network[Any]"]:
 class ControlGetter[App: AnyAppliance]:
 
     def __init__[
-        Control: GenericControl
+        State: GenericState, Control: GenericControl
     ](
-        self: "ControlGetter[Appliance[GenericState, Control, Port, Any, Any]]",
+        self: "ControlGetter[Appliance[State, Control, Port, Any, Any]]",
         _: App,
         control: Control,
     ):
         self._control = control
 
     def get[
-        Control: GenericControl
-    ](
-        self: "ControlGetter[Appliance[GenericState, Control, Port, Any, Any]]"
-    ) -> Control:
+        State: GenericState, Control: GenericControl
+    ](self: "ControlGetter[Appliance[State, Control, Port, Any, Any]]") -> Control:
         return cast(
             Control, self._control
         )  # cast should be safe; Control and App are bound together
