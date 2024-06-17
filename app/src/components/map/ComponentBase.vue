@@ -67,8 +67,22 @@ $ttime: 750ms;
   }
 }
 
+@keyframes greydientTo {
+  to {
+    stop-color: rgba(229, 229, 229);
+  }
+}
+
+@keyframes greydientFrom {
+  from {
+    stop-color: rgba(229, 229, 229);
+  }
+}
+
 .component {
-  transition: opacity 1500ms ease;
+  transition:
+    opacity 1500ms ease,
+    transform 750ms ease;
   will-change: transform, opacity;
   transform: scale(1, 1);
   opacity: 1;
@@ -82,20 +96,34 @@ $ttime: 750ms;
     will-change: fill, stroke;
   }
 
-  &.muted {
-    opacity: 0;
-  }
-
   &.highlighted {
     animation: pulse 750ms ease-out;
   }
 
+  &.hidden {
+    opacity: 0;
+  }
+
+  &.active.gradient {
+    .from,
+    .to {
+      animation: greydientFrom 750ms ease forwards;
+    }
+  }
+
   &:not(.active) {
-    .fill[fill]:not([fill="white"]) {
+    .fill[fill]:not([fill="white"]):not(.gradient) {
       fill: rgba(229, 229, 229);
     }
 
-    .fill[stroke]:not([stroke="white"]) {
+    &.gradient {
+      .from,
+      .to {
+        animation: greydientTo 750ms ease forwards;
+      }
+    }
+
+    .fill[stroke]:not([stroke="white"]):not(.gradient) {
       stroke: rgb(229, 229, 229);
     }
 

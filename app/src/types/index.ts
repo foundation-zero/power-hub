@@ -1,5 +1,8 @@
-import type { CamelCase, SnakeCase } from "type-fest";
+import type { CamelCase, SnakeCase, SnakeCasedProperties } from "type-fest";
 import type { PowerHubComponent } from "./power-hub";
+import type BaseWater from "@/components/slides/water/BaseWater.vue";
+import type { PresentationStore } from "@/stores/presentation";
+import type { AjaxConfig } from "rxjs/ajax";
 export * as PowerHub from "./power-hub";
 
 //@see https://stackoverflow.com/questions/58434389/typescript-deep-keyof-of-a-nested-object/76131375#76131375
@@ -30,11 +33,7 @@ export type HistoricalData<T extends string | Date = string, V = string | number
 
 export type Journey = "electrical" | "heat" | "water";
 
-export type ComponentState = {
-  active?: boolean;
-  muted?: boolean;
-  highlighted?: boolean;
-};
+export type ComponentState = Activatable & Highlightable & Hideable & Flowable & Customizable;
 
 export type ComponentElement = {
   component: PowerHubComponent;
@@ -55,14 +54,21 @@ export type JourneyFlowWithState = {
   streams: StreamState[];
 };
 
-export type StreamState = {
-  active?: boolean;
-  muted?: boolean;
-  flowing?: boolean;
-};
+export type StreamState = Activatable &
+  Hideable &
+  Muteable &
+  Customizable &
+  Flowable & {
+    skip?: boolean;
+  };
 
 export type PipeState = {
   active?: boolean;
+  muted?: boolean;
+};
+
+export type Hideable = {
+  hidden?: boolean;
 };
 
 export type Activatable = {
@@ -76,3 +82,38 @@ export type Muteable = {
 export type Flowable = {
   flowing?: boolean;
 };
+
+export type Customizable = {
+  custom?: boolean;
+};
+
+export type Highlightable = {
+  highlighted?: boolean;
+};
+
+export type PresentationComponent = typeof BaseWater;
+
+export type PresentationAction = (store: PresentationStore) => void | Promise<void>;
+
+export type PresentationItem =
+  | PresentationAction
+  | [duration: number, ...components: PresentationComponent[]];
+
+export type QueryParams<T extends AjaxConfig["queryParams"] = AjaxConfig["queryParams"]> =
+  | T
+  | (() => T);
+
+export type WeatherInfo = SnakeCasedProperties<{
+  dt: string;
+  humidity: number;
+  pressure: number;
+  temp: number;
+  feelsLike: number;
+  weather: {
+    description: string;
+    icon: string;
+    main: string;
+  }[];
+  windSpeed: number;
+  windDeg: number;
+}>;

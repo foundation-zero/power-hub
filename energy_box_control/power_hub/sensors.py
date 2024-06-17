@@ -24,6 +24,9 @@ from energy_box_control.power_hub.power_hub_components import (
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     PCM_ZERO_TEMPERATURE,
 )
+
+from datetime import datetime
+
 from energy_box_control.units import (
     Celsius,
     Joule,
@@ -700,6 +703,7 @@ class PowerHubSensors(NetworkSensors):
     fresh_water_tank: WaterTankSensors
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
+    time: datetime
 
 
 SensorName = str

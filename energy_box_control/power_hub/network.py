@@ -795,7 +795,7 @@ class PowerHub(Network[PowerHubSensors]):
         context.without_appliance(
             WeatherSensors,
             context.subject.weather,
-            ambient_temperature=phc.AMBIENT_TEMPERATURE,
+            ambient_temperature=self.schedules.ambient_temperature.at(state.time),
             global_irradiance=self.schedules.global_irradiance.at(state.time),
         )
 
@@ -823,4 +823,5 @@ class PowerHub(Network[PowerHubSensors]):
                     getattr(context.subject, sensor.name),
                     appliance,
                 )
-        return context.result()
+
+        return context.result(datetime.fromisoformat(sensors["time"]))

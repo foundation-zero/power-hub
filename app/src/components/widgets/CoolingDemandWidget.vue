@@ -1,14 +1,14 @@
 <template>
   <WidgetBase
     title="Cooling demand"
-    unit="kWh"
-    :value="total + recycled"
+    :unit="unit"
+    :value="coolingDemand"
     :format="formattedInt"
   >
     <StackedBarChart
       class="mt-3"
       :height="20"
-      :values="[recycled, total]"
+      :values="[chillPower ?? 0, compressionPower]"
       :series="series"
     />
   </WidgetBase>
@@ -17,10 +17,13 @@
 <script setup lang="ts">
 import WidgetBase from "./WidgetBase.vue";
 import type { PowerHubStore } from "@/stores/power-hub";
-import { formattedInt, useRandomNumber } from "@/utils/numbers";
+import { formattedInt } from "@/utils/numbers";
 import StackedBarChart, { type BarSeries } from "../graphs/FillBarChart.vue";
+import { useObservable } from "@vueuse/rxjs";
+import { computed } from "vue";
+import { useAsWatts } from "@/utils";
 
-defineProps<{
+const { powerHub } = defineProps<{
   powerHub: PowerHubStore;
 }>();
 
@@ -29,6 +32,10 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-fan", color: "#C16A6F" },
 ];
 
-const recycled = useRandomNumber(30, 200);
-const total = useRandomNumber(30, 200);
+const fillPower = useObservable(powerHub.sensors.useMean("cold_reservoir/fill_power"));
+const chillPower = useObservable(powerHub.sensors.useMean("yazaki/chill_power"));
+
+const compressionPower = computed(() => (fillPower.value ?? 0) - (chillPower.value ?? 0));
+
+const { unit, value: coolingDemand } = useAsWatts(fillPower, 10000);
 </script>

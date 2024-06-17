@@ -13,17 +13,18 @@ from energy_box_control.monitoring import (
 )
 from energy_box_control.custom_logging import get_logger
 import queue
+from queue import Empty
 from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
     ChillControlMode,
     HotControlMode,
     PowerHubControlState,
     WasteControlMode,
+    Setpoints,
     control_from_json,
     control_power_hub,
     control_to_json,
     initial_control_state,
-    no_control,
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
@@ -54,8 +55,10 @@ MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
 CONTROL_MODES_TOPIC = "power_hub/control_modes"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
+SETPOINTS_TOPIC = "power_hub/setpoints"
 control_values_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
+setpoints_queue: queue.Queue[str] = queue.Queue()
 
 
 def publish_sensor_values(
@@ -113,6 +116,22 @@ class SimulationResult:
             sensor_values_queue.get(block=True)
         )
 
+        try:
+            power_hub_control_setpoints_json = setpoints_queue.get(block=False)
+            try:
+                self.control_state.setpoints = Setpoints(
+                    **json.loads(power_hub_control_setpoints_json)
+                )
+                logger.info(
+                    f"Processed new setpoints successfully: {power_hub_control_setpoints_json}"
+                )
+            except TypeError as e:
+                logger.error(
+                    f"Couldn't process received setpoints ({power_hub_control_setpoints_json}) with error: {e}"
+                )
+        except Empty:
+            pass
+
         notifier.send_events(
             monitor.run_sensor_values_checks(
                 power_hub_sensors,
@@ -121,7 +140,10 @@ class SimulationResult:
         )
 
         control_state, control_values = control_power_hub(
-            self.power_hub, self.control_state, power_hub_sensors, self.state.time
+            self.power_hub,
+            self.control_state,
+            power_hub_sensors,
+            self.state.time.timestamp,
         )
 
         publish_to_mqtt(
@@ -180,17 +202,13 @@ async def run(
     await run_listener(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
+    await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
     monitor = Monitor(checks)
 
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-
-    state = power_hub.simulate(
-        power_hub.simple_initial_state(start_time=datetime.now()),
-        no_control(power_hub),
-    )
-
+    power_hub = PowerHub.power_hub(schedules)
+    state = power_hub.simple_initial_state()
     control_state = initial_control_state()
     power_hub_sensors = power_hub.sensors_from_state(state)
 
