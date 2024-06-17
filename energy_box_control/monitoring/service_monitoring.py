@@ -8,26 +8,24 @@ from energy_box_control.monitoring.monitoring import (
     Notifier,
     PagerDutyNotificationChannel,
 )
-from energy_box_control.monitoring.checks import cloud_services_checks
+from energy_box_control.monitoring.checks import service_checks
 
 
 @dataclass
 class HealthCheckResult:
 
-    def check(self, monitor: Monitor, notifier: Notifier) -> "HealthCheckResult":
+    async def check(self, monitor: Monitor, notifier: Notifier) -> None:
 
         notifier.send_events(
-            monitor.run_url_health_checks(
+            await monitor.run_url_health_checks(
                 "Python cloud monitoring script",
             )
         )
 
-        return HealthCheckResult()
-
 
 async def run():
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
-    monitor = Monitor(url_health_checks=cloud_services_checks)
+    monitor = Monitor(url_health_checks=service_checks)
 
     run_queue: queue.Queue[None] = queue.Queue()
 
@@ -41,7 +39,7 @@ async def run():
         schedule.run_pending()
         try:
             run_queue.get_nowait()
-            result = result.check(monitor, notifier)
+            await result.check(monitor, notifier)
 
         except queue.Empty:
             pass

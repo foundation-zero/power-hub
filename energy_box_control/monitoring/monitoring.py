@@ -67,10 +67,10 @@ class Monitor:
             if (result := check.check(sensor_values)) is not None
         ]
 
-    def run_url_health_checks(self, source: str) -> list[NotificationEvent]:
+    async def run_url_health_checks(self, source: str) -> list[NotificationEvent]:
 
         return [
             NotificationEvent(result, source, check.name, check.severity)
             for check in self._url_health_checks
-            if (result := check.check(None)) is not None
+            if (result := await check.check()) is not None
         ]
