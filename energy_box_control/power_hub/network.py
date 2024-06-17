@@ -123,7 +123,6 @@ class PowerHubSchedules:
         start = cast(datetime, data.index[0].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
 
         end = cast(datetime, data.index[-1].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
-        end.replace(tzinfo=timezone.utc)
 
         global_irradiance_values = cast(
             list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore

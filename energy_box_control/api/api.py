@@ -120,7 +120,6 @@ def values_query(
     field_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
 ) -> fluxy.Query:
 
-    # TODO change the way we query topics -> fields
     start, stop = query_range
     return fluxy.pipe(
         fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
