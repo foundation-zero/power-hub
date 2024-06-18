@@ -7,7 +7,7 @@ from enum import Enum
 from http import HTTPStatus
 
 
-POWER_HUB_API_URL = "https://power-hub-api.staging.power-hub.foundationzero.org/"
+POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
 INFLUXDB_URL = "https://influxdb.staging.power-hub.foundationzero.org/health"
 MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/health"
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"

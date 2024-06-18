@@ -8,14 +8,14 @@ variable "power_hub_api_token" {
 
 
 locals {
-  power_hub_api_record_name       = "power-hub-api.${var.env}.${var.subdomain}"
-  power_hub_api_hostname          = "power-hub-api.${var.env}.${var.subdomain}.${var.root_hostname}"
-  power_hub_api_ssl_name          = "${var.name}-${var.env}-power-hub-ssl"
+  power_hub_api_record_name       = "api.${var.env}.${var.subdomain}"
+  power_hub_api_hostname          = "api.${var.env}.${var.subdomain}.${var.root_hostname}"
+  power_hub_api_ssl_name          = "${var.name}-${var.env}-ssl"
   openweather_api_key_secret_name = "openweather-key"
 }
 
 resource "google_compute_global_address" "power_hub_api_ip" {
-  name = "${var.name}-${var.env}-power-hub-api-address"
+  name = "${var.name}-${var.env}-api-address"
 }
 
 resource "kubernetes_manifest" "power_hub_api_ssl_secret" {
