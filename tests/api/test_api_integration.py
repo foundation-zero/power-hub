@@ -1,7 +1,6 @@
 import asyncio
 import json
 import multiprocessing
-import os
 from typing import Optional
 import aiohttp
 import pytest
@@ -220,6 +219,21 @@ async def test_get_electric_power_consumption_mean(headers):
 
 
 @pytest.mark.integration
+async def test_get_electric_power_consumption_mean_per_hour(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/electric/power/consumption/mean/per/hour",
+                    headers=headers,
+                )
+            )
+        )
+        == 1
+    )
+
+
+@pytest.mark.integration
 async def test_get_electric_power_production(headers):
     assert (
         len(
@@ -230,7 +244,22 @@ async def test_get_electric_power_production(headers):
                 )
             )
         )
-        > 0
+        > 1
+    )
+
+
+@pytest.mark.integration
+async def test_get_electric_power_production_mean_per_hour(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/electric/power/production/mean/per/hour",
+                    headers=headers,
+                )
+            )
+        )
+        == 1
     )
 
 

@@ -11,7 +11,7 @@ class PowerHubConfig(BaseSettings):
     influxdb_telegraf_bucket: str = Field(default="")
     influxdb_token: str = Field(default="")
     influxdb_url: str = Field(
-        pattern="(https?)://([a-zA-Z0-9.-]+):(\\d+)", default="http://influxdb:8086"
+        pattern="(https?)://([a-zA-Z0-9.-]+)", default="http://influxdb:8086"
     )
     mqtt_host: str = Field(pattern="^[^/:]+$", default=" ")
     mqtt_password: str = Field(default="")

@@ -20,7 +20,11 @@ from energy_box_control.power_hub.control import (
 )
 import energy_box_control.power_hub.components as phc
 from energy_box_control.time import ProcessTime
-from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
+from tests.simulation.test_simulation import (
+    SimulationFailure,
+    SimulationSuccess,
+    run_simulation,
+)
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.schedules import ConstSchedule, PeriodicSchedule
 from energy_box_control.appliances.pcm import PcmPort

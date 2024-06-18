@@ -34,7 +34,9 @@ from energy_box_control.api.query_builders import (
     values_query,
     mean_values_query,
     timedelta_from_string,
+    mean_per_hour_query,
 )
+
 from energy_box_control.api.decorators import token_required, limit_query_result, serialize_dataframe, serialize_single_cell, check_weather_location_whitelist  # type: ignore
 
 logger = get_logger(__name__)
@@ -235,6 +237,10 @@ async def get_sensor_value_over_time(
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
+def consumption_appliances():
+    return [field.name for field in fields(PowerHubSensors) if "pump" in field.name]
+
+
 @app.route("/power_hub/electric/power/consumption/over/time")
 @token_required
 @validate_querystring(ComputedPowerQuery)  # type: ignore
@@ -243,9 +249,7 @@ async def get_sensor_value_over_time(
 async def get_electrical_power_consumption(
     query_args: ComputedPowerQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
-    appliance_names = request.args.getlist("appliances") or [
-        field.name for field in fields(PowerHubSensors) if "pump" in field.name
-    ]
+    appliance_names = request.args.getlist("appliances") or consumption_appliances()
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
@@ -264,6 +268,33 @@ async def get_electrical_power_consumption(
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
+@app.route("/power_hub/electric/power/consumption/mean/per/hour")
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+@limit_query_result
+@serialize_dataframe(["hour", "value"])
+async def get_electrical_power_consumption_per_hour(
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+    appliance_names = request.args.getlist("appliances") or consumption_appliances()
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_per_hour_query(
+                fluxy.any(
+                    fluxy.conform,
+                    [
+                        {"_field": f"{appliance_name}_electrical_power"}
+                        for appliance_name in appliance_names
+                    ],
+                ),
+                build_query_range(query_args, default_time_delta=timedelta(days=7)),
+            ),
+        )
+    ).rename(columns={"_value": "value"})
+
+
 @app.route("/power_hub/electric/power/consumption/mean")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
@@ -271,9 +302,7 @@ async def get_electrical_power_consumption(
 async def get_electrical_power_consumption_mean(
     query_args: AppliancesQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
-    appliance_names = request.args.getlist("appliances") or [
-        field.name for field in fields(PowerHubSensors) if "pump" in field.name
-    ]
+    appliance_names = request.args.getlist("appliances") or consumption_appliances()
 
     return await execute_influx_query(
         app.influx,  # type: ignore
@@ -325,6 +354,38 @@ async def get_electrical_power_production(
             ),
         )
     ).rename(columns={"_value": "value", "_time": "time"})
+
+
+@app.route("/power_hub/electric/power/production/mean/per/hour")
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+@limit_query_result
+@serialize_dataframe(["hour", "value"])
+async def get_electrical_power_production_interval(
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
+    appliance_names = request.args.getlist("appliances") or ["pv_panel"]
+
+    if any("pv_panel" not in item for item in appliance_names):
+        return await make_response(
+            "Please only provide pv_panel(s)", HTTPStatus.UNPROCESSABLE_ENTITY
+        )
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_per_hour_query(
+                fluxy.any(
+                    fluxy.conform,
+                    [
+                        {"_field": f"{appliance_name}_power"}
+                        for appliance_name in appliance_names
+                    ],
+                ),
+                build_query_range(query_args, default_time_delta=timedelta(hours=1)),
+            ),
+        )
+    ).rename(columns={"_value": "value"})
 
 
 WeatherProperty = str

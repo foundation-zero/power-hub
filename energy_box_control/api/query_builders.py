@@ -20,20 +20,27 @@ def timedelta_from_string(interval: str) -> timedelta:
             return timedelta(seconds=1)
 
 
-def build_query_range(query_args: ValuesQuery) -> tuple[datetime, datetime]:
+def parse_between_query_arg(between: str) -> tuple[datetime, datetime]:
+    start, stop = between.split(",")
+
+    start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
+    stop = datetime.fromisoformat(stop).replace(tzinfo=timezone.utc)
+
+    if start >= stop:
+        raise ValueError
+
+    return (start, stop)
+
+
+def build_query_range(
+    query_args: ValuesQuery,
+    default_time_delta: timedelta = timedelta(minutes=DEFAULT_MINUTES_BACK),
+) -> tuple[datetime, datetime]:
     if query_args.between:
-        start, stop = query_args.between.split(",")
-
-        start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
-        stop = datetime.fromisoformat(stop).replace(tzinfo=timezone.utc)
-
-        if start >= stop:
-            raise ValueError
-
-        return (start, stop)
+        return parse_between_query_arg(query_args.between)
 
     return (
-        datetime.now(timezone.utc) - timedelta(minutes=DEFAULT_MINUTES_BACK),
+        datetime.now(timezone.utc) - default_time_delta,
         datetime.now(timezone.utc),
     )
 
@@ -46,7 +53,6 @@ def values_query(
     return fluxy.pipe(
         fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
         fluxy.range(start, stop),
-        fluxy.filter(lambda r: r._measurement == "mqtt_consumer"),
         fluxy.filter(field_filter),
         fluxy.filter(lambda r: r.topic == "power_hub/sensor_values"),
         fluxy.keep(["_value", "_time"]),
@@ -65,4 +71,21 @@ def mean_values_query(
             fluxy.WindowOperation.MEAN,
             False,
         ),
+    )
+
+
+def mean_per_hour_query(
+    field_filter: fluxy.FilterCallback,
+    query_range: Tuple[datetime, datetime],
+) -> fluxy.Query:
+
+    return fluxy.pipe(
+        mean_values_query(field_filter, timedelta(hours=1), query_range),
+        fluxy.map(
+            "(r) => ({_time: r._time, _value: r._value, hour: uint(v: r._time) % uint(v: 86400000000000) / uint(v: 3600000000000)})"
+        ),
+        fluxy.group(["hour"]),
+        fluxy.mean("_value"),
+        fluxy.group(),
+        fluxy.sort(["hour"]),
     )
