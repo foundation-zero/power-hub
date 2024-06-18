@@ -15,42 +15,37 @@
       class="h-100"
     >
       <v-card
-        class="h-100"
+        class="h-100 px-5 py-3 d-flex flex-column align-start"
         :class="{ dragging }"
         :style="{ transform: `translateX(${swipeX}px)` }"
       >
-        <v-card-title>
-          <v-btn
-            variant="text"
-            color="blue"
-            class="text-mono"
-            @click="show = false"
-            >&#10094; Back to mapping
-          </v-btn>
-        </v-card-title>
+        <v-btn
+          variant="text"
+          color="blue"
+          size="small"
+          class="text-mono mx-0 px-0"
+          @click="show = false"
+          >&#10094; Back to mapping
+        </v-btn>
+        <slot />
       </v-card>
     </div>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import { usePresentationStore } from "@/stores/presentation";
 import { useSwipe } from "@vueuse/core";
 import { computed, ref } from "vue";
-import { toRefs } from "vue";
-
-const { setJourney } = usePresentationStore();
-const { currentJourney } = toRefs(usePresentationStore());
 
 const target = ref<HTMLElement>();
 
-const show = computed({
-  get() {
-    return !!currentJourney.value;
-  },
-  set(val: boolean) {
+const show = defineModel<boolean>({
+  set(val) {
     if (!val) {
-      setJourney();
+      setTimeout(() => {
+        swipeX.value = 0;
+        prevX.value = 0;
+      }, 500);
     }
   },
 });
@@ -84,13 +79,8 @@ const { direction, lengthX } = useSwipe(target, {
       target.value?.offsetWidth &&
       (swipeX.value - prevX.value > 20 || Math.abs(lengthX.value) > target.value.offsetWidth / 2)
     ) {
-      setJourney();
+      show.value = false;
       swipeX.value = target.value.offsetWidth;
-      setTimeout(() => {
-        setJourney();
-        swipeX.value = 0;
-        prevX.value = 0;
-      }, 500);
     } else {
       swipeX.value = 0;
       prevX.value = 0;

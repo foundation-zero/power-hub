@@ -23,9 +23,17 @@
       </div>
     </v-main>
 
-    <ContentPanel v-model:modelValue="show">
-      <JourneyContent />
-    </ContentPanel>
+    <template v-if="isLargeScreen">
+      <ContentModal v-model:modelValue="showJourneyContent">
+        <JourneyContent />
+      </ContentModal>
+    </template>
+
+    <template v-else>
+      <ContentPanel v-model:modelValue="showJourneyContent">
+        <JourneyContent />
+      </ContentPanel>
+    </template>
   </v-layout>
 </template>
 
@@ -41,11 +49,14 @@ import ContentPanel from "@/components/portrait/ContentPanel.vue";
 import AppBar from "@/components/portrait/AppBar.vue";
 import JourneyContent from "@/components/responsive/JourneyContent.vue";
 import { computed } from "vue";
+import { useDisplay } from "vuetify";
+import ContentModal from "@/components/portrait/ContentModal.vue";
 
 const { setJourney } = usePresentationStore();
 const { root, currentJourney } = toRefs(usePresentationStore());
+const { width, height } = useDisplay();
 
-const show = computed({
+const showJourneyContent = computed({
   get() {
     return !!currentJourney.value;
   },
@@ -54,6 +65,10 @@ const show = computed({
       setJourney();
     }
   },
+});
+
+const isLargeScreen = computed(() => {
+  return width.value > 600 && height.value > 800;
 });
 </script>
 

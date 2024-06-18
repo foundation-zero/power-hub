@@ -15,7 +15,7 @@
         max-width="600"
         max-height="800"
         class="px-5 py-3 d-flex flex-column align-start"
-        :class="{ dragging, 'px-5': $vuetify.display.smAndDown, 'px-8': $vuetify.display.mdAndUp }"
+        :class="{ dragging }"
         :style="{ transform: `translateY(${swipeY}px)` }"
       >
         <v-btn
@@ -33,7 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import "vue3-carousel/dist/carousel.css";
 import { useSwipe } from "@vueuse/core";
 import { ref } from "vue";
 import { computed } from "vue";

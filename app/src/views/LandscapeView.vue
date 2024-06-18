@@ -26,7 +26,9 @@
         </svg>
       </div>
     </v-main>
-    <ContentPanel />
+    <ContentPanel v-model:modelValue="showJourneyContent">
+      <JourneyContent />
+    </ContentPanel>
   </v-layout>
 </template>
 
@@ -45,6 +47,7 @@ import { toRefs } from "vue";
 import { useDisplay } from "vuetify";
 import { computed } from "vue";
 import ContentPanel from "@/components/landscape/ContentPanel.vue";
+import JourneyContent from "@/components/responsive/JourneyContent.vue";
 
 const display = useDisplay();
 const PREFERRED_RATIO = 980 / 1600;
@@ -61,7 +64,19 @@ const viewBox = computed(() => {
   return `20 60 ${width.value} 980`;
 });
 
-const { root } = toRefs(usePresentationStore());
+const { setJourney } = usePresentationStore();
+const { root, currentJourney } = toRefs(usePresentationStore());
+
+const showJourneyContent = computed({
+  get() {
+    return !!currentJourney.value;
+  },
+  set(val: boolean) {
+    if (!val) {
+      setJourney();
+    }
+  },
+});
 </script>
 
 <style>

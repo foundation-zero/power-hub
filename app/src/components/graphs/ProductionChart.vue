@@ -22,6 +22,7 @@ import { useObservable } from "@vueuse/rxjs";
 import { range } from "lodash";
 import { isAfter, startOfToday, startOfTomorrow } from "date-fns";
 import { useStripes } from "@/utils/charts";
+import { useStartOfHour } from "@/utils";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -44,7 +45,7 @@ const productionPerHour = computed(() =>
 
     if (!currentValue) {
       return {
-        time: new Date(new Date().setHours(hour, 0, 0, 0)),
+        time: useStartOfHour(hour),
         value: Math.random() * 1000,
       };
     }
