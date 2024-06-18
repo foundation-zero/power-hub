@@ -67,6 +67,19 @@ def test_off_by_one(periodic_schedule, period_start, period_delta):
     )
 
 
+def test_monthly_data():
+    data = tuple(
+        value
+        for value_ in [[i for i in range(0, 24)] for _ in range(0, 31)]
+        for value in value_
+    )
+    start = datetime(2000, 1, 1)
+    stop = datetime(2000, 2, 1)
+    schedule = PeriodicSchedule(start, stop - start, data)
+    time = ProcessTime(timedelta(seconds=1), 0, datetime(2000, 3, 10, 10))
+    assert schedule.at(time) == 10
+
+
 @pytest.fixture
 def given_schedule():
     return GivenSchedule(datetime(2024, 4, 15), datetime(2024, 4, 20), (1, 2, 3, 4, 5))
