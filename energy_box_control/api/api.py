@@ -6,7 +6,7 @@ from typing import Literal
 from dataclasses import fields
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import fluxy  # type: ignore
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
@@ -27,6 +27,7 @@ from energy_box_control.api.schemas import (
     AppliancesQuery,
     ComputedValuesQuery,
     ApplianceName,
+    ComputedPowerQuery,
 )
 from energy_box_control.api.query_builders import (
     build_query_range,
@@ -213,13 +214,34 @@ async def get_pcm_current_fill() -> str:
     )
 
 
-@app.route("/power_hub/electric/power/consumption/over/time")
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/over/time")
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
 @limit_query_result
 @serialize_dataframe(["time", "value"])
+async def get_sensor_value_over_time(
+    appliance_name: str, field_name: str, query_args: ComputedValuesQuery
+) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_values_query(
+                lambda r: r._field == f"{appliance_name}_{field_name}",
+                timedelta_from_string(query_args.interval),
+                build_query_range(query_args),
+            ),
+        )
+    ).rename(columns={"_value": "value", "_time": "time"})
+
+
+@app.route("/power_hub/electric/power/consumption/over/time")
+@token_required
+@validate_querystring(ComputedPowerQuery)  # type: ignore
+@limit_query_result
+@serialize_dataframe(["time", "value"])
 async def get_electrical_power_consumption(
-    query_args: ComputedValuesQuery,
+    query_args: ComputedPowerQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
     appliance_names = request.args.getlist("appliances") or [
         field.name for field in fields(PowerHubSensors) if "pump" in field.name
@@ -274,11 +296,11 @@ async def get_electrical_power_consumption_mean(
 
 @app.route("/power_hub/electric/power/production/over/time")
 @token_required
-@validate_querystring(ComputedValuesQuery)  # type: ignore
+@validate_querystring(ComputedPowerQuery)  # type: ignore
 @limit_query_result
 @serialize_dataframe(["time", "value"])
 async def get_electrical_power_production(
-    query_args: ComputedValuesQuery,
+    query_args: ComputedPowerQuery,
 ) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
     appliance_names = request.args.getlist("appliances") or ["pv_panel"]
 
