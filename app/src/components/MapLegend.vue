@@ -1,0 +1,67 @@
+<template>
+  <g>
+    <line
+      y1="12"
+      x2="50"
+      y2="12"
+      stroke="#FFEFB9"
+      stroke-width="8"
+    />
+    <text
+      fill="#050B22"
+      xml:space="preserve"
+      style="white-space: pre"
+      font-size="14"
+      letter-spacing="0em"
+    >
+      <tspan
+        x="62"
+        y="13.977"
+      >
+        Electric
+      </tspan>
+    </text>
+    <line
+      y1="36"
+      x2="50"
+      y2="36"
+      stroke="#ECD2D4"
+      stroke-width="8"
+    />
+    <text
+      fill="#050B22"
+      xml:space="preserve"
+      style="white-space: pre"
+      font-size="14"
+      letter-spacing="0em"
+    >
+      <tspan
+        x="62"
+        y="39.977"
+      >
+        Thermal
+      </tspan>
+    </text>
+    <text
+      fill="#050B22"
+      xml:space="preserve"
+      style="white-space: pre"
+      font-size="14"
+      letter-spacing="0em"
+    >
+      <tspan
+        x="62"
+        y="65.977"
+      >
+        Water
+      </tspan>
+    </text>
+    <line
+      y1="61"
+      x2="50"
+      y2="61"
+      stroke="#86B4E8"
+      stroke-width="8"
+    />
+  </g>
+</template>

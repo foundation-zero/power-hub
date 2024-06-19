@@ -117,3 +117,5 @@ export type WeatherInfo = SnakeCasedProperties<{
   windSpeed: number;
   windDeg: number;
 }>;
+
+export type AppMode = "display" | "portrait" | "landscape";

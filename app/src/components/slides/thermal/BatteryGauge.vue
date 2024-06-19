@@ -3,7 +3,10 @@
     class="gauge"
     fade
   >
-    <BatteryGauge />
+    <BatteryGauge
+      width="498"
+      height="260"
+    />
   </AnimatedSlide>
 </template>
 
@@ -23,11 +26,11 @@ export default {
   transition:
     transform 750ms,
     opacity 750ms ease;
-  transform: translate(1250px, 700px);
+  transform: translate(65%, 65%);
 }
 
 .slide-leave-to,
 .slide-enter-from {
-  transform: translate(1920px, 700px);
+  transform: translate(100%, 65%);
 }
 </style>

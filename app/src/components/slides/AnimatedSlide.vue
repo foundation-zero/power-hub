@@ -1,8 +1,9 @@
 <template>
-  <div :class="{ fade, delay }">
+  <div
+    :class="{ fade, delay }"
+    class="w-100 h-100"
+  >
     <svg
-      width="1920"
-      height="1080"
       viewBox="0 0 1920 1080"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
