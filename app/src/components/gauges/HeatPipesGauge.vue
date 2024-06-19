@@ -60,7 +60,6 @@
       >
         <AnimatedNumber
           :to="temperatureDifference"
-          :format="formattedInt"
           tag="tspan"
         />
         <tspan
@@ -84,15 +83,11 @@
         y="56.6"
       >
         <AnimatedNumber
-          :to="sunPower ?? 0"
-          :format="formattedInt"
+          :to="sunPower"
           tag="tspan"
         />
-        <tspan
-          text-anchor="end"
-          font-size="16"
-          width="30"
-        >
+        &thinsp;
+        <tspan font-size="16">
           {{ sunPowerUnit }}
         </tspan>
       </tspan>
@@ -209,12 +204,10 @@
       >
         <AnimatedNumber
           :to="heatPipesPower"
-          :format="formattedInt"
           tag="tspan"
         />
       </tspan>
     </text>
-
     <text
       fill="#756B61"
       xml:space="preserve"
@@ -258,14 +251,8 @@
         <AnimatedNumber
           :to="outputTemperature"
           tag="tspan"
-          :format="formattedInt"
         />
-        <tspan
-          width="30"
-          text-anchor="end"
-        >
-          &#8451;
-        </tspan>
+        &#8451;
       </tspan>
     </text>
     <text
@@ -353,11 +340,10 @@
 <script setup lang="ts">
 import { usePowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
-import { formattedInt } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import { map } from "rxjs";
 import { computed } from "vue";
-import AnimatedNumber from "vue-number-animation";
+import AnimatedNumber from "@/components/AnimatedInt.vue";
 
 const { sensors } = usePowerHubStore();
 

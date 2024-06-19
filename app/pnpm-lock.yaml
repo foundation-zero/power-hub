@@ -17,6 +17,9 @@ dependencies:
   '@vueuse/rxjs':
     specifier: ^10.9.0
     version: 10.9.0(rxjs@7.8.1)(vue@3.4.27)
+  date-fns:
+    specifier: ^3.6.0
+    version: 3.6.0
   echarts:
     specifier: ^5.5.0
     version: 5.5.0
@@ -2000,6 +2003,10 @@ packages:
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.0.0
     dev: true
+
+  /date-fns@3.6.0:
+    resolution: {integrity: sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==}
+    dev: false
 
   /de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
