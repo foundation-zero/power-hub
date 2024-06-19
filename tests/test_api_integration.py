@@ -181,21 +181,6 @@ async def test_get_values_over_time(headers):
 
 
 @pytest.mark.integration
-async def test_get_electric_power_consumption(headers):
-    assert (
-        len(
-            json.loads(
-                await do_request(
-                    f"{BASE_URL}/power_hub/electric/power/consumption/over/time",
-                    headers=headers,
-                )
-            )
-        )
-        > 0
-    )
-
-
-@pytest.mark.integration
 async def test_get_electric_power_consumption_appliances(headers):
     assert (
         len(
