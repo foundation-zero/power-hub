@@ -212,10 +212,7 @@ def test_schedule_hours(year, month, day, schedules, data):
             datetime(year, month, day, 12, tzinfo=timezone.utc),
         )
     )
-    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour in [
-        11,
-        12,
-    ]
+    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 11
 
 
 def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
