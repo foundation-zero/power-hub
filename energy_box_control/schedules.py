@@ -26,7 +26,7 @@ class PeriodicSchedule[T](Schedule[T]):
 
     def _get_index(self, time: ProcessTime) -> int:
         return floor(
-            (((time.timestamp - self.schedule_start) / self.period) % 1)
+            (((time.timestamp - self.schedule_start) % self.period) / self.period)
             * len(self.values)
         )
 

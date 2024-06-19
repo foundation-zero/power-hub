@@ -200,18 +200,14 @@ def test_schedules_from_data_extrapolation(year, month, day, schedules, data):
 @mark.parametrize("month", [1, 6, 11])
 @mark.parametrize("day", [11, 18, 25])
 def test_schedule_hours(year, month, day, schedules, data):
-    assert data.index[
-        schedules.global_irradiance._get_index(
-            ProcessTime(
-                timedelta(seconds=1),
-                0,
-                datetime(year, month, day, 12, tzinfo=timezone.utc),
-            )
+    index = schedules.global_irradiance._get_index(
+        ProcessTime(
+            timedelta(seconds=1),
+            0,
+            datetime(year, month, day, 12, tzinfo=timezone.utc),
         )
-    ].to_pydatetime().replace(tzinfo=timezone.utc).hour in [
-        12,
-        11,  # Not sure why this off by one is here, but I think that's within margin.
-    ]
+    )
+    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 12
 
 
 def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
