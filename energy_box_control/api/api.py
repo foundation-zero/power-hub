@@ -10,6 +10,7 @@ from datetime import timedelta
 from http import HTTPStatus
 from typing import no_type_check
 from pandas import DataFrame as df  # type: ignore
+import pandas as pd  # type: ignore
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import sensor_fields
 from energy_box_control.api.weather import WeatherClient, DailyWeather, CurrentWeather
@@ -172,6 +173,41 @@ async def get_total_value_for_appliance_sensor(
                 lambda r: r._field == f"{appliance_name}_{field_name}",
                 build_query_range(query_args),
             ),
+            fluxy.sum("_value"),
+        ),
+    )
+
+
+@app.route("/power_hub/appliance_sensors/pcm/fill/current")
+@token_required
+@serialize_single_cell("_value")
+async def get_pcm_current_fill() -> str:
+
+    last_empty: datetime = pd.Timestamp(
+        (
+            await execute_influx_query(
+                app.influx,  # type: ignore
+                query=fluxy.pipe(
+                    fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
+                    fluxy.range(start=timedelta(days=-10)),
+                    fluxy.filter(lambda r: r._field == "pcm_temperature"),
+                    fluxy.literal('filter(fn: (r) => r["_value"] <= 77)'),
+                    fluxy.sort(columns=["_time"], sort_order=fluxy.Order.DESC),
+                    fluxy.limit(1),
+                ),
+            )
+        )["_time"].values[0]
+    ).to_pydatetime()
+
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        query=fluxy.pipe(
+            fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
+            fluxy.range(
+                start=last_empty.replace(tzinfo=timezone.utc),
+                stop=datetime.now(tz=timezone.utc),
+            ),
+            fluxy.filter(lambda r: r._field == "pcm_net_charge"),
             fluxy.sum("_value"),
         ),
     )
