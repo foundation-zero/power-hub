@@ -1,12 +1,13 @@
-import type {
-  ComponentElement,
-  ComponentState,
-  Journey,
-  JourneyFlow,
-  JourneyFlowWithState,
-  PipeState,
-  PresentationComponent,
-  StreamState,
+import {
+  type AppMode,
+  type ComponentElement,
+  type ComponentState,
+  type Journey,
+  type JourneyFlow,
+  type JourneyFlowWithState,
+  type PipeState,
+  type PresentationComponent,
+  type StreamState,
 } from "@/types";
 import type { PowerHubComponent } from "@/types/power-hub";
 import { mapFn, useSleep } from "@/utils";
@@ -32,8 +33,8 @@ export const usePresentationStore = defineStore("presentation", () => {
   const isRunning = ref(false);
   const showWidgets = ref(false);
   const showWaves = ref(true);
-  const currentJourney = ref<Journey>("electrical");
-
+  const currentJourney = ref<Journey>();
+  const mode = ref<AppMode>("landscape");
   const root = ref<SVGSVGElement>();
 
   const components = ref<ComponentElement[]>(
@@ -155,9 +156,11 @@ export const usePresentationStore = defineStore("presentation", () => {
     return { streams, components: components.map(getComponentState) };
   };
 
-  const setJourney = (journey: Journey) => {
+  const setJourney = (journey?: Journey) => {
     currentJourney.value = journey;
   };
+
+  const setMode = (nextMode: AppMode) => (mode.value = nextMode);
 
   return {
     start,
@@ -180,6 +183,8 @@ export const usePresentationStore = defineStore("presentation", () => {
     getPosition,
     setPosition,
     sleep,
+    setMode,
+    mode,
   };
 });
 

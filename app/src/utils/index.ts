@@ -7,6 +7,7 @@ import type {
   Customizable,
   HistoricalData,
 } from "@/types";
+import { setHours, startOfHour } from "date-fns";
 import { computed, watch, type Ref } from "vue";
 
 export const parseValue = <T>(val: string | number) =>
@@ -91,11 +92,8 @@ export const useAsValueWithUnit =
 export const useAsWatts = useAsValueWithUnit("W");
 export const useAsWattHours = useAsValueWithUnit("Wh");
 
-export const oneDayAgo = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date;
-};
-
 export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
-  values.length ? values[values.length - 1].value : "";
+  values[values.length - 1]?.value;
+
+export const useStartOfHour = (hour: number, date: Date = new Date()) =>
+  startOfHour(setHours(date, hour));
