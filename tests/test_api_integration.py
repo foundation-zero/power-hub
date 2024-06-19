@@ -2,6 +2,8 @@ import asyncio
 import json
 import multiprocessing
 import os
+from typing import Optional
+import aiohttp
 import pytest
 import requests
 from energy_box_control.simulation import run as run_simulation
@@ -85,11 +87,16 @@ async def setup():
         api_process.join()
 
 
+async def do_request(url: str, headers: Optional[dict[str, str]] = None) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            assert response.status == HTTPStatus.OK
+            return await response.text()
+
+
 @pytest.mark.integration
-def test_hello_world():
-    response = requests.get(f"{BASE_URL}/")
-    assert response.status_code == HTTPStatus.OK
-    assert response.text == "Hello World!"
+async def test_hello_world():
+    assert await do_request(f"{BASE_URL}/") == "Hello World!"
 
 
 @pytest.fixture()
@@ -98,76 +105,121 @@ def headers():
 
 
 @pytest.mark.integration
-def test_get_appliances(headers):
-    response = requests.get(f"{BASE_URL}/power_hub/appliances", headers=headers)
-    assert response.status_code == HTTPStatus.OK
-    assert "appliances" in json.loads(response.text)
+async def test_get_appliances(headers):
+    assert "appliances" in json.loads(
+        await do_request(f"{BASE_URL}/power_hub/appliances", headers=headers)
+    )
 
 
 @pytest.mark.integration
-def test_get_last_values(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/last_values",
-        headers=headers,
+async def test_get_last_values(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/last_values",
+                    headers=headers,
+                )
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert len(json.loads(response.text)) > 0
 
 
 @pytest.mark.integration
-def test_get_total_value(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/total",
-        headers=headers,
+async def test_get_total_value(headers):
+    assert (
+        json.loads(
+            await do_request(
+                f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/total",
+                headers=headers,
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert json.loads(response.text) > 0
 
 
 @pytest.mark.integration
-def test_get_mean_value(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/mean", headers=headers
+async def test_get_mean_value(headers):
+    assert (
+        json.loads(
+            await do_request(
+                f"{BASE_URL}/power_hub/appliance_sensors/heat_pipes/power/mean",
+                headers=headers,
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert json.loads(response.text) > 0
 
 
 @pytest.mark.integration
-def test_get_electric_power_consumption(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/electric/power/consumption/over/time", headers=headers
+async def test_get_current_pcm_fill(headers):
+    assert (
+        json.loads(
+            await do_request(
+                f"{BASE_URL}/power_hub/appliance_sensors/pcm/fill/current",
+                headers=headers,
+            )
+        )
+        >= 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert len(json.loads(response.text)) > 0
 
 
 @pytest.mark.integration
-def test_get_electric_power_consumption_appliances(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/electric/power/consumption/over/time?appliance=pcm_to_yazaki_pump&appliance=chilled_loop_pump",
-        headers=headers,
+async def test_get_electric_power_consumption(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/electric/power/consumption/over/time",
+                    headers=headers,
+                )
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert len(json.loads(response.text)) > 0
 
 
 @pytest.mark.integration
-def test_get_electric_power_consumption_mean(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/electric/power/consumption/mean", headers=headers
+async def test_get_electric_power_consumption_appliances(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/electric/power/consumption/over/time?appliance=pcm_to_yazaki_pump&appliance=chilled_loop_pump",
+                    headers=headers,
+                )
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert json.loads(response.text) > 0
 
 
 @pytest.mark.integration
-def test_get_electric_power_production(headers):
-    response = requests.get(
-        f"{BASE_URL}/power_hub/electric/power/production/over/time", headers=headers
+async def test_get_electric_power_consumption_mean(headers):
+    assert (
+        json.loads(
+            await do_request(
+                f"{BASE_URL}/power_hub/electric/power/consumption/mean", headers=headers
+            )
+        )
+        > 0
     )
-    assert response.status_code == HTTPStatus.OK
-    assert len(json.loads(response.text)) > 0
+
+
+@pytest.mark.integration
+async def test_get_electric_power_production(headers):
+    assert (
+        len(
+            json.loads(
+                await do_request(
+                    f"{BASE_URL}/power_hub/electric/power/production/over/time",
+                    headers=headers,
+                )
+            )
+        )
+        > 0
+    )
 
 
 @pytest.fixture
@@ -176,19 +228,21 @@ def lat_lon():
 
 
 @pytest.mark.integration
-def test_get_current_weather(headers, lat_lon):
-    response = requests.get(f"{BASE_URL}/weather/current{lat_lon}", headers=headers)
-    assert response.status_code == HTTPStatus.OK
-    assert {"temp", "feels_like", "pressure"}.issubset(json.loads(response.text).keys())
+async def test_get_current_weather(headers, lat_lon):
+    assert {"temp", "feels_like", "pressure"}.issubset(
+        json.loads(
+            await do_request(f"{BASE_URL}/weather/current{lat_lon}", headers=headers)
+        ).keys()
+    )
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("forecast_window", ["hourly", "daily"])
-def test_get_hourly_weather(headers, lat_lon, forecast_window):
-    response = requests.get(
-        f"{BASE_URL}/weather/{forecast_window}{lat_lon}", headers=headers
+async def test_get_hourly_weather(headers, lat_lon, forecast_window):
+    weather = json.loads(
+        await do_request(
+            f"{BASE_URL}/weather/{forecast_window}{lat_lon}", headers=headers
+        )
     )
-    weather = json.loads(response.text)
-    assert response.status_code == HTTPStatus.OK
     assert type(weather) == list
     assert set(["temp", "feels_like", "pressure"]).issubset(next(iter(weather)))
