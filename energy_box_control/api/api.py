@@ -17,7 +17,7 @@ from energy_box_control.custom_logging import get_logger
 
 from energy_box_control.config import CONFIG
 from quart_cors import cors  # type: ignore
-from energy_box_control.api.validators import (
+from energy_box_control.api.schemas import (
     ApplianceSensorFieldValue,
     ReturnedAppliances,
     SensorName,

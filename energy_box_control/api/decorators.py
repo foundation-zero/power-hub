@@ -7,7 +7,7 @@ from energy_box_control.api.query_builders import (
     build_query_range,
     timedelta_from_string,
 )
-from energy_box_control.api.validators import ValuesQuery
+from energy_box_control.api.schemas import ValuesQuery
 from energy_box_control.config import CONFIG
 from pandas import DataFrame as df  # type: ignore
 

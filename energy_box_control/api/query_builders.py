@@ -1,4 +1,4 @@
-from energy_box_control.api.validators import ValuesQuery
+from energy_box_control.api.schemas import ValuesQuery
 from datetime import datetime, timezone, timedelta
 import fluxy  # type: ignore
 from typing import Tuple
