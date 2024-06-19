@@ -68,11 +68,7 @@ def test_off_by_one(periodic_schedule, period_start, period_delta):
 
 
 def test_monthly_data():
-    data = tuple(
-        value
-        for value_ in [[i for i in range(0, 24)] for _ in range(0, 31)]
-        for value in value_
-    )
+    data = tuple(list(range(0, 24)) * 31)
     start = datetime(2000, 1, 1)
     stop = datetime(2000, 2, 1)
     schedule = PeriodicSchedule(start, stop - start, data)

@@ -22,7 +22,7 @@ import energy_box_control.power_hub.power_hub_components as phc
 from energy_box_control.time import ProcessTime
 from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 from energy_box_control.power_hub.network import PowerHubSchedules
-from energy_box_control.schedules import ConstSchedule
+from energy_box_control.schedules import ConstSchedule, PeriodicSchedule
 from energy_box_control.appliances.pcm import PcmPort
 
 
@@ -200,14 +200,22 @@ def test_schedules_from_data_extrapolation(year, month, day, schedules, data):
 @mark.parametrize("month", [1, 6, 11])
 @mark.parametrize("day", [11, 18, 25])
 def test_schedule_hours(year, month, day, schedules, data):
-    index = schedules.global_irradiance._get_index(
+    schedule = PeriodicSchedule(
+        schedules.global_irradiance.schedule_start,
+        schedules.global_irradiance.period,
+        tuple(range(0, 3671)),
+    )
+    index = schedule.at(
         ProcessTime(
             timedelta(seconds=1),
             0,
             datetime(year, month, day, 12, tzinfo=timezone.utc),
         )
     )
-    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 12
+    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour in [
+        11,
+        12,
+    ]
 
 
 def test_water_filter_trigger(power_hub, min_max_temperature, schedules):

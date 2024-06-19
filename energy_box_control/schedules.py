@@ -24,14 +24,13 @@ class PeriodicSchedule[T](Schedule[T]):
     period: timedelta
     values: tuple[T, ...]
 
-    def _get_index(self, time: ProcessTime) -> int:
-        return floor(
-            (((time.timestamp - self.schedule_start) % self.period) / self.period)
-            * len(self.values)
-        )
-
     def at(self, time: ProcessTime) -> T:
-        return self.values[self._get_index(time)]
+        return self.values[
+            floor(
+                (((time.timestamp - self.schedule_start) % self.period) / self.period)
+                * len(self.values)
+            )
+        ]
 
 
 @dataclass(frozen=True)
