@@ -371,10 +371,7 @@ async def get_pcm_current_fill() -> str:
                 query=fluxy.pipe(
                     fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
                     fluxy.range(start=timedelta(days=-10)),
-                    fluxy.filter(
-                        lambda r: r.topic
-                        == "power_hub/appliance_sensors/pcm/temperature"
-                    ),
+                    fluxy.filter(lambda r: r._field == "pcm_temperature"),
                     fluxy.literal('filter(fn: (r) => r["_value"] <= 77)'),
                     fluxy.sort(columns=["_time"], sort_order=fluxy.Order.DESC),
                     fluxy.limit(1),
@@ -391,9 +388,7 @@ async def get_pcm_current_fill() -> str:
                 start=last_empty.replace(tzinfo=timezone.utc),
                 stop=datetime.now(tz=timezone.utc),
             ),
-            fluxy.filter(
-                lambda r: r.topic == "power_hub/appliance_sensors/pcm/net_charge"
-            ),
+            fluxy.filter(lambda r: r._field == "pcm_net_charge"),
             fluxy.sum("_value"),
         ),
     )
