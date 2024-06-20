@@ -10,7 +10,7 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import ThermalState
 from energy_box_control.time import ProcessTime
 
-from energy_box_control.power_hub.power_hub_components import SWITCH_PUMP_POWER
+from energy_box_control.power_hub.components import SWITCH_PUMP_POWER
 
 
 @fixture

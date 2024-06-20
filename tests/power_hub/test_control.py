@@ -5,7 +5,7 @@ from energy_box_control.power_hub.control import (
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.schedules import ConstSchedule
-import energy_box_control.power_hub.power_hub_components as phc
+import energy_box_control.power_hub.components as phc
 
 
 def test_control_from_json_roundtrips():

@@ -24,7 +24,7 @@ from energy_box_control.network import (
     NetworkState,
 )
 
-from energy_box_control.power_hub.power_hub_components import (
+from energy_box_control.power_hub.components import (
     heat_pipes,
     heat_pipes_pump,
     heat_pipes_mix,

@@ -82,7 +82,7 @@ from energy_box_control.power_hub.sensors import (
     WeatherSensors,
 )
 
-import energy_box_control.power_hub.power_hub_components as phc
+import energy_box_control.power_hub.components as phc
 from datetime import datetime, timedelta
 
 from energy_box_control.schedules import ConstSchedule, PeriodicSchedule, Schedule
