@@ -27,8 +27,9 @@ class PeriodicSchedule[T](Schedule[T]):
     def at(self, time: ProcessTime) -> T:
         return self.values[
             floor(
-                (((time.timestamp - self.schedule_start) % self.period) / self.period)
+                ((time.timestamp - self.schedule_start) % self.period)
                 * len(self.values)
+                / self.period
             )
         ]
 

@@ -203,8 +203,9 @@ def test_schedule_hours(year, month, day, schedules, data):
     schedule = PeriodicSchedule(
         schedules.global_irradiance.schedule_start,
         schedules.global_irradiance.period,
-        tuple(range(0, 3671)),
+        tuple(range(0, len(data))),
     )
+    time = schedules.global_irradiance.schedule_start + timedelta(hours=12)
     index = schedule.at(
         ProcessTime(
             timedelta(seconds=1),
@@ -212,7 +213,7 @@ def test_schedule_hours(year, month, day, schedules, data):
             datetime(year, month, day, 12, tzinfo=timezone.utc),
         )
     )
-    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 11
+    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 12
 
 
 def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
