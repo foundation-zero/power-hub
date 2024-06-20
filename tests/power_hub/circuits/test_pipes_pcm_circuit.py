@@ -20,7 +20,7 @@ from energy_box_control.power_hub.circuits.pipes_pcm_circuit import (
     PipesPcmNetwork,
 )
 from energy_box_control.network import NetworkState
-from energy_box_control.power_hub.power_hub_components import (
+from energy_box_control.power_hub.components import (
     AMBIENT_TEMPERATURE,
     GLOBAL_IRRADIANCE,
 )
