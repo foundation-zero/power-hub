@@ -15,7 +15,7 @@ from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
     WaterTreatmentPort,
 )
-from energy_box_control.power_hub.power_hub_components import (
+from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
