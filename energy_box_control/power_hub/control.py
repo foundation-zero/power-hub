@@ -10,7 +10,7 @@ from energy_box_control.control.state_machines import (
     StateMachine,
 )
 from energy_box_control.power_hub.network import PowerHub
-from energy_box_control.power_hub.power_hub_components import (
+from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HEAT_PIPES_BYPASS_OPEN_POSITION,

@@ -31,7 +31,7 @@ from energy_box_control.appliances.water_treatment import (
     WaterTreatmentState,
 )
 from energy_box_control.network import Network, NetworkState
-import energy_box_control.power_hub.power_hub_components as phc
+import energy_box_control.power_hub.components as phc
 from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime
 
