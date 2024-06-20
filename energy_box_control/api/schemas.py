@@ -35,6 +35,11 @@ class ComputedValuesQuery(AppliancesQuery):
 
 
 @dataclass
+class ComputedPowerQuery(ComputedValuesQuery, AppliancesQuery):
+    pass
+
+
+@dataclass
 class WeatherQuery:
     lat: float
     lon: float
