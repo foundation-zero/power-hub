@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import MQTTMessageInfo
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
@@ -113,7 +113,7 @@ def publish_to_mqtt(
     client: mqtt_client.Client,
     topic: str,
     json_str: str,
-    notifier: Notifier,
+    notifier: Optional[Notifier] = None,
 ) -> MQTTMessageInfo:
     result = client.publish(topic, json_str, qos=1)
     if result.rc == MQTTErrorCode.MQTT_ERR_SUCCESS:
@@ -122,17 +122,17 @@ def publish_to_mqtt(
         logger.error(
             f"Failed to send message to topic {topic} with error code: {result.rc}, client connected: {client.is_connected()}"
         )
-
-        notifier.send_events(
-            [
-                NotificationEvent(
-                    f"Failed to publish to MQTT: {result.rc}, please check the logs.",
-                    "power_hub_simulation_mqtt",
-                    "mqtt_publish",
-                    Severity.ERROR,
-                )
-            ]
-        )
+        if notifier:
+            notifier.send_events(
+                [
+                    NotificationEvent(
+                        f"Failed to publish to MQTT: {result.rc}, please check the logs.",
+                        "power_hub_simulation_mqtt",
+                        "mqtt_publish",
+                        Severity.ERROR,
+                    )
+                ]
+            )
 
     return result
 

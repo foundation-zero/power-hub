@@ -159,6 +159,7 @@ class Setpoints:
     )
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
+    survival_mode: bool = setpoint("survival mode on/of")
 
 
 @dataclass
@@ -196,6 +197,7 @@ def initial_control_state() -> PowerHubControlState:
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+            survival_mode=False,
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -750,6 +752,106 @@ def water_control(
     )
 
 
+def survival_control_state(control_state: PowerHubControlState) -> PowerHubControlState:
+    return PowerHubControlState(
+        hot_control=HotControlState(
+            control_state.hot_control.context,
+            HotControlMode.IDLE,
+            control_state.hot_control.feedback_valve_controller,
+            control_state.hot_control.hot_switch_valve_position,
+        ),
+        chill_control=ChillControlState(
+            control_state.chill_control.context,
+            ChillControlMode.CHILL_CHILLER,
+            control_state.chill_control.yazaki_hot_feedback_valve_controller,
+            CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+            WASTE_SWITCH_VALVE_CHILLER_POSITION,
+        ),
+        waste_control=WasteControlState(
+            control_state.waste_control.context, WasteControlMode.RUN_OUTBOARD
+        ),
+        water_control=WaterControlState(
+            control_state.water_control.context, WaterControlMode.READY
+        ),
+        preheat_control=PreHeatControlState(
+            control_state.preheat_control.context, PreHeatControlMode.NO_PREHEAT
+        ),
+        setpoints=control_state.setpoints,
+    )
+
+
+def survival_control(
+    power_hub: PowerHub, control_state: PowerHubControlState
+) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
+    control_state = survival_control_state(control_state)
+
+    # cold_reservoir
+
+    hot_control = (
+        power_hub.control(power_hub.heat_pipes_power_hub_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.heat_pipes_valve)
+        .value(ValveControl(HEAT_PIPES_BYPASS_OPEN_POSITION))
+        .control(power_hub.hot_switch_valve)
+        .value(ValveControl(control_state.hot_control.hot_switch_valve_position))
+        .control(power_hub.hot_reservoir)
+        .value(BoilerControl(heater_on=False))
+        .control(power_hub.preheat_reservoir)
+        .value(BoilerControl(False))
+    )
+
+    chill_control = (
+        power_hub.control(power_hub.chiller_switch_valve)
+        .value(ValveControl(CHILLER_SWITCH_VALVE_CHILLER_POSITION))
+        .control(power_hub.waste_switch_valve)
+        .value(ValveControl(WASTE_SWITCH_VALVE_CHILLER_POSITION))
+        .control(power_hub.yazaki_hot_bypass_valve)
+        .value(ValveControl(YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION))
+        .control(power_hub.waste_bypass_valve)
+        .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
+        .control(power_hub.pcm_to_yazaki_pump)
+        .value(SwitchPumpControl(False))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(False))
+        .control(power_hub.chiller)
+        .value(ChillerControl(True))
+        .control(power_hub.waste_pump)
+        .value(SwitchPumpControl(True))
+        .control(power_hub.chilled_loop_pump)
+        .value(SwitchPumpControl(True))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(on=True))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(on=False))
+        .control(power_hub.cold_reservoir)
+        .value(BoilerControl(False))
+    )
+
+    waste_control = (
+        power_hub.control(power_hub.outboard_pump)
+        .value(SwitchPumpControl(True))
+        .control(power_hub.preheat_switch_valve)
+        .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))
+    )
+
+    water_control = (
+        power_hub.control(power_hub.water_filter_bypass_valve)
+        .value(ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION))
+        .control(power_hub.fresh_water_pump)
+        .value(SwitchPumpControl(False))
+        .control(power_hub.water_maker_pump)
+        .value(SwitchPumpControl(on=False))
+    )
+
+    return (
+        control_state,
+        hot_control.combine(chill_control)
+        .combine(waste_control)
+        .combine(water_control)
+        .build(),
+    )
+
+
 def control_power_hub(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
@@ -760,6 +862,11 @@ def control_power_hub(
     # Hot: heat boiler / heat PCM / off
     # Chill: reservoir full: off / demand fulfil by Yazaki / demand fulfil by e-chiller
     # Waste: run outboard / no run outboard
+    # Survival: # everything off except for chiller
+
+    if control_state.setpoints.survival_mode:
+        return survival_control(power_hub, control_state)
+
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
