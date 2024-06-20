@@ -1,27 +1,17 @@
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from hypothesis import example
-from numpy import power
-from pandas import read_csv, read_parquet
+from pandas import read_csv
 from pytest import approx, fixture, mark
+import pytest
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
 from energy_box_control.appliances.boiler import BoilerPort
-from energy_box_control.appliances.chiller import ChillerState
-from energy_box_control.appliances.heat_pipes import HeatPipesState
-from energy_box_control.appliances.pcm import PcmPort, PcmState
-from energy_box_control.appliances.source import SourceState
-from energy_box_control.appliances.switch_pump import SwitchPumpState
-from energy_box_control.appliances.valve import ValveState
-from energy_box_control.appliances.yazaki import YazakiPort, YazakiState
-from energy_box_control.network import NetworkState
-from energy_box_control.networks import ControlState
+from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
 from energy_box_control.power_hub.control import (
-    PowerHubControlState,
     WaterControlMode,
     control_power_hub,
     initial_control_all_off,
@@ -30,10 +20,10 @@ from energy_box_control.power_hub.control import (
 )
 import energy_box_control.power_hub.power_hub_components as phc
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import Celsius, Watt, WattPerMeterSquared
 from tests.test_simulation import SimulationFailure, SimulationSuccess, run_simulation
 from energy_box_control.power_hub.network import PowerHubSchedules
-from energy_box_control.schedules import ConstSchedule
+from energy_box_control.schedules import ConstSchedule, PeriodicSchedule
+from energy_box_control.appliances.pcm import PcmPort
 
 
 @fixture
@@ -143,10 +133,14 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature, seconds):
     assert isinstance(result, SimulationSuccess)
 
 
-@mark.parametrize("seconds", [1, 60, 360])
-def test_power_hub_simulation_data_schedule(min_max_temperature, seconds):
+@pytest.fixture
+def schedules():
+    return PowerHubSchedules.schedules_from_data()
 
-    schedules = PowerHubSchedules.schedules_from_data()
+
+@mark.parametrize("seconds", [1, 60, 360])
+def test_power_hub_simulation_data_schedule(min_max_temperature, seconds, schedules):
+
     power_hub = PowerHub.power_hub(schedules)
 
     schedule_start = schedules.ambient_temperature.schedule_start  # type: ignore
@@ -163,32 +157,67 @@ def test_power_hub_simulation_data_schedule(min_max_temperature, seconds):
     assert isinstance(result, SimulationSuccess)
 
 
-def test_power_hub_schedules_from_data():
-
-    data = read_csv(
+@pytest.fixture
+def data():
+    return read_csv(
         "energy_box_control/power_hub/powerhub_simulation_schedules_Jun_Oct_TMY.csv",
         index_col=0,
         parse_dates=True,
     )
 
-    hour = 4
-    schedule = PowerHubSchedules.schedules_from_data()
 
+def test_power_hub_schedules_from_data(schedules, data):
+    hour = 4
     assert (
-        schedule.global_irradiance.at(
+        schedules.global_irradiance.at(
             ProcessTime(
                 timedelta(hours=1),
                 0,
-                schedule.global_irradiance.schedule_start + timedelta(hours=hour),  # type: ignore
+                schedules.global_irradiance.schedule_start + timedelta(hours=hour),  # type: ignore
             )
         )
         == data["Global Horizontal Radiation"].iloc[hour]
     )
 
 
-def test_water_filter_trigger(power_hub, min_max_temperature):
+@mark.parametrize("year", [2000, 2008, 2024])
+@mark.parametrize("month", [1, 6, 11])
+@mark.parametrize("day", [11, 18, 25])
+def test_schedules_from_data_extrapolation(year, month, day, schedules, data):
+    assert (
+        schedules.ambient_temperature.at(
+            ProcessTime(
+                timedelta(seconds=1),
+                0,
+                datetime(year, month, day, 12, tzinfo=timezone.utc),
+            )
+        )
+        >= data.between_time("12:00", "12:00")["Dry Bulb Temperature"].min()
+    )
 
-    schedules = PowerHubSchedules.schedules_from_data()
+
+@mark.parametrize("year", [2000, 2008, 2024])
+@mark.parametrize("month", [1, 6, 11])
+@mark.parametrize("day", [11, 18, 25])
+def test_schedule_hours(year, month, day, schedules, data):
+    schedule = PeriodicSchedule(
+        schedules.global_irradiance.schedule_start,
+        schedules.global_irradiance.period,
+        tuple(range(0, len(data))),
+    )
+    time = schedules.global_irradiance.schedule_start + timedelta(hours=12)
+    index = schedule.at(
+        ProcessTime(
+            timedelta(seconds=1),
+            0,
+            datetime(year, month, day, 12, tzinfo=timezone.utc),
+        )
+    )
+    assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 12
+
+
+def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
+
     power_hub = PowerHub.power_hub(schedules)
     state = power_hub.simple_initial_state(
         datetime.now(timezone.utc), timedelta(seconds=1)
@@ -226,9 +255,8 @@ def test_water_filter_trigger(power_hub, min_max_temperature):
             assert control_state.water_control.control_mode == WaterControlMode.READY
 
 
-def test_water_filter_stop(power_hub, min_max_temperature):
+def test_water_filter_stop(power_hub, min_max_temperature, schedules):
 
-    schedules = PowerHubSchedules.schedules_from_data()
     power_hub = PowerHub.power_hub(schedules)
     state = power_hub.simple_initial_state(
         datetime.now(timezone.utc), timedelta(seconds=1)
