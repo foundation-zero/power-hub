@@ -1,6 +1,12 @@
 import asyncio
+from dataclasses import dataclass
+import dataclasses
+from datetime import datetime, timezone
+import enum
 from functools import partial
+import json
 import queue
+from typing import Any
 from paho.mqtt import client as mqtt_client
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
@@ -16,6 +22,10 @@ from energy_box_control.mqtt import (
 )
 from energy_box_control.monitoring.checks import service_checks
 from energy_box_control.power_hub.control import (
+    ChillControlMode,
+    HotControlMode,
+    PowerHubControlState,
+    WasteControlMode,
     control_power_hub,
     control_to_json,
     initial_control_state,
@@ -27,9 +37,29 @@ logger = get_logger(__name__)
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
 SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
+CONTROL_MODES_TOPIC = f"{MQTT_TOPIC_BASE}/control_modes"
 
 
 sensor_values_queue: queue.Queue[str] = queue.Queue()
+
+
+@dataclass
+class ControlModes:
+    hot: HotControlMode
+    chill: ChillControlMode
+    waste: WasteControlMode
+    time: datetime
+
+    class ControlModesEncoder(json.JSONEncoder):
+        def default(self, o: Any):
+            if type(o) == datetime:
+                return o.isoformat()
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            if issubclass(type(o), enum.Enum):
+                return o.value
+            else:
+                return json.JSONEncoder.default(self, o)
 
 
 def queue_on_message(
@@ -41,6 +71,27 @@ def queue_on_message(
     decoded_message = str(message.payload.decode("utf-8"))
     logger.debug(f"Received message: {decoded_message}")
     queue.put(decoded_message)
+
+
+def publish_control_modes(
+    mqtt_client: mqtt_client.Client,
+    control_state: PowerHubControlState,
+    notifier: Notifier,
+):
+    publish_to_mqtt(
+        mqtt_client,
+        CONTROL_MODES_TOPIC,
+        json.dumps(
+            ControlModes(
+                control_state.hot_control.control_mode,
+                control_state.chill_control.control_mode,
+                control_state.waste_control.control_mode,
+                datetime.now(timezone.utc),
+            ),
+            cls=ControlModes.ControlModesEncoder,
+        ),
+        notifier,
+    )
 
 
 async def run():
@@ -71,6 +122,8 @@ async def run():
         control_state, control_values = control_power_hub(
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
         )
+
+        publish_control_modes(mqtt_client, control_state, notifier)
 
         publish_to_mqtt(
             mqtt_client,
