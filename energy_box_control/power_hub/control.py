@@ -577,12 +577,14 @@ def chill_control(
     )
 
 
-should_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) > Fn.state(
-    lambda state: state.setpoints.cold_reservoir_max_temperature
-)
-stop_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
-    lambda state: state.setpoints.cold_reservoir_min_temperature
-)
+cooling_waste = Fn.sensors(
+    lambda sensors: sensors.preheat_reservoir.temperature
+) > Fn.state(lambda state: state.setpoints.preheat_reservoir_max_temperature)
+no_cooling_waste = Fn.sensors(
+    lambda sensors: sensors.preheat_reservoir.temperature
+) < Fn.state(lambda state: state.setpoints.preheat_reservoir_min_temperature)
+water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
+water_maker_off = Fn.pred(lambda _, sensors: not sensors.water_maker.on)
 
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
@@ -591,14 +593,10 @@ waste_transitions: dict[
         PowerHubSensors,
     ],
 ] = {
-    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): Fn.sensors(
-        lambda sensors: sensors.preheat_reservoir.temperature
-    )
-    > Fn.state(lambda state: state.setpoints.preheat_reservoir_max_temperature),
-    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): Fn.sensors(
-        lambda sensors: sensors.preheat_reservoir.temperature
-    )
-    < Fn.state(lambda state: state.setpoints.preheat_reservoir_min_temperature),
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): cooling_waste
+    | water_maker_on,
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): no_cooling_waste
+    & water_maker_off,
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
