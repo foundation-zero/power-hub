@@ -12,7 +12,11 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MQTT_HOST": "0.0.0.0",
+                "INFLUXDB_URL": "http://0.0.0.0:8086"
+            }
         }
     ]
 }

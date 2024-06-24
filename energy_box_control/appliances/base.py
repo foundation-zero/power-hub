@@ -133,3 +133,16 @@ def has_appliance_state(appliance: BaseAppliance[Any, Any, Any, Any, Any]) -> bo
         for arg in base.__args__
         if issubclass(arg, ApplianceState)
     )
+
+
+def control_class(appliance: BaseAppliance[Any, Any, Any, Any, Any]) -> Any:
+    bases = _get_appliance_bases(appliance)
+    return next(
+        (
+            arg
+            for base in bases
+            for arg in base.__args__
+            if issubclass(arg, ApplianceControl)
+        ),
+        None,
+    )
