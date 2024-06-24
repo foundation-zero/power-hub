@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from functools import reduce
 import json
+from typing import Any, cast
+from energy_box_control.appliances.base import control_class
 from energy_box_control.control.state_machines import (
     Context,
     Functions,
@@ -31,7 +34,7 @@ from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.simulation_json import encoder
-from energy_box_control.network import NetworkControl
+from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, WattPerMeterSquared
@@ -796,35 +799,21 @@ def control_from_json(
     power_hub: PowerHub, control_json: str
 ) -> NetworkControl[PowerHub]:
     controls = json.loads(control_json)
-    return (
-        power_hub.control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=controls["hot_reservoir"]["heater_on"]))
-        .control(power_hub.preheat_reservoir)
-        .value(BoilerControl(heater_on=controls["preheat_reservoir"]["heater_on"]))
-        .control(power_hub.cold_reservoir)
-        .value(BoilerControl(heater_on=controls["cold_reservoir"]["heater_on"]))
-        .control(power_hub.heat_pipes_pump)
-        .value(SwitchPumpControl(on=controls["heat_pipes_pump"]["on"]))
-        .control(power_hub.pcm_to_yazaki_pump)
-        .value(SwitchPumpControl(on=controls["pcm_to_yazaki_pump"]["on"]))
-        .control(power_hub.chilled_loop_pump)
-        .value(SwitchPumpControl(on=controls["chilled_loop_pump"]["on"]))
-        .control(power_hub.waste_pump)
-        .value(SwitchPumpControl(on=controls["waste_pump"]["on"]))
-        .control(power_hub.fresh_water_pump)
-        .value(SwitchPumpControl(on=controls["fresh_water_pump"]["on"]))
-        .control(power_hub.cooling_demand_pump)
-        .value(SwitchPumpControl(on=controls["cooling_demand_pump"]["on"]))
-        .control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(on=controls["outboard_pump"]["on"]))
-        .control(power_hub.yazaki)
-        .value(YazakiControl(on=controls["yazaki"]["on"]))
-        .control(power_hub.chiller)
-        .value(ChillerControl(on=controls["chiller"]["on"]))
-        .control(power_hub.water_maker_pump)
-        .value(SwitchPumpControl(on=controls["water_maker_pump"]["on"]))
-        .build()
-    )
+
+    def _control(
+        control: PowerHub | ControlBuilder[PowerHub], cur: tuple[str, dict[str, Any]]
+    ) -> ControlBuilder[PowerHub]:
+        key, values = cur
+        appliance = getattr(power_hub, key)
+        control_cls = control_class(appliance)
+        return cast(
+            ControlBuilder[PowerHub],
+            control.control(appliance).value(control_cls(**values)),
+        )
+
+    return cast(
+        ControlBuilder[PowerHub], reduce(_control, controls.items(), power_hub)
+    ).build()
 
 
 def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> str:
