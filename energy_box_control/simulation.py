@@ -1,10 +1,7 @@
-import dataclasses
 from datetime import datetime, timezone
-import enum
 import json
 
 from dataclasses import dataclass
-from typing import Any
 import schedule
 from energy_box_control.monitoring.monitoring import (
     Monitor,
@@ -16,10 +13,7 @@ import queue
 from queue import Empty
 from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
-    ChillControlMode,
-    HotControlMode,
     PowerHubControlState,
-    WasteControlMode,
     Setpoints,
     control_from_json,
     control_power_hub,
@@ -40,6 +34,7 @@ from paho.mqtt import client as mqtt_client
 
 from functools import partial
 
+from energy_box_control.power_hub_control import publish_control_modes
 from energy_box_control.sensors import sensors_to_json
 
 import asyncio
@@ -67,22 +62,6 @@ def queue_on_message(
     decoded_message = str(message.payload.decode("utf-8"))
     logger.debug(f"Received message: {decoded_message}")
     queue.put(decoded_message)
-
-
-@dataclass
-class ControlModes:
-    hot: HotControlMode
-    chill: ChillControlMode
-    waste: WasteControlMode
-
-    class ControlModesEncoder(json.JSONEncoder):
-        def default(self, o: Any):
-            if dataclasses.is_dataclass(o):
-                return dataclasses.asdict(o)
-            if issubclass(type(o), enum.Enum):
-                return o.value
-            else:
-                return json.JSONEncoder.default(self, o)
 
 
 @dataclass
@@ -128,19 +107,7 @@ class SimulationResult:
             self.state.time.timestamp,
         )
 
-        publish_to_mqtt(
-            mqtt_client,
-            CONTROL_MODES_TOPIC,
-            json.dumps(
-                ControlModes(
-                    control_state.hot_control.control_mode,
-                    control_state.chill_control.control_mode,
-                    control_state.waste_control.control_mode,
-                ),
-                cls=ControlModes.ControlModesEncoder,
-            ),
-            notifier,
-        )
+        publish_control_modes(mqtt_client, control_state, notifier)
 
         publish_to_mqtt(
             mqtt_client,
