@@ -4,6 +4,7 @@ import fluxy
 import pytest
 
 from energy_box_control.api.query_builders import (
+    PrefixedFluxy,
     build_query_range,
     mean_per_hour_query,
     mean_values_query,
@@ -20,7 +21,7 @@ def query_args():
 @freeze_time("2012-01-01")
 def test_build_query_range_minutes_back(query_args):
     start_datetime, stop_datetime = build_query_range(query_args)
-    assert start_datetime == datetime.now(timezone.utc) - timedelta(minutes=60)
+    assert start_datetime == (datetime.now(timezone.utc) - timedelta(minutes=60))
     assert stop_datetime == datetime.now(timezone.utc)
 
 
@@ -96,14 +97,14 @@ async def test_build_mean_per_hour_query():
     query = mean_per_hour_query(
         lambda r: r.topic
         == f"power_hub/appliance_sensors/chiller_switch_valve/position",
-        build_query_range(query_args, default_time_delta=timedelta(days=7)),
+        build_query_range(query_args, default_timedelta=timedelta(days=7)),
     )
 
     assert (
         len(
             [
                 operation
-                for operation in query.operations
+                for operation in query.flux.operations
                 if type(operation) == fluxy.Filter
             ]
         )
@@ -114,11 +115,21 @@ async def test_build_mean_per_hour_query():
         fluxy.aggregate_window(
             timedelta(hours=1),
             fluxy.WindowOperation.MEAN,
-            False,
+            True,
         )
-        in query.operations
+        in query.flux.operations
     )
 
-    assert query.range == fluxy.range(
+    assert query.flux.range == fluxy.range(
         datetime.now(timezone.utc) - timedelta(days=7), datetime.now(timezone.utc)
+    )
+
+
+async def test_prefixed_query():
+    assert (
+        'import "date"'
+        in PrefixedFluxy(
+            prefixes=['import "date"'],
+            flux=fluxy.pipe(fluxy.from_bucket("test"), fluxy.range(timedelta(days=-5))),
+        ).to_flux()
     )

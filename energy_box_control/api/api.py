@@ -30,6 +30,7 @@ from energy_box_control.api.schemas import (
     ComputedPowerQuery,
 )
 from energy_box_control.api.query_builders import (
+    PrefixedFluxy,
     build_query_range,
     values_query,
     mean_values_query,
@@ -44,6 +45,7 @@ logger = get_logger(__name__)
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
+
 
 QuartSchema(
     app,
@@ -66,7 +68,7 @@ async def handle_request_validation_error(
 
 async def execute_influx_query(
     client: InfluxDBClientAsync,
-    query: fluxy.Query,
+    query: fluxy.Query | PrefixedFluxy,
 ) -> df:
     return await client.query_api().query_data_frame(query.to_flux())  # type: ignore
 
@@ -268,7 +270,7 @@ async def get_electrical_power_consumption(
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
-@app.route("/power_hub/electric/power/consumption/mean/per/hour")
+@app.route("/power_hub/electric/power/consumption/mean/per/hour_of_day")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
 @limit_query_result
@@ -289,7 +291,7 @@ async def get_electrical_power_consumption_per_hour(
                         for appliance_name in appliance_names
                     ],
                 ),
-                build_query_range(query_args, default_time_delta=timedelta(days=7)),
+                build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
         )
     ).rename(columns={"_value": "value"})
@@ -356,7 +358,7 @@ async def get_electrical_power_production(
     ).rename(columns={"_value": "value", "_time": "time"})
 
 
-@app.route("/power_hub/electric/power/production/mean/per/hour")
+@app.route("/power_hub/electric/power/production/mean/per/hour_of_day")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
 @limit_query_result
@@ -368,7 +370,8 @@ async def get_electrical_power_production_interval(
 
     if any("pv_panel" not in item for item in appliance_names):
         return await make_response(
-            "Please only provide pv_panel(s)", HTTPStatus.UNPROCESSABLE_ENTITY
+            "Query param 'appliances' must contain only pv_panel(s)",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
         )
 
     return (
@@ -382,7 +385,7 @@ async def get_electrical_power_production_interval(
                         for appliance_name in appliance_names
                     ],
                 ),
-                build_query_range(query_args, default_time_delta=timedelta(hours=1)),
+                build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
         )
     ).rename(columns={"_value": "value"})

@@ -224,12 +224,12 @@ async def test_get_electric_power_consumption_mean_per_hour(headers):
         len(
             json.loads(
                 await do_request(
-                    f"{BASE_URL}/power_hub/electric/power/consumption/mean/per/hour",
+                    f"{BASE_URL}/power_hub/electric/power/consumption/mean/per/hour_of_day",
                     headers=headers,
                 )
             )
         )
-        == 1
+        == 24
     )
 
 
@@ -254,12 +254,12 @@ async def test_get_electric_power_production_mean_per_hour(headers):
         len(
             json.loads(
                 await do_request(
-                    f"{BASE_URL}/power_hub/electric/power/production/mean/per/hour",
+                    f"{BASE_URL}/power_hub/electric/power/production/mean/per/hour_of_day",
                     headers=headers,
                 )
             )
         )
-        == 1
+        == 24
     )
 
 
