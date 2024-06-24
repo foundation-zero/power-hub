@@ -1,6 +1,9 @@
+from datetime import datetime, timezone, tzinfo
 from energy_box_control.power_hub.control import (
     control_from_json,
+    control_power_hub,
     control_to_json,
+    initial_control_state,
     no_control,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
@@ -19,7 +22,12 @@ def test_control_from_json_roundtrips():
             ConstSchedule(phc.WATER_DEMAND),
         )
     )
-    control = no_control(power_hub)
+    _, control = control_power_hub(
+        power_hub,
+        initial_control_state(),
+        power_hub.sensors_from_state(PowerHub.simple_initial_state(power_hub)),
+        datetime.now(tz=timezone.utc),
+    )
     json = control_to_json(power_hub, control)
     from_json = control_from_json(power_hub, json)
     assert from_json == control
