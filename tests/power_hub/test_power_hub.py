@@ -328,17 +328,17 @@ def test_water_filter_stop(
 
 
 @mark.parametrize(
-    "preheat_temperature, water_maker_out_flow, outboard_pump_on",
-    [(26, 5, True), (35, 5, True), (35, 0, True), (25, 0, False)],
+    "preheat_temperature, water_maker_on, outboard_pump_on",
+    [(26, True, True), (35, True, True), (35, True, True), (25, False, False)],
 )
-def test_waste_pump_water_maker_on_no_waste_heat_exchange(
+def test_waste_pump_water_maker(
     power_hub_sched,
     state,
     control_state,
     control_values,
     sensors,
     preheat_temperature,
-    water_maker_out_flow,
+    water_maker_on,
     outboard_pump_on,
 ):
     control_state, control_values = control_power_hub(
@@ -347,15 +347,13 @@ def test_waste_pump_water_maker_on_no_waste_heat_exchange(
     state = power_hub_sched.simulate(state, control_values)
     sensors = power_hub_sched.sensors_from_state(state)
     sensors.preheat_reservoir.temperature = preheat_temperature
-    sensors.water_maker.out_flow = water_maker_out_flow
+    sensors.water_maker.on = water_maker_on
 
     control_state, control_values = control_power_hub(
         power_hub_sched, control_state, sensors, state.time.timestamp
     )
 
     assert (
-        control_values.name_to_control_values_mapping(power_hub_sched)[
-            "outboard_pump"
-        ].on  # type: ignore
+        control_values.appliance(power_hub_sched.outboard_pump).get().on  # type: ignore
         == outboard_pump_on
     )

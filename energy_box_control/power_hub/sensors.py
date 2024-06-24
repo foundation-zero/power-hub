@@ -662,13 +662,10 @@ class WaterTreatmentSensors(FromState):
 @sensors()
 class WaterMakerSensors(FromState):
     spec: WaterMaker
+    on: bool
     out_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
-
-    @property
-    def on(self) -> bool:
-        return True if self.out_flow > 0 else False
 
 
 @sensors(from_appliance=False)
