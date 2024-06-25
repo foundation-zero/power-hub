@@ -32,7 +32,7 @@ jobs:
       - run: docker-compose up -d telegraf
 
       - name: Integration tests
-        run: poetry run pytest -s --runintegration tests/test_api_integration.py
+        run: poetry run pytest -s --runintegration tests/api/test_api_integration.py
         env:
           MQTT_HOST: "0.0.0.0"
           INFLUXDB_URL: "http://0.0.0.0:8086"
@@ -48,7 +48,7 @@ jobs:
           PAGERDUTY_KEY: ${{ secrets.PAGERDUTY_KEY}}
   
       - name: Simulation integration tests
-        run: poetry run pytest -s --runintegration tests/test_simulation_integration.py
+        run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py
         env:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
