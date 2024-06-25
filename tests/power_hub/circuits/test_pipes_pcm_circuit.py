@@ -25,7 +25,7 @@ from energy_box_control.power_hub.components import (
     GLOBAL_IRRADIANCE,
 )
 from energy_box_control.time import ProcessTime
-from tests.test_simulation import SimulationSuccess, run_simulation
+from tests.simulation.test_simulation import SimulationSuccess, run_simulation
 
 
 @fixture

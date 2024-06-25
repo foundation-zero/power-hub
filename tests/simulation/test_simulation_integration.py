@@ -4,7 +4,7 @@ import os
 import aiohttp
 import pytest
 import requests
-from tests.test_api_integration import check_api_is_up, check_simulation_entries
+from tests.api.test_api_integration import check_api_is_up, check_simulation_entries
 from energy_box_control.config import CONFIG
 
 
