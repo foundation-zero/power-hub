@@ -53,7 +53,7 @@ def test_water_maker_network():
                 .define_state(self.outboard_pump)
                 .value(SwitchPumpState())
                 .define_state(self.water_maker)
-                .value(WaterMakerState())
+                .value(WaterMakerState(False))
                 .define_state(self.water_tank)
                 .value(WaterTankState(0))
                 .define_state(self.water_demand)

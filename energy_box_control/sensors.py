@@ -296,7 +296,7 @@ def sensor_fields(sensor_cls: Any) -> set[str]:
         [
             field_name
             for field_name, field_value in get_type_hints(sensor_cls).items()
-            if field_value in [float, int]
+            if field_value in [float, int, bool]
         ]
     ) | set(
         [

@@ -438,7 +438,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_maker_pump)
             .value(SwitchPumpState())
             .define_state(self.water_maker)
-            .value(WaterMakerState())
+            .value(WaterMakerState(False))
             .define_state(self.fresh_water_tank)
             .value(WaterTankState(50))
             .define_state(self.water_demand)
