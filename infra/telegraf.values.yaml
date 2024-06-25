@@ -1,3 +1,4 @@
+tplVersion: 2
 replicaCount: 1
 
 config: 
@@ -11,9 +12,9 @@ config:
           - "power_hub/#"
         data_format: "json_v2"
         json_v2:
-          timestamp_path: "time"
-          timestamp_format: "2006-01-02T15:04:05.000000-07:00"
-          object:
-            path: "@this"
+          - timestamp_path: "time"
+            timestamp_format: "2006-01-02T15:04:05.000000-07:00"
+            object:
+            - path: "@this"
 service:
   enabled: false
