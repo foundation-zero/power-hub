@@ -6,7 +6,7 @@ import enum
 from functools import partial
 import json
 import queue
-from typing import Any, Optional
+from typing import Any
 from paho.mqtt import client as mqtt_client
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
@@ -99,7 +99,7 @@ def publish_control_values(
     mqtt_client: mqtt_client.Client,
     power_hub: PowerHub,
     control_values: NetworkControl[PowerHub],
-    notifier: Optional[Notifier] = None,
+    notifier: Notifier,
 ):
     publish_to_mqtt(
         mqtt_client,
