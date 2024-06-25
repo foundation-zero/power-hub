@@ -413,7 +413,7 @@ chill_transitions: dict[
         ChillControlMode.CHILL_YAZAKI,
     ): ready_for_yazaki,
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_CHILLER): should_chill
-    & ~pcm_charged,  # start chill whith chiller if PCM is not fully charged
+    & ~pcm_charged,  # start chill with chiller if PCM is not fully charged
     (
         ChillControlMode.PREPARE_CHILL_CHILLER,
         ChillControlMode.CHILL_CHILLER,
