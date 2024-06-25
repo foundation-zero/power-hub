@@ -31,3 +31,16 @@ def test_control_from_json_roundtrips():
     json = control_to_json(power_hub, control)
     from_json = control_from_json(power_hub, json)
     assert from_json == control
+
+
+def test_replace_control():
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    control = no_control(power_hub)
+    current_outboard_pump_control = control.appliance(power_hub.outboard_pump).get().on
+    new_outboard_pump_control = control.replace_control(
+        power_hub.outboard_pump, "on", not current_outboard_pump_control
+    )
+    new_outboard_pump_control = (
+        new_outboard_pump_control.appliance(power_hub.outboard_pump).get().on
+    )
+    assert current_outboard_pump_control != new_outboard_pump_control

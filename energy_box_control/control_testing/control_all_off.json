@@ -1,0 +1,65 @@
+{
+  "water_maker_pump": {
+    "on": false
+  },
+  "cooling_demand_pump": {
+    "on": false
+  },
+  "fresh_water_pump": {
+    "on": false
+  },
+  "cold_reservoir": {
+    "heater_on": false
+  },
+  "preheat_reservoir": {
+    "heater_on": false
+  },
+  "hot_reservoir": {
+    "heater_on": false
+  },
+  "hot_switch_valve": {
+    "position": 0.0
+  },
+  "heat_pipes_valve": {
+    "position": 0.0
+  },
+  "heat_pipes_pump": {
+    "on": false
+  },
+  "waste_bypass_valve": {
+    "position": 0.0
+  },
+  "yazaki_hot_bypass_valve": {
+    "position": 0.0
+  },
+  "waste_switch_valve": {
+    "position": 0.0
+  },
+  "chiller_switch_valve": {
+    "position": 0.0
+  },
+  "chiller": {
+    "on": false
+  },
+  "yazaki": {
+    "on": false
+  },
+  "chilled_loop_pump": {
+    "on": false
+  },
+  "pcm_to_yazaki_pump": {
+    "on": false
+  },
+  "waste_pump": {
+    "on": false
+  },
+  "preheat_switch_valve": {
+    "position": 0.0
+  },
+  "outboard_pump": {
+    "on": false
+  },
+  "water_filter_bypass_valve": {
+    "position": 0.0
+  }
+}
