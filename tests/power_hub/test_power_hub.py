@@ -223,13 +223,13 @@ def test_schedule_hours(year, month, day, schedules, data):
 
 
 @fixture
-def power_hub_sched(schedules):
+def scheduled_power_hub(schedules):
     return PowerHub.power_hub(schedules)
 
 
 @fixture
-def state(power_hub_sched):
-    return power_hub_sched.simple_initial_state(
+def state(scheduled_power_hub):
+    return scheduled_power_hub.simple_initial_state(
         datetime.now(timezone.utc), timedelta(seconds=1)
     )
 
@@ -240,21 +240,21 @@ def control_state():
 
 
 @fixture
-def control_values(power_hub_sched):
-    return initial_control_all_off(power_hub_sched)
+def control_values(scheduled_power_hub):
+    return initial_control_all_off(scheduled_power_hub)
 
 
 @fixture
-def sensors(power_hub_sched, state):
-    return power_hub_sched.sensors_from_state(state)
+def sensors(scheduled_power_hub, state):
+    return scheduled_power_hub.sensors_from_state(state)
 
 
 def test_water_filter_trigger(
-    power_hub_sched, state, control_state, control_values, sensors
+    scheduled_power_hub, state, control_state, control_values, sensors
 ):
 
     control_state, control_values = control_power_hub(
-        power_hub_sched, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -263,32 +263,32 @@ def test_water_filter_trigger(
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub_sched,
+            scheduled_power_hub,
             control_state,
             sensors,
             replace(state.time, step=i).timestamp,
         )
 
         if i == 1:
-            assert control_values.appliance(power_hub_sched.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
             assert control_state.water_control.control_mode == WaterControlMode.READY
 
         if i == 11:
-            assert control_values.appliance(power_hub_sched.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
             assert (
                 control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
             )
 
         if i == 12 + 30 * 60:
-            assert control_values.appliance(power_hub_sched.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
             assert control_state.water_control.control_mode == WaterControlMode.READY
 
 
 def test_water_filter_stop(
-    power_hub_sched, state, control_state, control_values, sensors
+    scheduled_power_hub, state, control_state, control_values, sensors
 ):
     control_state, control_values = control_power_hub(
-        power_hub_sched, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -300,7 +300,7 @@ def test_water_filter_stop(
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub_sched,
+            scheduled_power_hub,
             control_state,
             sensors,
             replace(state.time, step=i).timestamp,
@@ -308,7 +308,7 @@ def test_water_filter_stop(
 
         if i == 11:
             assert (
-                control_values.appliance(power_hub_sched.water_filter_bypass_valve)
+                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
                 .get()
                 .position
                 == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
@@ -319,7 +319,7 @@ def test_water_filter_stop(
 
         if i == 13:
             assert (
-                control_values.appliance(power_hub_sched.water_filter_bypass_valve)
+                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
                 .get()
                 .position
                 == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
@@ -332,7 +332,7 @@ def test_water_filter_stop(
     [(26, True, True), (35, True, True), (35, True, True), (25, False, False)],
 )
 def test_waste_pump_water_maker(
-    power_hub_sched,
+    scheduled_power_hub,
     state,
     control_state,
     control_values,
@@ -342,18 +342,18 @@ def test_waste_pump_water_maker(
     outboard_pump_on,
 ):
     control_state, control_values = control_power_hub(
-        power_hub_sched, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
-    state = power_hub_sched.simulate(state, control_values)
-    sensors = power_hub_sched.sensors_from_state(state)
+    state = scheduled_power_hub.simulate(state, control_values)
+    sensors = scheduled_power_hub.sensors_from_state(state)
     sensors.preheat_reservoir.temperature = preheat_temperature
     sensors.water_maker.on = water_maker_on
 
     control_state, control_values = control_power_hub(
-        power_hub_sched, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     assert (
-        control_values.appliance(power_hub_sched.outboard_pump).get().on  # type: ignore
+        control_values.appliance(scheduled_power_hub.outboard_pump).get().on
         == outboard_pump_on
     )
