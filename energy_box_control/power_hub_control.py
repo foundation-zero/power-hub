@@ -6,7 +6,7 @@ import enum
 from functools import partial
 import json
 import queue
-from typing import Any
+from typing import Any, Optional
 from paho.mqtt import client as mqtt_client
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
@@ -21,6 +21,7 @@ from energy_box_control.mqtt import (
     run_listener,
 )
 from energy_box_control.monitoring.checks import service_checks
+from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.control import (
     ChillControlMode,
     HotControlMode,
@@ -94,6 +95,20 @@ def publish_control_modes(
     )
 
 
+def publish_control_values(
+    mqtt_client: mqtt_client.Client,
+    power_hub: PowerHub,
+    control_values: NetworkControl[PowerHub],
+    notifier: Optional[Notifier] = None,
+):
+    publish_to_mqtt(
+        mqtt_client,
+        CONTROL_VALUES_TOPIC,
+        control_to_json(power_hub, control_values),
+        notifier,
+    )
+
+
 async def run():
 
     mqtt_client = create_and_connect_client()
@@ -125,12 +140,7 @@ async def run():
 
         publish_control_modes(mqtt_client, control_state, notifier)
 
-        publish_to_mqtt(
-            mqtt_client,
-            CONTROL_VALUES_TOPIC,
-            control_to_json(power_hub, control_values),
-            notifier,
-        )
+        publish_control_values(mqtt_client, power_hub, control_values, notifier)
 
 
 def main():

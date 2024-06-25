@@ -17,7 +17,6 @@ from energy_box_control.power_hub.control import (
     Setpoints,
     control_from_json,
     control_power_hub,
-    control_to_json,
     initial_control_state,
     no_control,
 )
@@ -34,7 +33,10 @@ from paho.mqtt import client as mqtt_client
 
 from functools import partial
 
-from energy_box_control.power_hub_control import publish_control_modes
+from energy_box_control.power_hub_control import (
+    publish_control_modes,
+    publish_control_values,
+)
 from energy_box_control.sensors import sensors_to_json
 
 import asyncio
@@ -71,7 +73,11 @@ class SimulationResult:
     control_state: PowerHubControlState
 
     def step(
-        self, mqtt_client: mqtt_client.Client, monitor: Monitor, notifier: Notifier
+        self,
+        mqtt_client: mqtt_client.Client,
+        monitor: Monitor,
+        notifier: Notifier,
+        power_hub: PowerHub,
     ) -> "SimulationResult":
         power_hub_sensors = self.power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
@@ -109,12 +115,8 @@ class SimulationResult:
 
         publish_control_modes(mqtt_client, control_state, notifier)
 
-        publish_to_mqtt(
-            mqtt_client,
-            CONTROL_VALUES_TOPIC,
-            control_to_json(self.power_hub, control_values),
-            notifier,
-        )
+        publish_control_values(mqtt_client, power_hub, control_values, notifier)
+
         control_values = control_from_json(
             self.power_hub, control_values_queue.get(block=True)
         )
@@ -172,7 +174,7 @@ async def run(
         schedule.run_pending()
         try:
             run_queue.get_nowait()
-            result = result.step(mqtt_client, monitor, notifier)
+            result = result.step(mqtt_client, monitor, notifier, power_hub)
             if steps and steps < result.state.time.step:
                 schedule.cancel_job(step)
                 break
