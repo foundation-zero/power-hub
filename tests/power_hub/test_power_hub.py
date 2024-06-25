@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from functools import partial
 from pandas import read_csv
 from pytest import approx, fixture, mark
-import pytest
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
@@ -31,7 +30,7 @@ from energy_box_control.appliances.pcm import PcmPort
 
 
 @fixture
-def power_hub() -> PowerHub:
+def power_hub_const() -> PowerHub:
     return PowerHub.power_hub(
         PowerHubSchedules(
             ConstSchedule(phc.GLOBAL_IRRADIANCE),
@@ -49,70 +48,76 @@ def min_max_temperature():
     return (0, 300)
 
 
-def test_power_hub_step(power_hub):
-    power_hub.simulate(
-        power_hub.simple_initial_state(),
-        no_control(power_hub),
+def test_power_hub_step(power_hub_const):
+    power_hub_const.simulate(
+        power_hub_const.simple_initial_state(),
+        no_control(power_hub_const),
     )
 
 
-def test_power_hub_sensors(power_hub):
+def test_power_hub_sensors(power_hub_const):
 
-    next_state = power_hub.simulate(
-        power_hub.simple_initial_state(), no_control(power_hub)
+    next_state = power_hub_const.simulate(
+        power_hub_const.simple_initial_state(), no_control(power_hub_const)
     )
 
-    sensors = power_hub.sensors_from_state(next_state)
+    sensors = power_hub_const.sensors_from_state(next_state)
     assert (
         sensors.heat_pipes.output_temperature
-        == next_state.connection(power_hub.heat_pipes, HeatPipesPort.OUT).temperature
+        == next_state.connection(
+            power_hub_const.heat_pipes, HeatPipesPort.OUT
+        ).temperature
     )
     assert sensors.hot_reservoir.exchange_flow == approx(
-        next_state.connection(power_hub.hot_reservoir, BoilerPort.HEAT_EXCHANGE_IN).flow
+        next_state.connection(
+            power_hub_const.hot_reservoir, BoilerPort.HEAT_EXCHANGE_IN
+        ).flow
     )
     assert sensors.cold_reservoir is not None
 
 
-def test_derived_sensors(power_hub, min_max_temperature):
+def test_derived_sensors(power_hub_const, min_max_temperature):
 
-    state = power_hub.simple_initial_state(datetime.now())
-    control_values = no_control(power_hub)
+    state = power_hub_const.simple_initial_state(datetime.now())
+    control_values = no_control(power_hub_const)
 
     for i in range(500):
         try:
-            state = power_hub.simulate(state, control_values, min_max_temperature)
+            state = power_hub_const.simulate(state, control_values, min_max_temperature)
         except Exception as e:
             SimulationFailure(e, i, state)
 
-        sensors = power_hub.sensors_from_state(state)
+        sensors = power_hub_const.sensors_from_state(state)
 
         assert sensors.pcm.discharge_input_temperature == approx(
-            state.connection(power_hub.pcm, PcmPort.DISCHARGE_IN).temperature, abs=1e-4
+            state.connection(power_hub_const.pcm, PcmPort.DISCHARGE_IN).temperature,
+            abs=1e-4,
         )
         assert sensors.pcm.charge_flow == approx(
-            state.connection(power_hub.pcm, PcmPort.CHARGE_IN).flow, abs=1e-4
+            state.connection(power_hub_const.pcm, PcmPort.CHARGE_IN).flow, abs=1e-4
         )
         assert sensors.pcm.discharge_output_temperature == approx(
-            state.connection(power_hub.pcm, PcmPort.DISCHARGE_OUT).temperature, abs=1e-4
+            state.connection(power_hub_const.pcm, PcmPort.DISCHARGE_OUT).temperature,
+            abs=1e-4,
         )
 
         assert sensors.yazaki.chilled_input_temperature == approx(
-            state.connection(power_hub.yazaki, YazakiPort.CHILLED_IN).temperature,
+            state.connection(power_hub_const.yazaki, YazakiPort.CHILLED_IN).temperature,
             abs=1e-4,
         )
 
         assert sensors.yazaki.cooling_input_temperature == approx(
-            state.connection(power_hub.yazaki, YazakiPort.COOLING_IN).temperature,
+            state.connection(power_hub_const.yazaki, YazakiPort.COOLING_IN).temperature,
             abs=1e-4,
         )
 
 
-def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
+def test_power_hub_simulation_no_control(power_hub_const, min_max_temperature):
 
     result = run_simulation(
-        power_hub,
-        power_hub.simple_initial_state(step_size=timedelta()),
-        initial_control_all_off(power_hub),
+        power_hub_const,
+        power_hub_const.simple_initial_state(step_size=timedelta()),
+        initial_control_all_off(power_hub_const),
         None,
         None,
         min_max_temperature,
@@ -123,13 +128,13 @@ def test_power_hub_simulation_no_control(power_hub, min_max_temperature):
 
 
 @mark.parametrize("seconds", [1, 60, 60 * 60, 60 * 60 * 24])
-def test_power_hub_simulation_control(power_hub, min_max_temperature, seconds):
+def test_power_hub_simulation_control(power_hub_const, min_max_temperature, seconds):
     result = run_simulation(
-        power_hub,
-        power_hub.simple_initial_state(step_size=timedelta(seconds=seconds)),
-        initial_control_all_off(power_hub),
+        power_hub_const,
+        power_hub_const.simple_initial_state(step_size=timedelta(seconds=seconds)),
+        initial_control_all_off(power_hub_const),
         initial_control_state(),
-        partial(control_power_hub, power_hub),
+        partial(control_power_hub, power_hub_const),
         min_max_temperature,
         500,
     )
@@ -137,23 +142,24 @@ def test_power_hub_simulation_control(power_hub, min_max_temperature, seconds):
     assert isinstance(result, SimulationSuccess)
 
 
-@pytest.fixture
+@fixture
 def schedules():
     return PowerHubSchedules.schedules_from_data()
 
 
 @mark.parametrize("seconds", [1, 60, 360])
-def test_power_hub_simulation_data_schedule(min_max_temperature, seconds, schedules):
-
-    power_hub = PowerHub.power_hub(schedules)
-
+def test_power_hub_simulation_data_schedule(
+    power_hub_const, min_max_temperature, seconds, schedules
+):
     schedule_start = schedules.ambient_temperature.schedule_start  # type: ignore
     result = run_simulation(
-        power_hub,
-        power_hub.simple_initial_state(schedule_start, timedelta(seconds=seconds)),
-        initial_control_all_off(power_hub),
+        power_hub_const,
+        power_hub_const.simple_initial_state(
+            schedule_start, timedelta(seconds=seconds)
+        ),
+        initial_control_all_off(power_hub_const),
         initial_control_state(),
-        partial(control_power_hub, power_hub),
+        partial(control_power_hub, power_hub_const),
         min_max_temperature,
         100,
     )
@@ -161,7 +167,7 @@ def test_power_hub_simulation_data_schedule(min_max_temperature, seconds, schedu
     assert isinstance(result, SimulationSuccess)
 
 
-@pytest.fixture
+@fixture
 def data():
     return read_csv(
         "energy_box_control/power_hub/powerhub_simulation_schedules_Jun_Oct_TMY.csv",
@@ -220,19 +226,39 @@ def test_schedule_hours(year, month, day, schedules, data):
     assert data.index[index].to_pydatetime().replace(tzinfo=timezone.utc).hour == 12
 
 
-def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
+@fixture
+def scheduled_power_hub(schedules):
+    return PowerHub.power_hub(schedules)
 
-    power_hub = PowerHub.power_hub(schedules)
-    state = power_hub.simple_initial_state(
+
+@fixture
+def state(scheduled_power_hub):
+    return scheduled_power_hub.simple_initial_state(
         datetime.now(timezone.utc), timedelta(seconds=1)
     )
-    control_state = initial_control_state()
-    control_values = initial_control_all_off(power_hub)
 
-    sensors = power_hub.sensors_from_state(state)
+
+@fixture
+def control_state():
+    return initial_control_state()
+
+
+@fixture
+def control_values(scheduled_power_hub):
+    return initial_control_all_off(scheduled_power_hub)
+
+
+@fixture
+def sensors(scheduled_power_hub, state):
+    return scheduled_power_hub.sensors_from_state(state)
+
+
+def test_water_filter_trigger(
+    scheduled_power_hub, state, control_state, control_values, sensors
+):
 
     control_state, control_values = control_power_hub(
-        power_hub, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -241,37 +267,32 @@ def test_water_filter_trigger(power_hub, min_max_temperature, schedules):
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub, control_state, sensors, replace(state.time, step=i).timestamp
+            scheduled_power_hub,
+            control_state,
+            sensors,
+            replace(state.time, step=i).timestamp,
         )
 
         if i == 1:
-            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
             assert control_state.water_control.control_mode == WaterControlMode.READY
 
         if i == 11:
-            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
             assert (
                 control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
             )
 
         if i == 12 + 30 * 60:
-            assert control_values.appliance(power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
+            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
             assert control_state.water_control.control_mode == WaterControlMode.READY
 
 
-def test_water_filter_stop(power_hub, min_max_temperature, schedules):
-
-    power_hub = PowerHub.power_hub(schedules)
-    state = power_hub.simple_initial_state(
-        datetime.now(timezone.utc), timedelta(seconds=1)
-    )
-    control_state = initial_control_state()
-    control_values = initial_control_all_off(power_hub)
-
-    sensors = power_hub.sensors_from_state(state)
-
+def test_water_filter_stop(
+    scheduled_power_hub, state, control_state, control_values, sensors
+):
     control_state, control_values = control_power_hub(
-        power_hub, control_state, sensors, state.time.timestamp
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -283,12 +304,15 @@ def test_water_filter_stop(power_hub, min_max_temperature, schedules):
 
     for i in range(31 * 60):
         control_state, control_values = control_power_hub(
-            power_hub, control_state, sensors, replace(state.time, step=i).timestamp
+            scheduled_power_hub,
+            control_state,
+            sensors,
+            replace(state.time, step=i).timestamp,
         )
 
         if i == 11:
             assert (
-                control_values.appliance(power_hub.water_filter_bypass_valve)
+                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
                 .get()
                 .position
                 == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
@@ -299,9 +323,41 @@ def test_water_filter_stop(power_hub, min_max_temperature, schedules):
 
         if i == 13:
             assert (
-                control_values.appliance(power_hub.water_filter_bypass_valve)
+                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
                 .get()
                 .position
                 == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
             )
             assert control_state.water_control.control_mode == WaterControlMode.READY
+
+
+@mark.parametrize(
+    "preheat_temperature, water_maker_on, outboard_pump_on",
+    [(26, True, True), (35, True, True), (35, True, True), (25, False, False)],
+)
+def test_waste_pump_water_maker(
+    scheduled_power_hub,
+    state,
+    control_state,
+    control_values,
+    sensors,
+    preheat_temperature,
+    water_maker_on,
+    outboard_pump_on,
+):
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+    state = scheduled_power_hub.simulate(state, control_values)
+    sensors = scheduled_power_hub.sensors_from_state(state)
+    sensors.preheat_reservoir.temperature = preheat_temperature
+    sensors.water_maker.on = water_maker_on
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    assert (
+        control_values.appliance(scheduled_power_hub.outboard_pump).get().on
+        == outboard_pump_on
+    )

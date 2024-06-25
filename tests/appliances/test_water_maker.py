@@ -22,7 +22,7 @@ def test_water_maker(simulation_time):
 
     _, output = water_maker.simulate(
         {WaterMakerPort.IN: WaterState(flow_in)},
-        WaterMakerState(),
+        WaterMakerState(False),
         None,
         simulation_time,
     )
