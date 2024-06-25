@@ -63,6 +63,8 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/fresh_water_tank/fill/last_values",
         "/power_hub/electric/power/production/over/time?interval=h",
         "/power_hub/electric/power/consumption/over/time?interval=h",
+        "/power_hub/electric/power/production/mean/per/hour_of_day",
+        "/power_hub/electric/power/consumption/mean/per/hour_of_day",
     ]
     single_value_endpoints = [
         "/power_hub/appliance_sensors/pv_panel/power/mean",
@@ -81,6 +83,7 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/pcm/discharge_power/mean",
         "/power_hub/appliance_sensors/pcm/temperature/mean",
         "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean",
+        "/power_hub/appliance_sensors/pcm/fill/current",
     ]
 
     for endpoint in multiple_value_endpoints:
