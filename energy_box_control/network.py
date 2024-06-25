@@ -409,8 +409,10 @@ class NetworkControl[Net: "Network[Any]"]:
 
     def replace_control(
         self, app: AnyAppliance, attr_to_replace: str, value: float | bool | int
-    ):
-        self._controls[app] = replace(self._controls[app], **{attr_to_replace: value})  # type: ignore
+    ) -> "NetworkControl[Net]":
+        new_controls = self._controls.copy()
+        new_controls[app] = replace(new_controls[app], **{attr_to_replace: value})  # type: ignore
+        return NetworkControl(new_controls)
 
 
 class ControlBuilder[Net: "Network[Any]", *Prev]:

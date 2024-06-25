@@ -1,5 +1,4 @@
 import argparse
-import copy
 import dataclasses
 import time
 import json
@@ -14,27 +13,22 @@ logger = get_logger(__name__)
 
 
 CONTROL_VALUES_TOPIC = "power_hub/control_values"
-SLEEP_SECONDS = 30
 
 
 class ControlTester:
 
-    def __init__(self) -> None:
-        self.power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        self.mqtt_client = create_and_connect_client()
-        self.everything_off_control: NetworkControl[PowerHub] = control_from_json(
-            self.power_hub,
-            json.dumps(
-                json.load(
-                    open(
-                        "energy_box_control/control_testing/example_control_all_off.json"
-                    )
-                )
-            ),
-        )
+    def __init__(self, seconds: int) -> None:
+        self._power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        self._mqtt_client = create_and_connect_client()
+        with open("energy_box_control/control_testing/control_all_off.json") as f:
+            self.everything_off_control: NetworkControl[PowerHub] = control_from_json(
+                self._power_hub,
+                json.dumps(json.load(f)),
+            )
+        self._seconds = seconds
 
     def publish(self, control: NetworkControl[PowerHub]):
-        publish_control_values(self.mqtt_client, self.power_hub, control)
+        publish_control_values(self._mqtt_client, self._power_hub, control)
 
     def everything_off(self):
         logger.info("Turning all controls off")
@@ -43,9 +37,8 @@ class ControlTester:
     def modified_control(
         self, app_name: str, control_name: str, control_value: bool | float
     ):
-        new_control = copy.deepcopy(self.everything_off_control)
-        new_control.replace_control(
-            getattr(self.power_hub, app_name), control_name, control_value
+        new_control = self.everything_off_control.replace_control(
+            getattr(self._power_hub, app_name), control_name, control_value
         )
         return new_control
 
@@ -63,45 +56,45 @@ class ControlTester:
         self.everything_off()
         for valve_name in [
             field.name
-            for field in dataclasses.fields(self.power_hub)
+            for field in dataclasses.fields(self._power_hub)
             if "valve" in field.name
         ]:
             self.change_valve_position(valve_name, 1.0)
-            time.sleep(SLEEP_SECONDS)
+            time.sleep(self._seconds)
 
     def test_pumps(self):
         self.everything_off()
         for pump_name in [
             field.name
-            for field in dataclasses.fields(self.power_hub)
+            for field in dataclasses.fields(self._power_hub)
             if "pump" in field.name
         ]:
             self.turn_on(pump_name)
-            time.sleep(SLEEP_SECONDS)
+            time.sleep(self._seconds)
 
     def test_coolers(self):
         self.everything_off()
         for app in [
             field.name
-            for field in dataclasses.fields(self.power_hub)
+            for field in dataclasses.fields(self._power_hub)
             if field.name in ["yazaki", "chiller"]
         ]:
             self.turn_on(app)
-            time.sleep(SLEEP_SECONDS)
+            time.sleep(self._seconds)
 
     def test_custom_file(self, file_path: str):
         self.publish(
-            control_from_json(self.power_hub, json.dumps(json.load(open(file_path))))
+            control_from_json(self._power_hub, json.dumps(json.load(open(file_path))))
         )
 
     def test_all(self):
         self.everything_off()
-        for app_name in [field.name for field in dataclasses.fields(self.power_hub)]:
+        for app_name in [field.name for field in dataclasses.fields(self._power_hub)]:
             if "pump" in app_name or app_name in ["yazaki", "chiller"]:
                 self.turn_on(app_name)
             elif "valve" in app_name:
                 self.change_valve_position(app_name, 1.0)
-            time.sleep(SLEEP_SECONDS)
+            time.sleep(self._seconds)
 
     def test_single(self, app_name: str, control_name: str, value: bool | float):
         self.everything_off()
@@ -113,6 +106,13 @@ class ControlTester:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="Control Tester", description="Test control values"
+    )
+    parser.add_argument(
+        "-s",
+        "--seconds",
+        help="How many seconds to sleep between control switches.",
+        default=30,
+        type=int,
     )
     parser.add_argument("-f", "--filepath")
     parser.add_argument(
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         help="Specify which control value you want to set, can only be used in combination with test_single",
     )
     args = parser.parse_args()
-    tester = ControlTester()
+    tester = ControlTester(args.seconds)
     if args.test == "test_valves":
         tester.test_valves()
     elif args.test == "test_pumps":
