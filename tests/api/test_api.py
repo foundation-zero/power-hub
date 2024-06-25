@@ -4,16 +4,11 @@ import pytest
 from quart import Response
 from energy_box_control.api.api import (
     app,
-    build_query_range,
-    values_query,
-    mean_values_query,
     ValuesQuery,
 )
 import json
-from datetime import datetime, timezone, timedelta, date
+from datetime import datetime, timezone, timedelta
 from freezegun import freeze_time
-import fluxy
-import os
 import pandas as pd
 import json
 import unittest.mock as mock
@@ -139,55 +134,6 @@ async def test_get_electrical_power_production_non_pv_panel():
     ) == "Please only provide pv_panel(s)"
 
 
-@pytest.fixture
-def query_args():
-    return ValuesQuery()
-
-
-@freeze_time("2012-01-01")
-async def test_build_query_range_minutes_back(query_args):
-    start_datetime, stop_datetime = build_query_range(query_args)
-    assert start_datetime == datetime.now(timezone.utc) - timedelta(minutes=60)
-    assert stop_datetime == datetime.now(timezone.utc)
-
-
-@freeze_time("2012-01-01")
-async def test_build_get_values_query(query_args):
-    query = values_query(
-        lambda r: r.topic
-        == f"power_hub/appliance_sensors/chiller_switch_valve/position",
-        build_query_range(query_args),
-    )
-    assert (
-        len(
-            [
-                operation
-                for operation in query.operations
-                if type(operation) == fluxy.Filter
-            ]
-        )
-        == 3
-    )
-
-    assert (
-        fluxy.filter(
-            lambda query: query.topic
-            == f"power_hub/appliance_sensors/chiller_switch_valve/position"
-        )
-        in query.operations
-    )
-    assert query.range == fluxy.range(
-        datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
-    )
-
-
-async def test_build_query_range_start_stop():
-    query_args = ValuesQuery("2000-01-01T00:00:00,2000-01-01T00:00:01")
-    start_datetime, stop_datetime = build_query_range(query_args)
-    assert start_datetime == datetime(2000, 1, 1, 0, 0, 0, 0, timezone.utc)
-    assert stop_datetime == datetime(2000, 1, 1, 0, 0, 1, 0, timezone.utc)
-
-
 INVALID_VALUES_ERROR_MESSAGE = "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'."
 
 
@@ -219,40 +165,6 @@ async def test_invalid_between():
     )
     assert response.status_code == 422
     assert (await response.get_data()).decode("utf-8") == INVALID_VALUES_ERROR_MESSAGE
-
-
-@freeze_time("2012-01-01")
-async def test_build_get_mean_values_query(query_args):
-    interval = timedelta(seconds=1)
-    query = mean_values_query(
-        lambda r: r.topic
-        == f"power_hub/appliance_sensors/chiller_switch_valve/position",
-        interval,
-        build_query_range(query_args),
-    )
-    assert (
-        len(
-            [
-                operation
-                for operation in query.operations
-                if type(operation) == fluxy.Filter
-            ]
-        )
-        == 3
-    )
-
-    assert (
-        fluxy.aggregate_window(
-            interval,
-            fluxy.WindowOperation.MEAN,
-            False,
-        )
-        in query.operations
-    )
-
-    assert query.range == fluxy.range(
-        datetime.now(timezone.utc) - timedelta(minutes=60), datetime.now(timezone.utc)
-    )
 
 
 @dataclass
