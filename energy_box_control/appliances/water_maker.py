@@ -10,7 +10,7 @@ from energy_box_control.time import ProcessTime
 
 @dataclass(frozen=True, eq=True)
 class WaterMakerState(ApplianceState):
-    pass
+    on: bool
 
 
 class WaterMakerPort(Port):
@@ -30,8 +30,9 @@ class WaterMaker(WaterAppliance[WaterMakerState, None, WaterMakerPort]):
         control: None,
         simulation_time: ProcessTime,
     ) -> tuple[WaterMakerState, dict[WaterMakerPort, WaterState]]:
-        return WaterMakerState(), {
+        out_flow = inputs[WaterMakerPort.IN].flow * self.efficiency
+        return WaterMakerState(out_flow > 0), {
             WaterMakerPort.DESALINATED_OUT: WaterState(
-                inputs[WaterMakerPort.IN].flow * self.efficiency,
+                out_flow,
             )
         }
