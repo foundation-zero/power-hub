@@ -14,6 +14,6 @@ config:
           timestamp_path: "time"
           timestamp_format: "2006-01-02T15:04:05.000000-07:00"
           - object:
-            path: "@this"
+              path: "@this"
 service:
   enabled: false
