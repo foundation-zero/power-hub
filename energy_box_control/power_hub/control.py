@@ -69,7 +69,7 @@ class ChillControlMode(State):
 class ChillControlState:
     context: Context
     control_mode: ChillControlMode
-    yazaki_feedback_valve_controller: Pid
+    yazaki_hot_feedback_valve_controller: Pid
     chiller_switch_valve_position: float
     waste_switch_valve_position: float
 
@@ -189,7 +189,7 @@ def initial_control_state() -> PowerHubControlState:
         chill_control=ChillControlState(
             context=Context(),
             control_mode=ChillControlMode.NO_CHILL,
-            yazaki_feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
+            yazaki_hot_feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
             chiller_switch_valve_position=CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
@@ -407,13 +407,13 @@ chill_transitions: dict[
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_YAZAKI): should_chill
-    & pcm_charged,
+    & pcm_charged,  # start chill with Yazaki if PCM is fully charged
     (
         ChillControlMode.PREPARE_CHILL_YAZAKI,
         ChillControlMode.CHILL_YAZAKI,
     ): ready_for_yazaki,
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_CHILLER): should_chill
-    & ~pcm_discharged,
+    & ~pcm_charged,  # start chill with chiller if PCM is not fully charged
     (
         ChillControlMode.PREPARE_CHILL_CHILLER,
         ChillControlMode.CHILL_CHILLER,
@@ -422,12 +422,12 @@ chill_transitions: dict[
         ChillControlMode.CHILL_YAZAKI,
         ChillControlMode.PREPARE_CHILL_CHILLER,
     ): should_chill
-    & pcm_discharged,
+    & pcm_discharged,  # switch from Yazaki to chiller if PCM is fully discharged
     (
         ChillControlMode.CHILL_CHILLER,
         ChillControlMode.PREPARE_CHILL_YAZAKI,
     ): should_chill
-    & pcm_charged,
+    & pcm_charged,  # switch from chiller to Yazaki if PCM is fully charged
     (ChillControlMode.CHILL_YAZAKI, ChillControlMode.NO_CHILL): stop_chill,
     (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill,
 }
@@ -508,8 +508,8 @@ def chill_control(
     if chill_control_mode == ChillControlMode.PREPARE_CHILL_YAZAKI:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
-        yazaki_feedback_valve_controller = (
-            control_state.chill_control.yazaki_feedback_valve_controller
+        yazaki_hot_feedback_valve_controller = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller
         )
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
@@ -517,8 +517,8 @@ def chill_control(
     elif chill_control_mode == ChillControlMode.CHILL_YAZAKI:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
-        yazaki_feedback_valve_controller, yazaki_feedback_valve_control = (
-            control_state.chill_control.yazaki_feedback_valve_controller.run(
+        yazaki_hot_feedback_valve_controller, yazaki_feedback_valve_control = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller.run(
                 control_state.setpoints.yazaki_inlet_target_temperature,
                 sensors.yazaki.hot_input_temperature,
             )
@@ -528,8 +528,8 @@ def chill_control(
     elif chill_control_mode == ChillControlMode.PREPARE_CHILL_CHILLER:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_CHILLER_POSITION
-        yazaki_feedback_valve_controller = (
-            control_state.chill_control.yazaki_feedback_valve_controller
+        yazaki_hot_feedback_valve_controller = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller
         )
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
@@ -537,8 +537,8 @@ def chill_control(
     elif chill_control_mode == ChillControlMode.CHILL_CHILLER:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_CHILLER_POSITION
-        yazaki_feedback_valve_controller = (
-            control_state.chill_control.yazaki_feedback_valve_controller
+        yazaki_hot_feedback_valve_controller = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller
         )
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = run_chiller
@@ -550,8 +550,8 @@ def chill_control(
         waste_switch_valve_position = (
             control_state.chill_control.waste_switch_valve_position
         )
-        yazaki_feedback_valve_controller = (
-            control_state.chill_control.yazaki_feedback_valve_controller
+        yazaki_hot_feedback_valve_controller = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller
         )
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
@@ -559,7 +559,7 @@ def chill_control(
     return ChillControlState(
         context,
         chill_control_mode,
-        yazaki_feedback_valve_controller,
+        yazaki_hot_feedback_valve_controller,
         chiller_switch_valve_position,
         waste_switch_valve_position,
     ), (
