@@ -1,6 +1,6 @@
 import type { CamelCase, SnakeCase, SnakeCasedProperties } from "type-fest";
 import type { PowerHubComponent } from "./power-hub";
-import type BaseWater from "@/components/slides/water/BaseWater.vue";
+import type BaseWater from "@/components/display/slides/water/BaseWater.vue";
 import type { PresentationStore } from "@/stores/presentation";
 import type { AjaxConfig } from "rxjs/ajax";
 export * as PowerHub from "./power-hub";

@@ -4,7 +4,15 @@
     elevation="1"
     class="pr-4"
   >
-    <v-app-bar-title class="text-subtitle-1 text-uppercase">Power Hub</v-app-bar-title>
+    <v-app-bar-title>
+      <v-btn
+        to="/"
+        flat
+        variant="text"
+        class="text-uppercase text-subtitle-1"
+        >Power Hub</v-btn
+      >
+    </v-app-bar-title>
     <FZeroButton />
   </v-app-bar>
 </template>

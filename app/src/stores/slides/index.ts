@@ -4,7 +4,7 @@ import thermal from "./thermal";
 import water from "./water";
 import { activateAllComponents, resetAll, showAll, toggleWaves, toggleWidgets } from "./actions";
 import { hide } from "@/utils";
-import WelcomeToThePowerHub from "@/components/slides/WelcomeToThePowerHub.vue";
+import WelcomeToThePowerHub from "@/components/display/slides/WelcomeToThePowerHub.vue";
 
 const journeyFn = (items: PresentationItem[]): PresentationItem[] => [
   toggleWaves(true),

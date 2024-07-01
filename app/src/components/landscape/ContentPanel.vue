@@ -2,11 +2,13 @@
   <v-navigation-drawer
     v-model:modelValue="show"
     temporary
+    tile
     color="transparent"
     location="right"
     width="600"
     :scrim="scrim"
     elevation="0"
+    :rounded="0"
     border="0"
     style="max-width: 40%"
   >
@@ -14,21 +16,12 @@
       ref="target"
       class="h-100"
     >
-      <v-card
-        class="h-100 px-5 py-3 d-flex flex-column align-start"
-        :class="{ dragging }"
+      <div
+        :class="{ dragging, 'h-100': true }"
         :style="{ transform: `translateX(${swipeX}px)` }"
       >
-        <v-btn
-          variant="text"
-          color="blue"
-          size="small"
-          class="text-mono mx-0 px-0"
-          @click="show = false"
-          >&#10094; Back to mapping
-        </v-btn>
         <slot />
-      </v-card>
+      </div>
     </div>
   </v-navigation-drawer>
 </template>

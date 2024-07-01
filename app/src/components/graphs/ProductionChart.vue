@@ -20,7 +20,7 @@ import { toKiloWattHours } from "@/utils/formatters";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
 import { range } from "lodash";
-import { isAfter, startOfToday, startOfTomorrow } from "date-fns";
+import { startOfToday, startOfTomorrow } from "date-fns";
 import { useStripes } from "@/utils/charts";
 import { useStartOfHour } from "@/utils";
 
@@ -30,7 +30,7 @@ const colorMode = useColorMode();
 
 const { sum } = usePowerHubStore();
 
-const hours = range(0, 24);
+const hours = range(0, 24, 2);
 
 const currentProduction = useObservable(
   sum.useOverTime("electric/power/production", () => ({
@@ -39,18 +39,21 @@ const currentProduction = useObservable(
   })),
 );
 
-const productionPerHour = computed(() =>
-  range(0, 24).map((hour) => {
-    const currentValue = currentProduction.value?.find(({ time }) => time.getHours() === hour);
+const productionPerTwoHours = computed(() =>
+  hours.map((hour) => {
+    const [current, next] =
+      currentProduction.value?.filter(
+        ({ time }) => time.getHours() === hour || time.getHours() === hour + 1,
+      ) ?? [];
 
-    if (!currentValue) {
+    if (!current) {
       return {
         time: useStartOfHour(hour),
         value: Math.random() * 1000,
       };
     }
 
-    return currentValue;
+    return { time: current.time, value: current.value + (next?.value ?? 0) };
   }),
 );
 
@@ -97,7 +100,7 @@ const option = ref({
   xAxis: {
     type: "category",
     show: false,
-    data: hours.filter((hour) => hour % 2 === 0),
+    data: hours,
   },
   yAxis: [
     {
@@ -136,25 +139,22 @@ const option = ref({
       type: "bar",
       barWidth: "50%",
       data: computed(() =>
-        productionPerHour.value
-          ?.filter((_, index) => index % 2 === 0)
-          .slice(0, 12)
-          .map((value, index) => ({
-            value: value.value + (productionPerHour.value?.[index * 2 + 1]?.value ?? 0),
-            itemStyle: {
-              decal: isAfter(value.time, new Date()) ? useStripes() : undefined,
-              color: new graphic.LinearGradient(0, 0, 1, 0, [
-                {
-                  offset: 0,
-                  color: colorsOfTheDay[new Date(value.time).getHours()],
-                },
-                {
-                  offset: 1,
-                  color: colorsOfTheDay[new Date(value.time).getHours()],
-                },
-              ]),
-            },
-          })),
+        productionPerTwoHours.value.map(({ value, time }) => ({
+          value,
+          itemStyle: {
+            decal: time.getHours() >= new Date().getHours() ? useStripes() : undefined,
+            color: new graphic.LinearGradient(0, 0, 1, 0, [
+              {
+                offset: 0,
+                color: colorsOfTheDay[new Date(time).getHours()],
+              },
+              {
+                offset: 1,
+                color: colorsOfTheDay[new Date(time).getHours()],
+              },
+            ]),
+          },
+        })),
       ),
     },
     {
@@ -173,7 +173,7 @@ const option = ref({
       tooltip: {
         valueFormatter: toKiloWattHours,
       },
-      data: batteryValues.filter((_, index) => index % 2 === 0),
+      data: batteryValues,
     },
   ],
 });
