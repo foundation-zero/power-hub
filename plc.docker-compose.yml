@@ -13,11 +13,6 @@ services:
       DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
       DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
       DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
-      DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" # https://docs.vernemq.com/configuring-vernemq/bridge
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0: "cloud-vernemq:1883"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1: "power_hub/* out 1"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__username: "power_hub"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__password: ${MQTT_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 5s
