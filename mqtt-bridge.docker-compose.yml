@@ -1,0 +1,129 @@
+services:
+  cloud-vernemq:
+    image: vernemq/vernemq:2.0.0-alpine
+    container_name: cloud-vernemq
+    restart: always
+    ports:
+      - "1884:1883"
+      - "9002:9001"
+    networks:
+      - power_hub_simulation
+    environment:
+      DOCKER_VERNEMQ_ACCEPT_EULA: "yes"
+      DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
+      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
+      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  vernemq:
+    image: vernemq/vernemq:2.0.0-alpine
+    container_name: vernemq
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - power_hub_simulation
+    depends_on:
+      cloud-vernemq:
+        condition: service_healthy
+    environment:
+      DOCKER_VERNEMQ_ACCEPT_EULA: "yes"
+      DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
+      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
+      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
+      DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0: "cloud-vernemq:1883"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1: "power_hub/* out 1"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__username: "power_hub"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__password: ${MQTT_PASSWORD}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    ports:
+      - "8086:8086"
+    networks:
+      - power_hub_simulation
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASS}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORGANISATION}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_TELEGRAF_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+
+  telegraf:
+    image: telegraf
+    container_name: telegraf
+    restart: always
+    volumes:
+      - ./docker/bridge-telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      cloud-vernemq:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
+    networks:
+      - power_hub_simulation
+    env_file:
+      - .env
+
+  simulation:
+    depends_on:
+      vernemq:
+        condition: service_healthy
+      telegraf:
+        condition: service_started
+    container_name: simulation
+    build:
+      context: .
+      dockerfile: python_script.Dockerfile
+    command: "energy_box_control.simulation"
+    networks:
+      - power_hub_simulation
+    env_file:
+      - .env
+    environment:
+      - PAGERDUTY_KEY=$PAGERDUTY_KEY
+    restart: on-failure:5
+
+  power_hub_api:
+    depends_on:
+      - influxdb
+    container_name: power_hub_api
+    ports:
+      - "5001:5001"
+    build:
+      context: .
+      dockerfile: python_script.Dockerfile
+    command: "energy_box_control.api.api"
+    networks:
+      - power_hub_simulation
+    env_file:
+      - .env
+    environment:
+      - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
+    restart: on-failure:5
+
+networks:
+  power_hub_simulation:
+
+volumes:
+  influxdb-data:
+  influxdb-config:
