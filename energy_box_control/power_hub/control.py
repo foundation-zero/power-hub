@@ -601,12 +601,12 @@ def chill_control(
     )
 
 
-should_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) > Fn.state(
-    lambda state: state.setpoints.cold_reservoir_max_temperature
-)
-stop_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
-    lambda state: state.setpoints.cold_reservoir_min_temperature
-)
+should_cool = Fn.sensors(
+    lambda sensors: sensors.waste_switch_valve.input_temperature
+) > Fn.state(lambda state: state.setpoints.cooling_in_max_temperature)
+stop_cool = Fn.sensors(
+    lambda sensors: sensors.waste_switch_valve.input_temperature
+) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
 
 water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
 water_maker_off = Fn.pred(lambda _, sensors: not sensors.water_maker.on)

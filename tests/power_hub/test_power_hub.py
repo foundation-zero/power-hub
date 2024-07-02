@@ -332,7 +332,7 @@ def test_water_filter_stop(
 
 
 @mark.parametrize(
-    "preheat_temperature, water_maker_on, outboard_pump_on",
+    "cooling_in_temperature, water_maker_on, outboard_pump_on",
     [(26, True, True), (35, True, True), (35, True, True), (25, False, False)],
 )
 def test_waste_pump_water_maker(
@@ -341,7 +341,7 @@ def test_waste_pump_water_maker(
     control_state,
     control_values,
     sensors,
-    preheat_temperature,
+    cooling_in_temperature,
     water_maker_on,
     outboard_pump_on,
 ):
@@ -350,7 +350,7 @@ def test_waste_pump_water_maker(
     )
     state = scheduled_power_hub.simulate(state, control_values)
     sensors = scheduled_power_hub.sensors_from_state(state)
-    sensors.preheat_reservoir.temperature = preheat_temperature
+    sensors.waste_switch_valve.input_temperature = cooling_in_temperature
     sensors.water_maker.on = water_maker_on
 
     control_state, control_values = control_power_hub(
