@@ -19,6 +19,7 @@ from energy_box_control.power_hub.components import (
     HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    PREHEAT_SWITCH_VALVE_BYPASS_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
@@ -85,6 +86,17 @@ class WasteControlState:
     control_mode: WasteControlMode
 
 
+class PreHeatControlMode(State):
+    PREHEAT = "preheat"
+    NO_PREHEAT = "no_preheat"
+
+
+@dataclass
+class PreHeatControlState:
+    context: Context
+    control_mode: PreHeatControlMode
+
+
 class WaterControlMode(State):
     READY = "ready"
     FILTER_TANK = "filter_tank"
@@ -136,11 +148,14 @@ class Setpoints:
     cold_reservoir_min_temperature: Celsius = setpoint(
         "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    preheat_reservoir_min_temperature: Celsius = setpoint(
-        "minimum temperature of the preheat reservoir"
+    minimum_preheat_offset: Celsius = setpoint(
+        "minimal offset of waste heat to preheat reservoir temperature"
     )
-    preheat_reservoir_max_temperature: Celsius = setpoint(
-        "maximum temperature of the preheat reservoir"
+    cooling_in_min_temperature: Celsius = setpoint(
+        "minimum temperature of the cooling in temperature"
+    )
+    cooling_in_max_temperature: Celsius = setpoint(
+        "maximum temperature of the cooling in temperature"
     )
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
@@ -151,6 +166,7 @@ class PowerHubControlState:
     hot_control: HotControlState
     chill_control: ChillControlState
     waste_control: WasteControlState
+    preheat_control: PreHeatControlState
     water_control: WaterControlState
     setpoints: Setpoints
 
@@ -173,8 +189,9 @@ def initial_control_state() -> PowerHubControlState:
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
-            preheat_reservoir_max_temperature=30,  # needs to be inside range of Yazaki cooling water (32) - or we need to change control to have a setpoint on yazaki cooling in temp
-            preheat_reservoir_min_temperature=25,
+            minimum_preheat_offset=1,
+            cooling_in_min_temperature=25,
+            cooling_in_max_temperature=33,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
@@ -196,6 +213,10 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
+        ),
+        preheat_control=PreHeatControlState(
+            context=Context(),
+            control_mode=PreHeatControlMode.NO_PREHEAT,
         ),
         water_control=WaterControlState(
             context=Context(), control_mode=WaterControlMode.READY
@@ -580,12 +601,13 @@ def chill_control(
     )
 
 
-cooling_waste = Fn.sensors(
-    lambda sensors: sensors.preheat_reservoir.temperature
-) > Fn.state(lambda state: state.setpoints.preheat_reservoir_max_temperature)
-no_cooling_waste = Fn.sensors(
-    lambda sensors: sensors.preheat_reservoir.temperature
-) < Fn.state(lambda state: state.setpoints.preheat_reservoir_min_temperature)
+should_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) > Fn.state(
+    lambda state: state.setpoints.cold_reservoir_max_temperature
+)
+stop_cool = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
+    lambda state: state.setpoints.cold_reservoir_min_temperature
+)
+
 water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
 water_maker_off = Fn.pred(lambda _, sensors: not sensors.water_maker.on)
 
@@ -596,9 +618,9 @@ waste_transitions: dict[
         PowerHubSensors,
     ],
 ] = {
-    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): cooling_waste
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): should_cool
     | water_maker_on,
-    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): no_cooling_waste
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): stop_cool
     & water_maker_off,
 }
 
@@ -611,13 +633,6 @@ def waste_control(
     sensors: PowerHubSensors,
     time: datetime,
 ):
-    # Waste
-    #   if preheat reservoir > max preheat reservoir temperature: run outboard
-    #   if preheat reservoir < min preheat reservoir temperature: stop running outboard
-
-    # if run outboard:
-    #   run outboard heat exchange pump
-    # In essence this uses the preheat reservoir as an extra heat buffer
 
     waste_control_mode, context = waste_control_machine.run(
         control_state.waste_control.control_mode,
@@ -629,10 +644,64 @@ def waste_control(
 
     return (
         WasteControlState(context, waste_control_mode),
-        power_hub.control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD))
-        .control(power_hub.preheat_switch_valve)
-        .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION)),
+        power_hub.control(power_hub.outboard_pump).value(
+            SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD)
+        ),
+    )
+
+
+should_preheat = Fn.pred(
+    lambda control_state, sensors: sensors.preheat_switch_valve.input_temperature
+    + sensors.preheat_reservoir.temperature
+    > control_state.setpoints.minimum_preheat_offset
+)
+
+stop_preheat = Fn.pred(
+    lambda control_state, sensors: sensors.preheat_reservoir.exchange_input_temperature
+    - sensors.preheat_reservoir.temperature
+    < control_state.setpoints.minimum_preheat_offset
+)
+
+preheat_transitions: dict[
+    tuple[PreHeatControlMode, PreHeatControlMode],
+    Predicate[
+        PowerHubControlState,
+        PowerHubSensors,
+    ],
+] = {
+    (PreHeatControlMode.NO_PREHEAT, PreHeatControlMode.PREHEAT): should_preheat,
+    (PreHeatControlMode.PREHEAT, PreHeatControlMode.NO_PREHEAT): stop_preheat,
+}
+
+preheat_control_machine = StateMachine(PreHeatControlMode, preheat_transitions)
+
+
+def preheat_control(
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: datetime,
+):
+
+    preheat_control_mode, context = preheat_control_machine.run(
+        control_state.preheat_control.control_mode,
+        control_state.preheat_control.context,
+        control_state,
+        sensors,
+        time,
+    )
+
+    valve_position = (
+        PREHEAT_SWITCH_VALVE_PREHEAT_POSITION
+        if preheat_control_mode == PreHeatControlMode.PREHEAT
+        else PREHEAT_SWITCH_VALVE_BYPASS_POSITION
+    )
+
+    return (
+        PreHeatControlState(context, preheat_control_mode),
+        power_hub.control(power_hub.preheat_switch_valve).value(
+            ValveControl(valve_position)
+        ),
     )
 
 
@@ -692,6 +761,9 @@ def control_power_hub(
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
+    preheat_control_state, preheat = preheat_control(
+        power_hub, control_state, sensors, time
+    )
     water_control_state, water = water_control(power_hub, control_state, sensors, time)
 
     control = (
@@ -710,6 +782,7 @@ def control_power_hub(
         .combine(hot)
         .combine(chill)
         .combine(waste)
+        .combine(preheat)
         .combine(water)
         .build()
     )
@@ -719,6 +792,7 @@ def control_power_hub(
             hot_control=hot_control_state,
             chill_control=chill_control_state,
             waste_control=waste_control_state,
+            preheat_control=preheat_control_state,
             water_control=water_control_state,
             setpoints=control_state.setpoints,
         ),
