@@ -693,7 +693,8 @@ class PowerHubSensors(NetworkSensors):
     outboard_exchange: HeatExchangerSensors
     hot_mix: HotMixSensors
     weather: WeatherSensors
-    heat_pipes_pump: SwitchPumpSensors
+    heat_pipes_power_hub_pump: SwitchPumpSensors
+    heat_pipes_supply_box_pump: SwitchPumpSensors
     pcm_to_yazaki_pump: SwitchPumpSensors
     chilled_loop_pump: SwitchPumpSensors
     waste_pump: SwitchPumpSensors

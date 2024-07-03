@@ -26,7 +26,7 @@ from energy_box_control.network import (
 
 from energy_box_control.power_hub.components import (
     heat_pipes,
-    heat_pipes_pump,
+    heat_pipes_power_hub_pump,
     heat_pipes_mix,
     heat_pipes_valve,
     pcm,
@@ -54,7 +54,7 @@ class PipesPcmControlState:
 class PipesPcmNetwork(Network[PipesPcmSensors]):
     heat_pipes: HeatPipes  # W-1001
     heat_pipes_valve: Valve  # CV-1006
-    heat_pipes_pump: SwitchPump  # P-1001
+    heat_pipes_power_hub_pump: SwitchPump  # P-1001
     heat_pipes_mix: Mix
     pcm: Pcm  # W-1003
 
@@ -68,7 +68,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
                 ConstSchedule(GLOBAL_IRRADIANCE), ConstSchedule(AMBIENT_TEMPERATURE)
             ),
             heat_pipes_valve,
-            heat_pipes_pump,
+            heat_pipes_power_hub_pump,
             heat_pipes_mix,
             pcm,
         )
@@ -98,14 +98,14 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
 
             .connect(self.heat_pipes_mix)
             .at(MixPort.AB)
-            .to(self.heat_pipes_pump)
+            .to(self.heat_pipes_power_hub_pump)
             .at(SwitchPumpPort.IN)
         ).build()
         # fmt: on
 
     def feedback(self) -> NetworkFeedbacks[Self]:
         return (
-            self.define_feedback(self.heat_pipes_pump)
+            self.define_feedback(self.heat_pipes_power_hub_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.heat_pipes)
             .at(HeatPipesPort.IN)
@@ -128,7 +128,7 @@ class PipesPcmNetwork(Network[PipesPcmSensors]):
 
         return (
             control_state,
-            self.control(self.heat_pipes_pump)
+            self.control(self.heat_pipes_power_hub_pump)
             .value(SwitchPumpControl(on=True))
             .control(self.heat_pipes_valve)
             .value(ValveControl(position=new_valve_position))
