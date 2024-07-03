@@ -1,33 +1,35 @@
 <template>
-  <v-main>
-    <svg
-      id="display-presentation"
-      ref="root"
-      width="100%"
-      viewBox="0 0 1920 1080"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <InnerWaves />
-      <OuterWaves />
-      <PhaseLanes />
-      <MapLegend
-        v-show="showWidgets"
-        transform="translate(167, 884)"
-      />
-      <FZLogo transform="translate(90, 107)" />
-      <PipeLines />
-      <PipeStreams />
-      <Suspense>
-        <PowerHubComponents />
-      </Suspense>
-    </svg>
+  <v-layout>
+    <v-main>
+      <svg
+        id="display-presentation"
+        ref="root"
+        width="100%"
+        viewBox="0 0 1920 1080"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <InnerWaves />
+        <OuterWaves />
+        <PhaseLanes />
+        <MapLegend
+          v-show="showWidgets"
+          transform="translate(167, 884)"
+        />
+        <FZLogo transform="translate(90, 107)" />
+        <PipeLines />
+        <PipeStreams />
+        <Suspense>
+          <PowerHubComponents />
+        </Suspense>
+      </svg>
 
-    <Suspense>
-      <WidgetsCarousel />
-    </Suspense>
-    <SlideShow />
-  </v-main>
+      <Suspense>
+        <WidgetsCarousel />
+      </Suspense>
+      <SlideShow />
+    </v-main>
+  </v-layout>
 </template>
 
 <script setup lang="ts">

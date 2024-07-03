@@ -1,13 +1,13 @@
-import Base from "@/components/slides/water/BaseWater.vue";
-import RecycleTriangle from "@/components/slides/water/RecycleTriangle.vue";
-import ThreeTimes from "@/components/slides/water/ThreeTimes.vue";
-import SavedDots from "@/components/slides/water/SavedDots.vue";
-import WaterHowDoesItWork from "@/components/slides/water/HowDoesItWork.vue";
-import ReusingWater from "@/components/slides/water/ReusingWater.vue";
-import SavedEnergy from "@/components/slides/water/SavedEnergy.vue";
-import WeCanReuseIt from "@/components/slides/water/WeCanReuseIt.vue";
-import ByReusingIt from "@/components/slides/water/ByReusingIt.vue";
-import GreyWaterIsUsed from "@/components/slides/water/GreyWaterIsUsed.vue";
+import Base from "@/components/display/slides/water/BaseWater.vue";
+import RecycleTriangle from "@/components/display/slides/water/RecycleTriangle.vue";
+import ThreeTimes from "@/components/display/slides/water/ThreeTimes.vue";
+import SavedDots from "@/components/display/slides/water/SavedDots.vue";
+import WaterHowDoesItWork from "@/components/display/slides/water/HowDoesItWork.vue";
+import ReusingWater from "@/components/display/slides/water/ReusingWater.vue";
+import SavedEnergy from "@/components/display/slides/water/SavedEnergy.vue";
+import WeCanReuseIt from "@/components/display/slides/water/WeCanReuseIt.vue";
+import ByReusingIt from "@/components/display/slides/water/ByReusingIt.vue";
+import GreyWaterIsUsed from "@/components/display/slides/water/GreyWaterIsUsed.vue";
 import type { PresentationItem } from "@/types";
 import {
   activateStream,

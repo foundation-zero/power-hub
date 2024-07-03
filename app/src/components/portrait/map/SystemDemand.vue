@@ -20,7 +20,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="9.34807"
-      font-weight="600"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan
@@ -36,7 +36,7 @@
       xml:space="preserve"
       style="white-space: pre"
       font-size="9.34807"
-      font-weight="600"
+      font-family="Five-Gothic-Bold"
       letter-spacing="0em"
     >
       <tspan

@@ -1,21 +1,22 @@
-import Base from "@/components/slides/thermal/BaseThermal.vue";
-import HowDoesItWork from "@/components/slides/thermal/HowDoesItWork.vue";
-import HarvestingThermalEnergy from "@/components/slides/thermal/HarvestingThermalEnergy.vue";
-import ZeroPercent from "@/components/slides/thermal/ZeroToFiftyPercent.vue";
-import HeatRadiation from "@/components/slides/thermal/HeatRadiation.vue";
-import HeatPipesGauge from "@/components/slides/thermal/HeatPipesGauge.vue";
-import ChillPowerGauge from "@/components/slides/thermal/ChillPower.vue";
-import CompoundTemperature from "@/components/slides/thermal/CompoundTemperature.vue";
-import BatteryGauge from "@/components/slides/thermal/BatteryGauge.vue";
-import EfficientAt from "@/components/slides/thermal/EfficientAt.vue";
-import StoringThermalEnergy from "@/components/slides/thermal/StoringThermalEnergy.vue";
-import KiloWattHoursStored from "@/components/slides/thermal/KiloWattHoursStored.vue";
-import HeatStored from "@/components/slides/thermal/HeatStored.vue";
-import FromTheBattery from "@/components/slides/thermal/FromTheBattery.vue";
-import BatteryGaugeOutline from "@/components/slides/thermal/BatteryGaugeOutline.vue";
-import UsingAbsorption from "@/components/slides/thermal/UsingAbsorption.vue";
-import SeventyPercent from "@/components/slides/thermal/SeventyPercent.vue";
-import EfficientAtTurningHeatIntoCold from "@/components/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
+import Base from "@/components/display/slides/thermal/BaseThermal.vue";
+import HowDoesItWork from "@/components/display/slides/thermal/HowDoesItWork.vue";
+import HarvestingThermalEnergy from "@/components/display/slides/thermal/HarvestingThermalEnergy.vue";
+import ZeroPercent from "@/components/display/slides/thermal/ZeroToFiftyPercent.vue";
+import HeatRadiation from "@/components/display/slides/thermal/HeatRadiation.vue";
+import HeatPipesGauge from "@/components/display/slides/thermal/HeatPipesGauge.vue";
+import ChillPowerGauge from "@/components/display/slides/thermal/ChillPower.vue";
+import CompoundTemperature from "@/components/display/slides/thermal/CompoundTemperature.vue";
+import BatteryGauge from "@/components/display/slides/thermal/BatteryGauge.vue";
+import EfficientAt from "@/components/display/slides/thermal/EfficientAt.vue";
+import StoringThermalEnergy from "@/components/display/slides/thermal/StoringThermalEnergy.vue";
+import KiloWattHoursStored from "@/components/display/slides/thermal/KiloWattHoursStored.vue";
+import HeatStored from "@/components/display/slides/thermal/HeatStored.vue";
+import FromTheBattery from "@/components/display/slides/thermal/FromTheBattery.vue";
+import BatteryGaugeOutline from "@/components/display/slides/thermal/BatteryGaugeOutline.vue";
+import UsingAbsorption from "@/components/display/slides/thermal/UsingAbsorption.vue";
+import SeventyPercent from "@/components/display/slides/thermal/SeventyPercent.vue";
+import EfficientAtTurningHeatIntoCold from "@/components/display/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
+import ThisIsUsed from "@/components/display/slides/thermal/ThisIsUsed.vue";
 import {
   activate,
   deactivate,
@@ -39,7 +40,6 @@ import {
   toggleWaves,
   toggleWidgets,
 } from "./actions";
-import ThisIsUsed from "@/components/slides/thermal/ThisIsUsed.vue";
 
 const disableAll = actionFn(async ({ sleep, getFlow, pipes, getComponentState }) => {
   const sun = getComponentState("sun");
