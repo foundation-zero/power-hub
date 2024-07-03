@@ -2,32 +2,24 @@
   <v-bottom-sheet
     v-model:model-value="show"
     :opacity="scrimOpacity"
+    scrollable
+    class="content-panel"
+    :class="{ dragging }"
     height="calc(100vh - 64px)"
   >
     <div
       ref="container"
-      class="h-100 d-flex justify-center align-end"
+      class="h-100"
     >
-      <v-card
+      <div
+        id="draggable"
         ref="target"
-        height="100%"
-        width="100%"
-        max-width="600"
-        max-height="800"
-        class="px-5 py-3 d-flex flex-column align-start"
+        class="h-100"
         :class="{ dragging }"
         :style="{ transform: `translateY(${swipeY}px)` }"
       >
-        <v-btn
-          variant="text"
-          color="blue"
-          size="small"
-          class="text-mono mx-0 px-0"
-          @click="show = false"
-          >&#10094; Back to mapping
-        </v-btn>
         <slot />
-      </v-card>
+      </div>
     </div>
   </v-bottom-sheet>
 </template>
@@ -93,11 +85,17 @@ const { direction, lengthY } = useSwipe(target, {
 </script>
 
 <style lang="scss" scoped>
-.v-card {
+#draggable {
   will-change: transform;
 }
 
-.v-card:not(.dragging) {
+#draggable:not(.dragging) {
   transition: transform 500ms ease;
+}
+</style>
+
+<style>
+.content-panel:not(.dragging) .v-overlay__scrim {
+  transition: opacity 500ms ease;
 }
 </style>

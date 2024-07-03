@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import BatteryGauge from "../../gauges/BatteryGauge.vue";
+import BatteryGauge from "../../../gauges/BatteryGauge.vue";
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {

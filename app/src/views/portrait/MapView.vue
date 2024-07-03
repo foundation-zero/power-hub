@@ -1,0 +1,112 @@
+<template>
+  <v-layout
+    @touchmove.stop.prevent
+    @touchend.stop.prevent
+    @touchstart.stop.prevent
+  >
+    <AppBar />
+
+    <v-main>
+      <div
+        class="d-flex flex-column justify-end align-center pt-5 px-3"
+        style="height: calc(100vh - 64px)"
+      >
+        <PortraitMap />
+      </div>
+
+      <ToggleWidgetsButton
+        id="toggle-widgets-button"
+        width="61"
+        height="61"
+        @click="showWidgets = true"
+      />
+    </v-main>
+
+    <component
+      :is="portraitContentWrapper"
+      v-model="showJourneyContent"
+    >
+      <JourneyContent
+        v-model="showJourneyContent"
+        scrollable
+        :journey="currentJourney"
+      />
+    </component>
+
+    <component
+      :is="portraitContentWrapper"
+      v-model="showWidgets"
+    >
+      <Suspense>
+        <WidgetsCarousel
+          v-model="showWidgets"
+          scrollable
+        />
+      </Suspense>
+    </component>
+
+    <component
+      :is="portraitContentWrapper"
+      v-model="showIntro"
+    >
+      <IntroContent />
+    </component>
+  </v-layout>
+</template>
+
+<script setup lang="ts">
+import { usePresentationStore } from "@/stores/presentation";
+import { toRefs } from "vue";
+import AppBar from "@/components/portrait/AppBar.vue";
+import JourneyContent from "@/components/responsive/JourneyContent.vue";
+import { computed } from "vue";
+import ToggleWidgetsButton from "@/components/responsive/ToggleWidgetsButton.vue";
+import { useRouter } from "vue-router";
+import WidgetsCarousel from "@/components/responsive/WidgetsCarousel.vue";
+import { portraitContentWrapper } from "@/utils/display";
+import PortraitMap from "@/components/portrait/PortraitMap.vue";
+import IntroContent from "@/components/responsive/IntroContent.vue";
+
+const { currentJourney, showWidgets } = toRefs(usePresentationStore());
+const router = useRouter();
+
+const showJourneyContent = computed({
+  get() {
+    return !!currentJourney.value;
+  },
+  set(val: boolean) {
+    if (!val) {
+      router.push("/journeys");
+    }
+  },
+});
+
+const showIntro = computed({
+  get() {
+    return router.currentRoute.value.path === "/";
+  },
+  set(val: boolean) {
+    if (!val) {
+      router.push("/journeys");
+    }
+  },
+});
+</script>
+
+<style>
+.fade-enter-active,
+.fade-leave-active {
+  transition: transform 750ms ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  transform: translateX(100%);
+}
+
+#toggle-widgets-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+</style>

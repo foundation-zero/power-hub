@@ -1,11 +1,11 @@
-import Base from "@/components/slides/electrical/BaseElectrical.vue";
-import LightBulb from "@/components/slides/electrical/LightBulb.vue";
-import HowDoesItWork from "@/components/slides/electrical/HowDoesItWork.vue";
-import WeProduce from "@/components/slides/electrical/WeProduce.vue";
-import HundredPercent from "@/components/slides/electrical/HundredPercent.vue";
-import SolarPowered from "@/components/slides/electrical/SolarPowered.vue";
-import ThatsEquivalentTo from "@/components/slides/electrical/ThatsEquivalentTo.vue";
-import ElectricDemand from "@/components/slides/electrical/ElectricDemand.vue";
+import Base from "@/components/display/slides/electrical/BaseElectrical.vue";
+import LightBulb from "@/components/display/slides/electrical/LightBulb.vue";
+import HowDoesItWork from "@/components/display/slides/electrical/HowDoesItWork.vue";
+import WeProduce from "@/components/display/slides/electrical/WeProduce.vue";
+import HundredPercent from "@/components/display/slides/electrical/HundredPercent.vue";
+import SolarPowered from "@/components/display/slides/electrical/SolarPowered.vue";
+import ThatsEquivalentTo from "@/components/display/slides/electrical/ThatsEquivalentTo.vue";
+import ElectricDemand from "@/components/display/slides/electrical/ElectricDemand.vue";
 import type { PresentationItem } from "@/types";
 import {
   activateStream,
