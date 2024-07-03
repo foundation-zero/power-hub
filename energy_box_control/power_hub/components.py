@@ -4,7 +4,7 @@ from energy_box_control.appliances.water_demand import WaterDemand
 from energy_box_control.appliances.water_maker import WaterMaker
 from energy_box_control.appliances.water_tank import WaterTank
 from energy_box_control.appliances.water_treatment import WaterTreatment
-from energy_box_control.schedules import Schedule
+from energy_box_control.schedules import ConstSchedule, Schedule
 from energy_box_control.units import (
     Celsius,
     JoulePerLiterKelvin,
@@ -76,7 +76,9 @@ def heat_pipes(
 
 
 heat_pipes_valve = Valve()
-heat_pipes_pump = SwitchPump(15 / 60, 60)
+heat_pipes_power_hub_pump = SwitchPump(15 / 60, 60)
+heat_pipes_supply_box_pump = SwitchPump(15 / 60, 60)
+heat_pipes_supply_box_pump_source = Source(0, ConstSchedule(AMBIENT_TEMPERATURE))
 heat_pipes_mix = Mix()
 
 
