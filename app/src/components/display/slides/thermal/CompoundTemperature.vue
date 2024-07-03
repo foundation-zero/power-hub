@@ -3,17 +3,17 @@
     class="gauge"
     fade
   >
-    <HeatPipesGauge />
+    <CompoundTemperatureGague />
   </AnimatedSlide>
 </template>
 
 <script lang="ts">
-import HeatPipesGauge from "../../gauges/HeatPipesGauge.vue";
+import CompoundTemperatureGague from "../../../gauges/CompoundTemperatureGauge.vue";
 import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "HeatPipesGaugeAnimated",
-  components: { AnimatedSlide, HeatPipesGauge },
+  name: "CompoundTemperatureAnimated",
+  components: { AnimatedSlide, CompoundTemperatureGague },
 };
 </script>
 

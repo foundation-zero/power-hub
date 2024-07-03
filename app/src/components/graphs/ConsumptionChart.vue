@@ -17,7 +17,7 @@ import VChart from "vue-echarts";
 import { ref } from "vue";
 import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
-import { isAfter, startOfToday, startOfTomorrow } from "date-fns";
+import { startOfToday, startOfTomorrow } from "date-fns";
 import { range } from "lodash";
 import { useStripes } from "@/utils/charts";
 import type { HistoricalData } from "@/types";
@@ -27,7 +27,7 @@ use([SVGRenderer, BarChart, LineChart]);
 
 const { sum } = usePowerHubStore();
 
-const hours = range(0, 24);
+const hours = range(0, 24, 2);
 
 const currentConsumption = useObservable(
   sum.useOverTime("electric/power/consumption", {
@@ -36,16 +36,21 @@ const currentConsumption = useObservable(
   }),
 );
 
-const consumptionPerHour = computed(() =>
+const consumptionPerTwoHours = computed(() =>
   hours.map<HistoricalData<Date, number>>((hour) => {
-    const currentValue = currentConsumption.value?.find(({ time }) => time.getHours() === hour);
+    const [current, next] =
+      currentConsumption.value?.filter(({ time }) => time.getHours() === hour) ?? [];
 
-    return (
-      currentValue ?? {
+    if (!current)
+      return {
         time: useStartOfHour(hour),
         value: Math.random() * 1000,
-      }
-    );
+      };
+
+    return {
+      time: current.time,
+      value: current.value + (next?.value ?? 0),
+    };
   }),
 );
 
@@ -65,7 +70,7 @@ const option = ref({
   xAxis: {
     type: "category",
     show: false,
-    data: hours.filter((hour) => hour % 2 === 0),
+    data: hours,
   },
   yAxis: [
     {
@@ -92,14 +97,12 @@ const option = ref({
       },
       barWidth: "40%",
       data: computed(() =>
-        consumptionPerHour.value
-          ?.filter((_, index) => index % 2 === 0)
-          .map((value, index) => ({
-            value: -Math.abs(value.value + (consumptionPerHour.value?.[index * 2 + 1]?.value ?? 0)),
-            itemStyle: {
-              decal: isAfter(value.time, new Date()) ? useStripes() : undefined,
-            },
-          })),
+        consumptionPerTwoHours.value.map(({ value, time }) => ({
+          value: -Math.abs(value),
+          itemStyle: {
+            decal: time.getHours() >= new Date().getHours() ? useStripes() : undefined,
+          },
+        })),
       ),
     },
   ],

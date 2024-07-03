@@ -21,6 +21,7 @@ import type { Journey } from "@/types";
 import { activate, deactivate, dehighlight, hide, highlight, show } from "@/utils";
 import { ref } from "vue";
 import { toRefs } from "vue";
+import { useRouter } from "vue-router";
 
 const { component, journey } = defineProps<{
   component: PowerHubComponent;
@@ -28,9 +29,8 @@ const { component, journey } = defineProps<{
 }>();
 
 const el = ref<HTMLElement>();
-
-const { getComponentState, getFlow, streamStates, componentStates, setJourney } =
-  usePresentationStore();
+const router = useRouter();
+const { getComponentState, getFlow, streamStates, componentStates } = usePresentationStore();
 const { root, currentJourney } = toRefs(usePresentationStore());
 
 const state = computed(() => getComponentState(component));
@@ -67,7 +67,7 @@ const onTouch = () => {
   touched.value = true;
   onHover();
   setTimeout(() => {
-    setJourney(journey);
+    router.push(`/journeys/${journey}`);
     touched.value = false;
   }, 500);
 };
@@ -75,7 +75,7 @@ const onTouch = () => {
 const onClick = () => {
   if (touched.value) return;
 
-  setJourney(journey);
+  router.push(`/journeys/${journey}`);
 };
 
 const onLeave = () => {
