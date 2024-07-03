@@ -156,6 +156,9 @@ class PowerHub(Network[PowerHubSensors]):
     heat_pipes: HeatPipes  # W-1001
     heat_pipes_valve: Valve  # CV-1006
     heat_pipes_power_hub_pump: SwitchPump  # P-1008
+    heat_pipes_supply_box_pump_source: (
+        Source  # Source for make heat pipes supply box pump in simulation
+    )
     heat_pipes_supply_box_pump: SwitchPump  # P-1009 not taken into account for simulation, but defined here for control signal
     heat_pipes_mix: Mix
     hot_reservoir: Boiler  # W-1002
@@ -206,8 +209,9 @@ class PowerHub(Network[PowerHubSensors]):
         return PowerHub(
             phc.heat_pipes(schedules.global_irradiance, schedules.ambient_temperature),
             phc.heat_pipes_valve,
-            phc.heat_pipes_pump,
-            phc.heat_pipes_pump,
+            phc.heat_pipes_power_hub_pump,
+            phc.heat_pipes_supply_box_pump_source,
+            phc.heat_pipes_supply_box_pump,
             phc.heat_pipes_mix,
             phc.hot_reservoir(schedules.ambient_temperature),
             phc.hot_switch_valve,
@@ -257,6 +261,12 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             power_hub.define_state(power_hub.heat_pipes)
             .value(HeatPipesState(phc.AMBIENT_TEMPERATURE))
+            .define_state(power_hub.heat_pipes_power_hub_pump)
+            .value(SwitchPumpState())
+            .define_state(power_hub.heat_pipes_supply_box_pump_source)
+            .value(SourceState())
+            .define_state(power_hub.heat_pipes_supply_box_pump)
+            .value(SwitchPumpState())
             .define_state(power_hub.heat_pipes_valve)
             .value(initial_valve_state)
             .define_state(power_hub.heat_pipes_mix)
@@ -344,6 +354,12 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self.define_state(self.heat_pipes)
             .value(HeatPipesState(phc.AMBIENT_TEMPERATURE))
+            .define_state(self.heat_pipes_power_hub_pump)
+            .value(SwitchPumpState())
+            .define_state(self.heat_pipes_supply_box_pump_source)
+            .value(SourceState())
+            .define_state(self.heat_pipes_supply_box_pump)
+            .value(SwitchPumpState())
             .define_state(self.heat_pipes_valve)
             .value(
                 ValveState(phc.HEAT_PIPES_BYPASS_OPEN_POSITION)
@@ -530,6 +546,11 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.heat_pipes_mix)
             .at(MixPort.AB)
             .to(self.heat_pipes_power_hub_pump)
+            .at(SwitchPumpPort.IN)
+
+            .connect(self.heat_pipes_supply_box_pump_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.heat_pipes_supply_box_pump)
             .at(SwitchPumpPort.IN)
         )
         # fmt: on
