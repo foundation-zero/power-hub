@@ -5,7 +5,11 @@
     class="pt-4 pb-8 px-6"
   >
     <div class="d-flex justify-space-between">
-      <span class="text-h6 text-uppercase font-weight-medium">{{ title }}</span>
+      <span
+        class="text-h6 text-uppercase font-weight-medium"
+        style="max-width: 100px"
+        >{{ title }}</span
+      >
       <div>
         <AnimatedNumber
           v-if="value"

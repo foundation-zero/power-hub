@@ -33,7 +33,7 @@ const powerhub = await store.connect();
 <style lang="scss" scoped>
 .sensor-widgets {
   position: absolute;
-  width: 450px;
+  width: 375px;
   top: 50%;
   transform: translate(0, -50%);
   transition:

@@ -9,26 +9,16 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
+      ><tspan
+        x="396"
+        y="759.7"
+        >The Power Hub uses heat pipes to </tspan
+      ><tspan
+        x="396"
+        y="805.7"
+        >harvest energy from sunlight.</tspan
+      ></text
     >
-      <tspan
-        x="396"
-        y="736.7"
-      >
-        Harvesting thermal&#10;
-      </tspan>
-      <tspan
-        x="396"
-        y="782.7"
-      >
-        energy from sunlight using &#10;
-      </tspan>
-      <tspan
-        x="396"
-        y="828.7"
-      >
-        heat tubes
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

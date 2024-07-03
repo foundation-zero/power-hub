@@ -362,5 +362,6 @@ const { value: sunPower, unit: sunPowerUnit } = useAsWatts(
       .useLastValues("weather/global_irradience")
       .pipe(map((values) => values[values.length - 1]?.value)),
   ),
+  0,
 );
 </script>

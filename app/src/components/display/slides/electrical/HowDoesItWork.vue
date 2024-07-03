@@ -6,14 +6,13 @@
       style="white-space: pre"
       font-size="50"
       letter-spacing="0em"
-      transform="translate(446, 549)"
       ><tspan
-        x="-4"
-        y="33.5"
+        x="442"
+        y="581.5"
         >How does &#10;</tspan
       ><tspan
-        x="-4"
-        y="90.5"
+        x="442"
+        y="638.5"
         >it work?</tspan
       ></text
     >

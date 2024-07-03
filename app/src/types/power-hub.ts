@@ -24,6 +24,7 @@ export type PCM = Port<"charge"> &
     chargePower: number;
     dischargePower: number;
     netCharge: number;
+    fill: number;
   };
 
 export type Chiller = Port<"cooling"> &

@@ -9,20 +9,23 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
-      transform="translate(413, 534)"
       ><tspan
-        x="0"
-        y="27.7"
-        >We produce up to 40 kW &#10;</tspan
+        x="403"
+        y="589.7"
+        >The Power Hub produces </tspan
       ><tspan
-        x="0"
-        y="73.7"
-        >per hour depending on &#10;</tspan
+        x="403"
+        y="635.7"
+        >up to 40 kW of electrical </tspan
       ><tspan
-        x="0"
-        y="119.7"
-        >the sun light....
-      </tspan></text
+        x="403"
+        y="681.7"
+        >power &#x2014; depending on </tspan
+      ><tspan
+        x="403"
+        y="727.7"
+        >the available sunlight.</tspan
+      ></text
     >
   </AnimatedSlide>
 </template>
