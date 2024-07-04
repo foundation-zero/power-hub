@@ -6,26 +6,20 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
+      ><tspan
+        x="396"
+        y="759.7"
+        >Harvested thermal energy is &#10;</tspan
+      ><tspan
+        x="396"
+        y="805.7"
+        >then stored in the Power Hub&#x2019;s &#10;</tspan
+      ><tspan
+        x="396"
+        y="851.7"
+        >heat battery.</tspan
+      ></text
     >
-      <tspan
-        x="396"
-        y="729.7"
-      >
-        Storing harvested &#10;
-      </tspan>
-      <tspan
-        x="396"
-        y="775.7"
-      >
-        thermal energy in the &#10;
-      </tspan>
-      <tspan
-        x="396"
-        y="821.7"
-      >
-        heat battery
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

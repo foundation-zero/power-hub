@@ -30,10 +30,9 @@
       style="white-space: pre"
       font-size="50"
       letter-spacing="0em"
-      transform="translate(1072, 126)"
       ><tspan
-        x="-4"
-        y="34"
+        x="1068"
+        y="160"
         >Electrical energy</tspan
       ></text
     >

@@ -1,10 +1,14 @@
 import { useTimeout } from "@vueuse/core";
 import { ref } from "vue";
 
+export const JOULE_TO_WATT_HOUR = 3600;
+
+export const jouleToWattHour = (val: number) => val / JOULE_TO_WATT_HOUR;
+
 export const formattedNumber =
   (digits: number = 1) =>
   (val: number = 0) =>
-    val.toLocaleString("nl-NL", {
+    +val.toLocaleString("nl-NL", {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     });

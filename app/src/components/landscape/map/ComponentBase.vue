@@ -59,7 +59,7 @@ const touched = ref(false);
 onMounted(() => {
   if (!el.value) return;
 
-  const svg = root.value!.getBoundingClientRect();
+  const svg = document.getElementsByClassName("v-layout").item(0)?.getBoundingClientRect();
   const viewbox = root.value!.viewBox;
 
   const dx = (viewbox.baseVal.width - viewbox.baseVal.x) / window.innerWidth;
@@ -67,7 +67,7 @@ onMounted(() => {
   const dimensions = el.value.getBoundingClientRect();
   const x = dimensions.left + dimensions.width / 2;
   const y = dimensions.top + dimensions.height / 2;
-  el.value.style.transformOrigin = `${(x - svg.left + viewbox.baseVal.x) * dx}px ${(y - svg.top + viewbox.baseVal.y) * dy}px`;
+  el.value.style.transformOrigin = `${(x - svg!.left + viewbox.baseVal.x) * dx}px ${(y - svg!.top + viewbox.baseVal.y) * dy}px`;
 });
 
 const onHover = () => {

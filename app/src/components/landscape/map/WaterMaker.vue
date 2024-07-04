@@ -90,11 +90,8 @@ import { formattedInt } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
-import { map } from "rxjs";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(
-  powerHub.sensors.useMqtt("water_maker/out_flow").pipe(map(({ value }) => value * 60)),
-);
+const value = useObservable(powerHub.sensors.useMean("water_maker/out_flow"));
 </script>

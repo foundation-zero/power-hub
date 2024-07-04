@@ -1,4 +1,13 @@
-import { usePollingApi, useLastValues, useMean, useOverTime, useTotal, type PathFn } from "@/api";
+import {
+  usePollingApi,
+  useLastValues,
+  useMean,
+  useOverTime,
+  useTotal,
+  type PathFn,
+  useCurrent,
+  useMeanPerHourOfDay,
+} from "@/api";
 import { MqttClient } from "@/mqtt";
 import type { HistoricalData, NestedPath, WeatherInfo } from "@/types";
 import { type SumTree, type SensorsTree, type Tree } from "@/types/power-hub";
@@ -32,12 +41,14 @@ export const usePowerHubStore = defineStore("powerHub", () => {
     useMqtt: useMqtt("appliance_sensors"),
     useTotal: useTotal<SensorsTree>(sensorsPathFn),
     useMean: useMean<SensorsTree>(sensorsPathFn),
+    useCurrent: useCurrent<SensorsTree>(sensorsPathFn),
   };
 
   const sum = {
     useMean: useMean<SumTree>(sumPathFn),
     useOverTime: useOverTime<SumTree>(sumPathFn),
     useMqtt: useMqtt("power_hub"),
+    useMeanPerHourOfDay: useMeanPerHourOfDay<SumTree>(sumPathFn),
   };
 
   const weather = {
@@ -60,8 +71,8 @@ export const usePowerHubStore = defineStore("powerHub", () => {
 
   return {
     connect,
-    sensors: pick(sensors, "useLastValues", "useTotal", "useMean"),
-    sum: pick(sum, "useMean", "useOverTime"),
+    sensors: pick(sensors, "useLastValues", "useTotal", "useMean", "useCurrent"),
+    sum: pick(sum, "useMean", "useOverTime", "useMeanPerHourOfDay"),
     weather,
   };
 });

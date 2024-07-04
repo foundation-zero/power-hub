@@ -249,6 +249,7 @@ const { sensors } = usePowerHubStore();
 
 const { value: chillingPower, unit: chillingPowerUnit } = useAsWatts(
   useObservable(sensors.useMean("yazaki/chill_power")),
+  100,
 );
 const { value: heatPower, unit: heatPowerUnit } = useAsWatts(useRandomNumber(0, 5000));
 const outputTemperature = useObservable(sensors.useMean("yazaki/chilled_output_temperature"));

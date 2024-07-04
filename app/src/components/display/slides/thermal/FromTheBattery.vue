@@ -9,26 +9,16 @@
       style="white-space: pre"
       font-size="38"
       letter-spacing="0em"
+      ><tspan
+        x="396"
+        y="763.04"
+        >Once heat is stored in the battery,&#10;</tspan
+      ><tspan
+        x="396"
+        y="807.04"
+        >it&#x2019;s fed into the absorption chiller&#x2026;</tspan
+      ></text
     >
-      <tspan
-        x="397"
-        y="721.04"
-      >
-        From the battery &#10;
-      </tspan>
-      <tspan
-        x="397"
-        y="765.04"
-      >
-        we feed heat into the&#10;
-      </tspan>
-      <tspan
-        x="397"
-        y="809.04"
-      >
-        absorption chiller....
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

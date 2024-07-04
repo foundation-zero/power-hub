@@ -6,8 +6,11 @@ import type {
   Muteable,
   Customizable,
   HistoricalData,
+  HourlyData,
 } from "@/types";
 import { setHours, startOfHour } from "date-fns";
+import { merge, range } from "lodash";
+import { combineLatest, map, type Observable } from "rxjs";
 import { computed, watch, type Ref } from "vue";
 
 export const parseValue = <T>(val: string | number) =>
@@ -84,9 +87,9 @@ export const useAsValueWithUnit =
     value: computed(() => {
       if (!value.value) return 0;
 
-      return value.value / (value.value < cutoff ? 1 : 1000);
+      return value.value / (Math.abs(value.value) < cutoff ? 1 : 1000);
     }),
-    unit: computed(() => ((value.value ?? 0) < cutoff ? baseUnit : `k${baseUnit}`)),
+    unit: computed(() => (Math.abs(value.value ?? 0) < cutoff ? baseUnit : `k${baseUnit}`)),
   });
 
 export const useAsWatts = useAsValueWithUnit("W");
@@ -97,3 +100,23 @@ export const useLastOrNone = (values: HistoricalData<Date, number>[]) =>
 
 export const useStartOfHour = (hour: number, date: Date = new Date()) =>
   startOfHour(setHours(date, hour));
+
+export const sortByHour = <T extends { hour: number }>(a: T, b: T) => a.hour - b.hour;
+
+export const useCombinedHourlyData = (
+  a: Observable<HourlyData[]>,
+  b: Observable<HourlyData[]>,
+  step: number = 1,
+  hours = range(0, 24, step),
+) =>
+  combineLatest([a, b]).pipe(
+    map(([a, b]) => {
+      const data = merge(a.slice().sort(sortByHour), b.slice().sort(sortByHour));
+
+      return hours.map<HourlyData<number>>((hour) => {
+        const value = data.slice(hour, hour + step).reduce((total, { value }) => total + value, 0);
+
+        return { hour, value: Math.max(value, 500) };
+      });
+    }),
+  );

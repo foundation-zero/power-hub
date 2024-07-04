@@ -13,7 +13,7 @@ import type { PowerHubComponent } from "@/types/power-hub";
 import { mapFn, useSleep } from "@/utils";
 import { type Position } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 
 import journeyItems from "./slides";
 import { isFunction } from "rxjs/internal/util/isFunction";
@@ -29,7 +29,7 @@ const createStreams = (amountOfStreams: number) =>
   new Array(amountOfStreams).fill(null).map(streamStateFn);
 
 export const usePresentationStore = defineStore("presentation", () => {
-  const slides = ref<PresentationComponent[]>([]);
+  const slides = shallowRef<PresentationComponent[]>([]);
   const isRunning = ref(false);
   const showWidgets = ref(false);
   const showWaves = ref(true);

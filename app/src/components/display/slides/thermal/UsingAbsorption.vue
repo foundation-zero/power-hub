@@ -6,26 +6,16 @@
       style="white-space: pre"
       font-size="38"
       letter-spacing="0em"
+      ><tspan
+        x="396"
+        y="763.04"
+        >&#x2026;and the absorption chiller </tspan
+      ><tspan
+        x="396"
+        y="807.04"
+        >transforms this heat into cool water.</tspan
+      ></text
     >
-      <tspan
-        x="397"
-        y="721.04"
-      >
-        Using the absorption&#10;
-      </tspan>
-      <tspan
-        x="397"
-        y="765.04"
-      >
-        process thermal energy &#10;
-      </tspan>
-      <tspan
-        x="397"
-        y="809.04"
-      >
-        is used to cool water
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 
