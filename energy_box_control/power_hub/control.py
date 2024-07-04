@@ -877,8 +877,6 @@ def control_from_json(
     power_hub: PowerHub, control_json: str
 ) -> NetworkControl[PowerHub]:
     controls = json.loads(control_json)
-    if "time" in controls:
-        del controls["time"]
 
     def _control(
         control: PowerHub | ControlBuilder[PowerHub], cur: tuple[str, dict[str, Any]]
@@ -892,7 +890,12 @@ def control_from_json(
         )
 
     return cast(
-        ControlBuilder[PowerHub], reduce(_control, controls.items(), power_hub)
+        ControlBuilder[PowerHub],
+        reduce(
+            _control,
+            {key: value for key, value in controls.items() if key != "time"}.items(),
+            power_hub,
+        ),
     ).build()
 
 
