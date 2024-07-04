@@ -877,6 +877,8 @@ def control_from_json(
     power_hub: PowerHub, control_json: str
 ) -> NetworkControl[PowerHub]:
     controls = json.loads(control_json)
+    if "time" in controls:
+        del controls["time"]
 
     def _control(
         control: PowerHub | ControlBuilder[PowerHub], cur: tuple[str, dict[str, Any]]
@@ -895,4 +897,10 @@ def control_from_json(
 
 
 def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> str:
-    return json.dumps(control.name_to_control_values_mapping(power_hub), cls=encoder())
+    return json.dumps(
+        {
+            **control.name_to_control_values_mapping(power_hub),
+            **{"time": datetime.now(tz=timezone.utc)},
+        },
+        cls=encoder(),
+    )

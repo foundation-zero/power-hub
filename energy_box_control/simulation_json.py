@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from typing import Any
 from uuid import UUID
@@ -8,6 +9,8 @@ def encoder(blacklist: set[str] = set()) -> type[json.JSONEncoder]:
     class NestedEncoder(json.JSONEncoder):
 
         def default(self, o: Any):
+            if type(o) == datetime:
+                return o.isoformat()
             if hasattr(o, "__dict__"):
                 return {
                     attr: value
