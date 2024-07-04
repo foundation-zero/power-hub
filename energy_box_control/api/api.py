@@ -120,72 +120,80 @@ async def get_all_appliance_names() -> dict[
     }
 
 
-@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/last_values")
+@app.route(
+    "/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/last_values"
+)
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
 @limit_query_result
 @serialize_dataframe(["time", "value"])
 async def get_values_for_appliance_sensor(
-    appliance_name: str, field_name: str, query_args: ValuesQuery
+    appliance_name: str, sensor_field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceSensorFieldValue]]:
 
+    field_name = f"{appliance_name}_{sensor_field_name}"
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             values_query(
-                lambda r: r._field == f"{appliance_name}_{field_name}",
-                build_query_range(query_args),
+                lambda r: r._field == field_name, build_query_range(query_args)
             ),
         )
-    ).rename(columns={"_value": "value", "_time": "time"})
+    ).rename(columns={field_name: "value", "_time": "time"})
 
 
-@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/mean")
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/mean")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
 @limit_query_result
-@serialize_single_cell("_value")
+@serialize_single_cell("value")
 async def get_mean_value_for_appliance_sensor(
-    appliance_name: str, field_name: str, query_args: ValuesQuery
+    appliance_name: str, sensor_field_name: str, query_args: ValuesQuery
 ) -> list[list[ApplianceSensorFieldValue]]:
-    return await execute_influx_query(
-        app.influx,  # type: ignore
-        fluxy.pipe(
-            values_query(
-                lambda r: r._field == f"{appliance_name}_{field_name}",
-                build_query_range(query_args),
+    field_name = f"{appliance_name}_{sensor_field_name}"
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            fluxy.pipe(
+                values_query(
+                    lambda r: r._field == field_name,
+                    build_query_range(query_args),
+                ),
+                fluxy.mean(column=field_name),
             ),
-            fluxy.mean(column="_value"),
-        ),
-    )
+        )
+    ).rename(columns={field_name: "value"})
 
 
-@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/total")
+@app.route("/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/total")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
 @limit_query_result
-@serialize_single_cell("_value")
+@serialize_single_cell("value")
 async def get_total_value_for_appliance_sensor(
     appliance_name: str,
-    field_name: str,
+    sensor_field_name: str,
     query_args: ValuesQuery,
 ) -> str:
 
-    return await execute_influx_query(
-        app.influx,  # type: ignore
-        query=fluxy.pipe(
-            values_query(
-                lambda r: r._field == f"{appliance_name}_{field_name}",
-                build_query_range(query_args),
+    field_name = f"{appliance_name}_{sensor_field_name}"
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            query=fluxy.pipe(
+                values_query(
+                    lambda r: r._field == field_name,
+                    build_query_range(query_args),
+                ),
+                fluxy.sum(field_name),
             ),
-            fluxy.sum("_value"),
-        ),
-    )
+        )
+    ).rename(columns={field_name: "value"})
 
 
 @app.route("/power_hub/appliance_sensors/pcm/fill/current")
 @token_required
-@serialize_single_cell("_value")
+@serialize_single_cell("value")
 async def get_pcm_current_fill() -> str:
 
     last_empty: datetime = pd.Timestamp(
@@ -199,44 +207,56 @@ async def get_pcm_current_fill() -> str:
                     fluxy.literal('filter(fn: (r) => r["_value"] <= 77)'),
                     fluxy.sort(columns=["_time"], sort_order=fluxy.Order.DESC),
                     fluxy.limit(1),
+                    fluxy.pivot(
+                        row_key=["_time"], column_key=["_field"], value_column="_value"
+                    ),
                 ),
             )
         )["_time"].values[0]
     ).to_pydatetime()
 
-    return await execute_influx_query(
-        app.influx,  # type: ignore
-        query=fluxy.pipe(
-            fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
-            fluxy.range(
-                start=last_empty.replace(tzinfo=timezone.utc),
-                stop=datetime.now(tz=timezone.utc),
+    net_charge_name = "pcm_net_charge"
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            query=fluxy.pipe(
+                fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
+                fluxy.range(
+                    start=last_empty.replace(tzinfo=timezone.utc),
+                    stop=datetime.now(tz=timezone.utc),
+                ),
+                fluxy.filter(lambda r: r._field == net_charge_name),
+                fluxy.pivot(
+                    row_key=["_time"], column_key=["_field"], value_column="_value"
+                ),
+                fluxy.sum(net_charge_name),
             ),
-            fluxy.filter(lambda r: r._field == "pcm_net_charge"),
-            fluxy.sum("_value"),
-        ),
-    )
+        )
+    ).rename(columns={net_charge_name: "value"})
 
 
-@app.route("/power_hub/appliance_sensors/<appliance_name>/<field_name>/over/time")
+@app.route(
+    "/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/over/time"
+)
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
 @limit_query_result
 @serialize_dataframe(["time", "value"])
 async def get_sensor_value_over_time(
-    appliance_name: str, field_name: str, query_args: ComputedValuesQuery
+    appliance_name: str, sensor_field_name: str, query_args: ComputedValuesQuery
 ) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
 
+    field_name = f"{appliance_name}_{sensor_field_name}"
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             mean_values_query(
-                lambda r: r._field == f"{appliance_name}_{field_name}",
+                lambda r: r._field == field_name,
                 timedelta_from_string(query_args.interval),
                 build_query_range(query_args),
             ),
         )
-    ).rename(columns={"_value": "value", "_time": "time"})
+    ).rename(columns={"field": "value", "_time": "time"})
 
 
 def consumption_appliances():
@@ -267,13 +287,12 @@ async def get_electrical_power_consumption(
                 build_query_range(query_args),
             ),
         )
-    ).rename(columns={"_value": "value", "_time": "time"})
+    ).rename(columns={"field": "value", "_time": "time"})
 
 
 @app.route("/power_hub/electric/power/consumption/mean/per/hour_of_day")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
-@limit_query_result
 @serialize_dataframe(["hour", "value"])
 async def get_electrical_power_consumption_per_hour(
     query_args: AppliancesQuery,
@@ -294,13 +313,13 @@ async def get_electrical_power_consumption_per_hour(
                 build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
         )
-    ).rename(columns={"_value": "value"})
+    ).rename(columns={"field": "value"})
 
 
 @app.route("/power_hub/electric/power/consumption/mean")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
-@serialize_single_cell("_value")
+@serialize_single_cell("field")
 async def get_electrical_power_consumption_mean(
     query_args: AppliancesQuery,
 ) -> list[list[ApplianceSensorFieldValue]]:
@@ -320,7 +339,7 @@ async def get_electrical_power_consumption_mean(
                 timedelta(seconds=1),
                 build_query_range(query_args),
             ),
-            fluxy.mean(column="_value"),
+            fluxy.mean(column="field"),
         ),
     )
 
@@ -355,13 +374,12 @@ async def get_electrical_power_production(
                 build_query_range(query_args),
             ),
         )
-    ).rename(columns={"_value": "value", "_time": "time"})
+    ).rename(columns={"field": "value", "_time": "time"})
 
 
 @app.route("/power_hub/electric/power/production/mean/per/hour_of_day")
 @token_required
 @validate_querystring(AppliancesQuery)  # type: ignore
-@limit_query_result
 @serialize_dataframe(["hour", "value"])
 async def get_electrical_power_production_interval(
     query_args: AppliancesQuery,
@@ -388,7 +406,7 @@ async def get_electrical_power_production_interval(
                 build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
         )
-    ).rename(columns={"_value": "value"})
+    ).rename(columns={"field": "value"})
 
 
 WeatherProperty = str
