@@ -112,7 +112,6 @@
           fill="#FF8C2E"
           xml:space="preserve"
           style="white-space: pre"
-          font-family="Five Gothic"
           font-size="65"
           letter-spacing="-0.04em"
         >
@@ -133,7 +132,6 @@
           fill="black"
           xml:space="preserve"
           style="white-space: pre"
-          font-family="Five Gothic"
           font-size="65"
           letter-spacing="-0.04em"
         >
@@ -198,7 +196,6 @@
           fill="white"
           xml:space="preserve"
           style="white-space: pre"
-          font-family="Five Gothic"
           font-size="45"
           letter-spacing="-0.04em"
         >
