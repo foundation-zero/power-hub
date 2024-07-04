@@ -28,7 +28,7 @@ const { component, journey } = defineProps<{
   journey: Journey;
 }>();
 
-const el = ref<HTMLElement>();
+const el = ref<SVGElement>();
 const router = useRouter();
 const { getComponentState, getFlow, streamStates, componentStates } = usePresentationStore();
 const { root, currentJourney } = toRefs(usePresentationStore());
@@ -40,14 +40,15 @@ onMounted(() => {
   if (!el.value) return;
 
   const svg = root.value!.getBoundingClientRect();
-  const viewbox = root.value!.viewBox;
+  const viewBox = root.value!.viewBox;
 
-  const dx = (viewbox.baseVal.width - viewbox.baseVal.x) / window.innerWidth;
-  const dy = (viewbox.baseVal.height - viewbox.baseVal.y) / window.innerHeight;
-  const dimensions = el.value.getBoundingClientRect();
+  const dx = viewBox.baseVal.width / svg!.width;
+  const dy = viewBox.baseVal.height / svg!.height;
+  const dimensions = el.value!.getBoundingClientRect();
+
   const x = dimensions.left + dimensions.width / 2;
   const y = dimensions.top + dimensions.height / 2;
-  el.value.style.transformOrigin = `${(x - svg.left + viewbox.baseVal.x) * dx}px ${(y - svg.top + viewbox.baseVal.y) * dy}px`;
+  el.value.style.transformOrigin = `${(x - svg.left) * dx}px ${(y - svg.top) * dy}px`;
 });
 
 const onHover = () => {
