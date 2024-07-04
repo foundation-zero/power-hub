@@ -4,11 +4,9 @@ import pytest
 from quart import Response
 from energy_box_control.api.api import (
     app,
-    ValuesQuery,
 )
 import json
 from datetime import datetime, timezone, timedelta
-from freezegun import freeze_time
 import pandas as pd
 import json
 import unittest.mock as mock
@@ -19,26 +17,59 @@ from energy_box_control.config import CONFIG
 HEADERS = {"Authorization": f"Bearer {CONFIG.api_token}"}
 
 
-@pytest.fixture(autouse=True)
-async def mock_influx(mocker):
+@pytest.fixture
+def appliance_name():
+    return "chiller_switch_valve"
+
+
+@pytest.fixture
+def sensor_field_name():
+    return "position"
+
+
+@pytest.fixture()
+def field_name(appliance_name, sensor_field_name):
+    return f"{appliance_name}_{sensor_field_name}"
+
+
+@pytest.fixture
+def start():
+    return datetime.now() - timedelta(hours=1)
+
+
+@pytest.fixture
+def stop():
+    return datetime.now()
+
+
+@pytest.fixture
+async def mock_influx_appliance(mocker, field_name):
     mocker.patch.object(InfluxDBClientAsync, "query_api", return_value=mock.Mock())
     app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
     fut = Future()
-    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "_value": [0, 0, 0]}))
+    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], field_name: [0, 0, 0]}))
     app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
     yield
 
 
 @pytest.fixture
-@freeze_time("2012-01-01")
-def start_datetime(minutes_back) -> datetime:
-    return datetime.now(timezone.utc) - timedelta(minutes=int(minutes_back))
+async def mock_influx_field(mocker):
+    mocker.patch.object(InfluxDBClientAsync, "query_api", return_value=mock.Mock())
+    app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
+    fut = Future()
+    fut.set_result(pd.DataFrame({"_time": [0, 0, 0], "field": [0, 0, 0]}))
+    app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
+    yield
 
 
 @pytest.fixture
-@freeze_time("2012-01-01")
-def stop_datetime() -> datetime:
-    return datetime.now(timezone.utc)
+async def mock_influx_hour_of_day(mocker):
+    mocker.patch.object(InfluxDBClientAsync, "query_api", return_value=mock.Mock())
+    app.influx = InfluxDBClientAsync("invalid_url")  # type: ignore
+    fut = Future()
+    fut.set_result(pd.DataFrame({"hour": [0, 0, 0], "value": [0, 0, 0]}))
+    app.influx.query_api().query_data_frame.return_value = fut  # type: ignore
+    yield
 
 
 async def test_hello_world():
@@ -55,74 +86,223 @@ async def test_get_all_appliance_names():
     assert len(response_data["appliances"]) > 0
 
 
-async def assert_row_response(response: Response):
+async def assert_row_response(response: Response, query: str):
     assert response.content_type == "application/json"
     result = json.loads(await response.get_data())
     assert type(result) == list
     assert len(result) == 3
+    app.influx.query_api().query_data_frame.assert_called_with(query)  # type: ignore
 
 
-async def assert_single_value_response(response: Response):
+async def assert_single_value_response(response: Response, query: str):
     assert response.content_type == "application/json"
     result = json.loads(await response.get_data())
     assert type(result) == float or int
+    app.influx.query_api().query_data_frame.assert_called_with(query)  # type: ignore
 
 
-async def test_get_last_values_for_appliance():
+async def test_get_last_values_for_appliance(
+    mock_influx_appliance, appliance_name, sensor_field_name, field_name, start, stop
+):
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "{field_name}")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time", "_field"])
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")"""
+
     await assert_row_response(
         await app.test_client().get(
-            f"/power_hub/appliance_sensors/chiller_switch_valve/position/last_values",
+            f"/power_hub/appliance_sensors/{appliance_name}/{sensor_field_name}/last_values?between={start.isoformat()},{stop.isoformat()}",
             headers=HEADERS,
-        )
+        ),
+        query,
     )
 
 
-async def test_get_mean_for_appliance():
+async def test_get_mean_for_appliance(
+    mock_influx_appliance, appliance_name, sensor_field_name, field_name, start, stop
+):
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "{field_name}")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time", "_field"])
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+|> mean(column: "{field_name}")"""
+
     await assert_single_value_response(
         await app.test_client().get(
-            f"/power_hub/appliance_sensors/chiller_switch_valve/position/mean",
+            f"/power_hub/appliance_sensors/{appliance_name}/{sensor_field_name}/mean?between={start.isoformat()},{stop.isoformat()}",
             headers=HEADERS,
-        )
+        ),
+        query,
     )
 
 
-async def test_get_total_for_appliance():
+async def test_get_total_for_appliance(
+    mock_influx_appliance, appliance_name, sensor_field_name, field_name, start, stop
+):
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "{field_name}")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time", "_field"])
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+|> sum(column: "{field_name}")"""
+
     await assert_single_value_response(
         await app.test_client().get(
-            f"/power_hub/appliance_sensors/chiller_switch_valve/position/total",
+            f"/power_hub/appliance_sensors/{appliance_name}/{sensor_field_name}/total?between={start.isoformat()},{stop.isoformat()}",
             headers=HEADERS,
-        )
+        ),
+        query,
     )
 
 
-async def test_get_electrical_power_consumption():
+async def test_get_sensor_value_over_time(
+    mock_influx_field, appliance_name, sensor_field_name, field_name, start, stop
+):
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "{field_name}")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, _field: "field"}}))
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")"""
+
+    await assert_single_value_response(
+        await app.test_client().get(
+            f"/power_hub/appliance_sensors/{appliance_name}/{sensor_field_name}/over/time?between={start.isoformat()},{stop.isoformat()}",
+            headers=HEADERS,
+        ),
+        query,
+    )
+
+
+async def test_get_electrical_power_consumption(mock_influx_field, start, stop):
+
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "fresh_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, _field: "field"}}))
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")"""
+
     await assert_row_response(
         await app.test_client().get(
-            f"/power_hub/electric/power/consumption/over/time",
+            f"/power_hub/electric/power/consumption/over/time?between={start.isoformat()},{stop.isoformat()}",
             headers=HEADERS,
-        )
+        ),
+        query,
     )
 
 
-async def test_get_mean_electrical_power_consumption():
-    await assert_single_value_response(
-        await app.test_client().get(
-            f"/power_hub/electric/power/consumption/mean",
-            headers=HEADERS,
-        )
-    )
+async def test_get_electrical_power_consumption_hourly_over_time(
+    mock_influx_hour_of_day,
+):
+    start = datetime.now() - timedelta(days=7)
+    stop = datetime.now()
 
+    query = f"""import "date"
+ from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "fresh_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 3600s, fn: mean, createEmpty: true)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, hour: date.hour(t: r._time)}}))
+|> group(columns: ["hour"])
+|> mean(column: "_value")
+|> group()
+|> sort(columns: ["hour"], desc: false)
+|> map(fn: (r) => ({{_value: r._value, hour: r.hour, _field: "field"}}))
+|> pivot(rowKey: ["hour"], columnKey: ["_field"], valueColumn: "_value")"""
 
-async def test_get_electrical_power_production():
+    endpoint = f"/power_hub/electric/power/consumption/mean/per/hour_of_day?between={start.isoformat()},{stop.isoformat()}"
     await assert_row_response(
         await app.test_client().get(
-            f"/power_hub/electric/power/production/over/time",
+            endpoint,
             headers=HEADERS,
-        )
+        ),
+        query,
     )
 
 
-async def test_get_electrical_power_production_non_pv_panel():
+async def test_get_mean_electrical_power_consumption(mock_influx_field, start, stop):
+
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "fresh_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, _field: "field"}}))
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+|> mean(column: "field")"""
+
+    await assert_single_value_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/consumption/mean?between={start.isoformat()},{stop.isoformat()}",
+            headers=HEADERS,
+        ),
+        query,
+    )
+
+
+async def test_get_electrical_power_production(mock_influx_field, start, stop):
+    query = f"""from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "pv_panel_power")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, _field: "field"}}))
+|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")"""
+
+    await assert_row_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/production/over/time?between={start.isoformat()},{stop.isoformat()}",
+            headers=HEADERS,
+        ),
+        query,
+    )
+
+
+async def test_get_electrical_power_production_hourly_over_time(
+    mock_influx_hour_of_day,
+):
+    start = datetime.now() - timedelta(days=7)
+    stop = datetime.now()
+
+    query = f"""import "date"
+ from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "pv_panel_power")
+|> filter(fn: (r) => r["topic"] == "power_hub/sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 3600s, fn: mean, createEmpty: true)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, hour: date.hour(t: r._time)}}))
+|> group(columns: ["hour"])
+|> mean(column: "_value")
+|> group()
+|> sort(columns: ["hour"], desc: false)
+|> map(fn: (r) => ({{_value: r._value, hour: r.hour, _field: "field"}}))
+|> pivot(rowKey: ["hour"], columnKey: ["_field"], valueColumn: "_value")"""
+
+    await assert_row_response(
+        await app.test_client().get(
+            f"/power_hub/electric/power/production/mean/per/hour_of_day?between={start.isoformat()},{stop.isoformat()}",
+            headers=HEADERS,
+        ),
+        query,
+    )
+
+
+async def test_get_electrical_power_production_non_pv_panel(mock_influx_field):
     response = await app.test_client().get(
         f"/power_hub/electric/power/production/over/time?appliances=test",
         headers=HEADERS,
