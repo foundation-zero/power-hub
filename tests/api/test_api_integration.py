@@ -43,7 +43,7 @@ async def influx_has_entries(client: InfluxDBClientAsync):
                 build_query_range(ValuesQuery()),
             ),
         )
-        return len(results["_value"]) > 0
+        return len(results["heat_pipes_power"]) > 0
     except Exception:
         return False
 
