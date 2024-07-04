@@ -56,17 +56,28 @@ def build_query_range(
 
 
 def values_query(
-    field_filter: fluxy.FilterCallback, query_range: Tuple[datetime, datetime]
+    field_filter: fluxy.FilterCallback,
+    query_range: Tuple[datetime, datetime],
+    pivot: bool = True,
+    keep: list[str] = ["_value", "_time", "_field"],
 ) -> fluxy.Query:
 
     start, stop = query_range
-    return fluxy.pipe(
+    query = fluxy.pipe(
         fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
         fluxy.range(start, stop),
         fluxy.filter(field_filter),
         fluxy.filter(lambda r: r.topic == "power_hub/sensor_values"),
-        fluxy.keep(["_value", "_time"]),
+        fluxy.keep(keep),
     )
+    if pivot:
+        return fluxy.pipe(
+            query,
+            fluxy.pivot(
+                row_key=["_time"], column_key=["_field"], value_column="_value"
+            ),
+        )
+    return query
 
 
 def mean_values_query(
@@ -74,15 +85,25 @@ def mean_values_query(
     interval: timedelta,
     query_range: Tuple[datetime, datetime],
     create_empty: bool = False,
+    pivot: bool = True,
 ) -> fluxy.Query:
-    return fluxy.pipe(
-        values_query(topic_filter, query_range),
+    query = fluxy.pipe(
+        values_query(topic_filter, query_range, False, ["_value", "_time"]),
         fluxy.aggregate_window(
             timedelta(seconds=interval.total_seconds()),
             fluxy.WindowOperation.MEAN,
             create_empty,
         ),
     )
+    if pivot:
+        return fluxy.pipe(
+            query,
+            fluxy.map('(r) => ({_time: r._time, _value: r._value, _field: "field"})'),
+            fluxy.pivot(
+                row_key=["_time"], column_key=["_field"], value_column="_value"
+            ),
+        )
+    return query
 
 
 def mean_per_hour_query(
@@ -92,7 +113,9 @@ def mean_per_hour_query(
     return PrefixedFluxy(
         prefixes=['import "date"'],
         flux=fluxy.pipe(
-            mean_values_query(field_filter, timedelta(hours=1), query_range, True),
+            mean_values_query(
+                field_filter, timedelta(hours=1), query_range, True, False
+            ),
             fluxy.map(
                 "(r) => ({_time: r._time, _value: r._value, hour: date.hour(t: r._time)})"
             ),
@@ -100,5 +123,7 @@ def mean_per_hour_query(
             fluxy.mean("_value"),
             fluxy.group(),
             fluxy.sort(["hour"]),
+            fluxy.map('(r) => ({_value: r._value, hour: r.hour, _field: "field"})'),
+            fluxy.pivot(row_key=["hour"], column_key=["_field"], value_column="_value"),
         ),
     )
