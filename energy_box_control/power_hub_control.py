@@ -26,22 +26,28 @@ from energy_box_control.power_hub.control import (
     ChillControlMode,
     HotControlMode,
     PowerHubControlState,
+    Setpoints,
     WasteControlMode,
     control_power_hub,
     control_to_json,
     initial_control_state,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
+from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.sensors import sensors_to_json
 
 logger = get_logger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
-CONTROL_VALUES_TOPIC = "power_hub/control_values"
-SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
+CONTROL_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/control_values"
+SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/sensor_values"
 CONTROL_MODES_TOPIC = f"{MQTT_TOPIC_BASE}/control_modes"
+ENRICHED_SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/enriched_sensor_values"
+SETPOINTS_TOPIC = f"{MQTT_TOPIC_BASE}/setpoints"
 
 
 sensor_values_queue: queue.Queue[str] = queue.Queue()
+setpoints_queue: queue.Queue[str] = queue.Queue()
 
 
 @dataclass
@@ -109,12 +115,51 @@ def publish_control_values(
     )
 
 
+def publish_sensor_values(
+    sensor_values: PowerHubSensors,
+    mqtt_client: mqtt_client.Client,
+    notifier: Notifier,
+    enriched: bool = False,
+):
+    publish_to_mqtt(
+        mqtt_client,
+        ENRICHED_SENSOR_VALUES_TOPIC if enriched else SENSOR_VALUES_TOPIC,
+        sensors_to_json(sensor_values, enriched),
+        notifier,
+    )
+
+
+def get_setpoints(control_state: PowerHubControlState):
+    try:
+        setpoints_json = setpoints_queue.get(block=False)
+        try:
+            control_state = PowerHubControlState(
+                control_state.hot_control,
+                control_state.chill_control,
+                control_state.waste_control,
+                control_state.preheat_control,
+                control_state.water_control,
+                Setpoints(**json.loads(setpoints_json)),
+            )
+            logger.info(f"Processed new setpoints successfully: {setpoints_json}")
+        except TypeError as e:
+            logger.error(
+                f"Couldn't process received setpoints ({setpoints_json}) with error: {e}"
+            )
+    except queue.Empty:
+        pass
+
+    return control_state
+
+
 async def run():
 
     mqtt_client = create_and_connect_client()
     await run_listener(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
+
+    await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(url_health_checks=service_checks)
@@ -128,12 +173,16 @@ async def run():
             sensor_values_queue.get(block=True)
         )
 
+        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, True)
+
         notifier.send_events(
             monitor.run_sensor_values_checks(
                 power_hub_sensors,
                 "power_hub_simulation",
             )
         )
+
+        control_state = get_setpoints(control_state)
 
         control_state, control_values = control_power_hub(
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
