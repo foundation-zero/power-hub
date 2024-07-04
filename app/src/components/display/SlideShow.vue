@@ -1,6 +1,6 @@
 <template>
   <TransitionGroup
-    v-show="store.isRunning"
+    v-if="store.isRunning"
     name="slide"
   >
     <component

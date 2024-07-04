@@ -1,45 +1,48 @@
 <template>
-  <AnimatedSlide fade>
+  <AnimatedSlide
+    fade
+    delay
+  >
     <text
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
-      font-size="30"
+      font-size="40"
       letter-spacing="0em"
     >
       <tspan
-        x="950"
-        y="190.9"
+        x="403"
+        y="589.7"
       >
-        Welcome to the Power Hub,&#10;
+        The electricity the Power
       </tspan>
       <tspan
-        x="950"
-        y="224.9"
+        x="403"
+        y="635.7"
       >
-        this display takes you through&#10;
+        Hub produces can be
       </tspan>
       <tspan
-        x="950"
-        y="258.9"
+        x="403"
+        y="681.7"
       >
-        the technology of the &#10;
+        stored in its battery for
       </tspan>
       <tspan
-        x="950"
-        y="292.9"
+        x="403"
+        y="727.7"
       >
-        power hub
+        later use.
       </tspan>
     </text>
   </AnimatedSlide>
 </template>
 
 <script lang="ts">
-import AnimatedSlide from "./AnimatedSlide.vue";
+import AnimatedSlide from "../AnimatedSlide.vue";
 
 export default {
-  name: "WelcomeToThePowerHub",
+  name: "ThemeIcon",
   components: { AnimatedSlide },
 };
 </script>

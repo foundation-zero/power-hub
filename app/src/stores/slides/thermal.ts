@@ -17,6 +17,12 @@ import UsingAbsorption from "@/components/display/slides/thermal/UsingAbsorption
 import SeventyPercent from "@/components/display/slides/thermal/SeventyPercent.vue";
 import EfficientAtTurningHeatIntoCold from "@/components/display/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
 import ThisIsUsed from "@/components/display/slides/thermal/ThisIsUsed.vue";
+import ThemeIcon from "@/components/display/slides/thermal/ThemeIcon.vue";
+import StepByStep from "@/components/display/slides/StepByStep.vue";
+import ThisIs from "@/components/display/slides/thermal/ThisIs.vue";
+import WeUseThisTo from "@/components/display/slides/WeUseThisTo.vue";
+import ThisProvides from "@/components/display/slides/thermal/ThisProvides.vue";
+import ProcessCalledAbsorption from "@/components/display/slides/thermal/ProcessCalledAbsorption.vue";
 import {
   activate,
   deactivate,
@@ -162,8 +168,10 @@ const activateDemand = actionFn(async ({ getComponentState, getFlow, sleep }) =>
 export default [
   ({ setJourney }) => setJourney("heat"),
   deactivateAll("heat"),
+  [7000, ThemeIcon, ThisIs, WeUseThisTo],
+  [0, ThemeIcon, ProcessCalledAbsorption],
   activateStream("heat"),
-  sleep(3000),
+  [5000, ThemeIcon, StepByStep, ThisProvides],
   [0],
   toggleWidgets(false),
   hideAll("heat"),

@@ -9,27 +9,20 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
-      transform="translate(410, 480)"
+      ><tspan
+        x="409"
+        y="474.2"
+        >The Power Hub is able to reuse </tspan
+      ><tspan
+        x="409"
+        y="520.2"
+        >water up to three times for </tspan
+      ><tspan
+        x="409"
+        y="566.2"
+        >different purposes.</tspan
+      ></text
     >
-      <tspan
-        x="0"
-        y="28.2"
-      >
-        We can reuse it up &#10;
-      </tspan>
-      <tspan
-        x="0"
-        y="74.2"
-      >
-        to 3 times for different
-      </tspan>
-      <tspan
-        x="0"
-        y="120.2"
-      >
-        purposes...
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

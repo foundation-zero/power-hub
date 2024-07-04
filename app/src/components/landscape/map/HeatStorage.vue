@@ -95,12 +95,14 @@
       font-size="10"
       letter-spacing="0em"
     >
-      <tspan
+      <AnimatedNumber
+        tag="tspan"
         text-anchor="end"
         x="56"
         y="82.91"
-        >20</tspan
-      >
+        :to="value"
+        :format="formattedInt"
+      />
     </text>
     <text
       fill="#756B61"
@@ -113,7 +115,7 @@
         x="58"
         y="82.91"
       >
-        kWh
+        {{ unit }}
       </tspan>
     </text>
   </ComponentBase>
@@ -121,6 +123,19 @@
 
 <script setup lang="ts">
 import ComponentBase from "./ComponentBase.vue";
+import AnimatedNumber from "vue-number-animation";
+import { type PowerHubStore } from "@/stores/power-hub";
+
+import { useAsWattHours } from "@/utils";
+import { useObservable } from "@vueuse/rxjs";
+import { formattedInt, jouleToWattHour } from "@/utils/numbers";
+import { map } from "rxjs";
+
+const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
+
+const { value, unit } = useAsWattHours(
+  useObservable(powerHub.sensors.useCurrent("pcm/fill").pipe(map(jouleToWattHour))),
+);
 </script>
 
 <style scoped lang="scss">

@@ -1,6 +1,10 @@
 <template>
-  <v-layout>
-    <v-main>
+  <v-layout class="bg-black d-flex flex-column justify-center align-center">
+    <v-main
+      max-width="1920"
+      max-height="1080"
+      class="w-100 position-relative bg-white overflow-hidden"
+    >
       <svg
         id="display-presentation"
         ref="root"

@@ -9,19 +9,22 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
-      transform="translate(410, 480)"
       ><tspan
-        x="0"
-        y="28.2"
-        >Grey water is used for&#10;</tspan
+        x="409"
+        y="451.2"
+        >Wastewater without harsh </tspan
       ><tspan
-        x="0"
-        y="74.2"
-        >flushing toiled and boat&#10;</tspan
+        x="409"
+        y="497.2"
+        >chemicals is used for flushing&#10;</tspan
       ><tspan
-        x="0"
-        y="120.2"
-        >wash down</tspan
+        x="409"
+        y="543.2"
+        >the toilet and washing down &#10;</tspan
+      ><tspan
+        x="409"
+        y="589.2"
+        >the boat.</tspan
       ></text
     >
   </AnimatedSlide>

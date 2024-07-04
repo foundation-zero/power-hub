@@ -9,21 +9,20 @@
       style="white-space: pre"
       font-size="40"
       letter-spacing="0em"
-      transform="translate(410, 500)"
+      ><tspan
+        x="409"
+        y="486.2"
+        >When it comes to water, reusing </tspan
+      ><tspan
+        x="409"
+        y="532.2"
+        >it is much more efficient than </tspan
+      ><tspan
+        x="409"
+        y="578.2"
+        >trying to make it anew.</tspan
+      ></text
     >
-      <tspan
-        x="-1"
-        y="28.2"
-      >
-        Reusing water is more
-      </tspan>
-      <tspan
-        x="-1"
-        y="74.2"
-      >
-        efficient than making new
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

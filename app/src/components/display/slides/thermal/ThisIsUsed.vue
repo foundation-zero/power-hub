@@ -9,20 +9,20 @@
       style="white-space: pre"
       font-size="38"
       letter-spacing="0em"
+      ><tspan
+        x="396"
+        y="768.04"
+        >The water that was chilled by the </tspan
+      ><tspan
+        x="396"
+        y="812.04"
+        >Power Hub is then used to cool the air </tspan
+      ><tspan
+        x="396"
+        y="856.04"
+        >in Sail Team BCN&#x2019;s base.</tspan
+      ></text
     >
-      <tspan
-        x="397"
-        y="733.04"
-      >
-        This is used to cool&#10;
-      </tspan>
-      <tspan
-        x="397"
-        y="777.04"
-      >
-        air for the compound
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 
