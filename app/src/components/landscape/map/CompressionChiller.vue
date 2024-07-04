@@ -140,11 +140,8 @@ import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
 
 import { useAsWatts } from "@/utils";
-import { map } from "rxjs";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMqtt("chiller/chill_power").pipe(map(({ value }) => value))),
-);
+const { value, unit } = useAsWatts(useObservable(powerHub.sensors.useMean("chiller/chill_power")));
 </script>

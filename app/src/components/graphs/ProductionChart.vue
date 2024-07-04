@@ -20,9 +20,11 @@ import { toKiloWattHours } from "@/utils/formatters";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
 import { range } from "lodash";
-import { startOfToday, startOfTomorrow } from "date-fns";
 import { useStripes } from "@/utils/charts";
-import { useStartOfHour } from "@/utils";
+import { map } from "rxjs";
+import { toHourlyData } from "@/api";
+import { useCombinedHourlyData } from "@/utils";
+import { startOfToday, startOfTomorrow } from "date-fns";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -30,31 +32,20 @@ const colorMode = useColorMode();
 
 const { sum } = usePowerHubStore();
 
-const hours = range(0, 24, 2);
+const hours = range(0, 24, 1);
 
-const currentProduction = useObservable(
-  sum.useOverTime("electric/power/production", () => ({
-    interval: "h",
-    between: [startOfToday().toISOString(), startOfTomorrow().toISOString()].join(","),
-  })),
-);
-
-const productionPerTwoHours = computed(() =>
-  hours.map((hour) => {
-    const [current, next] =
-      currentProduction.value?.filter(
-        ({ time }) => time.getHours() === hour || time.getHours() === hour + 1,
-      ) ?? [];
-
-    if (!current) {
-      return {
-        time: useStartOfHour(hour),
-        value: Math.random() * 1000,
-      };
-    }
-
-    return { time: current.time, value: current.value + (next?.value ?? 0) };
-  }),
+const productionPerTwoHours = useObservable(
+  useCombinedHourlyData(
+    sum
+      .useOverTime("electric/power/production", () => ({
+        interval: "h",
+        between: [startOfToday().toISOString(), startOfTomorrow().toISOString()].join(","),
+      }))
+      .pipe(map((values) => values.map(toHourlyData))),
+    sum.useMeanPerHourOfDay("electric/power/production"),
+    1,
+    hours,
+  ),
 );
 
 const batteryValues = hours.map(() => 50 + Math.random() * 50);
@@ -89,9 +80,9 @@ const colorsOfTheDay = [
 const option = ref({
   backgroundColor: "#f9f8f8",
   grid: {
-    left: 37,
+    left: 27,
     top: 5,
-    right: 37,
+    right: 27,
     bottom: 0,
   },
   legend: {
@@ -139,18 +130,18 @@ const option = ref({
       type: "bar",
       barWidth: "50%",
       data: computed(() =>
-        productionPerTwoHours.value.map(({ value, time }) => ({
+        productionPerTwoHours.value?.map(({ value, hour }) => ({
           value,
           itemStyle: {
-            decal: time.getHours() >= new Date().getHours() ? useStripes() : undefined,
+            decal: hour >= new Date().getHours() ? useStripes() : undefined,
             color: new graphic.LinearGradient(0, 0, 1, 0, [
               {
                 offset: 0,
-                color: colorsOfTheDay[new Date(time).getHours()],
+                color: colorsOfTheDay[hour],
               },
               {
                 offset: 1,
-                color: colorsOfTheDay[new Date(time).getHours()],
+                color: colorsOfTheDay[hour],
               },
             ]),
           },

@@ -4,22 +4,14 @@
       fill="#6D6D6D"
       xml:space="preserve"
       style="white-space: pre"
-      font-size="40"
+      font-size="48"
       letter-spacing="0em"
+      ><tspan
+        x="1216"
+        y="495.34"
+        >exchange rate of heat to cold</tspan
+      ></text
     >
-      <tspan
-        x="1394"
-        y="494.5"
-      >
-        Efficient at turning &#10;
-      </tspan>
-      <tspan
-        x="1394"
-        y="551.5"
-      >
-        heat into cold
-      </tspan>
-    </text>
   </AnimatedSlide>
 </template>
 

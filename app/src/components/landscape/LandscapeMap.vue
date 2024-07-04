@@ -61,6 +61,7 @@ const width = computed(() => {
 });
 
 const showIntro = () => router.push("/");
-const goToFZeroWebsite = () => window.open("https://foundationzero.org");
+const goToFZeroWebsite = () =>
+  window.open("https://www.foundationzero.org/insights/power-hub", "_self");
 const viewBox = computed(() => `20 60 ${width.value} 980`);
 </script>

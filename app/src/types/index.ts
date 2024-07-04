@@ -31,6 +31,11 @@ export type HistoricalData<T extends string | Date = string, V = string | number
   value: V;
 };
 
+export type HourlyData<V extends string | number = number> = {
+  hour: number;
+  value: V;
+};
+
 export type Journey = "electrical" | "heat" | "water";
 
 export type ComponentState = Activatable & Highlightable & Hideable & Flowable & Customizable;

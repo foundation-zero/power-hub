@@ -352,6 +352,7 @@ const { value: discharging, unit: dischargingUnit } = useAsWatts(
 );
 const { value: netValue, unit: netValueUnit } = useAsWatts(
   useObservable(sensors.useMean("pcm/net_charge")),
+  100,
 );
 const internalTemperature = useObservable(sensors.useMean("pcm/temperature"));
 
