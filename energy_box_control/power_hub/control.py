@@ -893,7 +893,7 @@ def control_from_json(
         ControlBuilder[PowerHub],
         reduce(
             _control,
-            {key: value for key, value in controls.items() if key != "time"}.items(),
+            ((key, value) for key, value in controls.items() if key != "time"),
             power_hub,
         ),
     ).build()
