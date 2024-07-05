@@ -35,7 +35,6 @@ export const usePresentationStore = defineStore("presentation", () => {
   const showWaves = ref(true);
   const currentJourney = ref<Journey>();
   const mode = ref<AppMode>("landscape");
-  const root = ref<SVGSVGElement>();
 
   const components = ref<ComponentElement[]>(
     mapFn(
@@ -173,7 +172,6 @@ export const usePresentationStore = defineStore("presentation", () => {
     journeys,
     streamStates,
     pipes,
-    root,
     showWidgets,
     showWaves,
     setJourney,

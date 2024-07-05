@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { usePresentationStore } from "@/stores/presentation";
 import type { PowerHubComponent } from "@/types/power-hub";
 import type { Journey } from "@/types";
@@ -31,25 +31,10 @@ const { component, journey } = defineProps<{
 const el = ref<SVGElement>();
 const router = useRouter();
 const { getComponentState, getFlow, streamStates, componentStates } = usePresentationStore();
-const { root, currentJourney } = toRefs(usePresentationStore());
+const { currentJourney } = toRefs(usePresentationStore());
 
 const state = computed(() => getComponentState(component));
 const touched = ref(false);
-
-onMounted(() => {
-  if (!el.value) return;
-
-  const svg = root.value!.getBoundingClientRect();
-  const viewBox = root.value!.viewBox;
-
-  const dx = viewBox.baseVal.width / svg!.width;
-  const dy = viewBox.baseVal.height / svg!.height;
-  const dimensions = el.value!.getBoundingClientRect();
-
-  const x = dimensions.left + dimensions.width / 2;
-  const y = dimensions.top + dimensions.height / 2;
-  el.value.style.transformOrigin = `${(x - svg.left) * dx}px ${(y - svg.top) * dy}px`;
-});
 
 const onHover = () => {
   const { streams, components } = getFlow(journey);
@@ -112,6 +97,9 @@ $ttime: 750ms;
 }
 
 .component.portrait {
+  transform-box: fill-box;
+  transform-origin: center center;
+
   transition:
     opacity 1500ms ease,
     transform 750ms ease;
