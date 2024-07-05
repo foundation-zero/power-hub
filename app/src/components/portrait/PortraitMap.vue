@@ -1,7 +1,6 @@
 <template>
   <svg
     id="portrait-view"
-    ref="root"
     viewBox="0 0 321 744"
     width="100%"
     fill="none"
@@ -19,8 +18,4 @@ import PowerHubComponents from "@/components/portrait/map/PowerHubComponents.vue
 import InnerWaves from "@/components/portrait/map/InnerWaves.vue";
 import PipeLines from "@/components/portrait/map/PipeLines.vue";
 import PipeStreams from "@/components/portrait/map/PipeStreams.vue";
-import { usePresentationStore } from "@/stores/presentation";
-import { toRefs } from "vue";
-
-const { root } = toRefs(usePresentationStore());
 </script>

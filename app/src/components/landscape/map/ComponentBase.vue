@@ -32,7 +32,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { usePresentationStore } from "@/stores/presentation";
 import type { PowerHubComponent } from "@/types/power-hub";
 import type { Journey } from "@/types";
@@ -51,25 +51,10 @@ const { component, journey } = defineProps<{
 const el = ref<SVGElement>();
 const router = useRouter();
 const { getComponentState, componentStates, streamStates, getFlow } = usePresentationStore();
-const { root, mode, currentJourney } = toRefs(usePresentationStore());
+const { mode, currentJourney } = toRefs(usePresentationStore());
 
 const state = computed(() => getComponentState(component));
 const touched = ref(false);
-
-onMounted(() => {
-  if (!el.value) return;
-
-  const svg = root.value!.getBoundingClientRect();
-  const viewBox = root.value!.viewBox;
-
-  const dx = viewBox.baseVal.width / svg!.width;
-  const dy = viewBox.baseVal.height / svg!.height;
-  const dimensions = el.value!.getBoundingClientRect();
-
-  const x = dimensions.left + dimensions.width / 2;
-  const y = dimensions.top + dimensions.height / 2;
-  el.value.style.transformOrigin = `${(x - svg.left) * dx}px ${(y - svg.top) * dy}px`;
-});
 
 const onHover = () => {
   const { streams, components } = getFlow(journey);
@@ -146,6 +131,9 @@ $ttime: 750ms;
 }
 
 .component {
+  transform-origin: center center;
+  transform-box: fill-box;
+
   &.display {
     &.highlighted {
       animation: pulseBig 750ms ease-out;
