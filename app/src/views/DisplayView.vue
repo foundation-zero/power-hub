@@ -7,7 +7,6 @@
     >
       <svg
         id="display-presentation"
-        ref="root"
         width="100%"
         viewBox="0 0 1920 1080"
         fill="none"
@@ -53,7 +52,7 @@ import { onMounted, onDeactivated } from "vue";
 import { toRefs } from "vue";
 
 const { start, stop, setMode } = usePresentationStore();
-const { showWidgets, root } = toRefs(usePresentationStore());
+const { showWidgets } = toRefs(usePresentationStore());
 
 onMounted(() => setMode("display"));
 onMounted(start);
