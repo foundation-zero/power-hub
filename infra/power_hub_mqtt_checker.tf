@@ -1,7 +1,3 @@
-variable "python_app_image_tag" {
-  default = "latest"
-}
-
 variable "pagerduty_mqtt_checker_key" {
   description = "PagerDuty key"
 }
