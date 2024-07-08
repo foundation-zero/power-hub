@@ -34,8 +34,9 @@ class PagerDutyNotificationChannel(NotificationChannel):
         self._events_session.url = "https://events.eu.pagerduty.com/"
 
     def send_event(self, event: NotificationEvent):
-        logger.info(f"Sending alert to PagerDuty: {event.message}")
+        logger.info(f"Triggering alert to PagerDuty: {event.message}")
         if CONFIG.send_notifications:
+            logger.info(f"Sending alert to PagerDuty: {event.message}")
             self._events_session.trigger(event.message, event.source, event.dedup_key)  # type: ignore
 
 
