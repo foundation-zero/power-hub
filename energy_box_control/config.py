@@ -22,7 +22,8 @@ class PowerHubConfig(BaseSettings):
         default="INFO"
     )
     send_notifications: bool = Field(default=False)
-    pagerduty_key: str = Field(default="")
+    pagerduty_simulation_key: str = Field(default="")
+    pagerduty_mqtt_checker_key: str = Field(default="")
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)

@@ -2,18 +2,14 @@ variable "python_app_image_tag" {
   default = "latest"
 }
 
-variable "pagerduty_simulation_key" {
+variable "pagerduty_mqtt_checker_key" {
   description = "PagerDuty key"
 }
 
-variable "send_notifications" {
-  description = "Enable/disable sending of notifications to PagerDuty"
-}
-
-resource "helm_release" "power_hub_simulation" {
-  name   = "power-hub-simulation"
+resource "helm_release" "power_hub_mqtt_checker" {
+  name   = "power-hub-mqtt_checker"
   chart  = "./charts/python-app"
-  values = [file("power_hub_simulation.values.yaml")]
+  values = [file("power_hub_mqtt_checker.values.yaml")]
   depends_on = [
     google_container_cluster.primary,
     helm_release.telegraf
@@ -30,8 +26,8 @@ resource "helm_release" "power_hub_simulation" {
   }
 
   set {
-    name = "container.env.PAGERDUTY_SIMULATION_KEY"
-    value = var.pagerduty_simulation_key
+    name = "container.env.PAGERDUTY_MQTT_CHECKER_KEY"
+    value = var.pagerduty_mqtt_checker_key
   } 
 
   set {

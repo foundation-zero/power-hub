@@ -70,7 +70,7 @@ services:
     env_file:
       - .env
     environment:
-      - PAGERDUTY_KEY=$PAGERDUTY_KEY
+      - PAGERDUTY_SIMULATION_KEY=$PAGERDUTY_SIMULATION_KEY
     restart: on-failure:5
 
   power_hub_api:
@@ -89,6 +89,23 @@ services:
       - .env
     environment:
       - OPEN_WEATHER_API_KEY=$OPEN_WEATHER_API_KEY
+    restart: on-failure:5
+
+  mqtt_checker:
+    depends_on:
+      vernemq:
+        condition: service_healthy
+    container_name: mqtt_checker
+    build:
+      context: .
+      dockerfile: python_script.Dockerfile
+    command: "energy_box_control.monitoring.mqtt_checker"
+    networks:
+      - power_hub_simulation
+    env_file:
+      - .env
+    environment:
+      - PAGERDUTY_MQTT_CHECKER_KEY=$PAGERDUTY_MQTT_CHECKER_KEY
     restart: on-failure:5
 
 networks:

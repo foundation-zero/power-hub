@@ -24,7 +24,7 @@ class HealthCheckResult:
 
 
 async def run():
-    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
+    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(url_health_checks=service_checks)
 
     run_queue: queue.Queue[None] = queue.Queue()
