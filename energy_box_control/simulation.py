@@ -146,7 +146,7 @@ async def run(
     )
     await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
 
-    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
+    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(sensor_checks)
 
     power_hub = PowerHub.power_hub(schedules)
