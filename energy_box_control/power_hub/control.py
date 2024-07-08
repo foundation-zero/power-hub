@@ -890,9 +890,20 @@ def control_from_json(
         )
 
     return cast(
-        ControlBuilder[PowerHub], reduce(_control, controls.items(), power_hub)
+        ControlBuilder[PowerHub],
+        reduce(
+            _control,
+            ((key, value) for key, value in controls.items() if key != "time"),
+            power_hub,
+        ),
     ).build()
 
 
 def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> str:
-    return json.dumps(control.name_to_control_values_mapping(power_hub), cls=encoder())
+    return json.dumps(
+        {
+            **control.name_to_control_values_mapping(power_hub),
+            **{"time": datetime.now(tz=timezone.utc)},
+        },
+        cls=encoder(),
+    )
