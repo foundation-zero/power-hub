@@ -44,7 +44,6 @@ class MockResponse:
         return self
 
 
-@pytest.mark.asyncio
 async def test_urls_healty(mocker):
     resp = MockResponse(json.dumps({}), HTTPStatus.OK)
     mocker.patch("aiohttp.ClientSession.get", return_value=resp)
@@ -52,8 +51,8 @@ async def test_urls_healty(mocker):
         assert await check.check() == None
 
 
-def test_urls_unhealthy(mocker):
-    mocker.patch.object(requests, "get", return_value=mock.Mock())
-    requests.get().status_code = HTTPStatus.FORBIDDEN  # type: ignore
+async def test_urls_unhealthy(mocker):
+    resp = MockResponse(json.dumps({}), HTTPStatus.NOT_FOUND)
+    mocker.patch("aiohttp.ClientSession.get", return_value=resp)
     for check in service_checks:
-        assert f"404 in {check.check()}"
+        assert (result := await check.check()) is not None and "404" in result
