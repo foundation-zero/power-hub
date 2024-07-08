@@ -1,3 +1,5 @@
-import WeProduce from "./WeProduce.vue";
+import PoweredByTheSun from "./PoweredByTheSun.vue";
+import BackedByBatteries from "./BackedByBatteries.vue";
+import PoweringTheCompound from "./PoweringTheCompound.vue";
 
-export default [WeProduce];
+export default [PoweredByTheSun, BackedByBatteries, PoweringTheCompound];

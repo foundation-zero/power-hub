@@ -1,3 +1,4 @@
-import AnyProcess from "./AnyProcess.vue";
+import MakingWater from "./MakingWater.vue";
+import TreatingWater from "./TreatingWater.vue";
 
-export default [AnyProcess];
+export default [MakingWater, TreatingWater];
