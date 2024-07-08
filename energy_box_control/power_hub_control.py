@@ -1,12 +1,12 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import dataclasses
 from datetime import datetime, timezone
 import enum
 from functools import partial
 import json
 import queue
-from typing import Any
+from typing import Any, Optional
 from paho.mqtt import client as mqtt_client
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
@@ -124,24 +124,18 @@ def publish_sensor_values(
     publish_to_mqtt(
         mqtt_client,
         ENRICHED_SENSOR_VALUES_TOPIC if enriched else SENSOR_VALUES_TOPIC,
-        sensors_to_json(sensor_values, enriched),
+        sensors_to_json(sensor_values, include_properties=enriched),
         notifier,
     )
 
 
-def get_setpoints(control_state: PowerHubControlState):
+def unqueue_setpoints() -> Optional[Setpoints]:
     try:
         setpoints_json = setpoints_queue.get(block=False)
         try:
-            control_state = PowerHubControlState(
-                control_state.hot_control,
-                control_state.chill_control,
-                control_state.waste_control,
-                control_state.preheat_control,
-                control_state.water_control,
-                Setpoints(**json.loads(setpoints_json)),
-            )
+            setpoints = Setpoints(**json.loads(setpoints_json))
             logger.info(f"Processed new setpoints successfully: {setpoints_json}")
+            return setpoints
         except TypeError as e:
             logger.error(
                 f"Couldn't process received setpoints ({setpoints_json}) with error: {e}"
@@ -149,7 +143,7 @@ def get_setpoints(control_state: PowerHubControlState):
     except queue.Empty:
         pass
 
-    return control_state
+    return None
 
 
 async def run():
@@ -173,7 +167,7 @@ async def run():
             sensor_values_queue.get(block=True)
         )
 
-        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, True)
+        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
         notifier.send_events(
             monitor.run_sensor_values_checks(
@@ -182,7 +176,11 @@ async def run():
             )
         )
 
-        control_state = get_setpoints(control_state)
+        control_state = (
+            replace(control_state, setpoints=setpoints)
+            if (setpoints := unqueue_setpoints())
+            else control_state
+        )
 
         control_state, control_values = control_power_hub(
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time

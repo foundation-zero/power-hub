@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import schedule
 from energy_box_control.monitoring.monitoring import (
     Monitor,
@@ -33,12 +33,10 @@ from energy_box_control.power_hub_control import (
     SETPOINTS_TOPIC,
     CONTROL_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
-    get_setpoints,
     publish_control_modes,
     publish_control_values,
     publish_sensor_values,
-    setpoints_queue,
-    sensor_values_queue,
+    unqueue_setpoints,
 )
 
 import asyncio
@@ -48,6 +46,8 @@ logger = get_logger(__name__)
 
 
 control_values_queue: queue.Queue[str] = queue.Queue()
+setpoints_queue: queue.Queue[str] = queue.Queue()
+sensor_values_queue: queue.Queue[str] = queue.Queue()
 
 
 def queue_on_message(
@@ -78,9 +78,14 @@ class SimulationResult:
             sensor_values_queue.get(block=True)
         )
 
-        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, True)
+        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
-        control_state = get_setpoints(self.control_state)
+        control_state = (
+            replace(self.control_state, setpoints=setpoints)
+            if (setpoints := unqueue_setpoints())
+            else self.control_state
+        )
+
         notifier.send_events(
             monitor.run_sensor_values_checks(
                 power_hub_sensors,
