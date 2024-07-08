@@ -3,7 +3,7 @@ variable "pagerduty_mqtt_checker_key" {
 }
 
 resource "helm_release" "power_hub_mqtt_checker" {
-  name   = "power-hub-mqtt_checker"
+  name   = "power-hub-mqtt-checker"
   chart  = "./charts/python-app"
   values = [file("power_hub_mqtt_checker.values.yaml")]
   depends_on = [
