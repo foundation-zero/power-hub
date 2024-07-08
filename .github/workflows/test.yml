@@ -38,14 +38,14 @@ jobs:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
           OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
-          PAGERDUTY_KEY: ${{ secrets.PAGERDUTY_KEY}}
+          PAGERDUTY_SIMULATION_KEY: ${{ secrets.PAGERDUTY_SIMULATION_KEY}}
       
       - name: Clear docker volumes
         run: docker-compose down -v
 
       - run: docker-compose up -d
         env:
-          PAGERDUTY_KEY: ${{ secrets.PAGERDUTY_KEY}}
+          PAGERDUTY_SIMULATION_KEY: ${{ secrets.PAGERDUTY_SIMULATION_KEY}}
   
       - name: Simulation integration tests
         run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py
@@ -153,5 +153,7 @@ jobs:
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
-          TF_VAR_pagerduty_key: ${{secrets.PAGERDUTY_KEY}}
+          TF_VAR_pagerduty_simulation_key: ${{secrets.PAGERDUTY_SIMULATION_KEY}}
+          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_send_notifications: true

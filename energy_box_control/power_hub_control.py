@@ -116,13 +116,14 @@ async def run():
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
 
-    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_key)])
+    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(url_health_checks=service_checks)
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     control_state = initial_control_state()
 
     while True:
+
         power_hub_sensors = power_hub.sensors_from_json(
             sensor_values_queue.get(block=True)
         )

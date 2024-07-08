@@ -1,0 +1,13 @@
+replicaCount: 1
+
+nameOverride: "power-hub-mqtt-checker"
+
+image:
+  pullPolicy: Always
+container:
+  commands: 
+  - "/app/env/bin/python"
+  - "-m"
+  - "energy_box_control.monitoring.mqtt_checker.main"
+  env:
+    MQTT_USERNAME: power-hub
