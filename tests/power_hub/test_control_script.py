@@ -8,6 +8,7 @@ from typing import Any, Tuple, no_type_check
 import pytest
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.config import CONFIG
+from energy_box_control.monitoring.monitoring import Notifier
 from energy_box_control.mqtt import (
     create_and_connect_client,
     publish_to_mqtt,
@@ -58,6 +59,7 @@ def publish_survival_mode(mqtt_client: mqtt_client.Client, on: bool):
         json.dumps(
             {"survival": on, "time": datetime.now(timezone.utc)}, cls=DatetimeEncoder
         ),
+        Notifier(),
     )
 
 
@@ -168,11 +170,7 @@ async def test_survival_mode_influx():
     json_string = json.dumps(
         {"survival": True, "time": survival_date}, cls=DatetimeEncoder
     )
-    publish_to_mqtt(
-        mqtt_client,
-        topic,
-        json_string,
-    )
+    publish_to_mqtt(mqtt_client, topic, json_string, Notifier())
 
     start = survival_date - timedelta(days=1)
     stop = survival_date + timedelta(days=1)

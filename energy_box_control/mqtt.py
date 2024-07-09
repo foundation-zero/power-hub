@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import MQTTMessageInfo
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
