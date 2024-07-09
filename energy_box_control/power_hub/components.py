@@ -32,6 +32,7 @@ AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
 COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
 WATER_DEMAND: LiterPerSecond = 10
+PERCENT_WATER_CAPTURED: float = 0.1
 PCM_ZERO_TEMPERATURE = 50
 
 
@@ -166,8 +167,8 @@ def outboard_source(seawater_temperature_schedule: Schedule[Celsius]):
     return Source(float("nan"), seawater_temperature_schedule)
 
 
-def sea_water_source(seawater_temp_schedule: Schedule[Celsius]) -> Source:
-    return Source(float("nan"), seawater_temp_schedule)
+def sea_water_source(seawater_temperature_schedule: Schedule[Celsius]) -> Source:
+    return Source(float(10), seawater_temperature_schedule)
 
 
 cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
@@ -183,9 +184,9 @@ def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPan
     )
 
 
-water_maker_pump = SwitchPump(300 / 60, SWITCH_PUMP_POWER)  # Preliminary specs
-water_maker = WaterMaker(1)
-fresh_water_tank = WaterTank(100)
+water_maker = WaterMaker(0.9, 10)
+fresh_water_tank = WaterTank(1000)
+grey_water_tank = WaterTank(1000)
 
 
 def water_demand(
@@ -194,5 +195,5 @@ def water_demand(
     return WaterDemand(water_demand_flow_schedule)
 
 
-water_treatment = WaterTreatment(0.5)
+water_treatment = WaterTreatment(1)  # Specs unknown
 water_filter_bypass_valve = Valve()

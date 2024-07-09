@@ -16,8 +16,7 @@ class WaterDemandState(ApplianceState):
 
 
 class WaterDemandPort(Port):
-    DEMAND_OUT = "demand_out"
-    GREY_WATER_OUT = "grey_water_out"
+    OUT = "out"
 
 
 @dataclass(frozen=True, eq=True)
@@ -33,10 +32,7 @@ class WaterDemand(WaterAppliance[WaterDemandState, None, WaterDemandPort]):
     ) -> tuple[WaterDemandState, dict[WaterDemandPort, WaterState]]:
 
         return WaterDemandState(), {
-            WaterDemandPort.DEMAND_OUT: WaterState(
+            WaterDemandPort.OUT: WaterState(
                 self.water_demand_flow_schedule.at(simulation_time),
-            ),
-            WaterDemandPort.GREY_WATER_OUT: WaterState(
-                self.water_demand_flow_schedule.at(simulation_time),
-            ),
+            )
         }

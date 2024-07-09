@@ -903,8 +903,6 @@ def control_power_hub(
         .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
-        .control(power_hub.water_maker_pump)
-        .value(SwitchPumpControl(on=True))
         .combine(hot)
         .combine(chill)
         .combine(waste)
@@ -954,8 +952,6 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(YazakiControl(on=False))
         .control(power_hub.chiller)
         .value(ChillerControl(on=False))
-        .control(power_hub.water_maker_pump)
-        .value(SwitchPumpControl(on=False))
         .control(power_hub.water_filter_bypass_valve)
         .value(ValveControl(position=WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION))
         .build()
@@ -991,8 +987,6 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(YazakiControl(on=True))
         .control(power_hub.chiller)
         .value(ChillerControl(on=False))
-        .control(power_hub.water_maker_pump)
-        .value(SwitchPumpControl(on=True))
         .build()
     )
 
