@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import schedule
 from energy_box_control.monitoring.monitoring import (
     Monitor,
@@ -33,10 +33,13 @@ from energy_box_control.power_hub_control import (
     SETPOINTS_TOPIC,
     CONTROL_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
+    combine_survival_setpoints,
     publish_control_modes,
     publish_control_values,
     publish_sensor_values,
     unqueue_setpoints,
+    queue_on_message,
+    unqueue_survival_mode,
 )
 
 import asyncio
@@ -48,17 +51,6 @@ logger = get_logger(__name__)
 control_values_queue: queue.Queue[str] = queue.Queue()
 setpoints_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
-
-
-def queue_on_message(
-    queue: queue.Queue[str],
-    client: mqtt_client.Client,
-    userdata: str,
-    message: mqtt_client.MQTTMessage,
-):
-    decoded_message = str(message.payload.decode("utf-8"))
-    logger.debug(f"Received message: {decoded_message}")
-    queue.put(decoded_message)
 
 
 @dataclass
@@ -80,9 +72,11 @@ class SimulationResult:
 
         publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
-        control_state = replace(
+        control_state = combine_survival_setpoints(
             self.control_state,
             setpoints=unqueue_setpoints() or self.control_state.setpoints,
+            survival_mode=unqueue_survival_mode()
+            or self.control_state.setpoints.survival_mode,
         )
 
         notifier.send_events(
@@ -112,7 +106,6 @@ class SimulationResult:
         publish_sensor_values(
             power_hub.sensors_from_state(state), mqtt_client, notifier
         )
-
         return SimulationResult(self.power_hub, state, control_state)
 
 

@@ -122,7 +122,6 @@ def publish_to_mqtt(
         logger.error(
             f"Failed to send message to topic {topic} with error code: {result.rc}, client connected: {client.is_connected()}"
         )
-
         notifier.send_events(
             [
                 NotificationEvent(

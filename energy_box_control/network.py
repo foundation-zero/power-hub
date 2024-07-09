@@ -90,6 +90,15 @@ class NetworkState(Generic[Net]):
     def appliance[App: AnyAppliance](self, appliance: App) -> StateGetter[App]:
         return StateGetter(appliance, self._appliance_state[appliance])
 
+    def replace_signal[
+        App: AnyAppliance
+    ](self, appliance: App, port: Port, value: Any) -> "NetworkState[Net]":
+        return NetworkState(
+            self._time,
+            self._appliance_state,
+            {**self._signals, (appliance, port): value},
+        )
+
     def has_connection(self, appliance: AnyAppliance, port: Port) -> bool:
         return (appliance, port) in self._signals
 
