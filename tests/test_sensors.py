@@ -3,7 +3,7 @@ from energy_box_control.sensors import sensor_fields
 
 
 def test_hot_reservoir_properties():
-    assert sensor_fields(HotReservoirSensors) == set(
+    assert sensor_fields(HotReservoirSensors, include_properties=True) == set(
         [
             "temperature",
             "fill_input_temperature",
