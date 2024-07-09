@@ -8,6 +8,6 @@ container:
   commands: 
   - "/app/env/bin/python"
   - "-m"
-  - "energy_box_control.monitoring.mqtt_checker.main"
+  - "energy_box_control.monitoring.mqtt_checker"
   env:
     MQTT_USERNAME: power-hub
