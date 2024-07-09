@@ -4,6 +4,7 @@ from functools import reduce
 import json
 from typing import Any, cast
 from energy_box_control.appliances.base import control_class
+from energy_box_control.appliances.water_maker import WaterMakerControl
 from energy_box_control.control.state_machines import (
     Context,
     Functions,
@@ -854,10 +855,10 @@ def survival_control(
     water_control = (
         power_hub.control(power_hub.water_filter_bypass_valve)
         .value(ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION))
-        .control(power_hub.fresh_water_pump)
+        .control(power_hub.hot_water_pump)
         .value(SwitchPumpControl(False))
-        .control(power_hub.water_maker_pump)
-        .value(SwitchPumpControl(on=False))
+        .control(power_hub.water_maker)
+        .value(WaterMakerControl(on=False))
     )
 
     return (
@@ -899,7 +900,7 @@ def control_power_hub(
         .value(BoilerControl(False))
         .control(power_hub.cold_reservoir)
         .value(BoilerControl(False))
-        .control(power_hub.fresh_water_pump)
+        .control(power_hub.hot_water_pump)
         .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
@@ -942,7 +943,7 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(SwitchPumpControl(on=False))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=False))
-        .control(power_hub.fresh_water_pump)
+        .control(power_hub.hot_water_pump)
         .value(SwitchPumpControl(on=False))
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=False))
@@ -977,7 +978,7 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(SwitchPumpControl(on=True))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
-        .control(power_hub.fresh_water_pump)
+        .control(power_hub.hot_water_pump)
         .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))

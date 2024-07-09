@@ -185,7 +185,7 @@ class PowerHub(Network[PowerHubSensors]):
     preheat_reservoir: Boiler  # W-1008
     preheat_mix: Mix
     waste_pump: SwitchPump  # P-1004
-    fresh_water_pump: SwitchPump
+    hot_water_pump: SwitchPump
     fresh_water_source: Source
     outboard_exchange: HeatExchanger  # W-1007
     outboard_pump: SwitchPump  # P-1002
@@ -202,6 +202,8 @@ class PowerHub(Network[PowerHubSensors]):
     grey_water_supply: WaterDemand
     water_treatment: WaterTreatment
     water_filter_bypass_valve: Valve
+    mock_water_source: Source
+    ignore_mock_temperature: IgnoreTemperature
 
     schedules: "PowerHubSchedules"
 
@@ -238,7 +240,7 @@ class PowerHub(Network[PowerHubSensors]):
             phc.preheat_reservoir(schedules.ambient_temperature),
             phc.preheat_mix,
             phc.waste_pump,
-            phc.fresh_water_pump,
+            phc.hot_water_pump,
             phc.fresh_water_source(schedules.fresh_water_temperature),
             phc.outboard_exchange,
             phc.outboard_pump,
@@ -255,6 +257,8 @@ class PowerHub(Network[PowerHubSensors]):
             phc.water_demand(schedules.grey_water_supply),
             phc.water_treatment,
             phc.water_filter_bypass_valve,
+            phc.mock_water_source,
+            IgnoreTemperature(),
             schedules,
         )
 
@@ -324,7 +328,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(power_hub.outboard_source)
             .value(SourceState())
-            .define_state(power_hub.fresh_water_pump)
+            .define_state(power_hub.hot_water_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.fresh_water_source)
             .value(SourceState())
@@ -346,6 +350,10 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.cooling_demand_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.sea_water_temperature_filter)
+            .value(ApplianceState())
+            .define_state(power_hub.mock_water_source)
+            .value(SourceState())
+            .define_state(power_hub.ignore_mock_temperature)
             .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
@@ -427,7 +435,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.outboard_source)
             .value(SourceState())
-            .define_state(self.fresh_water_pump)
+            .define_state(self.hot_water_pump)
             .value(SwitchPumpState())
             .define_state(self.fresh_water_source)
             .value(SourceState())
@@ -469,6 +477,10 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_treatment)
             .at(WaterTreatmentPort.OUT)
             .value(WaterState(1))
+            .define_state(self.mock_water_source)
+            .value(SourceState())
+            .define_state(self.ignore_mock_temperature)
+            .value(ApplianceState())
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -497,13 +509,11 @@ class PowerHub(Network[PowerHubSensors]):
         pcm_yazaki = self._pcm_yazaki_feedback()
         chilled_side = self._chilled_side_feedback()
         waste_side = self._waste_side_feedback()
-        fresh_water = self._fresh_water_feedback()
 
         return (
             pipes_pcm.combine(pcm_yazaki)
             .combine(chilled_side)
             .combine(waste_side)
-            .combine(fresh_water)
             .build()
         )
 
@@ -769,10 +779,10 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self.connect(self.fresh_water_source)
             .at(SourcePort.OUTPUT)
-            .to(self.fresh_water_pump)
+            .to(self.hot_water_pump)
             .at(SwitchPumpPort.IN)
 
-            .connect(self.fresh_water_pump)
+            .connect(self.hot_water_pump)
             .at(SwitchPumpPort.OUT)
             .to(self.preheat_reservoir)
             .at(BoilerPort.FILL_IN)
@@ -817,16 +827,23 @@ class PowerHub(Network[PowerHubSensors]):
             .at(WaterTreatmentPort.IN)
             .to(self.grey_water_tank)
             .at(WaterTankPort.CONSUMPTION) 
-        )
-        # fmt: on
 
-    def _fresh_water_feedback(self):
-        return (
-            self.define_feedback(self.water_treatment)
+            .connect(self.water_treatment)
             .at(WaterTreatmentPort.OUT)
             .to(self.fresh_water_tank)
             .at(WaterTankPort.IN_1)
+
+            .connect(self.mock_water_source)
+            .at(SourcePort.OUTPUT)
+            .to(self.ignore_mock_temperature)
+            .at(IgnoreTemperaturePort.INPUT)
+
+            .connect(self.ignore_mock_temperature)
+            .at(IgnoreTemperaturePort.OUTPUT)
+            .to(self.grey_water_tank)
+            .at(WaterTankPort.IN_1)
         )
+        # fmt: on
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         context = PowerHubSensors.context()

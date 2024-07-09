@@ -36,6 +36,7 @@ class WaterTank(WaterAppliance[WaterTankState, None, WaterTankPort]):
         control: None,
         simulation_time: ProcessTime,
     ) -> tuple[WaterTankState, dict[WaterTankPort, WaterState]]:
+
         new_fill = (
             previous_state.fill
             + (inputs[WaterTankPort.IN_0].flow * simulation_time.step_seconds)

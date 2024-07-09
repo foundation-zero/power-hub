@@ -22,7 +22,7 @@ def test_water_treatment(simulation_time):
 
     _, output = water_treatment.simulate(
         {WaterTreatmentPort.IN: WaterState(flow_in)},
-        WaterTreatmentState(),
+        WaterTreatmentState(on=True),
         None,
         simulation_time,
     )

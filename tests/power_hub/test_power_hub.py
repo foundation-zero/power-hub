@@ -6,6 +6,7 @@ from energy_box_control.appliances import (
     HeatPipesPort,
 )
 from energy_box_control.appliances.boiler import BoilerPort
+from energy_box_control.appliances.water_maker import WaterMakerState
 from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
 from dataclasses import replace
@@ -39,6 +40,7 @@ def power_hub_const() -> PowerHub:
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
             ConstSchedule(phc.WATER_DEMAND),
+            ConstSchedule(phc.PERCENT_WATER_CAPTURED * phc.WATER_DEMAND),
         )
     )
 
@@ -333,9 +335,9 @@ def test_water_filter_stop(
 
 @mark.parametrize(
     "cooling_in_temperature, water_maker_on, outboard_pump_on",
-    [(26, True, True), (35, True, True), (35, True, True), (25, False, False)],
+    [(10, True, True), (50, True, True), (50, False, True), (10, False, False)],
 )
-def test_waste_pump_water_maker(
+def test_waste_pump_water_maker_on(
     scheduled_power_hub,
     state,
     control_state,
@@ -345,11 +347,14 @@ def test_waste_pump_water_maker(
     water_maker_on,
     outboard_pump_on,
 ):
+
     control_state, control_values = control_power_hub(
         scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
+
     state = scheduled_power_hub.simulate(state, control_values)
     sensors = scheduled_power_hub.sensors_from_state(state)
+
     sensors.waste_switch_valve.input_temperature = cooling_in_temperature
     sensors.water_maker.on = water_maker_on
 

@@ -153,7 +153,7 @@ waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 waste_switch_valve = Valve()
 waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
-fresh_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
+hot_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
 
 
 def fresh_water_source(freshwater_temperature_schedule: Schedule[Celsius]):
@@ -184,9 +184,10 @@ def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPan
     )
 
 
-water_maker = WaterMaker(0.9, 10)
+water_maker = WaterMaker(0.9)
 fresh_water_tank = WaterTank(1000)
 grey_water_tank = WaterTank(1000)
+mock_water_source = Source(0, ConstSchedule(1))
 
 
 def water_demand(

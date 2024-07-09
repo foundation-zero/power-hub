@@ -7,7 +7,6 @@ from energy_box_control.appliances.base import (
     Port,
 )
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -27,15 +26,14 @@ class WaterMakerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterMaker(WaterAppliance[WaterMakerState, None, WaterMakerPort]):
+class WaterMaker(WaterAppliance[WaterMakerState, WaterMakerControl, WaterMakerPort]):
     efficiency: float
-    pump_flow: LiterPerSecond
 
     def simulate(
         self,
         inputs: dict[WaterMakerPort, WaterState],
         previous_state: WaterMakerState,
-        control: WaterMakerControl | None,
+        control: WaterMakerControl,
         simulation_time: ProcessTime,
     ) -> tuple[WaterMakerState, dict[WaterMakerPort, WaterState]]:
 
