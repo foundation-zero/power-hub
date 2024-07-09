@@ -1,5 +1,5 @@
 variable "pagerduty_mqtt_checker_key" {
-  description = "PagerDuty key"
+  description = "MQTT Checker PagerDuty integration key"
 }
 
 resource "helm_release" "power_hub_mqtt_checker" {
