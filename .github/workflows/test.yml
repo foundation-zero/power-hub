@@ -7,6 +7,10 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +59,36 @@ jobs:
       
       - name: Run simulation notebook
         run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
-  
+      
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.7.1
+      
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.SERVICE_ACCOUNT}}
+      
+      - run: tofu init
+        working-directory: ./infra
+      
+      - run: tofu plan 
+        working-directory: ./infra
+        env:
+          TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
+          TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+          TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
+          TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
+          TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
+          TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
+          TF_VAR_pagerduty_simulation_key: ${{secrets.PAGERDUTY_SIMULATION_KEY}}
+          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PAGERDUTY_MQTT_CHECKER_KEY}}
+          TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_send_notifications: false
+
   deploy:
     timeout-minutes: 10
     if: github.ref == 'refs/heads/main'
