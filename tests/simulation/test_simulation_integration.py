@@ -1,6 +1,5 @@
 from http import HTTPStatus
 import json
-import os
 import aiohttp
 import pytest
 import requests
