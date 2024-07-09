@@ -291,7 +291,7 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
     return _decorator
 
 
-def sensor_fields(sensor_cls: Any) -> set[str]:
+def sensor_fields(sensor_cls: Any, include_properties: bool = False) -> set[str]:
     return set(
         [
             field_name
@@ -302,7 +302,8 @@ def sensor_fields(sensor_cls: Any) -> set[str]:
         [
             field_name
             for field_name, field_value in getmembers(sensor_cls)
-            if type(field_value) == property or type(field_value) == Sensor
+            if (include_properties and type(field_value) == property)
+            or type(field_value) == Sensor
         ]
     )
 
@@ -311,24 +312,28 @@ def is_sensor(cls: Any) -> bool:
     return hasattr(cls, "is_sensor") and cls.is_sensor
 
 
-class SensorEncoder(json.JSONEncoder):
+def sensor_encoder(include_properties: bool = False):
 
-    def default(self, o: Any):
-        if type(o) == datetime:
-            return o.isoformat()
-        if is_sensor(o):
-            return {
-                field: getattr(o, field)
-                for field in sensor_fields(type(o))
-                if not math.isnan(getattr(o, field))
-            }
-        if hasattr(o, "__dict__"):
-            return {attr: value for attr, value in o.__dict__.items()}
-        if type(o) == UUID:
-            return o.hex
-        else:
-            return json.JSONEncoder.default(self, o)
+    class SensorEncoder(json.JSONEncoder):
+
+        def default(self, o: Any):
+            if type(o) == datetime:
+                return o.isoformat()
+            if is_sensor(o):
+                return {
+                    field: getattr(o, field)
+                    for field in sensor_fields(type(o), include_properties)
+                    if not math.isnan(getattr(o, field))
+                }
+            if hasattr(o, "__dict__"):
+                return {attr: value for attr, value in o.__dict__.items()}
+            if type(o) == UUID:
+                return o.hex
+            else:
+                return json.JSONEncoder.default(self, o)
+
+    return SensorEncoder
 
 
-def sensors_to_json(sensors: Any):
-    return json.dumps(sensors, cls=SensorEncoder)
+def sensors_to_json(sensors: Any, include_properties: bool = False):
+    return json.dumps(sensors, cls=sensor_encoder(include_properties))

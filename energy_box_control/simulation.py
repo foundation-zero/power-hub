@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-import json
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import schedule
 from energy_box_control.monitoring.monitoring import (
     Monitor,
@@ -10,11 +9,9 @@ from energy_box_control.monitoring.monitoring import (
 )
 from energy_box_control.custom_logging import get_logger
 import queue
-from queue import Empty
 from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
     PowerHubControlState,
-    Setpoints,
     control_from_json,
     control_power_hub,
     initial_control_state,
@@ -26,7 +23,6 @@ from energy_box_control.monitoring.checks import sensor_checks
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
-    publish_to_mqtt,
     run_listener,
 )
 from paho.mqtt import client as mqtt_client
@@ -34,10 +30,14 @@ from paho.mqtt import client as mqtt_client
 from functools import partial
 
 from energy_box_control.power_hub_control import (
+    SETPOINTS_TOPIC,
+    CONTROL_VALUES_TOPIC,
+    SENSOR_VALUES_TOPIC,
     publish_control_modes,
     publish_control_values,
+    publish_sensor_values,
+    unqueue_setpoints,
 )
-from energy_box_control.sensors import sensors_to_json
 
 import asyncio
 from energy_box_control.config import CONFIG
@@ -45,14 +45,9 @@ from energy_box_control.config import CONFIG
 logger = get_logger(__name__)
 
 
-MQTT_TOPIC_BASE = "power_hub"
-CONTROL_VALUES_TOPIC = "power_hub/control_values"
-CONTROL_MODES_TOPIC = "power_hub/control_modes"
-SENSOR_VALUES_TOPIC = "power_hub/sensor_values"
-SETPOINTS_TOPIC = "power_hub/setpoints"
 control_values_queue: queue.Queue[str] = queue.Queue()
-sensor_values_queue: queue.Queue[str] = queue.Queue()
 setpoints_queue: queue.Queue[str] = queue.Queue()
+sensor_values_queue: queue.Queue[str] = queue.Queue()
 
 
 def queue_on_message(
@@ -83,21 +78,12 @@ class SimulationResult:
             sensor_values_queue.get(block=True)
         )
 
-        try:
-            power_hub_control_setpoints_json = setpoints_queue.get(block=False)
-            try:
-                self.control_state.setpoints = Setpoints(
-                    **json.loads(power_hub_control_setpoints_json)
-                )
-                logger.info(
-                    f"Processed new setpoints successfully: {power_hub_control_setpoints_json}"
-                )
-            except TypeError as e:
-                logger.error(
-                    f"Couldn't process received setpoints ({power_hub_control_setpoints_json}) with error: {e}"
-                )
-        except Empty:
-            pass
+        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
+
+        control_state = replace(
+            self.control_state,
+            setpoints=unqueue_setpoints() or self.control_state.setpoints,
+        )
 
         notifier.send_events(
             monitor.run_sensor_values_checks(
@@ -108,7 +94,7 @@ class SimulationResult:
 
         control_state, control_values = control_power_hub(
             self.power_hub,
-            self.control_state,
+            control_state,
             power_hub_sensors,
             self.state.time.timestamp,
         )
@@ -123,12 +109,8 @@ class SimulationResult:
 
         state = self.power_hub.simulate(self.state, control_values)
 
-        power_hub_sensors = self.power_hub.sensors_from_state(state)
-        publish_to_mqtt(
-            mqtt_client,
-            SENSOR_VALUES_TOPIC,
-            sensors_to_json(power_hub_sensors),
-            notifier,
+        publish_sensor_values(
+            power_hub.sensors_from_state(state), mqtt_client, notifier
         )
 
         return SimulationResult(self.power_hub, state, control_state)
@@ -155,11 +137,8 @@ async def run(
         no_control(power_hub),
     )
     control_state = initial_control_state()
-    power_hub_sensors = power_hub.sensors_from_state(state)
 
-    publish_to_mqtt(
-        mqtt_client, SENSOR_VALUES_TOPIC, sensors_to_json(power_hub_sensors), notifier
-    )
+    publish_sensor_values(power_hub.sensors_from_state(state), mqtt_client, notifier)
 
     result = SimulationResult(power_hub, state, control_state)
 

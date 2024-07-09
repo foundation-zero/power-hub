@@ -67,7 +67,7 @@ def values_query(
         fluxy.from_bucket(CONFIG.influxdb_telegraf_bucket),
         fluxy.range(start, stop),
         fluxy.filter(field_filter),
-        fluxy.filter(lambda r: r.topic == "power_hub/sensor_values"),
+        fluxy.filter(lambda r: r.topic == "power_hub/enriched_sensor_values"),
         fluxy.keep(keep),
     )
     if pivot:
