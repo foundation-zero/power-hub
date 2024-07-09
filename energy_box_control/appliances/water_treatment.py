@@ -26,14 +26,16 @@ class WaterTreatmentPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterTreatment(WaterAppliance[WaterTreatmentState, None, WaterTreatmentPort]):
+class WaterTreatment(
+    WaterAppliance[WaterTreatmentState, WaterTreatmentControl, WaterTreatmentPort]
+):
     pump_flow: LiterPerSecond
 
     def simulate(
         self,
         inputs: dict[WaterTreatmentPort, WaterState],
         previous_state: WaterTreatmentState,
-        control: WaterTreatmentControl | None,
+        control: WaterTreatmentControl,
         simulation_time: ProcessTime,
     ) -> tuple[WaterTreatmentState, dict[WaterTreatmentPort, WaterState]]:
 

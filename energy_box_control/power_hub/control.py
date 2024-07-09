@@ -5,6 +5,7 @@ import json
 from typing import Any, cast
 from energy_box_control.appliances.base import control_class
 from energy_box_control.appliances.water_maker import WaterMakerControl
+from energy_box_control.appliances.water_treatment import WaterTreatmentControl
 from energy_box_control.control.state_machines import (
     Context,
     Functions,
@@ -109,6 +110,17 @@ class WaterControlState:
     control_mode: WaterControlMode
 
 
+class WaterTreatmentControlMode(State):
+    RUN = "run"
+    NO_RUN = "no_run"
+
+
+@dataclass
+class WaterTreatmentControlState:
+    context: Context
+    control_mode: WaterTreatmentControlMode
+
+
 def setpoint(description: str):
     return field(metadata={"description": description})
 
@@ -158,6 +170,8 @@ class Setpoints:
     cooling_in_max_temperature: Celsius = setpoint(
         "maximum temperature of the cooling in temperature"
     )
+    water_treatment_max_fill: float = setpoint("maximum level of grey water tank")
+    water_treatment_min_fill: float = setpoint("minimum level of grey water tank")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
@@ -170,6 +184,7 @@ class PowerHubControlState:
     waste_control: WasteControlState
     preheat_control: PreHeatControlState
     water_control: WaterControlState
+    water_treatment_control: WaterTreatmentControlState
     setpoints: Setpoints
 
 
@@ -194,6 +209,8 @@ def initial_control_state() -> PowerHubControlState:
             minimum_preheat_offset=1,
             cooling_in_min_temperature=25,
             cooling_in_max_temperature=33,
+            water_treatment_max_fill=0.5,
+            water_treatment_min_fill=0.1,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
@@ -223,6 +240,9 @@ def initial_control_state() -> PowerHubControlState:
         ),
         water_control=WaterControlState(
             context=Context(), control_mode=WaterControlMode.READY
+        ),
+        water_treatment_control=WaterTreatmentControlState(
+            context=Context(), control_mode=WaterTreatmentControlMode.NO_RUN
         ),
     )
 
@@ -753,6 +773,54 @@ def water_control(
     )
 
 
+should_treat = Fn.pred(
+    lambda control_state, sensors: sensors.grey_water_tank.percentage_fill
+    > control_state.setpoints.water_treatment_max_fill
+)
+
+stop_treat = Fn.pred(
+    lambda control_state, sensors: sensors.grey_water_tank.percentage_fill
+    < control_state.setpoints.water_treatment_min_fill
+)
+
+water_treatment_transitions: dict[
+    tuple[WaterTreatmentControlMode, WaterTreatmentControlMode],
+    Predicate[PowerHubControlState, PowerHubSensors],
+] = {
+    (WaterTreatmentControlMode.NO_RUN, WaterTreatmentControlMode.RUN): should_treat,
+    (WaterTreatmentControlMode.RUN, WaterTreatmentControlMode.NO_RUN): stop_treat,
+}
+
+water_treatment_control_machine = StateMachine(
+    WaterTreatmentControlMode, water_treatment_transitions
+)
+
+
+def water_treatment_control(
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: datetime,
+):
+
+    water_treatment_control_mode, context = water_treatment_control_machine.run(
+        control_state.water_treatment_control.control_mode,
+        control_state.water_treatment_control.context,
+        control_state,
+        sensors,
+        time,
+    )
+
+    return (
+        WaterTreatmentControlState(context, water_treatment_control_mode),
+        power_hub.control(power_hub.water_treatment).value(
+            WaterTreatmentControl(
+                water_treatment_control_mode == WaterTreatmentControlMode.RUN
+            )
+        ),
+    )
+
+
 def survival_control_state(control_state: PowerHubControlState) -> PowerHubControlState:
     return PowerHubControlState(
         hot_control=HotControlState(
@@ -776,6 +844,10 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
         ),
         preheat_control=PreHeatControlState(
             control_state.preheat_control.context, PreHeatControlMode.NO_PREHEAT
+        ),
+        water_treatment_control=WaterTreatmentControlState(
+            control_state.water_treatment_control.context,
+            WaterTreatmentControlMode.NO_RUN,
         ),
         setpoints=control_state.setpoints,
     )
@@ -892,6 +964,9 @@ def control_power_hub(
         power_hub, control_state, sensors, time
     )
     water_control_state, water = water_control(power_hub, control_state, sensors, time)
+    water_treatment_control_state, water_treatment = water_treatment_control(
+        power_hub, control_state, sensors, time
+    )
 
     control = (
         power_hub.control(power_hub.hot_reservoir)
@@ -909,6 +984,7 @@ def control_power_hub(
         .combine(waste)
         .combine(preheat)
         .combine(water)
+        .combine(water_treatment)
         .build()
     )
 
@@ -919,6 +995,7 @@ def control_power_hub(
             waste_control=waste_control_state,
             preheat_control=preheat_control_state,
             water_control=water_control_state,
+            water_treatment_control=water_treatment_control_state,
             setpoints=control_state.setpoints,
         ),
         control,

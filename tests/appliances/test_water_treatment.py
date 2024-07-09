@@ -4,6 +4,7 @@ from pytest import fixture
 from energy_box_control.appliances.base import WaterState
 from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
+    WaterTreatmentControl,
     WaterTreatmentPort,
     WaterTreatmentState,
 )
@@ -16,15 +17,14 @@ def simulation_time():
 
 
 def test_water_treatment(simulation_time):
-    efficiency = 0.5
-    flow_in = 1
-    water_treatment = WaterTreatment(efficiency)
+    flow_in = 3
+    water_treatment = WaterTreatment(1)
 
     _, output = water_treatment.simulate(
         {WaterTreatmentPort.IN: WaterState(flow_in)},
         WaterTreatmentState(on=True),
-        None,
+        WaterTreatmentControl(on=True),
         simulation_time,
     )
 
-    assert output[WaterTreatmentPort.OUT].flow == flow_in * efficiency
+    assert output[WaterTreatmentPort.OUT].flow == 1
