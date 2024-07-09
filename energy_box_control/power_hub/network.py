@@ -28,7 +28,6 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import (
     ApplianceState,
     ThermalState,
-    WaterState,
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
@@ -466,9 +465,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(WaterDemandState())
             .define_state(self.water_treatment)
             .value(WaterTreatmentState(True))
-            .define_state(self.water_treatment)
-            .at(WaterTreatmentPort.OUT)
-            .value(WaterState(1))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
