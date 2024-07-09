@@ -366,3 +366,35 @@ def test_waste_pump_water_maker_on(
         control_values.appliance(scheduled_power_hub.outboard_pump).get().on
         == outboard_pump_on
     )
+
+
+def test_water_treatment(
+    scheduled_power_hub, state, control_state, control_values, sensors
+):
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    state = scheduled_power_hub.simulate(state, control_values)
+    sensors = scheduled_power_hub.sensors_from_state(state)
+
+    sensors.grey_water_tank.fill = 0.9 * 1000
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    assert (
+        control_values.appliance(scheduled_power_hub.water_treatment).get().on == True
+    )
+
+    sensors.grey_water_tank.fill = 0.09 * 1000
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    assert (
+        control_values.appliance(scheduled_power_hub.water_treatment).get().on == False
+    )
