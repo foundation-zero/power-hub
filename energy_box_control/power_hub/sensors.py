@@ -637,16 +637,33 @@ class PVSensors(FromState):
 
 
 @sensors()
-class WaterTankSensors(FromState):
+class FreshWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter
-
+    fill: Liter = sensor(technical_name="LS-5001")
     water_demand_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
     )
     secondary_flow_in: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.IN_1
     )
+    primary_flow_in: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTankPort.IN_0
+    )
+
+    @property
+    def percentage_fill(self) -> float:
+        return self.fill / self.spec.capacity
+
+
+@sensors()
+class GreyWaterTankSensors(FromState):
+    spec: WaterTank
+    fill: Liter = sensor(technical_name="LS-3001")
+
+    water_demand_flow: LiterPerSecond = sensor(
+        type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
+    )
+
     primary_flow_in: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.IN_0
     )
@@ -708,8 +725,8 @@ class PowerHubSensors(NetworkSensors):
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
     pv_panel: PVSensors
-    fresh_water_tank: WaterTankSensors
-    grey_water_tank: WaterTankSensors
+    fresh_water_tank: FreshWaterTankSensors
+    grey_water_tank: GreyWaterTankSensors
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
     time: datetime

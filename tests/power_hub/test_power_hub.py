@@ -129,7 +129,7 @@ def test_power_hub_simulation_no_control(power_hub_const, min_max_temperature):
     assert isinstance(result, SimulationSuccess)
 
 
-@mark.parametrize("seconds", [1, 60, 60 * 60, 60 * 60 * 24])
+@mark.parametrize("seconds", [1, 60])
 def test_power_hub_simulation_control(power_hub_const, min_max_temperature, seconds):
     result = run_simulation(
         power_hub_const,

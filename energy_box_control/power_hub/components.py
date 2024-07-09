@@ -187,7 +187,6 @@ def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPan
 water_maker = WaterMaker(0.9)
 fresh_water_tank = WaterTank(1000)
 grey_water_tank = WaterTank(1000)
-mock_water_source = Source(0, ConstSchedule(1))
 
 
 def water_demand(

@@ -202,8 +202,6 @@ class PowerHub(Network[PowerHubSensors]):
     grey_water_supply: WaterDemand
     water_treatment: WaterTreatment
     water_filter_bypass_valve: Valve
-    mock_water_source: Source
-    ignore_mock_temperature: IgnoreTemperature
 
     schedules: "PowerHubSchedules"
 
@@ -257,8 +255,6 @@ class PowerHub(Network[PowerHubSensors]):
             phc.water_demand(schedules.grey_water_supply),
             phc.water_treatment,
             phc.water_filter_bypass_valve,
-            phc.mock_water_source,
-            IgnoreTemperature(),
             schedules,
         )
 
@@ -350,10 +346,6 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.cooling_demand_pump)
             .value(SwitchPumpState())
             .define_state(power_hub.sea_water_temperature_filter)
-            .value(ApplianceState())
-            .define_state(power_hub.mock_water_source)
-            .value(SourceState())
-            .define_state(power_hub.ignore_mock_temperature)
             .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
@@ -465,9 +457,9 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_maker)
             .value(WaterMakerState(True))
             .define_state(self.fresh_water_tank)
-            .value(WaterTankState(50))
+            .value(WaterTankState(500))
             .define_state(self.grey_water_tank)
-            .value(WaterTankState(50))
+            .value(WaterTankState(500))
             .define_state(self.fresh_water_demand)
             .value(WaterDemandState())
             .define_state(self.grey_water_supply)
@@ -477,10 +469,6 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_treatment)
             .at(WaterTreatmentPort.OUT)
             .value(WaterState(1))
-            .define_state(self.mock_water_source)
-            .value(SourceState())
-            .define_state(self.ignore_mock_temperature)
-            .value(ApplianceState())
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -831,16 +819,6 @@ class PowerHub(Network[PowerHubSensors]):
             .connect(self.water_treatment)
             .at(WaterTreatmentPort.OUT)
             .to(self.fresh_water_tank)
-            .at(WaterTankPort.IN_1)
-
-            .connect(self.mock_water_source)
-            .at(SourcePort.OUTPUT)
-            .to(self.ignore_mock_temperature)
-            .at(IgnoreTemperaturePort.INPUT)
-
-            .connect(self.ignore_mock_temperature)
-            .at(IgnoreTemperaturePort.OUTPUT)
-            .to(self.grey_water_tank)
             .at(WaterTankPort.IN_1)
         )
         # fmt: on
