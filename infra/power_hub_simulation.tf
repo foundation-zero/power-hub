@@ -3,7 +3,7 @@ variable "python_app_image_tag" {
 }
 
 variable "pagerduty_simulation_key" {
-  description = "PagerDuty key"
+  description = "Simulation PagerDuty integration key"
 }
 
 variable "send_notifications" {
