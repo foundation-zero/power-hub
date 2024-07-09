@@ -176,10 +176,8 @@ async def run():
             )
         )
 
-        control_state = (
-            replace(control_state, setpoints=setpoints)
-            if (setpoints := unqueue_setpoints())
-            else control_state
+        control_state = replace(
+            control_state, setpoints=unqueue_setpoints() or control_state.setpoints
         )
 
         control_state, control_values = control_power_hub(

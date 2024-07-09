@@ -80,10 +80,9 @@ class SimulationResult:
 
         publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
-        control_state = (
-            replace(self.control_state, setpoints=setpoints)
-            if (setpoints := unqueue_setpoints())
-            else self.control_state
+        control_state = replace(
+            self.control_state,
+            setpoints=unqueue_setpoints() or self.control_state.setpoints,
         )
 
         notifier.send_events(
