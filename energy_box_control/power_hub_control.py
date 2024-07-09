@@ -177,6 +177,13 @@ def unqueue_survival_mode() -> bool | None:
         return None
 
 
+def combine_survival_setpoints(
+    control_state: PowerHubControlState, setpoints: Setpoints, survival_mode: bool
+):
+    setpoints = replace(setpoints, survival_mode=survival_mode)
+    return replace(control_state, setpoints=setpoints)
+
+
 async def run(steps: Optional[int] = None):
 
     mqtt_client = create_and_connect_client()
@@ -209,7 +216,7 @@ async def run(steps: Optional[int] = None):
             )
         )
 
-        control_state = replace(
+        control_state = combine_survival_setpoints(
             control_state,
             setpoints=unqueue_setpoints() or control_state.setpoints,
             survival_mode=unqueue_survival_mode()

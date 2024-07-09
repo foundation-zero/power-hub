@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import schedule
 from energy_box_control.monitoring.monitoring import (
     Monitor,
@@ -33,6 +33,7 @@ from energy_box_control.power_hub_control import (
     SETPOINTS_TOPIC,
     CONTROL_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
+    combine_survival_setpoints,
     publish_control_modes,
     publish_control_values,
     publish_sensor_values,
@@ -71,10 +72,11 @@ class SimulationResult:
 
         publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
-        control_state = replace(
+        control_state = combine_survival_setpoints(
             self.control_state,
             setpoints=unqueue_setpoints() or self.control_state.setpoints,
-            survival_mode=unqueue_survival_mode() or self.control_state.survival_mode
+            survival_mode=unqueue_survival_mode()
+            or self.control_state.setpoints.survival_mode,
         )
 
         notifier.send_events(
