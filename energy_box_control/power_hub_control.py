@@ -8,6 +8,7 @@ import json
 import queue
 from typing import Any, Optional
 from paho.mqtt import client as mqtt_client
+
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.monitoring.monitoring import (
@@ -36,6 +37,7 @@ from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import sensors_to_json
 
+
 logger = get_logger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
@@ -44,10 +46,12 @@ SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/sensor_values"
 CONTROL_MODES_TOPIC = f"{MQTT_TOPIC_BASE}/control_modes"
 ENRICHED_SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/enriched_sensor_values"
 SETPOINTS_TOPIC = f"{MQTT_TOPIC_BASE}/setpoints"
+SURVIVAL_MODE_TOPIC = f"{MQTT_TOPIC_BASE}/survival"
 
 
 sensor_values_queue: queue.Queue[str] = queue.Queue()
 setpoints_queue: queue.Queue[str] = queue.Queue()
+survival_queue: queue.Queue[str] = queue.Queue()
 
 
 @dataclass
@@ -78,6 +82,26 @@ def queue_on_message(
     decoded_message = str(message.payload.decode("utf-8"))
     logger.debug(f"Received message: {decoded_message}")
     queue.put(decoded_message)
+
+
+def get_setpoints(control_state: PowerHubControlState):
+    try:
+        power_hub_control_setpoints_json = setpoints_queue.get(block=False)
+        try:
+            control_state.setpoints = Setpoints(
+                **json.loads(power_hub_control_setpoints_json)
+            )
+            logger.info(
+                f"Processed new setpoints successfully: {power_hub_control_setpoints_json}"
+            )
+        except TypeError as e:
+            logger.error(
+                f"Couldn't process received setpoints ({power_hub_control_setpoints_json}) with error: {e}"
+            )
+    except queue.Empty:
+        pass
+
+    return control_state
 
 
 def publish_control_modes(
@@ -146,7 +170,21 @@ def unqueue_setpoints() -> Optional[Setpoints]:
     return None
 
 
-async def run():
+def unqueue_survival_mode() -> bool | None:
+    try:
+        return json.loads(survival_queue.get(block=False))["survival"]
+    except queue.Empty:
+        return None
+
+
+def combine_survival_setpoints(
+    control_state: PowerHubControlState, setpoints: Setpoints, survival_mode: bool
+):
+    setpoints = replace(setpoints, survival_mode=survival_mode)
+    return replace(control_state, setpoints=setpoints)
+
+
+async def run(steps: Optional[int] = None):
 
     mqtt_client = create_and_connect_client()
     await run_listener(
@@ -154,6 +192,8 @@ async def run():
     )
 
     await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
+
+    await run_listener(SURVIVAL_MODE_TOPIC, partial(queue_on_message, survival_queue))
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(url_health_checks=service_checks)
@@ -176,16 +216,17 @@ async def run():
             )
         )
 
-        control_state = replace(
-            control_state, setpoints=unqueue_setpoints() or control_state.setpoints
+        control_state = combine_survival_setpoints(
+            control_state,
+            setpoints=unqueue_setpoints() or control_state.setpoints,
+            survival_mode=unqueue_survival_mode()
+            or control_state.setpoints.survival_mode,
         )
-
         control_state, control_values = control_power_hub(
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
         )
 
         publish_control_modes(mqtt_client, control_state, notifier)
-
         publish_control_values(mqtt_client, power_hub, control_values, notifier)
 
 
