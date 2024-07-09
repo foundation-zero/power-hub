@@ -159,7 +159,7 @@ class Setpoints:
     )
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
-    survival_mode: bool = setpoint("survival mode on/of")
+    survival_mode: bool = setpoint("survival mode on/off")
 
 
 @dataclass
@@ -781,14 +781,14 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
 
 
 def survival_control(
-    power_hub: PowerHub, control_state: PowerHubControlState
+    power_hub: PowerHub, sensors: PowerHubSensors, control_state: PowerHubControlState
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     control_state = survival_control_state(control_state)
 
-    # cold_reservoir
-
     hot_control = (
         power_hub.control(power_hub.heat_pipes_power_hub_pump)
+        .value(SwitchPumpControl(on=False))
+        .control(power_hub.heat_pipes_supply_box_pump)
         .value(SwitchPumpControl(on=False))
         .control(power_hub.heat_pipes_valve)
         .value(ValveControl(HEAT_PIPES_BYPASS_OPEN_POSITION))
@@ -799,6 +799,23 @@ def survival_control(
         .control(power_hub.preheat_reservoir)
         .value(BoilerControl(False))
     )
+
+    valves_in_position = all(
+        [
+            sensors.chiller_switch_valve.in_position(
+                CHILLER_SWITCH_VALVE_CHILLER_POSITION
+            ),
+            sensors.waste_switch_valve.in_position(WASTE_SWITCH_VALVE_CHILLER_POSITION),
+            sensors.waste_bypass_valve.in_position(WASTE_BYPASS_VALVE_CLOSED_POSITION),
+            sensors.preheat_switch_valve.in_position(
+                PREHEAT_SWITCH_VALVE_PREHEAT_POSITION
+            ),
+        ]
+    )
+
+    # not using a state machine here to keep loop simpler and to avoid adding state
+    run_pumps = valves_in_position
+    run_chiller = valves_in_position
 
     chill_control = (
         power_hub.control(power_hub.chiller_switch_valve)
@@ -814,13 +831,13 @@ def survival_control(
         .control(power_hub.yazaki)
         .value(YazakiControl(False))
         .control(power_hub.chiller)
-        .value(ChillerControl(True))
+        .value(ChillerControl(run_chiller))
         .control(power_hub.waste_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(run_pumps))
         .control(power_hub.chilled_loop_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(run_pumps))
         .control(power_hub.cooling_demand_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(SwitchPumpControl(on=run_pumps))
         .control(power_hub.yazaki)
         .value(YazakiControl(on=False))
         .control(power_hub.cold_reservoir)
@@ -829,7 +846,7 @@ def survival_control(
 
     waste_control = (
         power_hub.control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(run_pumps))
         .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))
     )
@@ -865,7 +882,7 @@ def control_power_hub(
     # Survival: # everything off except for chiller
 
     if control_state.setpoints.survival_mode:
-        return survival_control(power_hub, control_state)
+        return survival_control(power_hub, sensors, control_state)
 
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
