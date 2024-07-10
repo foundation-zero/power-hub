@@ -26,23 +26,13 @@ defineProps<{ amountOfPages: number }>();
 span {
   position: relative;
   display: inline-flex;
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   border-radius: 100%;
-  background-color: #d9d9d9;
+  background-color: #fff;
 
   &.active {
-    background-color: #a9a9a9;
-  }
-
-  &:not([data-page="1"]):before {
-    content: "";
-    width: 10px;
-    height: 2px;
-    background-color: #d9d9d9;
-    left: -10px;
-    top: 8.5px;
-    position: absolute;
+    background-color: #000;
   }
 }
 </style>

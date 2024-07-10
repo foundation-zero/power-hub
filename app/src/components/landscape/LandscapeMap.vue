@@ -9,14 +9,34 @@
     <OuterWaves />
     <PhaseLanes />
     <MapLegend transform="translate(167, 884)" />
-    <FZLogo
-      transform="translate(90, 107)"
-      @click="showIntro"
-    />
-    <HomeIcon
-      transform="translate(1250, 107)"
-      @click="goToFZeroWebsite"
-    />
+    <foreignObject
+      width="200"
+      height="59"
+      x="90"
+      y="107"
+    >
+      <RouterLink
+        to="/"
+        xmlns="http://www.w3.org/1999/xhtml"
+      >
+        <FZLogo />
+      </RouterLink>
+    </foreignObject>
+
+    <foreignObject
+      x="1250"
+      y="107"
+      width="40"
+      height="40"
+    >
+      <a
+        href="https://www.foundationzero.org/insights/power-hub"
+        xmlns="http://www.w3.org/1999/xhtml"
+        target="_self"
+      >
+        <HomeIcon />
+      </a>
+    </foreignObject>
 
     <PipeLines />
     <PipeStreams />
@@ -38,10 +58,7 @@ import PhaseLanes from "./map/PhaseLanes.vue";
 import PipeLines from "./map/PipeLines.vue";
 import PipeStreams from "./map/PipeStreams.vue";
 import PowerHubComponents from "./map/PowerHubComponents.vue";
-import { useRouter } from "vue-router";
 import HomeIcon from "../responsive/HomeIcon.vue";
-
-const router = useRouter();
 
 const PREFERRED_RATIO = 980 / 1600;
 
@@ -55,8 +72,5 @@ const width = computed(() => {
   return 1600;
 });
 
-const showIntro = () => router.push("/");
-const goToFZeroWebsite = () =>
-  window.open("https://www.foundationzero.org/insights/power-hub", "_self");
 const viewBox = computed(() => `20 60 ${width.value} 980`);
 </script>

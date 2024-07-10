@@ -1,0 +1,116 @@
+<template>
+  <v-sheet
+    color="#FF8C2E"
+    dark
+    rounded="0"
+    elevation="0"
+    height="100%"
+  >
+    <carousel
+      v-model="currentSlide"
+      class="w-100 h-100"
+      :items-to-show="1"
+    >
+      <slide
+        v-for="([left, right], index) in slides"
+        :key="index"
+        class="h-100"
+      >
+        <SideBySide class="w-100 h-100">
+          <template #left>
+            <component :is="left" />
+          </template>
+          <template
+            v-if="right"
+            #right
+          >
+            <component :is="right" />
+          </template>
+        </SideBySide>
+      </slide>
+    </carousel>
+
+    <IntroPagination
+      v-model="currentPage"
+      :amount-of-pages="slides.length"
+      class="mt-3"
+    />
+
+    <v-btn
+      v-show="currentPage < slides.length"
+      variant="text"
+      class="font-mono"
+      size="large"
+      to="/journeys"
+      >Skip intro &gt;</v-btn
+    >
+  </v-sheet>
+</template>
+
+<script setup lang="ts">
+import { Carousel, Slide } from "vue3-carousel";
+import IntroPagination from "@/components/responsive/IntroPagination.vue";
+import WelcomeToThePowerHub from "./WelcomeToThePowerHub.vue";
+import WhatThePowerHubProvides from "./WhatThePowerHubProvides.vue";
+import ElectricEnergyConverts from "./ElectricEnergyConverts.vue";
+import TheSecondPart from "./TheSecondPart.vue";
+import ThermalEnergyConverts from "./ThermalEnergyConverts.vue";
+import TheThirdPart from "./TheThirdPart.vue";
+import WaterManagementIsResponsible from "./WaterManagementIsResponsible.vue";
+import WeWillNowExplain from "./WeWillNowExplain.vue";
+import SunRise from "./SunRise.vue";
+import { ref } from "vue";
+import { computed } from "vue";
+import SideBySide from "@/components/responsive/SideBySide.vue";
+
+const currentPage = ref(1);
+
+const currentSlide = computed({
+  get() {
+    return currentPage.value - 1;
+  },
+  set(val: number) {
+    currentPage.value = val + 1;
+  },
+});
+
+const slides = [
+  [WelcomeToThePowerHub, SunRise],
+  [WhatThePowerHubProvides, ElectricEnergyConverts],
+  [TheSecondPart, ThermalEnergyConverts],
+  [TheThirdPart, WaterManagementIsResponsible],
+  [WeWillNowExplain],
+];
+</script>
+
+<style scoped lang="scss">
+.v-pagination {
+  position: absolute;
+  left: 50px;
+  bottom: 50px;
+}
+
+.v-btn {
+  position: absolute;
+  top: 50px;
+  right: 30px;
+}
+
+:deep(.carousel__slide),
+:deep(.carousel__track),
+:deep(.carousel__viewport) {
+  height: 100%;
+}
+
+:deep(.carousel__slide) {
+  align-items: start;
+}
+
+.carousel:not(.is-dragging):not(.is-sliding) :deep(.carousel__track) {
+  transition: transform 500ms ease !important;
+}
+
+:deep(.carousel__slide--next) {
+  height: 0;
+}
+</style>

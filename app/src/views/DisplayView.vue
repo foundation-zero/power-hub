@@ -19,7 +19,10 @@
           v-show="showWidgets"
           transform="translate(167, 884)"
         />
-        <FZLogo transform="translate(90, 107)" />
+        <FZLogo
+          x="90"
+          y="107"
+        />
         <PipeLines />
         <PipeStreams />
         <Suspense>

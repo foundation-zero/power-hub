@@ -2,7 +2,7 @@
   <v-layout>
     <v-main>
       <div
-        class="d-flex flex-column justify-center align-center"
+        class="d-flex flex-column justify-center align-center position-relative"
         style="height: 100vh"
       >
         <LandscapeMap />
@@ -28,28 +28,24 @@
       </Suspense>
     </ContentPanel>
 
-    <ContentModal
-      v-model="showIntro"
-      width="calc(100% - 64px)"
-      max-width="100%"
-    >
+    <IntroModal v-model="showIntro">
       <IntroContent />
-    </ContentModal>
+    </IntroModal>
   </v-layout>
 </template>
 
 <script setup lang="ts">
 import { usePresentationStore } from "@/stores/presentation";
-import { toRefs } from "vue";
-import { computed } from "vue";
+import { toRefs, computed } from "vue";
+
 import ContentPanel from "@/components/landscape/ContentPanel.vue";
 import JourneyContent from "@/components/responsive/JourneyContent.vue";
 import ToggleWidgetsButton from "@/components/responsive/ToggleWidgetsButton.vue";
 import { useRouter } from "vue-router";
 import WidgetsCarousel from "@/components/responsive/WidgetsCarousel.vue";
 import LandscapeMap from "@/components/landscape/LandscapeMap.vue";
-import ContentModal from "@/components/portrait/ContentModal.vue";
-import IntroContent from "@/components/landscape/IntroContent.vue";
+import IntroModal from "@/components/landscape/IntroModal.vue";
+import IntroContent from "@/components/landscape/intro/IntroContent.vue";
 
 const router = useRouter();
 let lastRouteChange: number;
@@ -83,6 +79,14 @@ const showIntro = computed({
   },
 });
 </script>
+
+<style scoped>
+a {
+  position: absolute;
+  top: px;
+  left: 107px;
+}
+</style>
 
 <style>
 .fade-enter-active,

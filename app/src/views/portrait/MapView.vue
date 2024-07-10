@@ -1,9 +1,5 @@
 <template>
-  <v-layout
-    @touchmove.stop.prevent
-    @touchend.stop.prevent
-    @touchstart.stop.prevent
-  >
+  <v-layout @touchmove.stop.prevent>
     <AppBar />
 
     <v-main>
@@ -45,12 +41,12 @@
       </Suspense>
     </component>
 
-    <component
-      :is="portraitContentWrapper"
-      v-model="showIntro"
-    >
-      <IntroContent />
-    </component>
+    <IntroPanel v-model="showIntro">
+      <component
+        :is="portraitIntro"
+        v-model="showIntro"
+      />
+    </IntroPanel>
   </v-layout>
 </template>
 
@@ -63,9 +59,9 @@ import { computed } from "vue";
 import ToggleWidgetsButton from "@/components/responsive/ToggleWidgetsButton.vue";
 import { useRouter } from "vue-router";
 import WidgetsCarousel from "@/components/responsive/WidgetsCarousel.vue";
-import { portraitContentWrapper } from "@/utils/display";
+import { portraitContentWrapper, portraitIntro } from "@/utils/display";
 import PortraitMap from "@/components/portrait/PortraitMap.vue";
-import IntroContent from "@/components/responsive/IntroContent.vue";
+import IntroPanel from "@/components/portrait/IntroPanel.vue";
 
 const { currentJourney, showWidgets } = toRefs(usePresentationStore());
 const router = useRouter();

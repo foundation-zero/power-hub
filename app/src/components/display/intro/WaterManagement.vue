@@ -116,14 +116,8 @@
           letter-spacing="-0.04em"
         >
           <tspan
-            x="227.161"
-            y="463.95"
-          >
-            Power Hub
-          </tspan>
-          <tspan
             x="128"
-            y="688.95"
+            y="650.95"
           >
             recycle
           </tspan>
@@ -137,37 +131,25 @@
         >
           <tspan
             x="128"
-            y="388.95"
+            y="425.95"
           >
-            Finally, the third service
+            Finally, the third part is
           </tspan>
           <tspan
             x="128"
-            y="463.95"
+            y="500.95"
           >
-            the
-          </tspan>
-          <tspan
-            x="535.172"
-            y="463.95"
-          >
-            provides
+            water management, with
           </tspan>
           <tspan
             x="128"
-            y="538.95"
+            y="575.95"
           >
-            is water management,
-          </tspan>
-          <tspan
-            x="128"
-            y="613.95"
-          >
-            with the unit being able to
+            the unit being able to
           </tspan>
           <tspan
             x="332.796"
-            y="688.95"
+            y="650.95"
           >
             and filter water.
           </tspan>
@@ -221,7 +203,7 @@
             x="1138"
             y="539.85"
           >
-            recycling
+            recycling.
           </tspan>
         </text>
       </g>

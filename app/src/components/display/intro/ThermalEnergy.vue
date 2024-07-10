@@ -108,14 +108,8 @@
         letter-spacing="-0.04em"
       >
         <tspan
-          x="129"
-          y="420.95"
-        >
-          Power Hub
-        </tspan>
-        <tspan
           x="285.868"
-          y="645.95"
+          y="607.95"
         >
           cooling system
         </tspan>
@@ -129,43 +123,37 @@
       >
         <tspan
           x="129"
-          y="345.95"
+          y="382.95"
         >
-          The second part the
-        </tspan>
-        <tspan
-          x="446.535"
-          y="420.95"
-        >
-          delivers is
+          The second part is
         </tspan>
         <tspan
           x="129"
-          y="495.95"
+          y="457.95"
         >
           thermal energy. This is
         </tspan>
         <tspan
           x="129"
-          y="570.95"
+          y="532.95"
         >
           done by turning heat
         </tspan>
         <tspan
           x="129"
-          y="645.95"
+          y="607.95"
         >
           into a
         </tspan>
         <tspan
           x="129"
-          y="720.95"
+          y="682.95"
         >
           through a process called
         </tspan>
         <tspan
           x="129"
-          y="795.95"
+          y="757.95"
         >
           &#x2018;absorption.&#x2019;
         </tspan>
@@ -219,7 +207,7 @@
           x="1321"
           y="807.85"
         >
-          absorption
+          absorption.
         </tspan>
       </text>
     </g>
