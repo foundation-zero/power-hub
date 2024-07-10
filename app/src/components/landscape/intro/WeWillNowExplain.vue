@@ -43,7 +43,7 @@
           x="0"
           y="186.85"
         >
-          provides renewable energy
+          provides renewable energy.
         </tspan>
       </text>
       <text

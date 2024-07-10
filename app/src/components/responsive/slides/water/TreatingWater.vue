@@ -2,7 +2,7 @@
   <TextSlide journey="water">
     <template #title>Treating water</template>
     <template #body>
-      <p>
+      <p class="font-weight-bold">
         Because making water is such an energy intensive process, it can be very worthwhile to
         recycle water. Plenty of water we dump into the sewer could very well be used to flush a
         toilet or to wash down the boat.

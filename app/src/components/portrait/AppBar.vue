@@ -13,7 +13,12 @@
         >Power Hub</v-btn
       >
     </v-app-bar-title>
-    <FZeroButton />
+    <a
+      href="https://www.foundationzero.org/insights/power-hub"
+      target="_self"
+    >
+      <FZeroButton />
+    </a>
   </v-app-bar>
 </template>
 

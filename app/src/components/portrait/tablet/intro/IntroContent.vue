@@ -63,14 +63,14 @@ import { ref } from "vue";
 import { computed } from "vue";
 import SideBySide from "@/components/responsive/SideBySide.vue";
 
-const currentPage = ref(1);
+const currentSlide = ref(0);
 
-const currentSlide = computed({
+const currentPage = computed({
   get() {
-    return currentPage.value - 1;
+    return currentSlide.value + 1;
   },
   set(val: number) {
-    currentPage.value = val + 1;
+    currentSlide.value = val - 1;
   },
 });
 

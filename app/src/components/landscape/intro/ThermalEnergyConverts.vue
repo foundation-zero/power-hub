@@ -38,7 +38,7 @@
           x="138"
           y="717.7"
         >
-          absorption
+          absorption.
         </tspan>
       </text>
       <path

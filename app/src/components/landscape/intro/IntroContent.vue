@@ -83,16 +83,16 @@ import SwipeButtons from "@/components/responsive/SwipeButtons.vue";
 import FZLogo from "@/components/FZLogo.vue";
 import type { Direction } from "@/types";
 
-const currentPage = ref(1);
+const currentSlide = ref(0);
 const container = ref<VSheet>();
 const hoverPosition = ref<Direction>();
 
-const currentSlide = computed({
+const currentPage = computed({
   get() {
-    return currentPage.value - 1;
+    return currentSlide.value + 1;
   },
   set(val: number) {
-    currentPage.value = val + 1;
+    currentSlide.value = val - 1;
   },
 });
 

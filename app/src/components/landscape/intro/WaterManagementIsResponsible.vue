@@ -38,7 +38,7 @@
           x="99"
           y="430.2"
         >
-          recycling
+          recycling.
         </tspan>
       </text>
       <path

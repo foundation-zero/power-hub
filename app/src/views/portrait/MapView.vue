@@ -24,6 +24,8 @@
     >
       <JourneyContent
         v-model="showJourneyContent"
+        class="py-5"
+        :class="{ 'px-15': $vuetify.display.mdAndUp, 'px-8': $vuetify.display.smAndDown }"
         scrollable
         :journey="currentJourney"
       />
@@ -36,6 +38,8 @@
       <Suspense>
         <WidgetsCarousel
           v-model="showWidgets"
+          class="py-5"
+          :class="{ 'px-15': $vuetify.display.mdAndUp, 'px-8': $vuetify.display.smAndDown }"
           scrollable
         />
       </Suspense>

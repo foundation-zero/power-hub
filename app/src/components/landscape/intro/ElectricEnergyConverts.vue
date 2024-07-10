@@ -39,7 +39,7 @@
           x="97"
           y="376.7"
         >
-          into electricity
+          into electricity.
         </tspan>
       </text>
     </svg>
