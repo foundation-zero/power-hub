@@ -44,7 +44,8 @@ def test_water_maker_network():
         water_maker = WaterMaker(0.5)
         water_tank = WaterTank(100)
         water_demand = WaterDemand(ConstSchedule(10))
-        water_treatment = WaterTreatment(0.5)
+        grey_water_supply = Source(0, ConstSchedule(1))
+        water_treatment = WaterTreatment(5)
 
         def initial_state(self):
             return (
@@ -53,16 +54,15 @@ def test_water_maker_network():
                 .define_state(self.outboard_pump)
                 .value(SwitchPumpState())
                 .define_state(self.water_maker)
-                .value(WaterMakerState(False))
+                .value(WaterMakerState(True))
                 .define_state(self.water_tank)
                 .value(WaterTankState(0))
                 .define_state(self.water_demand)
                 .value(WaterDemandState())
+                .define_state(self.grey_water_supply)
+                .value(SourceState())
                 .define_state(self.water_treatment)
-                .value(WaterTreatmentState())
-                .define_state(self.water_treatment)
-                .at(WaterTreatmentPort.OUT)
-                .value(WaterState(5))
+                .value(WaterTreatmentState(True))
                 .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
             )
 
@@ -85,26 +85,22 @@ def test_water_maker_network():
                 .at(WaterTankPort.IN_0)
 
                 .connect(self.water_demand)
-                .at(WaterDemandPort.DEMAND_OUT)
+                .at(WaterDemandPort.OUT)
                 .to(self.water_tank)
                 .at(WaterTankPort.CONSUMPTION)
 
-                .connect(self.water_demand)
-                .at(WaterDemandPort.GREY_WATER_OUT)
+                .connect(self.grey_water_supply)
+                .at(SourcePort.OUTPUT)
                 .to(self.water_treatment)
                 .at(WaterTreatmentPort.IN)
-                .build()
-            )
-            # fmt: on
 
-        def feedback(self):
-            return (
-                self.define_feedback(self.water_treatment)
-                .at(WaterTreatmentPort.OUT)
+                .connect(self.water_treatment)
+                .at(WaterTreatmentPort.IN)
                 .to(self.water_tank)
                 .at(WaterTankPort.IN_1)
                 .build()
             )
+            # fmt: on
 
         def sensors_from_state(self, state: NetworkState[Self]) -> None:
             return None
@@ -121,7 +117,7 @@ def test_water_maker_network():
     first simulation step we expect:
         0l current fill
         50% efficiency from the water maker on 100 l/s from the pump = +50l/s
-        +5 l/s from the water treatment, as defined in the feedback connection state
+        +5 l/s from the water treatment
         -10 l/s from the water demand
         1 second per timestep so the fill is:
         0 + (50 * 1) + (5 * 1) - (10 * 1) = 45l
@@ -133,7 +129,7 @@ def test_water_maker_network():
     second simulation step we expect:
         45l current fill
         50% efficiency from the water maker on 100l/s from the pump = +50l/s
-        50% efficiency from the water treatment on 10l/s from the water demand = +5l/s
+        +5 l/s from the water demand = +10l/s
         -10l/s from the water demand
         45 + (50 * 1) + (5 * 1) - (10 * 1) = 90l 
     """
