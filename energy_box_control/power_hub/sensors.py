@@ -82,6 +82,24 @@ class HeatPipesSensors(FromState):
 
 
 @sensors()
+class RH33Sensors(FromState):
+    spec: RH33
+    ts_1001: TempSensors
+    ts_1002: TempSensors
+
+    @property
+    def temp_a(self):
+        return self.ts_1001.temperature
+
+    @property
+    def temp_b(self):
+        return self.ts_1002.temperature
+    
+    # for the simulation, this needs to be a property, for the real world this is a value from sensor_values json
+    delta_t: Celsius
+
+
+@sensors()
 class PcmSensors(FromState):
     spec: Pcm
     temperature: Celsius = sensor(technical_name="TS-1007")
@@ -815,6 +833,7 @@ class WeatherSensors(WithoutAppliance):
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
+    rh33_heat_pipes: RH33Sensors
     heat_pipes_valve: ValveSensors
     hot_switch_valve: HotSwitchSensors
     hot_reservoir: HotReservoirSensors
