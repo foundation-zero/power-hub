@@ -933,11 +933,16 @@ def survival_control(
         .value(WaterMakerControl(on=False))
     )
 
+    water_treatment_control = power_hub.control(power_hub.water_treatment).value(
+        WaterTreatmentControl(False)
+    )
+
     return (
         control_state,
         hot_control.combine(chill_control)
         .combine(waste_control)
         .combine(water_control)
+        .combine(water_treatment_control)
         .build(),
     )
 
