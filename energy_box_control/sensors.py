@@ -276,12 +276,14 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
             ports_sensors = [
                 (
                     name,
-                    state.connection(
-                        appliance, description.from_ports[1], ThermalState(nan, nan)
-                    ).temperature
-                    - state.connection(
-                        appliance, description.from_ports[0], ThermalState(nan, nan)
-                    ).temperature,
+                    abs(
+                        state.connection(
+                            appliance, description.from_ports[1], ThermalState(nan, nan)
+                        ).temperature
+                        - state.connection(
+                            appliance, description.from_ports[0], ThermalState(nan, nan)
+                        ).temperature
+                    ),
                     description,
                 )
                 for name in get_type_hints(cls).keys()

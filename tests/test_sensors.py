@@ -6,14 +6,13 @@ def test_hot_reservoir_properties():
     assert sensor_fields(HotReservoirSensors, include_properties=True) == set(
         [
             "temperature",
-            "fill_input_temperature",
             "fill_output_temperature",
             "fill_flow",
-            "fill_power",
             "exchange_input_temperature",
             "exchange_output_temperature",
-            "exchange_flow",
+            "exchange_delta_t",
             "exchange_power",
-            "total_heating_power",
+            "exchange_flow",
+            "total_hot_water_power",
         ]
     )
