@@ -20,6 +20,7 @@ def test_control_from_json_roundtrips():
             ConstSchedule(phc.SEAWATER_TEMPERATURE),
             ConstSchedule(phc.FRESHWATER_TEMPERATURE),
             ConstSchedule(phc.WATER_DEMAND),
+            ConstSchedule(phc.PERCENT_WATER_CAPTURED * phc.WATER_DEMAND),
         )
     )
     _, control = control_power_hub(

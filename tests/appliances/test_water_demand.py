@@ -26,8 +26,4 @@ def test_water_demand(simulation_time):
         simulation_time,
     )
 
-    assert (
-        output[WaterDemandPort.GREY_WATER_OUT].flow
-        == output[WaterDemandPort.DEMAND_OUT].flow
-        == demand
-    )
+    assert output[WaterDemandPort.OUT].flow == demand
