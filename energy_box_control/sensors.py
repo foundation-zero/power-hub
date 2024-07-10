@@ -181,6 +181,7 @@ class SensorContext[T: Timed]:
 class SensorType(Enum):
     FLOW = "flow"
     TEMPERATURE = "temperature"
+    DELTA_T = "delta_t"
     HUMIDITY = "humidity"
     CO2 = "co2"
     ALARM = "alarm"
@@ -191,6 +192,7 @@ class SensorType(Enum):
 class Sensor:
     technical_name: str | None = None
     from_port: Port | None = None
+    from_ports: list[Port] | None = None
     type: SensorType | None = None
 
 
@@ -259,6 +261,7 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
                 and isinstance(description, Sensor)
                 and description.from_port is not None
             ]
+
             temperature_sensors = {
                 name: state.temperature
                 for name, state, description in port_sensors
@@ -269,7 +272,31 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
                 for name, state, description in port_sensors
                 if description.type == SensorType.FLOW
             }
-            return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors)  # type: ignore
+
+            ports_sensors = [
+                (
+                    name,
+                    state.connection(
+                        appliance, description.from_ports[1], ThermalState(nan, nan)
+                    ).temperature
+                    - state.connection(
+                        appliance, description.from_ports[0], ThermalState(nan, nan)
+                    ).temperature,
+                    description,
+                )
+                for name in get_type_hints(cls).keys()
+                if (description := getattr(cls, name, None))
+                and isinstance(description, Sensor)
+                and description.from_ports is not None
+            ]
+
+            delta_t_sensors = {
+                name: state
+                for name, state, description in ports_sensors
+                if description.type == SensorType.DELTA_T
+            }
+
+            return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors, **delta_t_sensors)  # type: ignore
 
         def _values(sensor: Any) -> dict[str, Any]:
             return {name: getattr(sensor, name) for name in get_type_hints(cls).keys()}

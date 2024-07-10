@@ -71,32 +71,16 @@ class HeatPipesSensors(FromState):
         from_port=HeatPipesPort.OUT,
     )
 
+    delta_t: Celsius = sensor(
+        technical_name="RH33-heat-pipes",
+        type=SensorType.DELTA_T,
+        from_ports=[HeatPipesPort.IN, HeatPipesPort.OUT],
+    )
+
     @property
     def power(self) -> Watt:
-        power = (
-            self.flow
-            * (self.output_temperature - self.input_temperature)
-            * self.spec.specific_heat_medium
-        )
-        return power if power == power else 0
-
-
-@sensors()
-class RH33Sensors(FromState):
-    spec: RH33
-    ts_1001: TempSensors
-    ts_1002: TempSensors
-
-    @property
-    def temp_a(self):
-        return self.ts_1001.temperature
-
-    @property
-    def temp_b(self):
-        return self.ts_1002.temperature
-    
-    # for the simulation, this needs to be a property, for the real world this is a value from sensor_values json
-    delta_t: Celsius
+        power = self.flow * (self.delta_t) * self.spec.specific_heat_medium
+        return power if self.output_temperature > self.input_temperature else -power
 
 
 @sensors()
@@ -833,7 +817,6 @@ class WeatherSensors(WithoutAppliance):
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
-    rh33_heat_pipes: RH33Sensors
     heat_pipes_valve: ValveSensors
     hot_switch_valve: HotSwitchSensors
     hot_reservoir: HotReservoirSensors

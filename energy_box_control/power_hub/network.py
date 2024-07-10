@@ -43,7 +43,6 @@ from energy_box_control.appliances.ignore_temperature import (
 )
 from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
-from energy_box_control.appliances.rh33 import RH33, RH33Port
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
@@ -102,7 +101,6 @@ class PowerHub(Network[PowerHubSensors]):
         Source  # Source for make heat pipes supply box pump in simulation
     )
     heat_pipes_supply_box_pump: SwitchPump  # P-1009 not taken into account for simulation, but defined here for control signal
-    rh33_heat_pipes: RH33
     heat_pipes_mix: Mix
     hot_reservoir: Boiler  # W-1002
     hot_switch_valve: Valve  # CV-1001
@@ -159,7 +157,6 @@ class PowerHub(Network[PowerHubSensors]):
             phc.heat_pipes_power_hub_pump,
             phc.heat_pipes_supply_box_pump_source,
             phc.heat_pipes_supply_box_pump,
-            phc.rh33_heat_pipes,
             phc.heat_pipes_mix,
             phc.hot_reservoir(schedules.ambient_temperature),
             phc.hot_switch_valve,
