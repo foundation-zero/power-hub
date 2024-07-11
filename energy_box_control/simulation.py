@@ -19,7 +19,11 @@ from energy_box_control.power_hub.control import (
 )
 
 from energy_box_control.power_hub.network import PowerHubSchedules
-from energy_box_control.monitoring.checks import sensor_checks
+from energy_box_control.monitoring.checks import (
+    sensor_checks,
+    alarm_checks,
+    warning_checks,
+)
 from energy_box_control.power_hub import PowerHub
 from energy_box_control.mqtt import (
     create_and_connect_client,
@@ -122,7 +126,9 @@ async def run(
     await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
-    monitor = Monitor(sensor_checks)
+    monitor = Monitor(
+        sensor_value_checks=sensor_checks, alarm_checks=alarm_checks + warning_checks
+    )
 
     power_hub = PowerHub.power_hub(schedules)
     state = power_hub.simulate(

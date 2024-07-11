@@ -5,6 +5,10 @@ import aiohttp
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
+from energy_box_control.power_hub.sensors import ElectricBatterySensors
+from typing import get_type_hints
+
+from energy_box_control.units import Alarm
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -41,6 +45,11 @@ class UrlHealthCheck(Check):
     check: Callable[[], Awaitable[CheckResult]]
 
 
+@dataclass
+class AlarmHealthCheck(Check):
+    check: Callable[[PowerHubSensors], CheckResult]
+
+
 def value_check[
     A, B
 ](name: str, sensor_fn: Callable[[A], B], check_fn: Callable[[B], bool]) -> Callable[
@@ -70,6 +79,30 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
     return UrlHealthCheck(name=name, check=_url_health_check, severity=severity)
 
 
+def alarm_check(
+    name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
+) -> AlarmHealthCheck:
+
+    def _alarm(sensor_values: PowerHubSensors) -> str | None:
+        if sensor_fn(sensor_values) == 2:
+            return f"{name} is raising an alarm"
+        return None
+
+    return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
+
+
+def warning_check(
+    name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
+) -> AlarmHealthCheck:
+
+    def _warning(sensor_values: PowerHubSensors) -> str | None:
+        if sensor_fn(sensor_values) == 1:
+            return f"{name} is raising a warning"
+        return None
+
+    return AlarmHealthCheck(name=name, check=_warning, severity=severity)
+
+
 def valid_temp(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
@@ -91,6 +124,33 @@ def valid_temp(
 sensor_checks = [
     valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
 ]
+
+alarm_checks = [
+    alarm_check(
+        f"{attr}",
+        lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        Severity.CRITICAL,
+    )
+    for attr in [
+        attr
+        for attr, type in get_type_hints(ElectricBatterySensors).items()
+        if type == Alarm
+    ]
+]
+warning_checks = [
+    warning_check(
+        f"{attr}_warning",
+        lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        Severity.WARNING,
+    )
+    for attr in [
+        attr
+        for attr, type in get_type_hints(ElectricBatterySensors).items()
+        if type == Alarm
+    ]
+]
+
+
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),
     url_health_check("InfluxDB Health", INFLUXDB_URL, severity=Severity.CRITICAL),
