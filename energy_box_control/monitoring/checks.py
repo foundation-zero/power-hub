@@ -17,6 +17,11 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
+class SensorAlarm(Enum):
+    WARNING = 1
+    ALARM = 2
+
+
 class Severity(Enum):
     DEBUG = "debug"
     INFO = "info"
@@ -84,7 +89,7 @@ def alarm_check(
 ) -> AlarmHealthCheck:
 
     def _alarm(sensor_values: PowerHubSensors) -> str | None:
-        if sensor_fn(sensor_values) == 2:
+        if sensor_fn(sensor_values) == SensorAlarm.ALARM.value:
             return f"{name} is raising an alarm"
         return None
 
@@ -96,7 +101,7 @@ def warning_check(
 ) -> AlarmHealthCheck:
 
     def _warning(sensor_values: PowerHubSensors) -> str | None:
-        if sensor_fn(sensor_values) == 1:
+        if sensor_fn(sensor_values) == SensorAlarm.WARNING.value:
             return f"{name} is raising a warning"
         return None
 
