@@ -35,9 +35,9 @@ def token_required(f):
 
 
 @no_type_check
-def limit_query_result(aggregated: bool = False):
+def limit_query(aggregated: bool = False):
     @no_type_check
-    def _limit_query_result[T: type](fn: T) -> Callable[[T], T]:
+    def _limit_query[T: type](fn: T) -> Callable[[T], T]:
 
         @wraps(fn)
         @no_type_check
@@ -63,7 +63,7 @@ def limit_query_result(aggregated: bool = False):
 
         return decorator
 
-    return _limit_query_result
+    return _limit_query
 
 
 @no_type_check

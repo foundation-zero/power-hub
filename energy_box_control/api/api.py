@@ -38,7 +38,7 @@ from energy_box_control.api.query_builders import (
     mean_per_hour_query,
 )
 
-from energy_box_control.api.decorators import token_required, limit_query_result, serialize_dataframe, serialize_single_cell, check_weather_location_whitelist  # type: ignore
+from energy_box_control.api.decorators import token_required, limit_query, serialize_dataframe, serialize_single_cell, check_weather_location_whitelist  # type: ignore
 
 logger = get_logger(__name__)
 
@@ -125,7 +125,7 @@ async def get_all_appliance_names() -> dict[
 )
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-@limit_query_result(aggregated=False)
+@limit_query(aggregated=False)
 @serialize_dataframe(["time", "value"])
 async def get_values_for_appliance_sensor(
     appliance_name: str, sensor_field_name: str, query_args: ValuesQuery
@@ -145,7 +145,7 @@ async def get_values_for_appliance_sensor(
 @app.route("/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/mean")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-@limit_query_result(aggregated=True)
+@limit_query(aggregated=True)
 @serialize_single_cell("value")
 async def get_mean_value_for_appliance_sensor(
     appliance_name: str, sensor_field_name: str, query_args: ValuesQuery
@@ -168,7 +168,7 @@ async def get_mean_value_for_appliance_sensor(
 @app.route("/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/total")
 @token_required
 @validate_querystring(ValuesQuery)  # type: ignore
-@limit_query_result(aggregated=True)
+@limit_query(aggregated=True)
 @serialize_single_cell("value")
 async def get_total_value_for_appliance_sensor(
     appliance_name: str,
@@ -240,7 +240,7 @@ async def get_pcm_current_fill() -> str:
 )
 @token_required
 @validate_querystring(ComputedValuesQuery)  # type: ignore
-@limit_query_result(aggregated=False)
+@limit_query(aggregated=False)
 @serialize_dataframe(["time", "value"])
 async def get_sensor_value_over_time(
     appliance_name: str, sensor_field_name: str, query_args: ComputedValuesQuery
@@ -266,7 +266,7 @@ def consumption_appliances():
 @app.route("/power_hub/electric/power/consumption/over/time")
 @token_required
 @validate_querystring(ComputedPowerQuery)  # type: ignore
-@limit_query_result(aggregated=False)
+@limit_query(aggregated=False)
 @serialize_dataframe(["time", "value"])
 async def get_electrical_power_consumption(
     query_args: ComputedPowerQuery,
@@ -347,7 +347,7 @@ async def get_electrical_power_consumption_mean(
 @app.route("/power_hub/electric/power/production/over/time")
 @token_required
 @validate_querystring(ComputedPowerQuery)  # type: ignore
-@limit_query_result(aggregated=False)
+@limit_query(aggregated=False)
 @serialize_dataframe(["time", "value"])
 async def get_electrical_power_production(
     query_args: ComputedPowerQuery,
