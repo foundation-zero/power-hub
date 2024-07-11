@@ -1,15 +1,10 @@
-from datetime import datetime
 import json
-from unittest import mock
-
-import pytest
 from energy_box_control.monitoring.checks import (
     value_check,
     valid_temp,
     service_checks,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
-import requests
 from http import HTTPStatus
 
 
