@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
+from energy_box_control.appliances.electric_battery import ElectricBattery
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -28,6 +29,7 @@ from energy_box_control.power_hub.components import (
 from datetime import datetime
 
 from energy_box_control.units import (
+    Alarm,
     Celsius,
     Joule,
     Liter,
@@ -637,6 +639,46 @@ class PVSensors(FromState):
 
 
 @sensors()
+class ElectricBatterySensors(FromState):
+    spec: ElectricBattery
+    voltage_battery_system: int
+    current_battery_system: int
+    power_battery_system: int
+    soc_battery_system: float
+    battery_alarm: int
+    battery_low_voltage_alarm: int
+    battery_high_voltage_alarm: int
+    battery_low_starter_voltage_alarm: int
+    battery_high_starter_voltage_alarm: int
+    battery_low_soc_alarm: Alarm
+    battery_low_temperature_alarm: Alarm
+    battery_high_temperature_alarm: Alarm
+    battery_mid_voltage_alarm: Alarm
+    battery_low_fused_voltage_alarm: Alarm
+    battery_high_fused_voltage_alarm: Alarm
+    battery_fuse_blown_alarm: Alarm
+    battery_high_internal_temperature_alarm: Alarm
+    battery_high_charge_current_alarm: Alarm
+    battery_high_discharge_current_alarm: Alarm
+    battery_cell_imbalance_alarm: Alarm
+    battery_internal_failure_alarm: Alarm
+    battery_high_charge_temperature_alarm: Alarm
+    battery_low_charge_temperature_alarm: Alarm
+    battery_low_cell_voltage_alarm: Alarm
+    battery_error: int
+    high_temperature_alarm: Alarm
+    high_battery_voltage_alarm: Alarm
+    high_ac_out_voltage_alarm: Alarm
+    low_temperature_alarm: Alarm
+    low_battery_voltage_alarm: Alarm
+    low_ac_out_voltage_alarm: Alarm
+    overload_alarm: Alarm
+    ripple_alarm: Alarm
+    low_batt_voltage_alarm: Alarm
+    high_batt_voltage_alarm: Alarm
+
+
+@sensors()
 class FreshWaterTankSensors(FromState):
     spec: WaterTank
     fill: Liter = sensor(technical_name="LS-5001")
@@ -725,6 +767,7 @@ class PowerHubSensors(NetworkSensors):
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
     pv_panel: PVSensors
+    electric_battery: ElectricBatterySensors
     fresh_water_tank: FreshWaterTankSensors
     grey_water_tank: GreyWaterTankSensors
     water_treatment: WaterTreatmentSensors
