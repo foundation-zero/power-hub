@@ -84,28 +84,28 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
     return UrlHealthCheck(name=name, check=_url_health_check, severity=severity)
 
 
-def alarm_check(
-    name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
-) -> AlarmHealthCheck:
+def sensor_alarm_check(
+    type: SensorAlarm, message: Callable[[str], str]
+) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
+    def _alarm_check(
+        name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
+    ):
+        def _alarm(sensor_values: PowerHubSensors) -> str | None:
+            if sensor_fn(sensor_values) == type.value:
+                return message(name)
+            return None
 
-    def _alarm(sensor_values: PowerHubSensors) -> str | None:
-        if sensor_fn(sensor_values) == SensorAlarm.ALARM.value:
-            return f"{name} is raising an alarm"
-        return None
+        return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
 
-    return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
+    return _alarm_check
 
 
-def warning_check(
-    name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
-) -> AlarmHealthCheck:
-
-    def _warning(sensor_values: PowerHubSensors) -> str | None:
-        if sensor_fn(sensor_values) == SensorAlarm.WARNING.value:
-            return f"{name} is raising a warning"
-        return None
-
-    return AlarmHealthCheck(name=name, check=_warning, severity=severity)
+alarm_check = sensor_alarm_check(
+    SensorAlarm.ALARM, lambda name: f"{name} is raising an alarm"
+)
+warning_check = sensor_alarm_check(
+    SensorAlarm.WARNING, lambda name: f"{name} is raising a warning"
+)
 
 
 def valid_temp(
