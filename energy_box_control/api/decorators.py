@@ -13,6 +13,7 @@ from pandas import DataFrame as df  # type: ignore
 
 
 MAX_ROWS = 10000
+MAX_ROWS_AGGREGATED = 604800
 WEATHER_LOCATION_WHITELIST = {(41.3874, 2.1686)}
 
 
@@ -34,29 +35,35 @@ def token_required(f):
 
 
 @no_type_check
-def limit_query_result(f):
-    @wraps(f)
+def limit_query_result(aggregated: bool = False):
     @no_type_check
-    async def decorator(*args, query_args: ValuesQuery, **kwargs):
-        try:
-            start, stop = build_query_range(query_args)
-        except ValueError:
-            return await make_response(
-                "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'.",
-                HTTPStatus.UNPROCESSABLE_ENTITY,
-            )
-        interval = (
-            timedelta_from_string(query_args.interval)
-            if hasattr(query_args, "interval")
-            else timedelta(seconds=1)
-        )
-        if (stop - start) / interval > MAX_ROWS:
-            return await make_response(
-                "Requested too many rows", HTTPStatus.UNPROCESSABLE_ENTITY
-            )
-        return await f(*args, query_args=query_args, **kwargs)
+    def _limit_query_result[T: type](fn: T) -> Callable[[T], T]:
 
-    return decorator
+        @wraps(fn)
+        @no_type_check
+        async def decorator(*args, query_args: ValuesQuery, **kwargs):
+            try:
+                start, stop = build_query_range(query_args)
+            except ValueError:
+                return await make_response(
+                    "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'.",
+                    HTTPStatus.UNPROCESSABLE_ENTITY,
+                )
+            interval = (
+                timedelta_from_string(query_args.interval)
+                if hasattr(query_args, "interval")
+                else timedelta(seconds=1)
+            )
+            max_rows = MAX_ROWS_AGGREGATED if aggregated else MAX_ROWS
+            if (stop - start) / interval > max_rows:
+                return await make_response(
+                    "Requested too many rows", HTTPStatus.UNPROCESSABLE_ENTITY
+                )
+            return await fn(*args, query_args=query_args, **kwargs)
+
+        return decorator
+
+    return _limit_query_result
 
 
 @no_type_check
