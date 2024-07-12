@@ -2,7 +2,7 @@
   <WidgetBase
     title="Water demand"
     unit="liter"
-    :value="waterDemand"
+    :value="waterDemand ?? 0"
     :format="formattedInt"
   >
     <StackedBarChart
@@ -30,6 +30,6 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-water", color: "#00bcd4" },
 ];
 
-const waterDemand = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand"));
+const waterDemand = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand_flow"));
 const waterMakerOut = useObservable(powerHub.sensors.useMean("water_maker/out_flow"));
 </script>

@@ -44,6 +44,8 @@
       to="/journeys"
       >Skip intro &gt;</v-btn
     >
+
+    <FZLogo id="logo" />
   </v-sheet>
 </template>
 
@@ -88,6 +90,12 @@ const slides = [
   position: absolute;
   left: 50px;
   bottom: 50px;
+}
+
+#logo {
+  position: absolute;
+  top: 50px;
+  left: 50px;
 }
 
 .v-btn {

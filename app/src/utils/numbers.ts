@@ -1,5 +1,6 @@
 import type { Direction } from "@/types";
 import { useTimeout } from "@vueuse/core";
+import { add } from "date-fns";
 import { ref } from "vue";
 
 export const JOULE_TO_WATT_HOUR = 3600;
@@ -68,3 +69,11 @@ export const useRevolvingNumber = (
 
   return val;
 };
+
+export const negateAndClampAtZero = (val: number) => Math.max(0, val * -1);
+
+export const between = (a: Date, b: Date) => [a.toISOString(), b.toISOString()].join(",");
+
+export const usePast24HoursParams = (now = new Date()) => ({
+  between: between(add(now, { days: -1 }), now),
+});

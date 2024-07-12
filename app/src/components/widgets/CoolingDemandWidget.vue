@@ -8,7 +8,8 @@
     <StackedBarChart
       class="mt-3"
       :height="20"
-      :values="[chillPower ?? 0, compressionPower]"
+      :disabled="!absorptionPower && !compressionPower"
+      :values="[absorptionPower ?? 0, compressionPower ?? 0]"
       :series="series"
     />
   </WidgetBase>
@@ -17,11 +18,11 @@
 <script setup lang="ts">
 import WidgetBase from "./WidgetBase.vue";
 import type { PowerHubStore } from "@/stores/power-hub";
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt, negateAndClampAtZero } from "@/utils/numbers";
 import StackedBarChart, { type BarSeries } from "../graphs/FillBarChart.vue";
 import { useObservable } from "@vueuse/rxjs";
-import { computed } from "vue";
 import { useAsWatts } from "@/utils";
+import { map } from "rxjs";
 
 const { powerHub } = defineProps<{
   powerHub: PowerHubStore;
@@ -33,9 +34,13 @@ const series: [BarSeries, BarSeries] = [
 ];
 
 const fillPower = useObservable(powerHub.sensors.useMean("cold_reservoir/fill_power"));
-const chillPower = useObservable(powerHub.sensors.useMean("yazaki/chill_power"));
+const absorptionPower = useObservable(
+  powerHub.sensors.useMean("yazaki/chill_power").pipe(map(negateAndClampAtZero)),
+);
 
-const compressionPower = computed(() => (fillPower.value ?? 0) - (chillPower.value ?? 0));
+const compressionPower = useObservable(
+  powerHub.sensors.useMean("chiller/chill_power").pipe(map(negateAndClampAtZero)),
+);
 
 const { unit, value: coolingDemand } = useAsWatts(fillPower, 10000);
 </script>
