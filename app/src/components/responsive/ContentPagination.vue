@@ -38,7 +38,7 @@ span {
   &:not([data-page="1"]):before {
     content: "";
     width: 10px;
-    height: 3px;
+    height: 2px;
     background-color: #d9d9d9;
     left: -10px;
     top: 8.5px;

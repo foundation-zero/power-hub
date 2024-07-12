@@ -2,7 +2,7 @@
   <TextSlide journey="electrical">
     <template #title>Backed by batteries</template>
     <template #body>
-      <p>
+      <p class="font-weight-bold">
         To migitate the sun's tendency to hide away on the earth's other side we have to store the
         electricity we collect during the day so we can use it during the night. We have 200 kWhs of
         storage available to do this. That's enough to power a household for a whole month.

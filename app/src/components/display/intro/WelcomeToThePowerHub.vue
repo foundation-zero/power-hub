@@ -13,6 +13,26 @@
       fill="#FF8C2E"
     />
     <text
+      fill="#1D2519"
+      xml:space="preserve"
+      style="white-space: pre"
+      font-size="60"
+      letter-spacing="-0.04em"
+    >
+      <tspan
+        x="422.006"
+        y="530.3"
+      >
+        .&#10;
+      </tspan>
+      <tspan
+        x="742.547"
+        y="806.3"
+      >
+        .
+      </tspan>
+    </text>
+    <text
       fill="white"
       xml:space="preserve"
       style="white-space: pre"
@@ -23,7 +43,13 @@
         x="558.307"
         y="254.3"
       >
-        Power Hub &#10;
+        Power Hub
+      </tspan>
+      <tspan
+        x="863.606"
+        y="254.3"
+      >
+        &#10;
       </tspan>
       <tspan
         x="343.073"
@@ -67,7 +93,7 @@
         x="132"
         y="530.3"
       >
-        clean water&#10;
+        clean water
       </tspan>
       <tspan
         x="132"
@@ -88,16 +114,16 @@
         how the
       </tspan>
       <tspan
-        x="640"
+        x="627.391"
         y="737.3"
       >
-        works and the
+        works and &#10;
       </tspan>
       <tspan
         x="132"
         y="806.3"
       >
-        technology behind it
+        the technology behind it
       </tspan>
       <tspan
         x="132"
@@ -120,10 +146,24 @@
         {
       </tspan>
       <tspan
-        x="651.014"
+        x="754.737"
         y="806.3"
       >
         }&#10;
+      </tspan>
+    </text>
+    <text
+      fill="black"
+      xml:space="preserve"
+      style="white-space: pre"
+      font-size="60"
+      letter-spacing="-0.04em"
+    >
+      <tspan
+        x="851.416"
+        y="254.3"
+      >
+        .
       </tspan>
     </text>
     <rect
