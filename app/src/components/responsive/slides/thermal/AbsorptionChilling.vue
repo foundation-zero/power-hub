@@ -2,7 +2,7 @@
   <TextSlide journey="heat">
     <template #title>Absorption Chilling</template>
     <template #body>
-      <p>
+      <p class="font-weight-bold">
         The reason we harvest heat at all is to use it to cool the compound. Of course we can't use
         the heat itself for this, but we can use the heat in an absorption chiller to cool down our
         cooling medium.

@@ -4,7 +4,7 @@
     :class="{ desktop: $vuetify.display.mdAndUp, mobile: $vuetify.display.smAndDown }"
   >
     <div
-      class="title d-flex align-center text-left text-h5"
+      class="title d-flex align-center text-left"
       :class="journey"
     >
       <slot name="title" />
@@ -23,6 +23,7 @@ defineProps<{ journey: Journey }>();
 
 <style scoped lang="scss">
 .title {
+  font-size: 1.9rem;
   min-height: 175px;
   background-position: center right 20px;
 
@@ -45,7 +46,7 @@ defineProps<{ journey: Journey }>();
 }
 
 .text-slide.mobile :deep(p) {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 21px;
 }
 

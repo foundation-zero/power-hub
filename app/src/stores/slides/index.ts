@@ -21,10 +21,10 @@ const journeyFn = (items: PresentationItem[]): PresentationItem[] => [
 
 const items: PresentationItem[] = [
   ({ streamStates }) => streamStates.forEach(hide),
-  [7000, WelcomeToThePowerHub],
-  [7000, ElectricEnergy],
-  [7000, ThermalEnergy],
-  [7000, WaterManagement],
+  [10000, WelcomeToThePowerHub],
+  [10000, ElectricEnergy],
+  [10000, ThermalEnergy],
+  [10000, WaterManagement],
   [250],
   ...journeyFn(electrical),
   ...journeyFn(thermal),

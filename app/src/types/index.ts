@@ -124,3 +124,4 @@ export type WeatherInfo = SnakeCasedProperties<{
 }>;
 
 export type AppMode = "display" | "portrait" | "landscape";
+export type Direction = "up" | "down" | "left" | "right";

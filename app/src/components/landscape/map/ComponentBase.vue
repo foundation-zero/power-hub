@@ -2,7 +2,7 @@
   <g
     :id="component"
     ref="el"
-    class="component"
+    class="component cursor-pointer"
     :class="{ ...state, [mode]: true }"
     @mouseenter="onHover"
     @mouseleave="onLeave"

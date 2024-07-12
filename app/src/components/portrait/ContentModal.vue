@@ -1,7 +1,7 @@
 <template>
   <v-dialog
     v-model="show"
-    max-width="400"
+    max-width="500"
     height="700"
     max-height="90%"
     scrollable

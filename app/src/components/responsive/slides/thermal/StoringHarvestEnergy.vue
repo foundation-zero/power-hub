@@ -6,7 +6,7 @@
         width="100%"
         :height="undefined"
       />
-      <p>
+      <p class="font-weight-bold">
         The heat from the heat pipes is fed through a phase change material. A material that melts
         and freezes at a desired temperature. During a phase change materials will stay at their
         phase transition temperature until entirety of the material has transitioned. This is why a

@@ -1,3 +1,4 @@
+import type { Direction } from "@/types";
 import { useTimeout } from "@vueuse/core";
 import { ref } from "vue";
 
@@ -30,8 +31,6 @@ export const useRandomNumber = (min: number, max: number, timeout?: number) => {
 
   return val;
 };
-
-export type Direction = "up" | "down";
 
 export const useCounter = (timeout: number = 1000) => {
   const val = ref(0);

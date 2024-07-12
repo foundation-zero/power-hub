@@ -2,8 +2,7 @@
   <v-card
     height="100%"
     width="100%"
-    class="py-3"
-    :class="{ scrollable, 'px-8': $vuetify.display.mdAndUp, 'px-4': $vuetify.display.smAndDown }"
+    :class="{ scrollable }"
   >
     <v-card-title class="pa-0">
       <v-btn

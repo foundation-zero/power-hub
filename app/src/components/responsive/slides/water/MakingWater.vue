@@ -2,7 +2,7 @@
   <TextSlide journey="water">
     <template #title>Making water</template>
     <template #body>
-      <p>
+      <p class="font-weight-bold">
         To fulfill BCN's need for water we take water from the harbor and then filter it to produce
         clean water. This water isn't considered drinkable because of the need for regular testing
         to filter out any contaminants that might be inside of the harbor water.
