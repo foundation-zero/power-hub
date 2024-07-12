@@ -67,7 +67,8 @@
         text-anchor="end"
         x="54"
         y="84.8"
-        :to="value"
+        :to="value ?? 0"
+        :from="0"
         :format="formattedInt"
       />
     </text>
@@ -125,5 +126,5 @@ import { formattedInt } from "@/utils/numbers";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand"));
+const value = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand_flow"));
 </script>

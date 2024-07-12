@@ -6,13 +6,13 @@
   >
     <div class="d-flex justify-space-between">
       <span
-        class="text-h6 text-uppercase font-weight-medium"
+        class="text-h6 text-uppercase font-weight-medium text-left"
         style="max-width: 100px"
         >{{ title }}</span
       >
       <div>
         <AnimatedNumber
-          v-if="value"
+          v-if="!Number.isNaN(value)"
           :to="value"
           :format="format"
           class="text-h3 font-weight-medium"

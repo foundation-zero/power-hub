@@ -348,7 +348,8 @@ import AnimatedNumber from "@/components/AnimatedInt.vue";
 const { sensors } = usePowerHubStore();
 
 const { value: heatPipesPower, unit: heatPipesPowerUnit } = useAsWatts(
-  useObservable(sensors.useMean("heat_pipes/power")),
+  useObservable(sensors.useMean("heat_pipes/power").pipe(map((val) => Math.max(val, 0)))),
+  99,
 );
 
 const temperatureDifference = computed(() =>
@@ -362,6 +363,5 @@ const { value: sunPower, unit: sunPowerUnit } = useAsWatts(
       .useLastValues("weather/global_irradience")
       .pipe(map((values) => values[values.length - 1]?.value)),
   ),
-  0,
 );
 </script>
