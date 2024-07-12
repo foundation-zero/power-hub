@@ -53,7 +53,7 @@ export interface WaterTank {
   fill: number;
   waterTreatmentFlowIn: number;
   waterMakerFlowIn: number;
-  waterDemand: number;
+  waterDemandFlow: number;
 }
 
 export interface WaterProcessor {

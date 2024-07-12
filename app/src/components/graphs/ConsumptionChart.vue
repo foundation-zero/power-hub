@@ -23,6 +23,7 @@ import { useStripes } from "@/utils/charts";
 import { useCombinedHourlyData } from "@/utils";
 import { map } from "rxjs";
 import { toHourlyData } from "@/api";
+import { between } from "@/utils/numbers";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -35,7 +36,7 @@ const consumptionPerTwoHours = useObservable(
     sum
       .useOverTime("electric/power/consumption", {
         interval: "h",
-        between: [startOfToday().toISOString(), startOfTomorrow().toISOString()].join(","),
+        between: between(startOfToday(), startOfTomorrow()),
       })
       .pipe(map((values) => values.map(toHourlyData))),
     sum.useMeanPerHourOfDay("electric/power/consumption"),
