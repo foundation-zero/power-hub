@@ -214,7 +214,7 @@
           x="1324"
           y="384.35"
         >
-          into electricity
+          into electricity.
         </tspan>
       </text>
     </g>

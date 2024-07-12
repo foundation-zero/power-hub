@@ -2,7 +2,7 @@
   <TextSlide journey="electrical">
     <template #title>Powered by the sun</template>
     <template #body>
-      <p>
+      <p class="font-weight-bold">
         We have 200 m² of photo-voltaic solar panels capable of delivering 40 kW in ideal
         conditions. That's enough to run 80 washing machines at the same time. However this varies
         throughout the day and seasons. In ideal conditions the sun is pointed straight at the solar

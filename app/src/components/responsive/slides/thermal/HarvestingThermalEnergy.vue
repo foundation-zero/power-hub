@@ -6,7 +6,7 @@
         width="100%"
         :height="undefined"
       />
-      <p>
+      <p class="font-weight-bold">
         We use heat pipes to harvest thermal energy (i.e. heat) from the sun. Heat pipes are glass
         tubes which hold a vacuum. Inside that vacuum there is a bit of liquid, often distilled
         water. This way the sunlight can pass through the glass and heat up that medium, but the
