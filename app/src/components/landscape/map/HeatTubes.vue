@@ -101,12 +101,12 @@ import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
 import { useAsWatts } from "@/utils";
-import { ref } from "vue";
+import { map } from "rxjs";
 
-const { powerHub } = defineProps<{ powerHub?: PowerHubStore }>();
+const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  powerHub ? useObservable(powerHub.sensors.useMean("heat_pipes/power")) : ref(0),
+  useObservable(powerHub.sensors.useMean("heat_pipes/power").pipe(map((val) => Math.max(val, 0)))),
 );
 </script>
 

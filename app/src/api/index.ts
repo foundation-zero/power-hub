@@ -1,5 +1,5 @@
 import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/types";
-import type { DateRange, TimeInterval } from "@/types/power-hub";
+import type { TimeInterval } from "@/types/power-hub";
 import { Observable, defer, map, repeat, retry, timer } from "rxjs";
 import { ajax } from "rxjs/ajax";
 
@@ -37,7 +37,7 @@ export const useMean =
   <K extends NestedPath<T>>(
     topic: K,
     params?: QueryParams<{
-      between?: DateRange;
+      between?: string;
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
@@ -48,7 +48,7 @@ export const useCurrent =
   <K extends NestedPath<T>>(
     topic: K,
     params?: QueryParams<{
-      between?: DateRange;
+      between?: string;
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
@@ -59,7 +59,7 @@ export const useTotal =
   <K extends NestedPath<T>>(
     topic: K,
     params?: QueryParams<{
-      between?: DateRange;
+      between?: string;
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
@@ -83,7 +83,7 @@ export const useLastValues =
   <K extends NestedPath<T>>(
     topic: K,
     params?: QueryParams<{
-      between?: DateRange;
+      between?: string;
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>

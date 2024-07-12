@@ -10,10 +10,33 @@
         :size="32"
       />
     </div>
-    <div class="bar d-flex mt-3 mb-3">
+    <div class="bar my-3">
       <div
-        :style="{ backgroundColor: series[0].color, width: `${fillPercentage}%` }"
-        class="series d-flex pl-3 align-center"
+        class="container h-100 w-100 d-flex"
+        :class="{ 'bg-grey-lighten-2': disabled }"
+      >
+        <template v-if="!disabled">
+          <div
+            :style="{
+              backgroundColor: series[0].color,
+              width: `${fillPercentage}%`,
+            }"
+            class="series"
+          />
+
+          <div
+            :style="{
+              backgroundColor: series[1].color,
+              width: `${100 - fillPercentage}%`,
+            }"
+            class="series"
+          />
+        </template>
+      </div>
+
+      <div
+        class="marker d-flex flex-column align-center justify-space-between"
+        :style="{ left }"
       >
         <div class="pointer"></div>
         <div class="value">
@@ -21,10 +44,6 @@
           <span class="unit text-subtitle-2">%</span>
         </div>
       </div>
-      <div
-        :style="{ backgroundColor: series[1].color, width: `${100 - fillPercentage}%` }"
-        class="series d-flex pl-3 align-center"
-      ></div>
     </div>
   </div>
 </template>
@@ -41,55 +60,58 @@ export type BarSeries = {
 const fillTotal = computed(() => props.values[0] + props.values[1]);
 
 const fillPercentage = computed(() =>
-  fillTotal.value === 0 ? 0 : (props.values[0] / (props.values[0] + props.values[1])) * 100,
+  fillTotal.value === 0 ? 0 : (props.values[0] / fillTotal.value) * 100,
 );
+
+const left = computed(() => `max(10px, min(calc(100% - 10px), ${fillPercentage.value}%))`);
 
 const props = defineProps<{
   series: [BarSeries, BarSeries];
   values: [number, number];
+  disabled?: boolean;
 }>();
 </script>
 
 <style lang="scss" scoped>
-.bar {
-  height: 16px;
+.container {
+  border-radius: 10px;
+  overflow: hidden;
 
-  & > :first-child {
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+  & > :not(:last-child) {
     border-right: 4px double white;
   }
+}
 
-  & > :last-child {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-  }
+.bar {
+  height: 16px;
+  position: relative;
 }
 
 .series {
-  position: relative;
+  min-width: 10px;
+  max-width: calc(100% - 10px);
   transition: width 750ms ease;
   will-change: width;
   height: 100%;
-  display: inline-block;
+}
+
+.marker {
+  will-change: left;
+  transition: left 750ms ease;
+  height: 54px;
+  top: -15px;
+  position: absolute;
+  transform: translate(calc(-50% - 2px));
 }
 
 .value {
-  position: absolute;
-  bottom: -6px;
-  right: -8px;
-  text-align: center;
-  transform: translate(50%, 100%);
+  transform: translate(7px, 0);
 }
 
 .pointer {
-  position: absolute;
   content: "";
   width: 0;
   height: 0;
-  right: -2px;
-  top: -3px;
-  transform: translate(50%, -100%);
   border-top: 10px solid black;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
