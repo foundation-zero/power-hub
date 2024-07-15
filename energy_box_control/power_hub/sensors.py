@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
-from energy_box_control.appliances.electric_battery import ElectricBattery
+from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
+from energy_box_control.appliances.electric_battery import BatteryAlarm, ElectricBattery
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -29,7 +30,6 @@ from energy_box_control.power_hub.components import (
 from datetime import datetime
 
 from energy_box_control.units import (
-    Alarm,
     Celsius,
     Joule,
     Liter,
@@ -650,32 +650,32 @@ class ElectricBatterySensors(FromState):
     battery_high_voltage_alarm: int
     battery_low_starter_voltage_alarm: int
     battery_high_starter_voltage_alarm: int
-    battery_low_soc_alarm: Alarm
-    battery_low_temperature_alarm: Alarm
-    battery_high_temperature_alarm: Alarm
-    battery_mid_voltage_alarm: Alarm
-    battery_low_fused_voltage_alarm: Alarm
-    battery_high_fused_voltage_alarm: Alarm
-    battery_fuse_blown_alarm: Alarm
-    battery_high_internal_temperature_alarm: Alarm
-    battery_high_charge_current_alarm: Alarm
-    battery_high_discharge_current_alarm: Alarm
-    battery_cell_imbalance_alarm: Alarm
-    battery_internal_failure_alarm: Alarm
-    battery_high_charge_temperature_alarm: Alarm
-    battery_low_charge_temperature_alarm: Alarm
-    battery_low_cell_voltage_alarm: Alarm
+    battery_low_soc_alarm: BatteryAlarm
+    battery_low_temperature_alarm: BatteryAlarm
+    battery_high_temperature_alarm: BatteryAlarm
+    battery_mid_voltage_alarm: BatteryAlarm
+    battery_low_fused_voltage_alarm: BatteryAlarm
+    battery_high_fused_voltage_alarm: BatteryAlarm
+    battery_fuse_blown_alarm: BatteryAlarm
+    battery_high_internal_temperature_alarm: BatteryAlarm
+    battery_high_charge_current_alarm: BatteryAlarm
+    battery_high_discharge_current_alarm: BatteryAlarm
+    battery_cell_imbalance_alarm: BatteryAlarm
+    battery_internal_failure_alarm: BatteryAlarm
+    battery_high_charge_temperature_alarm: BatteryAlarm
+    battery_low_charge_temperature_alarm: BatteryAlarm
+    battery_low_cell_voltage_alarm: BatteryAlarm
     battery_error: int
-    high_temperature_alarm: Alarm
-    high_battery_voltage_alarm: Alarm
-    high_ac_out_voltage_alarm: Alarm
-    low_temperature_alarm: Alarm
-    low_battery_voltage_alarm: Alarm
-    low_ac_out_voltage_alarm: Alarm
-    overload_alarm: Alarm
-    ripple_alarm: Alarm
-    low_batt_voltage_alarm: Alarm
-    high_batt_voltage_alarm: Alarm
+    high_temperature_alarm: BatteryAlarm
+    high_battery_voltage_alarm: BatteryAlarm
+    high_ac_out_voltage_alarm: BatteryAlarm
+    low_temperature_alarm: BatteryAlarm
+    low_battery_voltage_alarm: BatteryAlarm
+    low_ac_out_voltage_alarm: BatteryAlarm
+    overload_alarm: BatteryAlarm
+    ripple_alarm: BatteryAlarm
+    low_batt_voltage_alarm: BatteryAlarm
+    high_batt_voltage_alarm: BatteryAlarm
 
 
 @sensors()
@@ -733,6 +733,31 @@ class WaterMakerSensors(FromState):
     )
 
 
+@sensors()
+class ContainersSensors(FromState):
+    spec: Containers
+    simulator_storage_co2: float
+    simulator_storage_humidity: float
+    simulator_storage_temperature: Celsius
+    simulator_storage_ventilation_error: FanAlarm
+    simulator_storage_ventilation_filter_status: FilterAlarm
+    office_co2: float
+    office_humidity: float
+    office_temperature: Celsius
+    office_ventilation_error: FanAlarm
+    office_ventilation_filter_status: FilterAlarm
+    kitchen_co2: float
+    kitchen_humidity: float
+    kitchen_temperature: Celsius
+    sanitary_temperature: Celsius
+    kitchen_ventilation_error: FanAlarm
+    kitchen_ventilation_filter_status: FilterAlarm
+    power_hub_humidity: float
+    power_hub_temperature: float
+    supply_box_humidiy: float
+    supply_box_temperature: float
+
+
 @sensors(from_appliance=False)
 class WeatherSensors(WithoutAppliance):
     ambient_temperature: Celsius
@@ -772,6 +797,7 @@ class PowerHubSensors(NetworkSensors):
     grey_water_tank: GreyWaterTankSensors
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
+    containers: ContainersSensors
     time: datetime
 
 

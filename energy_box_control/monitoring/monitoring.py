@@ -9,7 +9,7 @@ from energy_box_control.monitoring.checks import (
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
-from typing import Protocol
+from typing import Protocol, Sequence
 from energy_box_control.config import CONFIG
 
 
@@ -54,20 +54,18 @@ class Notifier:
 class Monitor:
     def __init__(
         self,
-        sensor_value_checks: list[SensorValueCheck] = [],
+        appliance_checks: Sequence[AlarmHealthCheck | SensorValueCheck] = [],
         url_health_checks: list[UrlHealthCheck] = [],
-        alarm_checks: list[AlarmHealthCheck] = [],
     ):
-        self._sensor_value_checks = sensor_value_checks
+        self._appliance_checks = appliance_checks
         self._url_health_checks = url_health_checks
-        self._alarm_checks = alarm_checks
 
-    def run_sensor_values_checks(
+    def run_appliance_checks(
         self, sensor_values: PowerHubSensors, source: str
     ) -> list[NotificationEvent]:
         return [
             NotificationEvent(result, source, check.name, check.severity)
-            for check in self._sensor_value_checks
+            for check in self._appliance_checks
             if (result := check.check(sensor_values)) is not None
         ]
 
@@ -77,14 +75,4 @@ class Monitor:
             NotificationEvent(result, source, check.name, check.severity)
             for check in self._url_health_checks
             if (result := await check.check()) is not None
-        ]
-
-    def run_alarm_checks(
-        self, sensor_values: PowerHubSensors, source: str
-    ) -> list[NotificationEvent]:
-        print("hit")
-        return [
-            NotificationEvent(result, source, check.name, check.severity)
-            for check in self._alarm_checks
-            if (result := check.check(sensor_values)) is not None
         ]
