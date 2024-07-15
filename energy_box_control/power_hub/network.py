@@ -202,6 +202,8 @@ class PowerHub(Network[PowerHubSensors]):
     water_maker: WaterMaker
     fresh_water_tank: WaterTank
     grey_water_tank: WaterTank
+    black_water_tank: WaterTank
+    technical_water_tank: WaterTank
     fresh_water_demand: WaterDemand
     grey_water_supply: WaterDemand
     water_treatment: WaterTreatment
@@ -256,6 +258,8 @@ class PowerHub(Network[PowerHubSensors]):
             phc.water_maker,
             phc.fresh_water_tank,
             phc.grey_water_tank,
+            phc.black_water_tank,
+            phc.technical_water_tank,
             phc.water_demand(schedules.fresh_water_demand),
             phc.water_demand(schedules.grey_water_supply),
             phc.water_treatment,
@@ -464,9 +468,13 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_maker)
             .value(WaterMakerState(True))
             .define_state(self.fresh_water_tank)
-            .value(WaterTankState(500))
+            .value(WaterTankState(500, 50))
             .define_state(self.grey_water_tank)
-            .value(WaterTankState(500))
+            .value(WaterTankState(500, 50))
+            .define_state(self.black_water_tank)
+            .value(WaterTankState(500, 50))
+            .define_state(self.technical_water_tank)
+            .value(WaterTankState(500, 50))
             .define_state(self.fresh_water_demand)
             .value(WaterDemandState())
             .define_state(self.grey_water_supply)
@@ -493,6 +501,8 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(outboard)
             .unconnected(self.pv_panel)
             .unconnected(self.electric_battery)
+            .unconnected(self.black_water_tank)
+            .unconnected(self.technical_water_tank)
             .combine(fresh_water)
             .build()
         )

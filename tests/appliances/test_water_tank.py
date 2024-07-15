@@ -28,7 +28,7 @@ def test_water_tank(simulation_time):
             WaterTankPort.IN_1: WaterState(water_treatment_in),
             WaterTankPort.CONSUMPTION: WaterState(consumption),
         },
-        WaterTankState(initial_fill),
+        WaterTankState(initial_fill, 0),
         None,
         simulation_time,
     )

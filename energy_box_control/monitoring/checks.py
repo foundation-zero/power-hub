@@ -15,6 +15,8 @@ POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
 INFLUXDB_URL = "https://influxdb.staging.power-hub.foundationzero.org/health"
 MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/health"
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
+WATER_TANK_LOWER_BOUND = 40
+WATER_TANK_UPPER_BOUND = 100
 
 
 class SensorAlarm(Enum):
@@ -108,7 +110,7 @@ warning_check = sensor_alarm_check(
 )
 
 
-def valid_temp(
+def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
     lower_bound: int = 5,
@@ -127,7 +129,7 @@ def valid_temp(
 
 
 sensor_checks = [
-    valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
 ]
 
 alarm_checks = [
@@ -155,6 +157,22 @@ warning_checks = [
     ]
 ]
 
+water_tank_checks = [
+    valid_value(
+        f"{tank_name}_percentage_fill",
+        lambda sensors, tank_name=tank_name: getattr(
+            sensors, tank_name
+        ).percentage_fill,
+        lower_bound=WATER_TANK_LOWER_BOUND,
+        upper_bound=WATER_TANK_UPPER_BOUND,
+        severity=Severity.CRITICAL,
+    )
+    for tank_name in get_type_hints(PowerHubSensors).keys()
+    if "tank" in tank_name
+]
+
+
+all_appliance_checks = sensor_checks + alarm_checks + warning_checks + water_tank_checks
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

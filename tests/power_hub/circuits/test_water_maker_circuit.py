@@ -56,7 +56,7 @@ def test_water_maker_network():
                 .define_state(self.water_maker)
                 .value(WaterMakerState(True))
                 .define_state(self.water_tank)
-                .value(WaterTankState(0))
+                .value(WaterTankState(0, 0))
                 .define_state(self.water_demand)
                 .value(WaterDemandState())
                 .define_state(self.grey_water_supply)

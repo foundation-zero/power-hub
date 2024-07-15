@@ -194,6 +194,8 @@ def electric_battery(
 water_maker = WaterMaker(0.9)
 fresh_water_tank = WaterTank(1000)
 grey_water_tank = WaterTank(1000)
+black_water_tank = WaterTank(1000)
+technical_water_tank = WaterTank(1000)
 
 
 def water_demand(
