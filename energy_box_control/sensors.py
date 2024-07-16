@@ -20,7 +20,7 @@ import functools
 from collections import deque
 
 from energy_box_control.linearize import linearize
-from energy_box_control.network import NetworkState, Network
+from energy_box_control.network import AnyAppliance, NetworkState, Network
 
 
 class Timed(Protocol):
@@ -192,8 +192,31 @@ class SensorType(Enum):
 class Sensor:
     technical_name: str | None = None
     from_port: Port | None = None
-    from_ports: list[Port] | None = None
+    from_ports: tuple[Port, Port] | None = None
     type: SensorType | None = None
+
+    def value_from_state(
+        self, network_state: NetworkState[Any], appliance: AnyAppliance, name: str
+    ) -> Any:
+        if self.from_port and self.type == SensorType.FLOW:
+            return network_state.connection(
+                appliance, self.from_port, ThermalState(nan, nan)
+            ).flow
+        elif self.from_port and self.type == SensorType.TEMPERATURE:
+            return network_state.connection(
+                appliance, self.from_port, ThermalState(nan, nan)
+            ).temperature
+        elif self.from_ports and self.type == SensorType.DELTA_T:
+            return (
+                network_state.connection(
+                    appliance, self.from_ports[1], ThermalState(nan, nan)
+                ).temperature
+                - network_state.connection(
+                    appliance, self.from_ports[0], ThermalState(nan, nan)
+                ).temperature
+            )
+        else:
+            return getattr(network_state.appliance(appliance).get(), name, None)
 
 
 def sensor(*args: Any, **kwargs: Any) -> Any:
@@ -240,65 +263,13 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
             appliance: ThermalAppliance[Any, Any, Any],
             state: NetworkState[Any],
         ):
-            appliance_state = state.appliance(appliance).get()
-            appliance_sensors = {
-                name: getattr(appliance_state, name)
-                for name in get_type_hints(cls).keys()
-                if hasattr(appliance_state, name)
-            }
-            port_sensors = [
-                (
-                    name,
-                    state.connection(
-                        appliance,
-                        description.from_port,
-                        ThermalState(nan, nan),
-                    ),
-                    description,
-                )
+            sensors = {
+                name: description.value_from_state(state, appliance, name)
                 for name in get_type_hints(cls).keys()
                 if (description := getattr(cls, name, None))
-                and isinstance(description, Sensor)
-                and description.from_port is not None
-            ]
-
-            temperature_sensors = {
-                name: state.temperature
-                for name, state, description in port_sensors
-                if description.type == SensorType.TEMPERATURE
-            }
-            flow_sensors = {
-                name: state.flow
-                for name, state, description in port_sensors
-                if description.type == SensorType.FLOW
             }
 
-            ports_sensors = [
-                (
-                    name,
-                    abs(
-                        state.connection(
-                            appliance, description.from_ports[1], ThermalState(nan, nan)
-                        ).temperature
-                        - state.connection(
-                            appliance, description.from_ports[0], ThermalState(nan, nan)
-                        ).temperature
-                    ),
-                    description,
-                )
-                for name in get_type_hints(cls).keys()
-                if (description := getattr(cls, name, None))
-                and isinstance(description, Sensor)
-                and description.from_ports is not None
-            ]
-
-            delta_t_sensors = {
-                name: state
-                for name, state, description in ports_sensors
-                if description.type == SensorType.DELTA_T
-            }
-
-            return cls(context, appliance, **appliance_sensors, **temperature_sensors, **flow_sensors, **delta_t_sensors)  # type: ignore
+            return cls(context, appliance, **sensors)  # type: ignore
 
         def _values(sensor: Any) -> dict[str, Any]:
             return {name: getattr(sensor, name) for name in get_type_hints(cls).keys()}

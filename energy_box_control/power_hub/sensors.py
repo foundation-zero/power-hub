@@ -597,8 +597,8 @@ class ColdReservoirSensors(FromState):
 @sensors()
 class ValveSensors(FromState):
     spec: Valve
-    position: float
-    service_info: ValveServiceInfo
+    position: float = sensor()
+    service_info: ValveServiceInfo = sensor()
 
     def in_position(self, position: float, diff: float = 0.05) -> bool:
         return abs(self.position - position) < diff
@@ -769,7 +769,7 @@ class SwitchPumpSensors(FromState):
 
     pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
     pump_2_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pressure: Bar
+    pressure: Bar = sensor()
 
     @property
     def electrical_power(self) -> Watt:
@@ -779,21 +779,21 @@ class SwitchPumpSensors(FromState):
 @sensors()
 class PVSensors(FromState):
     spec: PVPanel
-    power: Watt
+    power: Watt = sensor()
 
 
 @sensors()
 class ElectricBatterySensors(FromState):
     spec: ElectricBattery
-    voltage_battery_system: int
-    current_battery_system: int
-    power_battery_system: int
-    soc_battery_system: float
-    battery_alarm: int
-    battery_low_voltage_alarm: int
-    battery_high_voltage_alarm: int
-    battery_low_starter_voltage_alarm: int
-    battery_high_starter_voltage_alarm: int
+    voltage_battery_system: int = sensor()
+    current_battery_system: int = sensor()
+    power_battery_system: int = sensor()
+    soc_battery_system: float = sensor()
+    battery_alarm: int = sensor()
+    battery_low_voltage_alarm: int = sensor()
+    battery_high_voltage_alarm: int = sensor()
+    battery_low_starter_voltage_alarm: int = sensor()
+    battery_high_starter_voltage_alarm: int = sensor()
     battery_low_soc_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
@@ -811,7 +811,7 @@ class ElectricBatterySensors(FromState):
     battery_high_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_low_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_low_cell_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_error: int
+    battery_error: int = sensor()
     high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     high_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     high_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
@@ -872,7 +872,7 @@ class WaterTreatmentSensors(FromState):
 @sensors()
 class WaterMakerSensors(FromState):
     spec: WaterMaker
-    on: bool
+    on: bool = sensor()
     out_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
