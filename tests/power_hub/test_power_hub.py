@@ -379,10 +379,7 @@ def test_water_treatment(
     state = scheduled_power_hub.simulate(state, control_values)
     sensors = scheduled_power_hub.sensors_from_state(state)
 
-    sensors.grey_water_tank.fill = 0.9 * 1000
-    sensors.grey_water_tank.percentage_fill = (
-        sensors.grey_water_tank.fill / scheduled_power_hub.grey_water_tank.capacity
-    )
+    sensors.grey_water_tank.percentage_fill = 90
 
     control_state, control_values = control_power_hub(
         scheduled_power_hub, control_state, sensors, state.time.timestamp
@@ -392,10 +389,7 @@ def test_water_treatment(
         control_values.appliance(scheduled_power_hub.water_treatment).get().on == True
     )
 
-    sensors.grey_water_tank.fill = 0.09 * 1000
-    sensors.grey_water_tank.percentage_fill = (
-        sensors.grey_water_tank.fill / scheduled_power_hub.grey_water_tank.capacity
-    )
+    sensors.grey_water_tank.percentage_fill = 9
 
     control_state, control_values = control_power_hub(
         scheduled_power_hub, control_state, sensors, state.time.timestamp

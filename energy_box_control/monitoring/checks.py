@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
+from energy_box_control.monitoring.health_bounds import TANK_BOUNDS
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
@@ -15,8 +16,6 @@ POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
 INFLUXDB_URL = "https://influxdb.staging.power-hub.foundationzero.org/health"
 MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/health"
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
-WATER_TANK_LOWER_BOUND = 40
-WATER_TANK_UPPER_BOUND = 100
 
 
 class SensorAlarm(Enum):
@@ -163,16 +162,14 @@ water_tank_checks = [
         lambda sensors, tank_name=tank_name: getattr(
             sensors, tank_name
         ).percentage_fill,
-        lower_bound=WATER_TANK_LOWER_BOUND,
-        upper_bound=WATER_TANK_UPPER_BOUND,
+        lower_bound=TANK_BOUNDS[tank_name]["lower_bound"],
+        upper_bound=TANK_BOUNDS[tank_name]["upper_bound"],
         severity=Severity.CRITICAL,
     )
-    for tank_name in get_type_hints(PowerHubSensors).keys()
+    for tank_name in TANK_BOUNDS.keys()
     if "tank" in tank_name
 ]
 
-
-all_appliance_checks = sensor_checks + alarm_checks + warning_checks + water_tank_checks
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

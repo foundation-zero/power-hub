@@ -681,7 +681,6 @@ class ElectricBatterySensors(FromState):
 @sensors()
 class FreshWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter
     percentage_fill: Liter = sensor(technical_name="LS-5001")
 
     water_demand_flow: LiterPerSecond = sensor(
@@ -694,11 +693,14 @@ class FreshWaterTankSensors(FromState):
         type=SensorType.FLOW, from_port=WaterTankPort.IN_0
     )
 
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
+
 
 @sensors()
 class GreyWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter
     percentage_fill: float = sensor(technical_name="LS-3001")
 
     water_demand_flow: LiterPerSecond = sensor(
@@ -709,19 +711,29 @@ class GreyWaterTankSensors(FromState):
         type=SensorType.FLOW, from_port=WaterTankPort.IN_0
     )
 
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
+
 
 @sensors()
 class BlackTankSensors(FromState):
     spec: WaterTank
-    fill: Liter
     percentage_fill: float = sensor(technical_name="LS-2001")
+
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
 
 
 @sensors()
 class TechnicalWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter
     percentage_fill: float = sensor(technical_name="LS-4001")
+
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
 
 
 @sensors()
