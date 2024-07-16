@@ -1,8 +1,10 @@
+from dataclasses import fields
 from energy_box_control.monitoring.checks import (
     sensor_checks,
     Severity,
     alarm_checks,
     warning_checks,
+    pump_alarm_checks,
 )
 from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
@@ -11,6 +13,7 @@ from energy_box_control.monitoring.monitoring import (
     Notifier,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
+from energy_box_control.power_hub.sensors import PowerHubSensors
 
 
 def test_run_sensor_values_checks():
@@ -54,6 +57,25 @@ def test_warning_checks():
         dedup_key="battery_fuse_blown_alarm_warning",
         severity=Severity.WARNING,
     )
+
+
+def test_pump_alarm_checks():
+    for pump_name in [
+        field.name for field in fields(PowerHubSensors) if "pump" in field.name
+    ]:
+        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+        attr_name = "pump_1_alarm"
+        alarm_code = 50
+        setattr(getattr(sensors, pump_name), attr_name, alarm_code)
+        monitor = Monitor(alarm_checks=pump_alarm_checks)
+        source = "test"
+        assert monitor.run_alarm_checks(sensors, source)[0] == NotificationEvent(
+            message=f"{pump_name}_{attr_name} is raising an alarm with code {alarm_code}",
+            source=source,
+            dedup_key=f"{pump_name}_{attr_name}",
+            severity=Severity.CRITICAL,
+        )
 
 
 def test_send_events(mocker):

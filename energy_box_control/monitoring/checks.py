@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
-from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub.sensors import PowerHubSensors, SwitchPumpSensors
 from enum import Enum
 from http import HTTPStatus
 from energy_box_control.power_hub.sensors import ElectricBatterySensors
@@ -20,6 +20,10 @@ DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 class SensorAlarm(Enum):
     WARNING = 1
     ALARM = 2
+
+
+class PumpAlarm(Enum):
+    NO_ALARM = 0
 
 
 class Severity(Enum):
@@ -100,11 +104,33 @@ def sensor_alarm_check(
     return _alarm_check
 
 
+def pump_alarm_check(
+    type: PumpAlarm, message: Callable[[str, int], str]
+) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
+    def _pump_alarm_check(
+        name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
+    ):
+        def _alarm(sensor_values: PowerHubSensors) -> str | None:
+            alarm_code = sensor_fn(sensor_values)
+            if alarm_code != type.value:
+                return message(name, alarm_code)
+            return None
+
+        return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
+
+    return _pump_alarm_check
+
+
 alarm_check = sensor_alarm_check(
     SensorAlarm.ALARM, lambda name: f"{name} is raising an alarm"
 )
 warning_check = sensor_alarm_check(
     SensorAlarm.WARNING, lambda name: f"{name} is raising a warning"
+)
+
+pump_alarm = pump_alarm_check(
+    PumpAlarm.NO_ALARM,
+    lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
 )
 
 
@@ -152,6 +178,22 @@ warning_checks = [
         attr
         for attr, type in get_type_hints(ElectricBatterySensors).items()
         if type == Alarm
+    ]
+]
+
+pump_alarm_checks = [
+    pump_alarm(
+        f"{appliance_name}_{attr}",
+        lambda sensors, attr=attr, appliance_name=appliance_name: getattr(
+            getattr(sensors, appliance_name), attr
+        ),
+        Severity.CRITICAL,
+    )
+    for appliance_name in [
+        field.name for field in fields(PowerHubSensors) if "pump" in field.name
+    ]
+    for attr in [
+        attr for attr, _ in get_type_hints(SwitchPumpSensors).items() if "alarm" in attr
     ]
 ]
 
