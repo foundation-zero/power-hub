@@ -32,7 +32,7 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    pass
+    hot_pressure: int = 100
 
 
 @dataclass(frozen=True, eq=True)

@@ -1,7 +1,13 @@
 from dataclasses import dataclass
+from math import isnan
 from typing import Any, Awaitable, Callable, Optional
-
 import aiohttp
+from energy_box_control.monitoring.health_bounds import (
+    YAZAKI_BOUNDS,
+    HealthBound,
+)
+from energy_box_control.network import NetworkControl
+from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
@@ -46,6 +52,11 @@ class SensorValueCheck(Check):
 
 
 @dataclass
+class ApplianceSensorValueCheck(Check):
+    check: Callable[[PowerHubSensors, NetworkControl[PowerHub], PowerHub], CheckResult]
+
+
+@dataclass
 class UrlHealthCheck(Check):
     check: Callable[[], Awaitable[CheckResult]]
 
@@ -63,6 +74,30 @@ def value_check[
 
     def _check(sensor_values: A) -> CheckResult:
         if not check_fn(sensor_fn(sensor_values)):
+            return (
+                f"{name} is outside valid bounds with value: {sensor_fn(sensor_values)}"
+            )
+        else:
+            return None
+
+    return _check
+
+
+def appliance_value_check(
+    name: str,
+    sensor_fn: Callable[[PowerHubSensors], float],
+    check_fn: Callable[[float, bool], bool],
+    control_fn: Callable[[NetworkControl[PowerHub], PowerHub], bool],
+) -> Callable[[PowerHubSensors, NetworkControl[PowerHub], PowerHub], CheckResult]:
+
+    def _check(
+        sensor_values: PowerHubSensors,
+        control_values: NetworkControl[PowerHub],
+        power_hub: PowerHub,
+    ) -> CheckResult:
+        if not check_fn(
+            sensor_fn(sensor_values), control_fn(control_values, power_hub)
+        ):
             return (
                 f"{name} is outside valid bounds with value: {sensor_fn(sensor_values)}"
             )
@@ -108,7 +143,7 @@ warning_check = sensor_alarm_check(
 )
 
 
-def valid_temp(
+def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
     lower_bound: int = 5,
@@ -126,9 +161,46 @@ def valid_temp(
     )
 
 
+def valid_appliance_value(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], float],
+    control_fn: Callable[[NetworkControl[PowerHub], PowerHub], bool],
+    health_bound: HealthBound,
+    severity: Severity = Severity.CRITICAL,
+) -> ApplianceSensorValueCheck:
+    return ApplianceSensorValueCheck(
+        name,
+        appliance_value_check(
+            name,
+            value_fn,
+            lambda value, appliance_on: (
+                health_bound.lower_bound < value < health_bound.upper_bound
+                if appliance_on and not isnan(value)
+                else True
+            ),
+            control_fn,
+        ),
+        severity,
+    )
+
+
 sensor_checks = [
-    valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
 ]
+
+
+yazaki_bound_checks = [
+    valid_appliance_value(
+        f"yazaki_{attr}_check",
+        lambda sensors, attr=attr: getattr(sensors.yazaki, attr),
+        lambda control_values, network: control_values.appliance(network.yazaki)
+        .get()
+        .on,
+        YAZAKI_BOUNDS[attr],
+    )
+    for attr in [attr for attr, _ in YAZAKI_BOUNDS.items()]
+]
+
 
 alarm_checks = [
     alarm_check(
