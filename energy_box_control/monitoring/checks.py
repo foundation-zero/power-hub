@@ -4,6 +4,14 @@ from typing import Any, Awaitable, Callable, Optional
 import aiohttp
 from energy_box_control.appliances.electric_battery import BatteryAlarm
 from energy_box_control.appliances.containers import FilterAlarm, FanAlarm
+from energy_box_control.monitoring.health_bounds import (
+    CO2_LOWER_BOUND,
+    CO2_UPPER_BOUND,
+    CONTAINER_TEMPERATURE_LOWER_BOUND,
+    CONTAINER_TEMPERATURE_UPPER_BOUND,
+    HUMIDITY_LOWER_BOUND,
+    HUMIDITY_UPPER_BOUND,
+)
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
@@ -18,12 +26,6 @@ POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
 INFLUXDB_URL = "https://influxdb.staging.power-hub.foundationzero.org/health"
 MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/health"
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
-CO2_LOWER_BOUND = 20
-CO2_UPPER_BOUND = 100
-HUMIDITY_LOWER_BOUND = 20
-HUMIDITY_UPPER_BOUND = 100
-CONTAINER_TEMPERATURE_LOWER_BOUND = 15
-CONTAINER_TEMPERATURE_UPPER_BOUND = 35
 
 
 class ElectricBatteryAlarm(Enum):

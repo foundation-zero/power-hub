@@ -40,7 +40,7 @@ class ContainersState(ApplianceState):
     kitchen_ventilation_filter_status: FilterAlarm = NO_ALARM
     power_hub_humidity: float = DEFAULT_HUMIDITY
     power_hub_temperature: float = DEFAULT_TEMPERATURE
-    supply_box_humidiy: float = DEFAULT_CO2
+    supply_box_humidity: float = DEFAULT_CO2
     supply_box_temperature: float = DEFAULT_TEMPERATURE
 
 

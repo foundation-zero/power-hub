@@ -754,7 +754,7 @@ class ContainersSensors(FromState):
     kitchen_ventilation_filter_status: FilterAlarm
     power_hub_humidity: float
     power_hub_temperature: float
-    supply_box_humidiy: float
+    supply_box_humidity: float
     supply_box_temperature: float
 
 
