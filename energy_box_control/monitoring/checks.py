@@ -1,7 +1,14 @@
 from dataclasses import dataclass
+from math import isnan
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
+from energy_box_control.monitoring.health_bounds import (
+    HealthBound,
+    HOT_CIRCUIT_FLOW_BOUNDS,
+    HOT_CIRCUIT_PRESSURE_BOUNDS,
+    HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+)
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
@@ -108,26 +115,41 @@ warning_check = sensor_alarm_check(
 )
 
 
-def valid_temp(
+def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
-    lower_bound: int = 5,
-    upper_bound: int = 100,
-    severity: Severity = Severity.ERROR,
+    health_bound: HealthBound = HealthBound(5, 100),
+    severity: Severity = Severity.CRITICAL,
 ) -> SensorValueCheck:
     return SensorValueCheck(
         name,
         value_check(
             name,
             value_fn,
-            lambda value: lower_bound < value < upper_bound,
+            lambda value: health_bound.lower_bound <= value <= health_bound.upper_bound
+            or isnan(value),
         ),
         severity,
     )
 
 
 sensor_checks = [
-    valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature),
+    valid_value(
+        "hot_circuit_temperature_check",
+        lambda sensors: sensors.pcm.charge_input_temperature,
+        HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+    ),
+    valid_value(
+        "hot_circuit_flow_check",
+        lambda sensors: sensors.pcm.charge_flow,
+        HOT_CIRCUIT_FLOW_BOUNDS,
+    ),
+    valid_value(
+        "hot_circuit_pressure_check",
+        lambda sensors: sensors.pcm.charge_pressure,
+        HOT_CIRCUIT_PRESSURE_BOUNDS,
+    ),
 ]
 
 alarm_checks = [

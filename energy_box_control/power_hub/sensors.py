@@ -30,6 +30,7 @@ from datetime import datetime
 
 from energy_box_control.units import (
     Alarm,
+    Bar,
     Celsius,
     Joule,
     Liter,
@@ -123,6 +124,14 @@ class PcmSensors(FromState):
     def charge_output_temperature(self) -> Celsius:
         return (
             self.hot_mix.output_temperature
+            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            else float("nan")
+        )
+
+    @property
+    def charge_pressure(self) -> Celsius:
+        return (
+            self.hot_switch_valve.pressure
             if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
             else float("nan")
         )
@@ -509,8 +518,10 @@ class HotSwitchSensors(ValveSensors):
     )
 
     flow: LiterPerSecond = sensor(
-        technical_name="FS1011", type=SensorType.FLOW, from_port=ValvePort.AB
+        technical_name="FS-1011", type=SensorType.FLOW, from_port=ValvePort.AB
     )
+
+    pressure: Bar = sensor(technical_name="PS-1003")
 
 
 @sensors()

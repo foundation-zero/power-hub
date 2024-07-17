@@ -7,11 +7,13 @@ from energy_box_control.appliances.base import (
     Port,
 )
 from energy_box_control.time import ProcessTime
+from energy_box_control.units import Bar
 
 
 @dataclass(frozen=True, eq=True)
 class ValveState(ApplianceState):
     position: float
+    pressure: Bar = 250
 
 
 @dataclass(frozen=True, eq=True)
