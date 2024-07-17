@@ -67,12 +67,15 @@
       font-size="10"
       letter-spacing="0em"
     >
-      <tspan
+      <AnimatedNumber
         text-anchor="end"
         x="56"
         y="79.91"
-        >218</tspan
-      >
+        :from="0"
+        :format="formattedInt"
+        :to="value"
+        tag="tspan"
+      />
     </text>
     <text
       fill="#756B61"
@@ -85,7 +88,7 @@
         x="58"
         y="79.91"
       >
-        kWh
+        {{ unit }}
       </tspan>
     </text>
   </ComponentBase>
@@ -93,4 +96,27 @@
 
 <script setup lang="ts">
 import ComponentBase from "./ComponentBase.vue";
+
+import AnimatedNumber from "vue-number-animation";
+import { type PowerHubStore } from "@/stores/power-hub";
+
+import { useAsWattHours } from "@/utils";
+import { useObservable } from "@vueuse/rxjs";
+import { between, formattedInt } from "@/utils/numbers";
+import { map } from "rxjs";
+import { add } from "date-fns";
+
+const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
+
+const BATTERY_CAPACITY = 218000;
+
+const { value, unit } = useAsWattHours(
+  useObservable(
+    powerHub.sensors
+      .useLastValues("electric_battery/soc_battery_system", () => ({
+        between: between(add(new Date(), { seconds: -100 }), new Date()),
+      }))
+      .pipe(map((val) => (val.slice(-1)[0].value * BATTERY_CAPACITY) / 100)),
+  ),
+);
 </script>
