@@ -25,6 +25,7 @@ pydantic-settings = "^2.2.1"
 quart-cors = "^0.7.0"
 pdpyras = "^5.2.0"
 
+scp = "^0.15.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
 hypothesis = "^6.98.4"
