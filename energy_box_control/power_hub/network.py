@@ -835,6 +835,7 @@ class PowerHub(Network[PowerHubSensors]):
             context.subject.weather,
             ambient_temperature=self.schedules.ambient_temperature.at(state.time),
             global_irradiance=self.schedules.global_irradiance.at(state.time),
+            alarm=0,
         )
 
         return context.resolve_for_network(

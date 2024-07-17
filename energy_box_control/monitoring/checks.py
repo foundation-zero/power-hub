@@ -8,7 +8,7 @@ from http import HTTPStatus
 from energy_box_control.power_hub.sensors import ElectricBatterySensors
 from typing import get_type_hints
 
-from energy_box_control.units import Alarm
+from energy_box_control.units import BatteryAlarm
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -17,9 +17,13 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
-class SensorAlarm(Enum):
+class BatteryAlarmValues(Enum):
     WARNING = 1
     ALARM = 2
+
+
+class Alarm(Enum):
+    NO_ALARM = 0
 
 
 class Severity(Enum):
@@ -85,7 +89,7 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
 
 
 def sensor_alarm_check(
-    type: SensorAlarm, message: Callable[[str], str]
+    type: BatteryAlarmValues, message: Callable[[str], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
     def _alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
@@ -100,12 +104,29 @@ def sensor_alarm_check(
     return _alarm_check
 
 
-alarm_check = sensor_alarm_check(
-    SensorAlarm.ALARM, lambda name: f"{name} is raising an alarm"
+def no_alarm_check(
+    type: Alarm, message: Callable[[str], str]
+) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
+    def _alarm_check(
+        name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
+    ):
+        def _alarm(sensor_values: PowerHubSensors) -> str | None:
+            if sensor_fn(sensor_values) != type.value:
+                return message(name)
+            return None
+
+        return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
+
+    return _alarm_check
+
+
+battery_alarm_check = sensor_alarm_check(
+    BatteryAlarmValues.ALARM, lambda name: f"{name} is raising an alarm"
 )
-warning_check = sensor_alarm_check(
-    SensorAlarm.WARNING, lambda name: f"{name} is raising a warning"
+battery_warning_check = sensor_alarm_check(
+    BatteryAlarmValues.WARNING, lambda name: f"{name} is raising a warning"
 )
+alarm_check = no_alarm_check(Alarm.NO_ALARM, lambda name: f"{name} is raising an alarm")
 
 
 def valid_temp(
@@ -130,8 +151,8 @@ sensor_checks = [
     valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
 ]
 
-alarm_checks = [
-    alarm_check(
+battery_alarm_checks = [
+    battery_alarm_check(
         f"{attr}",
         lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
         Severity.CRITICAL,
@@ -139,11 +160,11 @@ alarm_checks = [
     for attr in [
         attr
         for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        if type == BatteryAlarm
     ]
 ]
-warning_checks = [
-    warning_check(
+battery_warning_checks = [
+    battery_warning_check(
         f"{attr}_warning",
         lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
         Severity.WARNING,
@@ -151,10 +172,17 @@ warning_checks = [
     for attr in [
         attr
         for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        if type == BatteryAlarm
     ]
 ]
 
+weather_station_alarm_checks = [
+    alarm_check(
+        f"weather_station",
+        lambda sensors,: getattr(sensors.weather, "alarm"),
+        Severity.ERROR,
+    )
+]
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

@@ -1,8 +1,9 @@
 from energy_box_control.monitoring.checks import (
     sensor_checks,
     Severity,
-    alarm_checks,
-    warning_checks,
+    battery_alarm_checks,
+    battery_warning_checks,
+    weather_station_alarm_checks,
 )
 from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
@@ -28,11 +29,11 @@ def test_run_sensor_values_checks():
     )
 
 
-def test_alarm_checks():
+def test_battery_alarm_checks():
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     sensors.electric_battery.battery_fuse_blown_alarm = 2
-    monitor = Monitor(alarm_checks=alarm_checks)
+    monitor = Monitor(alarm_checks=battery_alarm_checks)
     source = "test"
     assert monitor.run_alarm_checks(sensors, source)[0] == NotificationEvent(
         message=f"battery_fuse_blown_alarm is raising an alarm",
@@ -42,17 +43,31 @@ def test_alarm_checks():
     )
 
 
-def test_warning_checks():
+def test_battery_warning_checks():
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     sensors.electric_battery.battery_fuse_blown_alarm = 1
-    monitor = Monitor(alarm_checks=warning_checks)
+    monitor = Monitor(alarm_checks=battery_warning_checks)
     source = "test"
     assert monitor.run_alarm_checks(sensors, source)[0] == NotificationEvent(
         message=f"battery_fuse_blown_alarm_warning is raising a warning",
         source=source,
         dedup_key="battery_fuse_blown_alarm_warning",
         severity=Severity.WARNING,
+    )
+
+
+def test_weather_station_alarm_checks():
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    sensors.weather.alarm = 50
+    monitor = Monitor(alarm_checks=weather_station_alarm_checks)
+    source = "test"
+    assert monitor.run_alarm_checks(sensors, source)[0] == NotificationEvent(
+        message=f"weather_station is raising an alarm",
+        source=source,
+        dedup_key="weather_station",
+        severity=Severity.ERROR,
     )
 
 
