@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
@@ -20,6 +20,20 @@ DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 class SensorAlarm(Enum):
     WARNING = 1
     ALARM = 2
+
+
+"""
+1: Mechanical travel increased
+2: Actuator cannot move
+8: Internal activity
+9: Gear train disengaged
+10: Bus watchdog triggered
+"""
+
+
+class ValveAlarm(Enum):
+    ACTUATOR_CANNOT_MOVE = 2
+    GEAR_TRAIN_DISENGAGED = 9
 
 
 class Severity(Enum):
@@ -85,7 +99,7 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
 
 
 def sensor_alarm_check(
-    type: SensorAlarm, message: Callable[[str], str]
+    type: SensorAlarm | ValveAlarm, message: Callable[[str], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
     def _alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
@@ -105,6 +119,13 @@ alarm_check = sensor_alarm_check(
 )
 warning_check = sensor_alarm_check(
     SensorAlarm.WARNING, lambda name: f"{name} is raising a warning"
+)
+
+valve_actuator_check = sensor_alarm_check(
+    ValveAlarm.ACTUATOR_CANNOT_MOVE, lambda name: f"{name} is raised"
+)
+valve_gear_train_check = sensor_alarm_check(
+    ValveAlarm.GEAR_TRAIN_DISENGAGED, lambda name: f"{name} is raised"
 )
 
 
@@ -154,6 +175,35 @@ warning_checks = [
         if type == Alarm
     ]
 ]
+
+
+valve_actuator_checks = [
+    valve_actuator_check(
+        f"{valve_name}_actuator_alarm",
+        lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name for field in fields(PowerHubSensors) if "valve" in field.name
+    ]
+]
+
+valve_gear_train_checks = [
+    valve_gear_train_check(
+        f"{valve_name}_gear_train_alarm",
+        lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name for field in fields(PowerHubSensors) if "valve" in field.name
+    ]
+]
+
+valve_alarm_checks = valve_actuator_checks + valve_gear_train_checks
 
 
 service_checks = [

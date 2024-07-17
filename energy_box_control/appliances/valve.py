@@ -12,6 +12,7 @@ from energy_box_control.time import ProcessTime
 @dataclass(frozen=True, eq=True)
 class ValveState(ApplianceState):
     position: float
+    service_info: int = 0
 
 
 @dataclass(frozen=True, eq=True)
