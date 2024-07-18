@@ -24,7 +24,8 @@ import { useStripes } from "@/utils/charts";
 import { map } from "rxjs";
 import { toHourlyData } from "@/api";
 import { useCombinedHourlyData } from "@/utils";
-import { todayRangeFn } from "@/utils/numbers";
+import { between, todayRangeFn } from "@/utils/numbers";
+import { add, startOfTomorrow, startOfYesterday } from "date-fns";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -46,7 +47,26 @@ const productionPerTwoHours = useObservable(
 );
 
 const batteryValues = useObservable(
-  sensors.useOverTime("electric_battery/soc_battery_system", todayRangeFn),
+  sensors
+    .useOverTime("electric_battery/soc_battery_system", () => ({
+      interval: "h",
+      between: between(add(startOfYesterday(), { seconds: -1 }), startOfTomorrow()),
+    }))
+    .pipe(
+      map((values) => values.map(toHourlyData)),
+      map((values) => {
+        const yesterday = values.slice(0, 24);
+        const today = values.slice(24);
+
+        // Use the current value as starting point and add delta to yesterdays values
+        const delta = today[today.length - 1].value - yesterday[today.length - 1].value;
+        const forecastToday = yesterday
+          .slice(today.length)
+          .map(({ value, hour }) => ({ hour, value: Math.min(100, Math.max(0, value + delta)) }));
+
+        return today.concat(forecastToday);
+      }),
+    ),
 );
 
 const colorsOfTheDay = [
@@ -151,7 +171,20 @@ const option = ref({
       name: "Battery level",
       type: "line",
       itemStyle: {
-        color: "#746c62",
+        color: new graphic.LinearGradient(0, 0, 1, 0, [
+          {
+            offset: 0,
+            color: "#746c62",
+          },
+          {
+            offset: (new Date().getHours() + 1) / 24,
+            color: "#746c62",
+          },
+          {
+            offset: (new Date().getHours() + 1) / 24,
+            color: "rgba(116, 108, 98, 0.5)",
+          },
+        ]),
       },
       showSymbol: false,
       lineStyle: {
