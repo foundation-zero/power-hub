@@ -17,13 +17,12 @@ import VChart from "vue-echarts";
 import { ref } from "vue";
 import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
-import { startOfToday, startOfTomorrow } from "date-fns";
 import { range } from "lodash";
 import { useStripes } from "@/utils/charts";
 import { useCombinedHourlyData } from "@/utils";
 import { map } from "rxjs";
 import { toHourlyData } from "@/api";
-import { between } from "@/utils/numbers";
+import { todayRangeFn } from "@/utils/numbers";
 
 use([SVGRenderer, BarChart, LineChart]);
 
@@ -34,10 +33,7 @@ const hours = range(0, 24, 1);
 const consumptionPerTwoHours = useObservable(
   useCombinedHourlyData(
     sum
-      .useOverTime("electric/power/consumption", {
-        interval: "h",
-        between: between(startOfToday(), startOfTomorrow()),
-      })
+      .useOverTime("electric/power/consumption", todayRangeFn)
       .pipe(map((values) => values.map(toHourlyData))),
     sum.useMeanPerHourOfDay("electric/power/consumption"),
     1,
@@ -91,7 +87,7 @@ const option = ref({
         consumptionPerTwoHours.value?.map(({ value, hour }) => ({
           value: -Math.abs(value),
           itemStyle: {
-            decal: hour >= new Date().getHours() ? useStripes() : undefined,
+            decal: hour > new Date().getHours() ? useStripes() : undefined,
           },
         })),
       ),

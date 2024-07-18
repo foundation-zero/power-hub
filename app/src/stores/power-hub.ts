@@ -39,6 +39,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   const sensors = {
     useLastValues: useLastValues<SensorsTree>(sensorsPathFn),
     useMqtt: useMqtt("appliance_sensors"),
+    useOverTime: useOverTime<SensorsTree>(sensorsPathFn),
     useTotal: useTotal<SensorsTree>(sensorsPathFn),
     useMean: useMean<SensorsTree>(sensorsPathFn),
     useCurrent: useCurrent<SensorsTree>(sensorsPathFn),
@@ -71,7 +72,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
 
   return {
     connect,
-    sensors: pick(sensors, "useLastValues", "useTotal", "useMean", "useCurrent"),
+    sensors: pick(sensors, "useLastValues", "useTotal", "useMean", "useCurrent", "useOverTime"),
     sum: pick(sum, "useMean", "useOverTime", "useMeanPerHourOfDay"),
     weather,
   };
