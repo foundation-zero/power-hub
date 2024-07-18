@@ -1,5 +1,6 @@
 from dataclasses import fields
 import pytest
+from energy_box_control.appliances.valve import Valve
 from energy_box_control.monitoring.checks import (
     ValveAlarm,
     sensor_checks,
@@ -15,7 +16,7 @@ from energy_box_control.monitoring.monitoring import (
     Notifier,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
-from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub.sensors import PowerHubSensors, ValveSensors
 
 
 def test_run_sensor_values_checks():
@@ -70,7 +71,9 @@ def test_warning_checks():
 )
 def test_valve_alarm_checks(alarm, dedup_key):
     for valve_name in [
-        field.name for field in fields(PowerHubSensors) if "valve" in field.name
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     ]:
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())

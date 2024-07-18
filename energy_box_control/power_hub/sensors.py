@@ -29,7 +29,7 @@ from energy_box_control.power_hub.components import (
 from datetime import datetime
 
 from energy_box_control.units import (
-    Alarm,
+    BatteryAlarm,
     Celsius,
     Joule,
     Liter,
@@ -651,32 +651,32 @@ class ElectricBatterySensors(FromState):
     battery_high_voltage_alarm: int
     battery_low_starter_voltage_alarm: int
     battery_high_starter_voltage_alarm: int
-    battery_low_soc_alarm: Alarm
-    battery_low_temperature_alarm: Alarm
-    battery_high_temperature_alarm: Alarm
-    battery_mid_voltage_alarm: Alarm
-    battery_low_fused_voltage_alarm: Alarm
-    battery_high_fused_voltage_alarm: Alarm
-    battery_fuse_blown_alarm: Alarm
-    battery_high_internal_temperature_alarm: Alarm
-    battery_high_charge_current_alarm: Alarm
-    battery_high_discharge_current_alarm: Alarm
-    battery_cell_imbalance_alarm: Alarm
-    battery_internal_failure_alarm: Alarm
-    battery_high_charge_temperature_alarm: Alarm
-    battery_low_charge_temperature_alarm: Alarm
-    battery_low_cell_voltage_alarm: Alarm
+    battery_low_soc_alarm: BatteryAlarm
+    battery_low_temperature_alarm: BatteryAlarm
+    battery_high_temperature_alarm: BatteryAlarm
+    battery_mid_voltage_alarm: BatteryAlarm
+    battery_low_fused_voltage_alarm: BatteryAlarm
+    battery_high_fused_voltage_alarm: BatteryAlarm
+    battery_fuse_blown_alarm: BatteryAlarm
+    battery_high_internal_temperature_alarm: BatteryAlarm
+    battery_high_charge_current_alarm: BatteryAlarm
+    battery_high_discharge_current_alarm: BatteryAlarm
+    battery_cell_imbalance_alarm: BatteryAlarm
+    battery_internal_failure_alarm: BatteryAlarm
+    battery_high_charge_temperature_alarm: BatteryAlarm
+    battery_low_charge_temperature_alarm: BatteryAlarm
+    battery_low_cell_voltage_alarm: BatteryAlarm
     battery_error: int
-    high_temperature_alarm: Alarm
-    high_battery_voltage_alarm: Alarm
-    high_ac_out_voltage_alarm: Alarm
-    low_temperature_alarm: Alarm
-    low_battery_voltage_alarm: Alarm
-    low_ac_out_voltage_alarm: Alarm
-    overload_alarm: Alarm
-    ripple_alarm: Alarm
-    low_batt_voltage_alarm: Alarm
-    high_batt_voltage_alarm: Alarm
+    high_temperature_alarm: BatteryAlarm
+    high_battery_voltage_alarm: BatteryAlarm
+    high_ac_out_voltage_alarm: BatteryAlarm
+    low_temperature_alarm: BatteryAlarm
+    low_battery_voltage_alarm: BatteryAlarm
+    low_ac_out_voltage_alarm: BatteryAlarm
+    overload_alarm: BatteryAlarm
+    ripple_alarm: BatteryAlarm
+    low_batt_voltage_alarm: BatteryAlarm
+    high_batt_voltage_alarm: BatteryAlarm
 
 
 @sensors()

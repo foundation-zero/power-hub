@@ -2,13 +2,13 @@ from dataclasses import dataclass, fields
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
-from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub.sensors import PowerHubSensors, ValveSensors
 from enum import Enum
 from http import HTTPStatus
 from energy_box_control.power_hub.sensors import ElectricBatterySensors
 from typing import get_type_hints
 
-from energy_box_control.units import Alarm
+from energy_box_control.units import BatteryAlarm
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -17,7 +17,11 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
-class SensorAlarm(Enum):
+class Alarm(Enum):
+    pass
+
+
+class SensorAlarm(Alarm):
     WARNING = 1
     ALARM = 2
 
@@ -31,7 +35,7 @@ class SensorAlarm(Enum):
 """
 
 
-class ValveAlarm(Enum):
+class ValveAlarm(Alarm):
     ACTUATOR_CANNOT_MOVE = 2
     GEAR_TRAIN_DISENGAGED = 9
 
@@ -99,7 +103,7 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
 
 
 def sensor_alarm_check(
-    type: SensorAlarm | ValveAlarm, message: Callable[[str], str]
+    type: Alarm, message: Callable[[str], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
     def _alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
@@ -160,7 +164,7 @@ alarm_checks = [
     for attr in [
         attr
         for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        if type == BatteryAlarm
     ]
 ]
 warning_checks = [
@@ -172,7 +176,7 @@ warning_checks = [
     for attr in [
         attr
         for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        if type == BatteryAlarm
     ]
 ]
 
@@ -186,7 +190,9 @@ valve_actuator_checks = [
         Severity.CRITICAL,
     )
     for valve_name in [
-        field.name for field in fields(PowerHubSensors) if "valve" in field.name
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     ]
 ]
 
@@ -199,7 +205,9 @@ valve_gear_train_checks = [
         Severity.CRITICAL,
     )
     for valve_name in [
-        field.name for field in fields(PowerHubSensors) if "valve" in field.name
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     ]
 ]
 

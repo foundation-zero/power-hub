@@ -8,7 +8,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.time import ProcessTime
 from energy_box_control.schedules import Schedule
-from energy_box_control.units import Alarm, Celsius
+from energy_box_control.units import BatteryAlarm, Celsius
 
 
 @dataclass(frozen=True, eq=True)
@@ -22,32 +22,32 @@ class ElectricBatteryState(ApplianceState):
     battery_high_voltage_alarm: int = 0
     battery_low_starter_voltage_alarm: int = 0
     battery_high_starter_voltage_alarm: int = 0
-    battery_low_soc_alarm: Alarm = 0
-    battery_low_temperature_alarm: Alarm = 0
-    battery_high_temperature_alarm: Alarm = 0
-    battery_mid_voltage_alarm: Alarm = 0
-    battery_low_fused_voltage_alarm: Alarm = 0
-    battery_high_fused_voltage_alarm: Alarm = 0
-    battery_fuse_blown_alarm: Alarm = 0
-    battery_high_internal_temperature_alarm: Alarm = 0
-    battery_high_charge_current_alarm: Alarm = 0
-    battery_high_discharge_current_alarm: Alarm = 0
-    battery_cell_imbalance_alarm: Alarm = 0
-    battery_internal_failure_alarm: Alarm = 0
-    battery_high_charge_temperature_alarm: Alarm = 0
-    battery_low_charge_temperature_alarm: Alarm = 0
-    battery_low_cell_voltage_alarm: Alarm = 0
+    battery_low_soc_alarm: BatteryAlarm = 0
+    battery_low_temperature_alarm: BatteryAlarm = 0
+    battery_high_temperature_alarm: BatteryAlarm = 0
+    battery_mid_voltage_alarm: BatteryAlarm = 0
+    battery_low_fused_voltage_alarm: BatteryAlarm = 0
+    battery_high_fused_voltage_alarm: BatteryAlarm = 0
+    battery_fuse_blown_alarm: BatteryAlarm = 0
+    battery_high_internal_temperature_alarm: BatteryAlarm = 0
+    battery_high_charge_current_alarm: BatteryAlarm = 0
+    battery_high_discharge_current_alarm: BatteryAlarm = 0
+    battery_cell_imbalance_alarm: BatteryAlarm = 0
+    battery_internal_failure_alarm: BatteryAlarm = 0
+    battery_high_charge_temperature_alarm: BatteryAlarm = 0
+    battery_low_charge_temperature_alarm: BatteryAlarm = 0
+    battery_low_cell_voltage_alarm: BatteryAlarm = 0
     battery_error: int = 0
-    high_temperature_alarm: Alarm = 0
-    high_battery_voltage_alarm: Alarm = 0
-    high_ac_out_voltage_alarm: Alarm = 0
-    low_temperature_alarm: Alarm = 0
-    low_battery_voltage_alarm: Alarm = 0
-    low_ac_out_voltage_alarm: Alarm = 0
-    overload_alarm: Alarm = 0
-    ripple_alarm: Alarm = 0
-    low_batt_voltage_alarm: Alarm = 0
-    high_batt_voltage_alarm: Alarm = 0
+    high_temperature_alarm: BatteryAlarm = 0
+    high_battery_voltage_alarm: BatteryAlarm = 0
+    high_ac_out_voltage_alarm: BatteryAlarm = 0
+    low_temperature_alarm: BatteryAlarm = 0
+    low_battery_voltage_alarm: BatteryAlarm = 0
+    low_ac_out_voltage_alarm: BatteryAlarm = 0
+    overload_alarm: BatteryAlarm = 0
+    ripple_alarm: BatteryAlarm = 0
+    low_batt_voltage_alarm: BatteryAlarm = 0
+    high_batt_voltage_alarm: BatteryAlarm = 0
 
 
 class ElectricBatteryPort(Port):
