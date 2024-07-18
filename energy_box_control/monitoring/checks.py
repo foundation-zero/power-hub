@@ -167,7 +167,6 @@ water_tank_checks = [
         severity=Severity.CRITICAL,
     )
     for tank_name in TANK_BOUNDS.keys()
-    if "tank" in tank_name
 ]
 
 
