@@ -24,24 +24,20 @@ import { useStripes } from "@/utils/charts";
 import { map } from "rxjs";
 import { toHourlyData } from "@/api";
 import { useCombinedHourlyData } from "@/utils";
-import { startOfToday, startOfTomorrow } from "date-fns";
-import { between } from "@/utils/numbers";
+import { todayRangeFn } from "@/utils/numbers";
 
 use([SVGRenderer, BarChart, LineChart]);
 
 const colorMode = useColorMode();
 
-const { sum } = usePowerHubStore();
+const { sum, sensors } = usePowerHubStore();
 
 const hours = range(0, 24, 1);
 
 const productionPerTwoHours = useObservable(
   useCombinedHourlyData(
     sum
-      .useOverTime("electric/power/production", () => ({
-        interval: "h",
-        between: between(startOfToday(), startOfTomorrow()),
-      }))
+      .useOverTime("electric/power/production", todayRangeFn)
       .pipe(map((values) => values.map(toHourlyData))),
     sum.useMeanPerHourOfDay("electric/power/production"),
     1,
@@ -49,7 +45,9 @@ const productionPerTwoHours = useObservable(
   ),
 );
 
-const batteryValues = hours.map(() => 50 + Math.random() * 50);
+const batteryValues = useObservable(
+  sensors.useOverTime("electric_battery/soc_battery_system", todayRangeFn),
+);
 
 const colorsOfTheDay = [
   "#213b5d",
@@ -134,7 +132,7 @@ const option = ref({
         productionPerTwoHours.value?.map(({ value, hour }) => ({
           value,
           itemStyle: {
-            decal: hour >= new Date().getHours() ? useStripes() : undefined,
+            decal: hour > new Date().getHours() ? useStripes() : undefined,
             color: new graphic.LinearGradient(0, 0, 1, 0, [
               {
                 offset: 0,
