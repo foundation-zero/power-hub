@@ -1,7 +1,7 @@
 import type { Direction, QueryParams } from "@/types";
 import type { TimeInterval } from "@/types/power-hub";
 import { useTimeout } from "@vueuse/core";
-import { startOfToday, startOfTomorrow } from "date-fns";
+import { add, startOfToday, startOfTomorrow } from "date-fns";
 import { ref } from "vue";
 
 export const JOULE_TO_WATT_HOUR = 3600;
@@ -80,5 +80,5 @@ export const todayRangeFn: QueryParams<{
   interval: TimeInterval;
 }> = () => ({
   interval: "h",
-  between: between(startOfToday(), startOfTomorrow()),
+  between: between(add(startOfToday(), { seconds: -1 }), startOfTomorrow()),
 });
