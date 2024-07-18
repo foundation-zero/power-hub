@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
-from energy_box_control.appliances.electric_battery import BatteryAlarm
-from energy_box_control.appliances.containers import FilterAlarm, FanAlarm
 from energy_box_control.monitoring.health_bounds import (
     CO2_LOWER_BOUND,
     CO2_UPPER_BOUND,
@@ -19,7 +17,7 @@ from energy_box_control.power_hub.sensors import (
     ElectricBatterySensors,
     ContainersSensors,
 )
-from typing import get_type_hints
+from energy_box_control.sensors import Sensor, SensorType
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -162,8 +160,9 @@ battery_alarm_checks = [
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == BatteryAlarm
+        for attr in dir(ElectricBatterySensors)
+        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
     ]
 ]
 battery_warning_checks = [
@@ -174,8 +173,9 @@ battery_warning_checks = [
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == BatteryAlarm
+        for attr in dir(ElectricBatterySensors)
+        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
     ]
 ]
 
@@ -188,8 +188,12 @@ container_temperature_checks = [
         upper_bound=CONTAINER_TEMPERATURE_UPPER_BOUND,
         severity=Severity.CRITICAL,
     )
-    for attr, _ in get_type_hints(ContainersSensors).items()
-    if "temperature" in attr
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.TEMPERATURE
+    ]
 ]
 
 container_humidity_checks = [
@@ -200,8 +204,12 @@ container_humidity_checks = [
         upper_bound=HUMIDITY_UPPER_BOUND,
         severity=Severity.ERROR,
     )
-    for attr, _ in get_type_hints(ContainersSensors).items()
-    if "humidity" in attr
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.HUMIDITY
+    ]
 ]
 
 container_co2_checks = [
@@ -212,8 +220,12 @@ container_co2_checks = [
         upper_bound=CO2_UPPER_BOUND,
         severity=Severity.CRITICAL,
     )
-    for attr, _ in get_type_hints(ContainersSensors).items()
-    if "co2" in attr
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.CO2
+    ]
 ]
 
 container_fancoil_alarm_checks = [
@@ -224,8 +236,9 @@ container_fancoil_alarm_checks = [
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ContainersSensors).items()
-        if type == FanAlarm
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.FAN_ALARM
     ]
 ]
 
@@ -237,8 +250,9 @@ containers_fancoil_filter_checks = [
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ContainersSensors).items()
-        if type == FilterAlarm
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.FAN_FILTER_ALARM
     ]
 ]
 

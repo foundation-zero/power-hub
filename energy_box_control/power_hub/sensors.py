@@ -650,32 +650,46 @@ class ElectricBatterySensors(FromState):
     battery_high_voltage_alarm: int
     battery_low_starter_voltage_alarm: int
     battery_high_starter_voltage_alarm: int
-    battery_low_soc_alarm: BatteryAlarm
-    battery_low_temperature_alarm: BatteryAlarm
-    battery_high_temperature_alarm: BatteryAlarm
-    battery_mid_voltage_alarm: BatteryAlarm
-    battery_low_fused_voltage_alarm: BatteryAlarm
-    battery_high_fused_voltage_alarm: BatteryAlarm
-    battery_fuse_blown_alarm: BatteryAlarm
-    battery_high_internal_temperature_alarm: BatteryAlarm
-    battery_high_charge_current_alarm: BatteryAlarm
-    battery_high_discharge_current_alarm: BatteryAlarm
-    battery_cell_imbalance_alarm: BatteryAlarm
-    battery_internal_failure_alarm: BatteryAlarm
-    battery_high_charge_temperature_alarm: BatteryAlarm
-    battery_low_charge_temperature_alarm: BatteryAlarm
-    battery_low_cell_voltage_alarm: BatteryAlarm
+    battery_low_soc_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_mid_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_low_fused_voltage_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_high_fused_voltage_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_fuse_blown_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_high_internal_temperature_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_high_charge_current_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_high_discharge_current_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_cell_imbalance_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_internal_failure_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_high_charge_temperature_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_low_charge_temperature_alarm: BatteryAlarm = sensor(
+        type=SensorType.BATTERY_ALARM
+    )
+    battery_low_cell_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
     battery_error: int
-    high_temperature_alarm: BatteryAlarm
-    high_battery_voltage_alarm: BatteryAlarm
-    high_ac_out_voltage_alarm: BatteryAlarm
-    low_temperature_alarm: BatteryAlarm
-    low_battery_voltage_alarm: BatteryAlarm
-    low_ac_out_voltage_alarm: BatteryAlarm
-    overload_alarm: BatteryAlarm
-    ripple_alarm: BatteryAlarm
-    low_batt_voltage_alarm: BatteryAlarm
-    high_batt_voltage_alarm: BatteryAlarm
+    high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    high_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    high_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    low_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    low_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    overload_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    ripple_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
 
 
 @sensors()
@@ -736,26 +750,32 @@ class WaterMakerSensors(FromState):
 @sensors()
 class ContainersSensors(FromState):
     spec: Containers
-    simulator_storage_co2: float
-    simulator_storage_humidity: float
-    simulator_storage_temperature: Celsius
-    simulator_storage_ventilation_error: FanAlarm
-    simulator_storage_ventilation_filter_status: FilterAlarm
-    office_co2: float
-    office_humidity: float
-    office_temperature: Celsius
-    office_ventilation_error: FanAlarm
-    office_ventilation_filter_status: FilterAlarm
-    kitchen_co2: float
-    kitchen_humidity: float
-    kitchen_temperature: Celsius
-    sanitary_temperature: Celsius
-    kitchen_ventilation_error: FanAlarm
-    kitchen_ventilation_filter_status: FilterAlarm
-    power_hub_humidity: float
-    power_hub_temperature: float
-    supply_box_humidity: float
-    supply_box_temperature: float
+    simulator_storage_co2: float = sensor(type=SensorType.CO2)
+    simulator_storage_humidity: float = sensor(type=SensorType.HUMIDITY)
+    simulator_storage_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    simulator_storage_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    simulator_storage_ventilation_filter_status: FilterAlarm = sensor(
+        type=SensorType.FAN_FILTER_ALARM
+    )
+    office_co2: float = sensor(type=SensorType.CO2)
+    office_humidity: float = sensor(type=SensorType.HUMIDITY)
+    office_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    office_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    office_ventilation_filter_status: FilterAlarm = sensor(
+        type=SensorType.FAN_FILTER_ALARM
+    )
+    kitchen_co2: float = sensor(type=SensorType.CO2)
+    kitchen_humidity: float = sensor(type=SensorType.HUMIDITY)
+    kitchen_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    sanitary_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    kitchen_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    kitchen_ventilation_filter_status: FilterAlarm = sensor(
+        type=SensorType.FAN_FILTER_ALARM
+    )
+    power_hub_humidity: float = sensor(type=SensorType.HUMIDITY)
+    power_hub_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    supply_box_humidity: float = sensor(type=SensorType.HUMIDITY)
+    supply_box_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
 
 
 @sensors(from_appliance=False)

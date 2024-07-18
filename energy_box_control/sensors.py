@@ -181,6 +181,11 @@ class SensorContext[T: Timed]:
 class SensorType(Enum):
     FLOW = "flow"
     TEMPERATURE = "temperature"
+    HUMIDITY = "humidity"
+    CO2 = "co2"
+    FAN_ALARM = "fan_alarm"
+    FAN_FILTER_ALARM = "fan_filter_alarm"
+    BATTERY_ALARM = "battery_alarm"
 
 
 @dataclass(eq=True, frozen=True)

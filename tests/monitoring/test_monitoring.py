@@ -20,6 +20,7 @@ from energy_box_control.monitoring.monitoring import (
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import ContainersSensors
+from energy_box_control.sensors import Sensor, SensorType
 
 
 def test_run_sensor_values_checks():
@@ -110,20 +111,21 @@ def test_fancoil_filter_checks(filter_property: str):
 
 
 @pytest.mark.parametrize(
-    "property,alerting_value,checks,severity",
+    "sensor_type,alerting_value,checks,severity",
     [
-        ("co2", 3, container_co2_checks, Severity.CRITICAL),
-        ("humidity", 3, container_humidity_checks, Severity.ERROR),
-        ("temperature", 100, container_temperature_checks, Severity.CRITICAL),
+        (SensorType.CO2, 3, container_co2_checks, Severity.CRITICAL),
+        (SensorType.HUMIDITY, 3, container_humidity_checks, Severity.ERROR),
+        (SensorType.TEMPERATURE, 100, container_temperature_checks, Severity.CRITICAL),
     ],
 )
 def test_container_sensor_valules(
-    property: str, alerting_value: int, checks: List[SensorValueCheck], severity
+    sensor_type, alerting_value: int, checks: List[SensorValueCheck], severity
 ):
     for attr in [
         attr
-        for attr, _ in get_type_hints(ContainersSensors).items()
-        if property in attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == sensor_type
     ]:
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
