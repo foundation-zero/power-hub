@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 
 from energy_box_control.monitoring.checks import (
-    AlarmHealthCheck,
-    ApplianceSensorValueCheck,
     SensorValueCheck,
     Severity,
     UrlHealthCheck,
@@ -12,7 +10,7 @@ from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
-from typing import Protocol, Sequence
+from typing import Optional, Protocol
 from energy_box_control.config import CONFIG
 
 
@@ -57,33 +55,22 @@ class Notifier:
 class Monitor:
     def __init__(
         self,
-        appliance_checks: Sequence[AlarmHealthCheck | SensorValueCheck] = [],
-        appliance_sensor_value_checks: list[ApplianceSensorValueCheck] = [],
+        sensor_value_checks: list[SensorValueCheck] = [],
         url_health_checks: list[UrlHealthCheck] = [],
     ):
-        self._appliance_checks = appliance_checks
         self._url_health_checks = url_health_checks
-        self._appliance_sensor_value_checks = appliance_sensor_value_checks
+        self._sensor_value_checks = sensor_value_checks
 
-    def run_appliance_checks(
-        self, sensor_values: PowerHubSensors, source: str
-    ) -> list[NotificationEvent]:
-        return [
-            NotificationEvent(result, source, check.name, check.severity)
-            for check in self._appliance_checks
-            if (result := check.check(sensor_values)) is not None
-        ]
-
-    def run_appliance_sensor_value_checks(
+    def run_sensor_value_checks(
         self,
         sensor_values: PowerHubSensors,
-        control: NetworkControl[PowerHub],
-        power_hub: PowerHub,
         source: str,
+        control: Optional[NetworkControl[PowerHub]] = None,
+        power_hub: Optional[PowerHub] = None,
     ) -> list[NotificationEvent]:
         return [
             NotificationEvent(result, source, check.name, check.severity)
-            for check in self._appliance_sensor_value_checks
+            for check in self._sensor_value_checks
             if (result := check.check(sensor_values, control, power_hub)) is not None
         ]
 

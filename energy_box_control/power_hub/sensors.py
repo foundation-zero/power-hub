@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
 from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
 from energy_box_control.appliances.electric_battery import BatteryAlarm, ElectricBattery
@@ -10,7 +12,7 @@ from energy_box_control.appliances.heat_exchanger import (
 from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
-from energy_box_control.appliances.switch_pump import SwitchPumpPort
+from energy_box_control.appliances.switch_pump import SwitchPumpAlarm, SwitchPumpPort
 from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
 from energy_box_control.appliances.water_tank import WaterTank, WaterTankPort
 from energy_box_control.appliances.water_treatment import (
@@ -27,11 +29,8 @@ from energy_box_control.power_hub.components import (
     PCM_ZERO_TEMPERATURE,
 )
 
-from datetime import datetime
-
 from energy_box_control.units import (
     Bar,
-    BatteryAlarm,
     Celsius,
     Joule,
     Liter,
@@ -42,7 +41,7 @@ from energy_box_control.units import (
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
 from energy_box_control.appliances.chiller import Chiller
 from energy_box_control.appliances.pcm import Pcm, PcmPort
-from energy_box_control.appliances.valve import Valve, ValvePort
+from energy_box_control.appliances.valve import Valve, ValvePort, ValveServiceInfo
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
@@ -522,7 +521,7 @@ class ColdReservoirSensors(FromState):
 class ValveSensors(FromState):
     spec: Valve
     position: float
-    service_info: int
+    service_info: ValveServiceInfo
 
     def in_position(self, position: float, diff: float = 0.05) -> bool:
         return abs(self.position - position) < diff
@@ -664,8 +663,8 @@ class SwitchPumpSensors(FromState):
         type=SensorType.FLOW, from_port=SwitchPumpPort.OUT
     )
 
-    pump_1_alarm: int
-    pump_2_alarm: int
+    pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    pump_2_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
     pressure: Bar
 
     @property
@@ -691,52 +690,48 @@ class ElectricBatterySensors(FromState):
     battery_high_voltage_alarm: int
     battery_low_starter_voltage_alarm: int
     battery_high_starter_voltage_alarm: int
-    battery_low_soc_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_mid_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_low_fused_voltage_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_high_fused_voltage_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_fuse_blown_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_low_soc_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_mid_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_low_fused_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_high_fused_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_fuse_blown_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_high_internal_temperature_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
+        type=SensorType.ALARM
     )
-    battery_high_charge_current_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_high_discharge_current_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_cell_imbalance_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_internal_failure_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    battery_high_charge_temperature_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_low_charge_temperature_alarm: BatteryAlarm = sensor(
-        type=SensorType.BATTERY_ALARM
-    )
-    battery_low_cell_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    battery_high_charge_current_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_high_discharge_current_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_cell_imbalance_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_internal_failure_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_high_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_low_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    battery_low_cell_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     battery_error: int
-    high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    high_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    high_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    low_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    low_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    overload_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    ripple_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
-    high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.BATTERY_ALARM)
+    high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    high_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    high_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    low_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    low_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    overload_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    ripple_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
 
 
 @sensors()
-class FreshWaterTankSensors(FromState):
+class WaterTankSensors(FromState):
     spec: WaterTank
     percentage_fill: Liter = sensor(technical_name="LS-5001")
+
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
+
+
+@sensors()
+class FreshWaterTankSensors(WaterTankSensors):
 
     water_demand_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
@@ -748,15 +743,9 @@ class FreshWaterTankSensors(FromState):
         type=SensorType.FLOW, from_port=WaterTankPort.IN_0
     )
 
-    @property
-    def fill(self) -> Liter:
-        return self.percentage_fill / 100 * self.spec.capacity
-
 
 @sensors()
-class GreyWaterTankSensors(FromState):
-    spec: WaterTank
-    percentage_fill: float = sensor(technical_name="LS-3001")
+class GreyWaterTankSensors(WaterTankSensors):
 
     water_demand_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
@@ -765,30 +754,6 @@ class GreyWaterTankSensors(FromState):
     primary_flow_in: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.IN_0
     )
-
-    @property
-    def fill(self) -> Liter:
-        return self.percentage_fill / 100 * self.spec.capacity
-
-
-@sensors()
-class BlackTankSensors(FromState):
-    spec: WaterTank
-    percentage_fill: float = sensor(technical_name="LS-2001")
-
-    @property
-    def fill(self) -> Liter:
-        return self.percentage_fill / 100 * self.spec.capacity
-
-
-@sensors()
-class TechnicalWaterTankSensors(FromState):
-    spec: WaterTank
-    percentage_fill: float = sensor(technical_name="LS-4001")
-
-    @property
-    def fill(self) -> Liter:
-        return self.percentage_fill / 100 * self.spec.capacity
 
 
 @sensors()
@@ -815,24 +780,24 @@ class ContainersSensors(FromState):
     simulator_storage_co2: float = sensor(type=SensorType.CO2)
     simulator_storage_humidity: float = sensor(type=SensorType.HUMIDITY)
     simulator_storage_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    simulator_storage_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    simulator_storage_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
     simulator_storage_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.FAN_FILTER_ALARM
+        type=SensorType.REPLACE_FILTER_ALARM
     )
     office_co2: float = sensor(type=SensorType.CO2)
     office_humidity: float = sensor(type=SensorType.HUMIDITY)
     office_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    office_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    office_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
     office_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.FAN_FILTER_ALARM
+        type=SensorType.REPLACE_FILTER_ALARM
     )
     kitchen_co2: float = sensor(type=SensorType.CO2)
     kitchen_humidity: float = sensor(type=SensorType.HUMIDITY)
     kitchen_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
     sanitary_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    kitchen_ventilation_error: FanAlarm = sensor(type=SensorType.FAN_ALARM)
+    kitchen_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
     kitchen_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.FAN_FILTER_ALARM
+        type=SensorType.REPLACE_FILTER_ALARM
     )
     power_hub_humidity: float = sensor(type=SensorType.HUMIDITY)
     power_hub_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
@@ -844,7 +809,7 @@ class ContainersSensors(FromState):
 class WeatherSensors(WithoutAppliance):
     ambient_temperature: Celsius
     global_irradiance: WattPerMeterSquared
-    alarm: int
+    alarm: int = sensor(type=SensorType.ALARM)
 
 
 @dataclass
@@ -878,8 +843,8 @@ class PowerHubSensors(NetworkSensors):
     electric_battery: ElectricBatterySensors
     fresh_water_tank: FreshWaterTankSensors
     grey_water_tank: GreyWaterTankSensors
-    black_water_tank: BlackTankSensors
-    technical_water_tank: TechnicalWaterTankSensors
+    black_water_tank: WaterTankSensors
+    technical_water_tank: WaterTankSensors
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
     containers: ContainersSensors

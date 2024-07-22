@@ -1,43 +1,31 @@
 from dataclasses import dataclass, fields
+from math import isnan
 from typing import Any, Awaitable, Callable, Optional, get_type_hints
-
 import aiohttp
+from enum import Enum
+from http import HTTPStatus
+
 from energy_box_control.monitoring.health_bounds import (
+    HealthBound,
     CONTAINER_BOUNDS,
     TANK_BOUNDS,
-)
-from dataclasses import dataclass
-from math import isnan
-from typing import Any, Awaitable, Callable, Optional
-from energy_box_control.monitoring.health_bounds import (
-    YAZAKI_BOUNDS,
-    HealthBound,
-)
-from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.network import PowerHub
-from dataclasses import dataclass
-from math import isnan
-from typing import Any, Awaitable, Callable, Optional
-
-from energy_box_control.monitoring.health_bounds import (
-    HealthBound,
     HOT_CIRCUIT_FLOW_BOUNDS,
     HOT_CIRCUIT_PRESSURE_BOUNDS,
     HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+    YAZAKI_BOUNDS,
 )
-from energy_box_control.power_hub.sensors import PowerHubSensors
-from energy_box_control.power_hub.sensors import PowerHubSensors, SwitchPumpSensors
-from typing import Any, Awaitable, Callable, Optional
-
-from energy_box_control.power_hub.sensors import PowerHubSensors, ValveSensors
-from enum import Enum
-from http import HTTPStatus
+from energy_box_control.sensors import Sensor, SensorType
+from energy_box_control.network import NetworkControl
+from energy_box_control.power_hub.network import PowerHub
+from energy_box_control.power_hub.sensors import (
+    PowerHubSensors,
+    SwitchPumpSensors,
+    ValveSensors,
+)
 from energy_box_control.power_hub.sensors import (
     ElectricBatterySensors,
     ContainersSensors,
 )
-from energy_box_control.sensors import Sensor, SensorType
-from typing import get_type_hints
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -101,12 +89,10 @@ CheckResult = str | None
 
 @dataclass
 class SensorValueCheck(Check):
-    check: Callable[[PowerHubSensors], CheckResult]
-
-
-@dataclass
-class ApplianceSensorValueCheck(Check):
-    check: Callable[[PowerHubSensors, NetworkControl[PowerHub], PowerHub], CheckResult]
+    check: Callable[
+        [PowerHubSensors, Optional[NetworkControl[PowerHub]], Optional[PowerHub]],
+        CheckResult,
+    ]
 
 
 @dataclass
@@ -114,46 +100,26 @@ class UrlHealthCheck(Check):
     check: Callable[[], Awaitable[CheckResult]]
 
 
-@dataclass
-class AlarmHealthCheck(Check):
-    check: Callable[[PowerHubSensors], CheckResult]
-
-
 def value_check[
-    A, B
-](name: str, sensor_fn: Callable[[A], B], check_fn: Callable[[B], bool]) -> Callable[
-    [A], CheckResult
-]:
-
-    def _check(sensor_values: A) -> CheckResult:
-        if not check_fn(sensor_fn(sensor_values)):
-            return (
-                f"{name} is outside valid bounds with value: {sensor_fn(sensor_values)}"
-            )
-        else:
-            return None
-
-    return _check
-
-
-def appliance_value_check(
+    A, B, C, D
+](
     name: str,
-    sensor_fn: Callable[[PowerHubSensors], float],
-    check_fn: Callable[[float, bool], bool],
-    control_fn: Callable[[NetworkControl[PowerHub], PowerHub], bool],
-) -> Callable[[PowerHubSensors, NetworkControl[PowerHub], PowerHub], CheckResult]:
+    sensor_fn: Callable[[A], B],
+    check_fn: Callable[[B, bool], bool],
+    message_fn: Callable[[str, B], str],
+    control_fn: Optional[Callable[[Optional[C], Optional[D]], bool]] = None,
+) -> Callable[[A, Optional[C], Optional[D]], CheckResult]:
 
     def _check(
-        sensor_values: PowerHubSensors,
-        control_values: NetworkControl[PowerHub],
-        power_hub: PowerHub,
+        sensor_values: A,
+        control_values: Optional[C] = None,
+        power_hub: Optional[D] = None,
     ) -> CheckResult:
         if not check_fn(
-            sensor_fn(sensor_values), control_fn(control_values, power_hub)
+            sensor_fn(sensor_values),
+            control_fn(control_values, power_hub) if control_fn is not None else True,
         ):
-            return (
-                f"{name} is outside valid bounds with value: {sensor_fn(sensor_values)}"
-            )
+            return message_fn(name, sensor_fn(sensor_values))
         else:
             return None
 
@@ -172,117 +138,59 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
     return UrlHealthCheck(name=name, check=_url_health_check, severity=severity)
 
 
-def sensor_alarm_check(
-    type: Alarm, message: Callable[[str], str]
-) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
-    def _alarm_check(
-        name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
-    ):
-        def _alarm(sensor_values: PowerHubSensors) -> str | None:
-            if sensor_fn(sensor_values) == type.value:
-                return message(name)
-            return None
-
-        return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
-
-    return _alarm_check
-
-
-def no_pump_alarm_check(
-    type: PumpAlarm | WeatherStationAlarm, message: Callable[[str, int], str]
-) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
-    def _no_pump_alarm_check(
-        name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
-    ):
-        def _alarm(sensor_values: PowerHubSensors) -> str | None:
-            alarm_code = sensor_fn(sensor_values)
-            if alarm_code != type.value:
-                return message(name, alarm_code)
-            return None
-
-        return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
-
-    return _no_pump_alarm_check
-
-
-battery_alarm_check = sensor_alarm_check(
-    ElectricBatteryAlarm.ALARM, lambda name: f"{name} is raising an alarm"
-)
-
-battery_warning_check = sensor_alarm_check(
-    ElectricBatteryAlarm.WARNING, lambda name: f"{name} is raising a warning"
-)
-
-weather_station_alarm_check = no_pump_alarm_check(
-    WeatherStationAlarm.NO_ALARM,
-    lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
-)
-
-valve_actuator_check = sensor_alarm_check(
-    ValveAlarm.ACTUATOR_CANNOT_MOVE, lambda name: f"{name} is raised"
-)
-valve_gear_train_check = sensor_alarm_check(
-    ValveAlarm.GEAR_TRAIN_DISENGAGED, lambda name: f"{name} is raised"
-)
-
-
-fancoil_alarm_check = sensor_alarm_check(
-    FancoilAlarm.ALARM, lambda name: f"{name} is raising an alarm"
-)
-
-fancoil_filter_check = sensor_alarm_check(
-    FancoilAlarm.ALARM, lambda name: f"{name} gone bad"
-)
-
-pump_alarm = no_pump_alarm_check(
-    PumpAlarm.NO_ALARM,
-    lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
-)
-
-
 def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
     health_bound: HealthBound = HealthBound(5, 100),
+    control_fn: Optional[
+        Callable[[Optional[NetworkControl[PowerHub]], Optional[PowerHub]], bool]
+    ] = None,
     severity: Severity = Severity.CRITICAL,
 ) -> SensorValueCheck:
     return SensorValueCheck(
         name,
         value_check(
-            name,
-            value_fn,
-            lambda value: health_bound.lower_bound <= value <= health_bound.upper_bound
-            or isnan(value),
-        ),
-        severity,
-    )
-
-
-def valid_appliance_value(
-    name: str,
-    value_fn: Callable[[PowerHubSensors], float],
-    control_fn: Callable[[NetworkControl[PowerHub], PowerHub], bool],
-    health_bound: HealthBound,
-    severity: Severity = Severity.CRITICAL,
-) -> ApplianceSensorValueCheck:
-    return ApplianceSensorValueCheck(
-        name,
-        appliance_value_check(
-            name,
-            value_fn,
-            lambda value, appliance_on: (
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda value, appliance_on: (
                 health_bound.lower_bound < value < health_bound.upper_bound
                 if appliance_on and not isnan(value)
                 else True
             ),
-            control_fn,
+            message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value}",
+            control_fn=control_fn,
         ),
         severity,
     )
 
 
+def alarm(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], int],
+    message_fn: Callable[[str, int], str],
+    alarm: Alarm,
+    severity: Severity,
+    valid_value: bool = True,
+) -> SensorValueCheck:
+    return SensorValueCheck(
+        name=name,
+        check=value_check(
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda value, _: (
+                (value != alarm.value) if valid_value else (value == alarm.value)
+            ),
+            message_fn=message_fn,
+        ),
+        severity=severity,
+    )
+
+
 sensor_checks = [
-    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature),
+    valid_value(
+        "pcm_temperature_check",
+        lambda sensors: sensors.pcm.temperature,
+    ),
     valid_value(
         "hot_circuit_temperature_check",
         lambda sensors: sensors.pcm.charge_input_temperature,
@@ -300,46 +208,135 @@ sensor_checks = [
     ),
 ]
 
-yazaki_bound_checks = [
-    valid_appliance_value(
-        f"yazaki_{attr}_check",
-        lambda sensors, attr=attr: getattr(sensors.yazaki, attr),
-        lambda control_values, network: control_values.appliance(network.yazaki)
-        .get()
-        .on,
-        YAZAKI_BOUNDS[attr],
-    )
-    for attr in [attr for attr, _ in YAZAKI_BOUNDS.items()]
-]
-
-
 battery_alarm_checks = [
-    battery_alarm_check(
-        f"{attr}",
-        lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
-        Severity.CRITICAL,
+    alarm(
+        name=f"{attr}",
+        value_fn=(lambda sensors, attr=attr: getattr(sensors.electric_battery, attr)),
+        message_fn=(lambda name, _: f"{name} is raising an alarm"),
+        alarm=ElectricBatteryAlarm.ALARM,
+        severity=Severity.CRITICAL,
     )
-    for attr in [
-        attr
-        for attr in dir(ElectricBatterySensors)
-        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
-        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
-    ]
+    for attr in dir(ElectricBatterySensors)
+    if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+    and getattr(ElectricBatterySensors, attr).type == SensorType.ALARM
 ]
 
 battery_warning_checks = [
-    battery_warning_check(
-        f"{attr}_warning",
-        lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
-        Severity.WARNING,
+    alarm(
+        name=f"{attr}_warning",
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        message_fn=(lambda name, _: f"{name} is raising a warning"),
+        alarm=ElectricBatteryAlarm.WARNING,
+        severity=Severity.WARNING,
     )
-    for attr in [
-        attr
-        for attr in dir(ElectricBatterySensors)
-        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
-        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
+    for attr in dir(ElectricBatterySensors)
+    if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+    and getattr(ElectricBatterySensors, attr).type == SensorType.ALARM
+]
+
+container_fancoil_alarm_checks = [
+    alarm(
+        name=f"{attr}",
+        value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        message_fn=lambda name, _: f"{name} is raising an alarm",
+        alarm=FancoilAlarm.ALARM,
+        severity=Severity.CRITICAL,
+    )
+    for attr in dir(ContainersSensors)
+    if isinstance(getattr(ContainersSensors, attr), Sensor)
+    and getattr(ContainersSensors, attr).type == SensorType.ALARM
+]
+
+containers_fancoil_filter_checks = [
+    alarm(
+        name=f"{attr}",
+        value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        message_fn=lambda name, _: f"{name} gone bad",
+        alarm=FancoilAlarm.ALARM,
+        severity=Severity.CRITICAL,
+    )
+    for attr in dir(ContainersSensors)
+    if isinstance(getattr(ContainersSensors, attr), Sensor)
+    and getattr(ContainersSensors, attr).type == SensorType.REPLACE_FILTER_ALARM
+]
+
+weather_station_alarm_checks = [
+    alarm(
+        name=f"weather_station",
+        value_fn=lambda sensors,: getattr(sensors.weather, "alarm"),
+        message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
+        alarm=WeatherStationAlarm.NO_ALARM,
+        severity=Severity.ERROR,
+        valid_value=False,
+    )
+]
+
+valve_actuator_checks = [
+    alarm(
+        name=f"{valve_name}_actuator_alarm",
+        value_fn=lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=ValveAlarm.ACTUATOR_CANNOT_MOVE,
+        severity=Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     ]
 ]
+
+valve_gear_train_checks = [
+    alarm(
+        name=f"{valve_name}_gear_train_alarm",
+        value_fn=lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=ValveAlarm.GEAR_TRAIN_DISENGAGED,
+        severity=Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    ]
+]
+
+pump_alarm_checks = [
+    alarm(
+        name=f"{appliance_name}_{attr}",
+        value_fn=lambda sensors, attr=attr, appliance_name=appliance_name: getattr(
+            getattr(sensors, appliance_name), attr
+        ),
+        message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
+        alarm=PumpAlarm.NO_ALARM,
+        severity=Severity.CRITICAL,
+        valid_value=False,
+    )
+    for appliance_name, appliance_type in get_type_hints(PowerHubSensors).items()
+    if appliance_type == SwitchPumpSensors
+    for attr in dir(SwitchPumpSensors)
+    if isinstance(getattr(SwitchPumpSensors, attr), Sensor)
+    and getattr(SwitchPumpSensors, attr).type == SensorType.ALARM
+]
+
+yazaki_bound_checks = [
+    valid_value(
+        f"yazaki_{attr}_check",
+        lambda sensors, attr=attr: getattr(sensors.yazaki, attr),
+        YAZAKI_BOUNDS[attr],
+        lambda control_values, network: (
+            control_values.appliance(network.yazaki).get().on
+            if control_values and network
+            else True
+        ),
+    )
+    for attr, _ in YAZAKI_BOUNDS.items()
+]
+
 
 water_tank_checks = [
     valid_value(
@@ -361,12 +358,9 @@ container_temperature_checks = [
         health_bound=CONTAINER_BOUNDS["temperature"],
         severity=Severity.CRITICAL,
     )
-    for attr in [
-        attr
-        for attr in dir(ContainersSensors)
-        if isinstance(getattr(ContainersSensors, attr), Sensor)
-        and getattr(ContainersSensors, attr).type == SensorType.TEMPERATURE
-    ]
+    for attr in dir(ContainersSensors)
+    if isinstance(getattr(ContainersSensors, attr), Sensor)
+    and getattr(ContainersSensors, attr).type == SensorType.TEMPERATURE
 ]
 
 container_humidity_checks = [
@@ -376,12 +370,9 @@ container_humidity_checks = [
         health_bound=CONTAINER_BOUNDS["humidity"],
         severity=Severity.ERROR,
     )
-    for attr in [
-        attr
-        for attr in dir(ContainersSensors)
-        if isinstance(getattr(ContainersSensors, attr), Sensor)
-        and getattr(ContainersSensors, attr).type == SensorType.HUMIDITY
-    ]
+    for attr in dir(ContainersSensors)
+    if isinstance(getattr(ContainersSensors, attr), Sensor)
+    and getattr(ContainersSensors, attr).type == SensorType.HUMIDITY
 ]
 
 container_co2_checks = [
@@ -391,110 +382,27 @@ container_co2_checks = [
         health_bound=CONTAINER_BOUNDS["co2"],
         severity=Severity.CRITICAL,
     )
-    for attr in [
-        attr
-        for attr in dir(ContainersSensors)
-        if isinstance(getattr(ContainersSensors, attr), Sensor)
-        and getattr(ContainersSensors, attr).type == SensorType.CO2
-    ]
+    for attr in dir(ContainersSensors)
+    if isinstance(getattr(ContainersSensors, attr), Sensor)
+    and getattr(ContainersSensors, attr).type == SensorType.CO2
 ]
 
-container_fancoil_alarm_checks = [
-    fancoil_alarm_check(
-        f"{attr}",
-        lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        Severity.CRITICAL,
-    )
-    for attr in [
-        attr
-        for attr in dir(ContainersSensors)
-        if isinstance(getattr(ContainersSensors, attr), Sensor)
-        and getattr(ContainersSensors, attr).type == SensorType.FAN_ALARM
-    ]
-]
-
-containers_fancoil_filter_checks = [
-    fancoil_filter_check(
-        f"{attr}",
-        lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        Severity.CRITICAL,
-    )
-    for attr in [
-        attr
-        for attr in dir(ContainersSensors)
-        if isinstance(getattr(ContainersSensors, attr), Sensor)
-        and getattr(ContainersSensors, attr).type == SensorType.FAN_FILTER_ALARM
-    ]
-]
-
-pump_alarm_checks = [
-    pump_alarm(
-        f"{appliance_name}_{attr}",
-        lambda sensors, attr=attr, appliance_name=appliance_name: getattr(
-            getattr(sensors, appliance_name), attr
-        ),
-        Severity.CRITICAL,
-    )
-    for appliance_name in [
-        field.name for field in fields(PowerHubSensors) if "pump" in field.name
-    ]
-    for attr in [
-        attr for attr, _ in get_type_hints(SwitchPumpSensors).items() if "alarm" in attr
-    ]
-]
-
-
-all_appliance_checks = (
-    sensor_checks
-    + battery_alarm_checks
+all_checks = (
+    battery_alarm_checks
     + battery_warning_checks
+    + container_fancoil_alarm_checks
+    + containers_fancoil_filter_checks
+    + sensor_checks
     + container_temperature_checks
     + container_humidity_checks
     + container_co2_checks
-    + container_fancoil_alarm_checks
-    + containers_fancoil_filter_checks
+    + water_tank_checks
+    + pump_alarm_checks
+    + yazaki_bound_checks
+    + weather_station_alarm_checks
+    + valve_actuator_checks
+    + valve_gear_train_checks
 )
-
-weather_station_alarm_checks = [
-    weather_station_alarm_check(
-        f"weather_station",
-        lambda sensors,: getattr(sensors.weather, "alarm"),
-        Severity.ERROR,
-    )
-]
-
-valve_actuator_checks = [
-    valve_actuator_check(
-        f"{valve_name}_actuator_alarm",
-        lambda sensors, valve_name=valve_name: getattr(
-            sensors, valve_name
-        ).service_info,
-        Severity.CRITICAL,
-    )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
-]
-
-valve_gear_train_checks = [
-    valve_gear_train_check(
-        f"{valve_name}_gear_train_alarm",
-        lambda sensors, valve_name=valve_name: getattr(
-            sensors, valve_name
-        ).service_info,
-        Severity.CRITICAL,
-    )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
-]
-
-valve_alarm_checks = valve_actuator_checks + valve_gear_train_checks
-
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

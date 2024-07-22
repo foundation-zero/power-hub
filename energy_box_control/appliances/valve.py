@@ -10,11 +10,16 @@ from energy_box_control.time import ProcessTime
 from energy_box_control.units import Bar
 
 
+ValveServiceInfo = int
+NO_SERVICE_INFO = 0
+DEFAULT_PRESSURE = 250
+
+
 @dataclass(frozen=True, eq=True)
 class ValveState(ApplianceState):
     position: float
-    pressure: Bar = 250
-    service_info: int = 0
+    pressure: Bar = DEFAULT_PRESSURE
+    service_info: ValveServiceInfo = NO_SERVICE_INFO
 
 
 @dataclass(frozen=True, eq=True)

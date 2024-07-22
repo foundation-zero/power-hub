@@ -14,4 +14,3 @@ MeterPerSecond = float
 Percentage = float
 Degree = float
 Bar = float
-BatteryAlarm = int  # 0: no Alarm, 1: Warning, 2: Alarm

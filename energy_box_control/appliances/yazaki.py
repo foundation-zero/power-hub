@@ -12,6 +12,7 @@ import logging
 
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import (
+    Bar,
     Celsius,
     JoulePerLiterKelvin,
     KiloWatt,
@@ -19,6 +20,8 @@ from energy_box_control.units import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+DEFAULT_PRESSURE = 250
 
 
 class YazakiPort(Port):
@@ -32,7 +35,7 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    hot_pressure: int = 100
+    hot_pressure: Bar = DEFAULT_PRESSURE
 
 
 @dataclass(frozen=True, eq=True)

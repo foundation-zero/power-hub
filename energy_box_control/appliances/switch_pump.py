@@ -11,13 +11,16 @@ from energy_box_control.time import ProcessTime
 
 from energy_box_control.units import Bar, LiterPerSecond, Watt
 
+SwitchPumpAlarm = int  # CRE series alarm codes: https://drive.google.com/file/d/1I8lCpu8UkNt6YmGF5-MU4DgqCUPPA-BV/view?usp=drive_link
+NO_ALARM = 0
+DEFAULT_PRESSURE = 250
+
 
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
-    # CRE series alarm codes: https://drive.google.com/file/d/1I8lCpu8UkNt6YmGF5-MU4DgqCUPPA-BV/view?usp=drive_link
-    pump_1_alarm: int = 0
-    pump_2_alarm: int = 0
-    pressure: Bar = 100
+    pump_1_alarm: int = NO_ALARM
+    pump_2_alarm: int = NO_ALARM
+    pressure: Bar = DEFAULT_PRESSURE
 
 
 class SwitchPumpPort(Port):

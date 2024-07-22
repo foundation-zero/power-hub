@@ -183,9 +183,8 @@ class SensorType(Enum):
     TEMPERATURE = "temperature"
     HUMIDITY = "humidity"
     CO2 = "co2"
-    FAN_ALARM = "fan_alarm"
-    FAN_FILTER_ALARM = "fan_filter_alarm"
-    BATTERY_ALARM = "battery_alarm"
+    ALARM = "alarm"
+    REPLACE_FILTER_ALARM = "replace_filter_alarm"
 
 
 @dataclass(eq=True, frozen=True)
