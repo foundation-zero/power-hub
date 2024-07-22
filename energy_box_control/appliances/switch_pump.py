@@ -14,7 +14,9 @@ from energy_box_control.units import LiterPerSecond, Watt
 
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
-    pass
+    # CRE series alarm codes: https://drive.google.com/file/d/1I8lCpu8UkNt6YmGF5-MU4DgqCUPPA-BV/view?usp=drive_link
+    pump_1_alarm: int = 0
+    pump_2_alarm: int = 0
 
 
 class SwitchPumpPort(Port):

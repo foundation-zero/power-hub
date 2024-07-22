@@ -1,4 +1,5 @@
-from typing import List, get_type_hints
+from dataclasses import fields
+from typing import List
 import pytest
 from energy_box_control.monitoring.checks import (
     SensorValueCheck,
@@ -12,6 +13,7 @@ from energy_box_control.monitoring.checks import (
     container_humidity_checks,
     container_temperature_checks,
     water_tank_checks,
+    pump_alarm_checks,
 )
 from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
@@ -20,7 +22,7 @@ from energy_box_control.monitoring.monitoring import (
     Notifier,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
-from energy_box_control.power_hub.sensors import ContainersSensors
+from energy_box_control.power_hub.sensors import ContainersSensors, PowerHubSensors
 from energy_box_control.sensors import Sensor, SensorType
 
 
@@ -161,6 +163,25 @@ def test_container_sensor_valules(
             source=source,
             dedup_key=attr,
             severity=severity,
+        )
+
+
+def test_pump_alarm_checks():
+    for pump_name in [
+        field.name for field in fields(PowerHubSensors) if "pump" in field.name
+    ]:
+        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+        attr_name = "pump_1_alarm"
+        alarm_code = 50
+        setattr(getattr(sensors, pump_name), attr_name, alarm_code)
+        monitor = Monitor(appliance_checks=pump_alarm_checks)
+        source = "test"
+        assert monitor.run_appliance_checks(sensors, source)[0] == NotificationEvent(
+            message=f"{pump_name}_{attr_name} is raising an alarm with code {alarm_code}",
+            source=source,
+            dedup_key=f"{pump_name}_{attr_name}",
+            severity=Severity.CRITICAL,
         )
 
 

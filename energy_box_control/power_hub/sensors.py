@@ -627,6 +627,9 @@ class SwitchPumpSensors(FromState):
         type=SensorType.FLOW, from_port=SwitchPumpPort.OUT
     )
 
+    pump_1_alarm: int
+    pump_2_alarm: int
+
     @property
     def electrical_power(self) -> Watt:
         return self.spec.electrical_power if self.flow_out > 0 else 0
