@@ -1,3 +1,4 @@
+from energy_box_control.appliances.containers import Containers
 from energy_box_control.appliances.cooling_sink import CoolingSink
 from energy_box_control.appliances.electric_battery import ElectricBattery
 from energy_box_control.appliances.pv_panel import PVPanel
@@ -204,3 +205,7 @@ def water_demand(
 
 water_treatment = WaterTreatment(1)  # Specs unknown
 water_filter_bypass_valve = Valve()
+
+
+def containers(ambient_temperature_schedule: Schedule[Celsius]) -> Containers:
+    return Containers(ambient_temperature_schedule)

@@ -2,13 +2,22 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp
+from energy_box_control.monitoring.health_bounds import (
+    CO2_LOWER_BOUND,
+    CO2_UPPER_BOUND,
+    CONTAINER_TEMPERATURE_LOWER_BOUND,
+    CONTAINER_TEMPERATURE_UPPER_BOUND,
+    HUMIDITY_LOWER_BOUND,
+    HUMIDITY_UPPER_BOUND,
+)
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
 from http import HTTPStatus
-from energy_box_control.power_hub.sensors import ElectricBatterySensors
-from typing import get_type_hints
-
-from energy_box_control.units import Alarm
+from energy_box_control.power_hub.sensors import (
+    ElectricBatterySensors,
+    ContainersSensors,
+)
+from energy_box_control.sensors import Sensor, SensorType
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -17,9 +26,13 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
-class SensorAlarm(Enum):
+class ElectricBatteryAlarm(Enum):
     WARNING = 1
     ALARM = 2
+
+
+class FancoilAlarm(Enum):
+    ALARM = 1
 
 
 class Severity(Enum):
@@ -85,7 +98,7 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
 
 
 def sensor_alarm_check(
-    type: SensorAlarm, message: Callable[[str], str]
+    type: ElectricBatteryAlarm | FancoilAlarm, message: Callable[[str], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
     def _alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
@@ -100,15 +113,24 @@ def sensor_alarm_check(
     return _alarm_check
 
 
-alarm_check = sensor_alarm_check(
-    SensorAlarm.ALARM, lambda name: f"{name} is raising an alarm"
+battery_alarm_check = sensor_alarm_check(
+    ElectricBatteryAlarm.ALARM, lambda name: f"{name} is raising an alarm"
 )
-warning_check = sensor_alarm_check(
-    SensorAlarm.WARNING, lambda name: f"{name} is raising a warning"
+
+battery_warning_check = sensor_alarm_check(
+    ElectricBatteryAlarm.WARNING, lambda name: f"{name} is raising a warning"
+)
+
+fancoil_alarm_check = sensor_alarm_check(
+    FancoilAlarm.ALARM, lambda name: f"{name} is raising an alarm"
+)
+
+fancoil_filter_check = sensor_alarm_check(
+    FancoilAlarm.ALARM, lambda name: f"{name} gone bad"
 )
 
 
-def valid_temp(
+def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
     lower_bound: int = 5,
@@ -127,34 +149,124 @@ def valid_temp(
 
 
 sensor_checks = [
-    valid_temp("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature),
 ]
 
-alarm_checks = [
-    alarm_check(
+battery_alarm_checks = [
+    battery_alarm_check(
         f"{attr}",
         lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
         Severity.CRITICAL,
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        for attr in dir(ElectricBatterySensors)
+        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
     ]
 ]
-warning_checks = [
-    warning_check(
+battery_warning_checks = [
+    battery_warning_check(
         f"{attr}_warning",
         lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
         Severity.WARNING,
     )
     for attr in [
         attr
-        for attr, type in get_type_hints(ElectricBatterySensors).items()
-        if type == Alarm
+        for attr in dir(ElectricBatterySensors)
+        if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
+        and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
     ]
 ]
 
+
+container_temperature_checks = [
+    valid_value(
+        attr,
+        lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        lower_bound=CONTAINER_TEMPERATURE_LOWER_BOUND,
+        upper_bound=CONTAINER_TEMPERATURE_UPPER_BOUND,
+        severity=Severity.CRITICAL,
+    )
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.TEMPERATURE
+    ]
+]
+
+container_humidity_checks = [
+    valid_value(
+        attr,
+        lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        lower_bound=HUMIDITY_LOWER_BOUND,
+        upper_bound=HUMIDITY_UPPER_BOUND,
+        severity=Severity.ERROR,
+    )
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.HUMIDITY
+    ]
+]
+
+container_co2_checks = [
+    valid_value(
+        attr,
+        lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        lower_bound=CO2_LOWER_BOUND,
+        upper_bound=CO2_UPPER_BOUND,
+        severity=Severity.CRITICAL,
+    )
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.CO2
+    ]
+]
+
+container_fancoil_alarm_checks = [
+    fancoil_alarm_check(
+        f"{attr}",
+        lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        Severity.CRITICAL,
+    )
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.FAN_ALARM
+    ]
+]
+
+containers_fancoil_filter_checks = [
+    fancoil_filter_check(
+        f"{attr}",
+        lambda sensors, attr=attr: getattr(sensors.containers, attr),
+        Severity.CRITICAL,
+    )
+    for attr in [
+        attr
+        for attr in dir(ContainersSensors)
+        if isinstance(getattr(ContainersSensors, attr), Sensor)
+        and getattr(ContainersSensors, attr).type == SensorType.FAN_FILTER_ALARM
+    ]
+]
+
+
+all_appliance_checks = (
+    sensor_checks
+    + battery_alarm_checks
+    + battery_warning_checks
+    + container_temperature_checks
+    + container_humidity_checks
+    + container_co2_checks
+    + container_fancoil_alarm_checks
+    + containers_fancoil_filter_checks
+)
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

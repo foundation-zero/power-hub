@@ -65,6 +65,7 @@ async def test_app_endpoints(headers):
         "/power_hub/electric/power/production/mean/per/hour_of_day",
         "/power_hub/electric/power/consumption/mean/per/hour_of_day",
         "/power_hub/appliance_sensors/electric_battery/soc_battery_system/last_values",
+        "/power_hub/appliance_sensors/electric_battery/soc_battery_system/over/time?interval=h",
     ]
     single_value_endpoints = [
         "/power_hub/appliance_sensors/pv_panel/power/mean",
@@ -84,6 +85,9 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/pcm/temperature/mean",
         "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean",
         "/power_hub/appliance_sensors/pcm/fill/current",
+        "/power_hub/appliance_sensors/containers/office_temperature/mean",
+        "/power_hub/appliance_sensors/weather/global_irradiance/mean",
+        "/power_hub/appliance_sensors/yazaki/used_power/mean",
     ]
 
     for endpoint in multiple_value_endpoints:
@@ -93,15 +97,3 @@ async def test_app_endpoints(headers):
     for endpoint in single_value_endpoints:
         response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
         assert type(response) == float or int
-
-
-@pytest.mark.skip
-async def test_remaining_endpoints(headers):
-    endpoints = [
-        "/power_hub/appliance_sensors/compound/overall_temperature/mean",
-        "/power_hub/weather_station/pyranometer/irradiance/mean",
-    ]
-
-    for endpoint in endpoints:
-        response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
-        assert len(response) > 0
