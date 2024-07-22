@@ -2,11 +2,14 @@ from dataclasses import dataclass
 
 from energy_box_control.monitoring.checks import (
     AlarmHealthCheck,
+    ApplianceSensorValueCheck,
     SensorValueCheck,
     Severity,
     UrlHealthCheck,
 )
 from energy_box_control.custom_logging import get_logger
+from energy_box_control.network import NetworkControl
+from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
 from typing import Protocol, Sequence
@@ -55,10 +58,12 @@ class Monitor:
     def __init__(
         self,
         appliance_checks: Sequence[AlarmHealthCheck | SensorValueCheck] = [],
+        appliance_sensor_value_checks: list[ApplianceSensorValueCheck] = [],
         url_health_checks: list[UrlHealthCheck] = [],
     ):
         self._appliance_checks = appliance_checks
         self._url_health_checks = url_health_checks
+        self._appliance_sensor_value_checks = appliance_sensor_value_checks
 
     def run_appliance_checks(
         self, sensor_values: PowerHubSensors, source: str
@@ -67,6 +72,19 @@ class Monitor:
             NotificationEvent(result, source, check.name, check.severity)
             for check in self._appliance_checks
             if (result := check.check(sensor_values)) is not None
+        ]
+
+    def run_appliance_sensor_value_checks(
+        self,
+        sensor_values: PowerHubSensors,
+        control: NetworkControl[PowerHub],
+        power_hub: PowerHub,
+        source: str,
+    ) -> list[NotificationEvent]:
+        return [
+            NotificationEvent(result, source, check.name, check.severity)
+            for check in self._appliance_sensor_value_checks
+            if (result := check.check(sensor_values, control, power_hub)) is not None
         ]
 
     async def run_url_health_checks(self, source: str) -> list[NotificationEvent]:

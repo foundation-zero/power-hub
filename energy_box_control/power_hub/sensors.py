@@ -30,6 +30,7 @@ from energy_box_control.power_hub.components import (
 from datetime import datetime
 
 from energy_box_control.units import (
+    Bar,
     Celsius,
     Joule,
     Liter,
@@ -172,6 +173,7 @@ class YazakiSensors(FromState):
     cold_reservoir: "ColdReservoirSensors"
     waste_switch_valve: "WasteSwitchSensors"
     preheat_switch_valve: "PreHeatSwitchSensors"
+    chilled_loop_pump: "SwitchPumpSensors"
 
     hot_flow: LiterPerSecond = sensor(
         technical_name="FS-1004", type=SensorType.FLOW, from_port=YazakiPort.HOT_IN
@@ -186,6 +188,8 @@ class YazakiSensors(FromState):
         type=SensorType.TEMPERATURE,
         from_port=YazakiPort.HOT_OUT,
     )
+
+    hot_pressure: LiterPerSecond = sensor(technical_name="PS-1001")
 
     @property
     def cooling_input_temperature(self) -> Celsius:
@@ -207,6 +211,14 @@ class YazakiSensors(FromState):
     def cooling_flow(self) -> LiterPerSecond:
         return (
             self.preheat_switch_valve.input_flow
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
+            else 0
+        )
+
+    @property
+    def cooling_pressure(self) -> Bar:
+        return (
+            self.preheat_switch_valve.pressure
             if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
             else 0
         )
@@ -237,6 +249,17 @@ class YazakiSensors(FromState):
     ) -> LiterPerSecond:
         return (
             self.cold_reservoir.exchange_flow
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+            else 0
+        )
+
+    @property
+    def chilled_pressure(
+        self,
+    ) -> LiterPerSecond:
+        return (
+            self.chilled_loop_pump.pressure
             if self.chiller_switch_valve.position
             == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
             else 0
@@ -537,6 +560,8 @@ class PreHeatSwitchSensors(ValveSensors):
         technical_name="FS-1012", type=SensorType.FLOW, from_port=ValvePort.AB
     )
 
+    pressure: Bar = sensor(technical_name="PS-1002")
+
 
 @sensors()
 class ChillerSensors(FromState):
@@ -629,6 +654,7 @@ class SwitchPumpSensors(FromState):
 
     pump_1_alarm: int
     pump_2_alarm: int
+    pressure: Bar
 
     @property
     def electrical_power(self) -> Watt:
