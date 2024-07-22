@@ -34,6 +34,8 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 from energy_box_control.sensors import Sensor, SensorType
+from energy_box_control.power_hub.sensors import ElectricBatterySensors
+from typing import get_type_hints
 
 
 POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
@@ -52,6 +54,10 @@ class FancoilAlarm(Enum):
 
 
 class PumpAlarm(Enum):
+    NO_ALARM = 0
+
+
+class WeatherStationAlarm(Enum):
     NO_ALARM = 0
 
 
@@ -162,10 +168,10 @@ def sensor_alarm_check(
     return _alarm_check
 
 
-def pump_alarm_check(
-    type: PumpAlarm, message: Callable[[str, int], str]
+def no_pump_alarm_check(
+    type: PumpAlarm | WeatherStationAlarm, message: Callable[[str, int], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
-    def _pump_alarm_check(
+    def _no_pump_alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
     ):
         def _alarm(sensor_values: PowerHubSensors) -> str | None:
@@ -176,7 +182,7 @@ def pump_alarm_check(
 
         return AlarmHealthCheck(name=name, check=_alarm, severity=severity)
 
-    return _pump_alarm_check
+    return _no_pump_alarm_check
 
 
 battery_alarm_check = sensor_alarm_check(
@@ -187,6 +193,12 @@ battery_warning_check = sensor_alarm_check(
     ElectricBatteryAlarm.WARNING, lambda name: f"{name} is raising a warning"
 )
 
+weather_station_alarm_check = no_pump_alarm_check(
+    WeatherStationAlarm.NO_ALARM,
+    lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
+)
+
+
 fancoil_alarm_check = sensor_alarm_check(
     FancoilAlarm.ALARM, lambda name: f"{name} is raising an alarm"
 )
@@ -195,7 +207,7 @@ fancoil_filter_check = sensor_alarm_check(
     FancoilAlarm.ALARM, lambda name: f"{name} gone bad"
 )
 
-pump_alarm = pump_alarm_check(
+pump_alarm = no_pump_alarm_check(
     PumpAlarm.NO_ALARM,
     lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
 )
@@ -415,6 +427,14 @@ all_appliance_checks = (
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
 )
+
+weather_station_alarm_checks = [
+    weather_station_alarm_check(
+        f"weather_station",
+        lambda sensors,: getattr(sensors.weather, "alarm"),
+        Severity.ERROR,
+    )
+]
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

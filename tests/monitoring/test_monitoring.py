@@ -15,6 +15,7 @@ from energy_box_control.monitoring.checks import (
     water_tank_checks,
     pump_alarm_checks,
     yazaki_bound_checks,
+    weather_station_alarm_checks,
 )
 from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
@@ -403,6 +404,21 @@ def test_yazaki_property_health_bound_checks_yazaki_off(
             )
         )
         == 0
+    )
+
+
+def test_weather_station_alarm_checks():
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    alarm_value = 50
+    sensors.weather.alarm = alarm_value
+    monitor = Monitor(appliance_checks=weather_station_alarm_checks)
+    source = "test"
+    assert monitor.run_appliance_checks(sensors, source)[0] == NotificationEvent(
+        message=f"weather_station is raising an alarm with code {alarm_value}",
+        source=source,
+        dedup_key="weather_station",
+        severity=Severity.ERROR,
     )
 
 

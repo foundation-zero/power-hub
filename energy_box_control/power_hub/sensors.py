@@ -31,6 +31,7 @@ from datetime import datetime
 
 from energy_box_control.units import (
     Bar,
+    BatteryAlarm,
     Celsius,
     Joule,
     Liter,
@@ -842,6 +843,7 @@ class ContainersSensors(FromState):
 class WeatherSensors(WithoutAppliance):
     ambient_temperature: Celsius
     global_irradiance: WattPerMeterSquared
+    alarm: int
 
 
 @dataclass

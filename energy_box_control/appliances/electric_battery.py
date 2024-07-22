@@ -13,6 +13,7 @@ from energy_box_control.units import Celsius
 
 BatteryAlarm = int  # 0: no Alarm, 1: Warning, 2: Alarm
 NO_ALARM = 0
+from energy_box_control.units import BatteryAlarm, Celsius
 
 
 @dataclass(frozen=True, eq=True)
