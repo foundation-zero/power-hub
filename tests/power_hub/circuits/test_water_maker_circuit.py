@@ -122,7 +122,11 @@ def test_water_maker_network():
         1 second per timestep so the fill is:
         0 + (50 * 1) + (5 * 1) - (10 * 1) = 45l
     """
-    assert state.appliance(water_maker_network.water_tank).get().fill == approx(45)
+    assert state.appliance(
+        water_maker_network.water_tank
+    ).get().percentage_fill / 100 * water_maker_network.water_tank.capacity == approx(
+        45
+    )
 
     state = water_maker_network.simulate(state, control)
     """
@@ -133,4 +137,8 @@ def test_water_maker_network():
         -10l/s from the water demand
         45 + (50 * 1) + (5 * 1) - (10 * 1) = 90l 
     """
-    assert state.appliance(water_maker_network.water_tank).get().fill == approx(90)
+    assert state.appliance(
+        water_maker_network.water_tank
+    ).get().percentage_fill / 100 * water_maker_network.water_tank.capacity == approx(
+        90
+    )

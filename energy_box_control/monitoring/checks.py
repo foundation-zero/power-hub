@@ -9,6 +9,7 @@ from energy_box_control.monitoring.health_bounds import (
     CONTAINER_TEMPERATURE_UPPER_BOUND,
     HUMIDITY_LOWER_BOUND,
     HUMIDITY_UPPER_BOUND,
+    TANK_BOUNDS,
 )
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from enum import Enum
@@ -149,7 +150,7 @@ def valid_value(
 
 
 sensor_checks = [
-    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature),
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
 ]
 
 battery_alarm_checks = [
@@ -177,6 +178,19 @@ battery_warning_checks = [
         if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
         and getattr(ElectricBatterySensors, attr).type == SensorType.BATTERY_ALARM
     ]
+]
+
+water_tank_checks = [
+    valid_value(
+        f"{tank_name}_percentage_fill",
+        lambda sensors, tank_name=tank_name: getattr(
+            sensors, tank_name
+        ).percentage_fill,
+        lower_bound=TANK_BOUNDS[tank_name]["lower_bound"],
+        upper_bound=TANK_BOUNDS[tank_name]["upper_bound"],
+        severity=Severity.CRITICAL,
+    )
+    for tank_name in TANK_BOUNDS.keys()
 ]
 
 

@@ -695,7 +695,8 @@ class ElectricBatterySensors(FromState):
 @sensors()
 class FreshWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter = sensor(technical_name="LS-5001")
+    percentage_fill: Liter = sensor(technical_name="LS-5001")
+
     water_demand_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
     )
@@ -707,14 +708,14 @@ class FreshWaterTankSensors(FromState):
     )
 
     @property
-    def percentage_fill(self) -> float:
-        return self.fill / self.spec.capacity
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
 
 
 @sensors()
 class GreyWaterTankSensors(FromState):
     spec: WaterTank
-    fill: Liter = sensor(technical_name="LS-3001")
+    percentage_fill: float = sensor(technical_name="LS-3001")
 
     water_demand_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
@@ -725,8 +726,28 @@ class GreyWaterTankSensors(FromState):
     )
 
     @property
-    def percentage_fill(self) -> float:
-        return self.fill / self.spec.capacity
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
+
+
+@sensors()
+class BlackTankSensors(FromState):
+    spec: WaterTank
+    percentage_fill: float = sensor(technical_name="LS-2001")
+
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
+
+
+@sensors()
+class TechnicalWaterTankSensors(FromState):
+    spec: WaterTank
+    percentage_fill: float = sensor(technical_name="LS-4001")
+
+    @property
+    def fill(self) -> Liter:
+        return self.percentage_fill / 100 * self.spec.capacity
 
 
 @sensors()
@@ -815,6 +836,8 @@ class PowerHubSensors(NetworkSensors):
     electric_battery: ElectricBatterySensors
     fresh_water_tank: FreshWaterTankSensors
     grey_water_tank: GreyWaterTankSensors
+    black_water_tank: BlackTankSensors
+    technical_water_tank: TechnicalWaterTankSensors
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
     containers: ContainersSensors

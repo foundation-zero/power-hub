@@ -11,6 +11,7 @@ from energy_box_control.monitoring.checks import (
     container_co2_checks,
     container_humidity_checks,
     container_temperature_checks,
+    water_tank_checks,
 )
 from energy_box_control.monitoring.monitoring import (
     NotificationEvent,
@@ -84,6 +85,29 @@ def test_fancoil_alarm_checks(fancoil_alarm: str):
         message=f"{fancoil_alarm} is raising an alarm",
         source=source,
         dedup_key=fancoil_alarm,
+        severity=Severity.CRITICAL,
+    )
+
+
+@pytest.mark.parametrize(
+    "water_tank,invalid_tank_fill",
+    [
+        ("grey_water_tank", 110),
+        ("fresh_water_tank", 10),
+        ("technical_water_tank", 10),
+        ("black_water_tank", 100),
+    ],
+)
+def test_tank_checks(water_tank: str, invalid_tank_fill: int):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    setattr(getattr(sensors, water_tank), "percentage_fill", invalid_tank_fill)
+    monitor = Monitor(appliance_checks=water_tank_checks)
+    source = "test"
+    assert monitor.run_appliance_checks(sensors, source)[0] == NotificationEvent(
+        message=f"{water_tank}_percentage_fill is outside valid bounds with value: {invalid_tank_fill}",
+        source=source,
+        dedup_key=f"{water_tank}_percentage_fill",
         severity=Severity.CRITICAL,
     )
 
