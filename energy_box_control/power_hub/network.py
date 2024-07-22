@@ -2,9 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import json
 
-from typing import Self, cast
+from typing import Self
 
-from pandas import read_csv, DataFrame  # type: ignore
 from energy_box_control.appliances import (
     HeatPipes,
     Valve,
@@ -81,6 +80,7 @@ from energy_box_control.network import (
 )
 
 
+from energy_box_control.power_hub.schedules import PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
     WeatherSensors,
@@ -89,73 +89,7 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.schedules import ConstSchedule, PeriodicSchedule, Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import LiterPerSecond, WattPerMeterSquared, Celsius, Watt
-
-
-@dataclass
-class PowerHubSchedules:
-    global_irradiance: Schedule[WattPerMeterSquared]
-    ambient_temperature: Schedule[Celsius]
-    cooling_demand: Schedule[Watt]
-    sea_water_temperature: Schedule[Celsius]
-    fresh_water_temperature: Schedule[Celsius]
-    fresh_water_demand: Schedule[LiterPerSecond]
-    grey_water_supply: Schedule[LiterPerSecond]
-
-    @staticmethod
-    def const_schedules() -> "PowerHubSchedules":
-        return PowerHubSchedules(
-            ConstSchedule(phc.GLOBAL_IRRADIANCE),
-            ConstSchedule(phc.AMBIENT_TEMPERATURE),
-            ConstSchedule(phc.COOLING_DEMAND),
-            ConstSchedule(phc.SEAWATER_TEMPERATURE),
-            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
-            ConstSchedule(phc.WATER_DEMAND),
-            ConstSchedule(phc.PERCENT_WATER_CAPTURED * phc.WATER_DEMAND),
-        )
-
-    @staticmethod
-    def schedules_from_data(
-        path: str = "energy_box_control/power_hub/powerhub_simulation_schedules_Jun_Oct_TMY.csv",
-    ) -> "PowerHubSchedules":
-        data: DataFrame = read_csv(
-            path,
-            index_col=0,
-            parse_dates=True,
-        )
-
-        start = cast(datetime, data.index[0].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
-
-        end = cast(datetime, data.index[-1].to_pydatetime()).replace(tzinfo=timezone.utc)  # type: ignore
-
-        global_irradiance_values = cast(
-            list[WattPerMeterSquared], data["Global Horizontal Radiation"].to_list()  # type: ignore
-        )
-        ambient_temperature_values = cast(
-            list[Celsius], data["Dry Bulb Temperature"].to_list()  # type: ignore
-        )
-        cooling_demand_values = cast(list[Watt], data["Cooling Demand"].to_list())  # type: ignore
-
-        schedule_period = (end - start) + timedelta(hours=1)
-        return PowerHubSchedules(
-            PeriodicSchedule(
-                start,
-                schedule_period,
-                tuple(global_irradiance_values),
-            ),
-            PeriodicSchedule(
-                start,
-                schedule_period,
-                tuple(ambient_temperature_values),
-            ),
-            PeriodicSchedule(start, schedule_period, tuple(cooling_demand_values)),
-            ConstSchedule(phc.SEAWATER_TEMPERATURE),
-            ConstSchedule(phc.FRESHWATER_TEMPERATURE),
-            ConstSchedule(phc.WATER_DEMAND),
-            ConstSchedule(phc.PERCENT_WATER_CAPTURED * phc.WATER_DEMAND),
-        )
 
 
 @dataclass
@@ -210,7 +144,7 @@ class PowerHub(Network[PowerHubSensors]):
     water_treatment: WaterTreatment
     water_filter_bypass_valve: Valve
     containers: Containers
-    schedules: "PowerHubSchedules"
+    schedules: PowerHubSchedules
 
     def __post_init__(self):
         super().__init__()

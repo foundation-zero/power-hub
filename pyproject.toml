@@ -8,7 +8,6 @@ packages = [{include = "energy_box_control"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pint = "^0.23"
 scipy = "^1.12.0"
 paho-mqtt = "^2.0.0"
 quart = "^0.19.4"
@@ -25,7 +24,13 @@ pydantic-settings = "^2.2.1"
 quart-cors = "^0.7.0"
 pdpyras = "^5.2.0"
 
-scp = "^0.15.0"
+[tool.poetry.group.control.dependencies]
+python = "^3.12"
+paho-mqtt = "^2.0.0"
+python-dotenv = "^1.0.1"
+pydantic-settings = "^2.2.1"
+pdpyras = "^5.2.0"
+
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
 hypothesis = "^6.98.4"
@@ -41,6 +46,7 @@ ipykernel = "^6.29.4"
 matplotlib = "^3.8.4"
 seaborn = "^0.13.2"
 notebook = "^7.1.3"
+scp = "^0.15.0"
 
 [tool.pyright]
 strict = ["energy_box_control"]

@@ -2,7 +2,7 @@ FROM erlang:24 as build-env
 
 WORKDIR /vernemq-build
 
-ARG VERNEMQ_GIT_REF=1.13.0
+ARG VERNEMQ_GIT_REF=2.0.1
 ARG TARGET=rpi32
 ARG VERNEMQ_REPO=https://github.com/vernemq/vernemq.git
 
