@@ -27,6 +27,9 @@ from energy_box_control.monitoring.health_bounds import (
 )
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.power_hub.sensors import PowerHubSensors, SwitchPumpSensors
+from typing import Any, Awaitable, Callable, Optional
+
+from energy_box_control.power_hub.sensors import PowerHubSensors, ValveSensors
 from enum import Enum
 from http import HTTPStatus
 from energy_box_control.power_hub.sensors import (
@@ -34,7 +37,6 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 from energy_box_control.sensors import Sensor, SensorType
-from energy_box_control.power_hub.sensors import ElectricBatterySensors
 from typing import get_type_hints
 
 
@@ -44,21 +46,39 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
-class ElectricBatteryAlarm(Enum):
+class Alarm(Enum):
+    pass
+
+
+class ElectricBatteryAlarm(Alarm):
     WARNING = 1
     ALARM = 2
 
 
-class FancoilAlarm(Enum):
+class FancoilAlarm(Alarm):
     ALARM = 1
 
 
-class PumpAlarm(Enum):
+class PumpAlarm(Alarm):
     NO_ALARM = 0
 
 
-class WeatherStationAlarm(Enum):
+class WeatherStationAlarm(Alarm):
     NO_ALARM = 0
+
+
+"""
+1: Mechanical travel increased
+2: Actuator cannot move
+8: Internal activity
+9: Gear train disengaged
+10: Bus watchdog triggered
+"""
+
+
+class ValveAlarm(Alarm):
+    ACTUATOR_CANNOT_MOVE = 2
+    GEAR_TRAIN_DISENGAGED = 9
 
 
 class Severity(Enum):
@@ -153,7 +173,7 @@ def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
 
 
 def sensor_alarm_check(
-    type: ElectricBatteryAlarm | FancoilAlarm, message: Callable[[str], str]
+    type: Alarm, message: Callable[[str], str]
 ) -> Callable[[str, Callable[[PowerHubSensors], int], Severity], AlarmHealthCheck]:
     def _alarm_check(
         name: str, sensor_fn: Callable[[PowerHubSensors], int], severity: Severity
@@ -196,6 +216,13 @@ battery_warning_check = sensor_alarm_check(
 weather_station_alarm_check = no_pump_alarm_check(
     WeatherStationAlarm.NO_ALARM,
     lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
+)
+
+valve_actuator_check = sensor_alarm_check(
+    ValveAlarm.ACTUATOR_CANNOT_MOVE, lambda name: f"{name} is raised"
+)
+valve_gear_train_check = sensor_alarm_check(
+    ValveAlarm.GEAR_TRAIN_DISENGAGED, lambda name: f"{name} is raised"
 )
 
 
@@ -435,6 +462,39 @@ weather_station_alarm_checks = [
         Severity.ERROR,
     )
 ]
+
+valve_actuator_checks = [
+    valve_actuator_check(
+        f"{valve_name}_actuator_alarm",
+        lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    ]
+]
+
+valve_gear_train_checks = [
+    valve_gear_train_check(
+        f"{valve_name}_gear_train_alarm",
+        lambda sensors, valve_name=valve_name: getattr(
+            sensors, valve_name
+        ).service_info,
+        Severity.CRITICAL,
+    )
+    for valve_name in [
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    ]
+]
+
+valve_alarm_checks = valve_actuator_checks + valve_gear_train_checks
+
 
 service_checks = [
     url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),

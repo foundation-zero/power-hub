@@ -522,6 +522,7 @@ class ColdReservoirSensors(FromState):
 class ValveSensors(FromState):
     spec: Valve
     position: float
+    service_info: int
 
     def in_position(self, position: float, diff: float = 0.05) -> bool:
         return abs(self.position - position) < diff

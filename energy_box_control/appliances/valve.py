@@ -14,6 +14,7 @@ from energy_box_control.units import Bar
 class ValveState(ApplianceState):
     position: float
     pressure: Bar = 250
+    service_info: int = 0
 
 
 @dataclass(frozen=True, eq=True)

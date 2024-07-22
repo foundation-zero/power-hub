@@ -1,17 +1,20 @@
 from dataclasses import fields
 from typing import List
 import pytest
+from energy_box_control.appliances.valve import Valve
 from energy_box_control.monitoring.checks import (
     SensorValueCheck,
+    ValveAlarm,
     sensor_checks,
     Severity,
-    battery_alarm_checks,
-    battery_warning_checks,
     container_fancoil_alarm_checks,
-    containers_fancoil_filter_checks,
     container_co2_checks,
     container_humidity_checks,
     container_temperature_checks,
+    containers_fancoil_filter_checks,
+    valve_alarm_checks,
+    battery_alarm_checks,
+    battery_warning_checks,
     water_tank_checks,
     pump_alarm_checks,
     yazaki_bound_checks,
@@ -30,7 +33,11 @@ from energy_box_control.power_hub.components import (
 from energy_box_control.power_hub.control import no_control
 from energy_box_control.power_hub.components import HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
-from energy_box_control.power_hub.sensors import ContainersSensors, PowerHubSensors
+from energy_box_control.power_hub.sensors import (
+    ContainersSensors,
+    PowerHubSensors,
+    ValveSensors,
+)
 from energy_box_control.sensors import Sensor, SensorType
 
 
@@ -202,6 +209,32 @@ def test_pump_alarm_checks():
             message=f"{pump_name}_{attr_name} is raising an alarm with code {alarm_code}",
             source=source,
             dedup_key=f"{pump_name}_{attr_name}",
+            severity=Severity.CRITICAL,
+        )
+
+
+@pytest.mark.parametrize(
+    "alarm,dedup_key",
+    [
+        (ValveAlarm.ACTUATOR_CANNOT_MOVE, "actuator"),
+        (ValveAlarm.GEAR_TRAIN_DISENGAGED, "gear_train"),
+    ],
+)
+def test_valve_alarm_checks(alarm, dedup_key):
+    for valve_name in [
+        field.name
+        for field in fields(PowerHubSensors)
+        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    ]:
+        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+        setattr(getattr(sensors, valve_name), "service_info", alarm.value)
+        monitor = Monitor(appliance_checks=valve_alarm_checks)
+        source = "test"
+        assert monitor.run_appliance_checks(sensors, source)[0] == NotificationEvent(
+            message=f"{valve_name}_{dedup_key}_alarm is raised",
+            source=source,
+            dedup_key=f"{valve_name}_{dedup_key}_alarm",
             severity=Severity.CRITICAL,
         )
 
