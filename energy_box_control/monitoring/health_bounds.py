@@ -1,12 +1,5 @@
 from dataclasses import dataclass
 
-CO2_LOWER_BOUND = 20
-CO2_UPPER_BOUND = 100
-HUMIDITY_LOWER_BOUND = 20
-HUMIDITY_UPPER_BOUND = 100
-CONTAINER_TEMPERATURE_LOWER_BOUND = 15
-CONTAINER_TEMPERATURE_UPPER_BOUND = 35
-
 
 @dataclass
 class HealthBound:
@@ -14,11 +7,17 @@ class HealthBound:
     upper_bound: int | float
 
 
+CONTAINER_BOUNDS = {
+    "co2": HealthBound(20, 100),
+    "humidity": HealthBound(20, 100),
+    "temperature": HealthBound(15, 35),
+}
+
 TANK_BOUNDS = {
-    "grey_water_tank": {"lower_bound": 0, "upper_bound": 100},
-    "black_water_tank": {"lower_bound": 0, "upper_bound": 90},
-    "technical_water_tank": {"lower_bound": 40, "upper_bound": 100},
-    "fresh_water_tank": {"lower_bound": 40, "upper_bound": 100},
+    "grey_water_tank": HealthBound(0, 100),
+    "black_water_tank": HealthBound(0, 90),
+    "technical_water_tank": HealthBound(40, 100),
+    "fresh_water_tank": HealthBound(40, 100),
 }
 
 
@@ -33,3 +32,10 @@ YAZAKI_BOUNDS = {
     "cooling_pressure": HealthBound(0, 1034),
     "hot_pressure": HealthBound(0, 588),
 }
+HOT_CIRCUIT_TEMPERATURE_BOUNDS: HealthBound = HealthBound(
+    50, 90
+)  # adapt this to a valid value
+HOT_CIRCUIT_FLOW_BOUNDS: HealthBound = HealthBound(0, 5)  # adapt this to a valid value
+HOT_CIRCUIT_PRESSURE_BOUNDS: HealthBound = HealthBound(
+    0, 500
+)  # adapt this to a valid value

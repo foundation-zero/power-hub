@@ -3,12 +3,7 @@ from typing import Any, Awaitable, Callable, Optional, get_type_hints
 
 import aiohttp
 from energy_box_control.monitoring.health_bounds import (
-    CO2_LOWER_BOUND,
-    CO2_UPPER_BOUND,
-    CONTAINER_TEMPERATURE_LOWER_BOUND,
-    CONTAINER_TEMPERATURE_UPPER_BOUND,
-    HUMIDITY_LOWER_BOUND,
-    HUMIDITY_UPPER_BOUND,
+    CONTAINER_BOUNDS,
     TANK_BOUNDS,
 )
 from dataclasses import dataclass
@@ -20,6 +15,16 @@ from energy_box_control.monitoring.health_bounds import (
 )
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
+from dataclasses import dataclass
+from math import isnan
+from typing import Any, Awaitable, Callable, Optional
+
+from energy_box_control.monitoring.health_bounds import (
+    HealthBound,
+    HOT_CIRCUIT_FLOW_BOUNDS,
+    HOT_CIRCUIT_PRESSURE_BOUNDS,
+    HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+)
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.power_hub.sensors import PowerHubSensors, SwitchPumpSensors
 from enum import Enum
@@ -199,16 +204,16 @@ pump_alarm = pump_alarm_check(
 def valid_value(
     name: str,
     value_fn: Callable[[PowerHubSensors], float],
-    lower_bound: int = 5,
-    upper_bound: int = 100,
-    severity: Severity = Severity.ERROR,
+    health_bound: HealthBound = HealthBound(5, 100),
+    severity: Severity = Severity.CRITICAL,
 ) -> SensorValueCheck:
     return SensorValueCheck(
         name,
         value_check(
             name,
             value_fn,
-            lambda value: lower_bound < value < upper_bound,
+            lambda value: health_bound.lower_bound <= value <= health_bound.upper_bound
+            or isnan(value),
         ),
         severity,
     )
@@ -238,7 +243,22 @@ def valid_appliance_value(
 
 
 sensor_checks = [
-    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature)
+    valid_value("pcm_temperature_check", lambda sensors: sensors.pcm.temperature),
+    valid_value(
+        "hot_circuit_temperature_check",
+        lambda sensors: sensors.pcm.charge_input_temperature,
+        HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+    ),
+    valid_value(
+        "hot_circuit_flow_check",
+        lambda sensors: sensors.pcm.charge_flow,
+        HOT_CIRCUIT_FLOW_BOUNDS,
+    ),
+    valid_value(
+        "hot_circuit_pressure_check",
+        lambda sensors: sensors.pcm.charge_pressure,
+        HOT_CIRCUIT_PRESSURE_BOUNDS,
+    ),
 ]
 
 yazaki_bound_checks = [
@@ -288,8 +308,7 @@ water_tank_checks = [
         lambda sensors, tank_name=tank_name: getattr(
             sensors, tank_name
         ).percentage_fill,
-        lower_bound=TANK_BOUNDS[tank_name]["lower_bound"],
-        upper_bound=TANK_BOUNDS[tank_name]["upper_bound"],
+        health_bound=TANK_BOUNDS[tank_name],
         severity=Severity.CRITICAL,
     )
     for tank_name in TANK_BOUNDS.keys()
@@ -300,8 +319,7 @@ container_temperature_checks = [
     valid_value(
         attr,
         lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        lower_bound=CONTAINER_TEMPERATURE_LOWER_BOUND,
-        upper_bound=CONTAINER_TEMPERATURE_UPPER_BOUND,
+        health_bound=CONTAINER_BOUNDS["temperature"],
         severity=Severity.CRITICAL,
     )
     for attr in [
@@ -316,8 +334,7 @@ container_humidity_checks = [
     valid_value(
         attr,
         lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        lower_bound=HUMIDITY_LOWER_BOUND,
-        upper_bound=HUMIDITY_UPPER_BOUND,
+        health_bound=CONTAINER_BOUNDS["humidity"],
         severity=Severity.ERROR,
     )
     for attr in [
@@ -332,8 +349,7 @@ container_co2_checks = [
     valid_value(
         attr,
         lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        lower_bound=CO2_LOWER_BOUND,
-        upper_bound=CO2_UPPER_BOUND,
+        health_bound=CONTAINER_BOUNDS["co2"],
         severity=Severity.CRITICAL,
     )
     for attr in [
