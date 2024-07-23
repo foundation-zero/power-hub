@@ -1,7 +1,7 @@
 import json
 from energy_box_control.monitoring.checks import (
     value_check,
-    valid_temp,
+    valid_value,
     service_checks,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
@@ -12,15 +12,23 @@ def test_value_check():
     value_fn = lambda _value: 0
     check_fn = lambda value: value == 1
     name = "testing"
-    value_check_fn = value_check(name, value_fn, check_fn)
-    assert value_check_fn(100) == f"{name} is outside valid bounds with value: {0}"
+    value_check_fn = value_check(
+        name,
+        value_fn,
+        check_fn,
+        message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value}",
+    )
+    assert (
+        value_check_fn(100, None, None)
+        == f"{name} is outside valid bounds with value: {0}"
+    )
 
 
 def test_valid_temp():
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-    check = valid_temp("testing", lambda sensors: sensors.pcm.temperature)
+    check = valid_value("testing", lambda sensors: sensors.pcm.temperature)
     assert not check.check(
-        power_hub.sensors_from_state(power_hub.simple_initial_state())
+        power_hub.sensors_from_state(power_hub.simple_initial_state()), None, None
     )
 
 

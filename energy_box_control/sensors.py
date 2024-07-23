@@ -181,6 +181,10 @@ class SensorContext[T: Timed]:
 class SensorType(Enum):
     FLOW = "flow"
     TEMPERATURE = "temperature"
+    HUMIDITY = "humidity"
+    CO2 = "co2"
+    ALARM = "alarm"
+    REPLACE_FILTER_ALARM = "replace_filter_alarm"
 
 
 @dataclass(eq=True, frozen=True)
@@ -337,3 +341,11 @@ def sensor_encoder(include_properties: bool = False):
 
 def sensors_to_json(sensors: Any, include_properties: bool = False):
     return json.dumps(sensors, cls=sensor_encoder(include_properties))
+
+
+def attributes_for_type(cls: FromState, type: SensorType) -> list[str]:
+    return [
+        attr
+        for attr in dir(cls)
+        if isinstance(getattr(cls, attr), Sensor) and getattr(cls, attr).type == type
+    ]

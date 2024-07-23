@@ -17,7 +17,7 @@ def simulation_time():
 
 
 def test_water_treatment(simulation_time):
-    flow_in = 3
+    flow_in = 0.03
     water_treatment = WaterTreatment(1)
 
     _, output = water_treatment.simulate(
