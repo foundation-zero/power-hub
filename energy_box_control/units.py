@@ -13,4 +13,4 @@ HectoPascal = float
 MeterPerSecond = float
 Percentage = float
 Degree = float
-Alarm = int  # 0: no Alarm, 1: Warning, 2: Alarm
+Bar = float

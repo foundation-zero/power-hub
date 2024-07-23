@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pytest import fixture
+from pytest import approx, fixture
 
 from energy_box_control.appliances.base import WaterState
 from energy_box_control.appliances.water_tank import (
@@ -19,7 +19,7 @@ def test_water_tank(simulation_time):
     water_maker_in = 1
     water_treatment_in = 1
     initial_fill = 0
-    consumption = -1
+    consumption = 1
     water_tank = WaterTank(100)
 
     state, _ = water_tank.simulate(
@@ -28,11 +28,11 @@ def test_water_tank(simulation_time):
             WaterTankPort.IN_1: WaterState(water_treatment_in),
             WaterTankPort.CONSUMPTION: WaterState(consumption),
         },
-        WaterTankState(initial_fill),
+        WaterTankState(0),
         None,
         simulation_time,
     )
 
-    assert (
-        state.fill == initial_fill + water_maker_in + water_treatment_in - consumption
+    assert state.fill_ratio * water_tank.capacity == approx(
+        initial_fill + water_maker_in + water_treatment_in - consumption
     )
