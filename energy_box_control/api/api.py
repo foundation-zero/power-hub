@@ -259,6 +259,29 @@ async def get_sensor_value_over_time(
     ).rename(columns={"field": "value", "_time": "time"})
 
 
+@app.route(
+    "/power_hub/appliance_sensors/<appliance_name>/<sensor_field_name>/mean/per/hour_of_day"
+)
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+@serialize_dataframe(["hour", "value"])
+async def get_mean_sensor_value_per_hour(
+    appliance_name: str,
+    sensor_field_name: str,
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+
+    return (
+        await execute_influx_query(
+            app.influx,  # type: ignore
+            mean_per_hour_query(
+                lambda r: r._field == f"{appliance_name}_{sensor_field_name}",
+                build_query_range(query_args, default_timedelta=timedelta(days=7)),
+            ),
+        )
+    ).rename(columns={"field": "value"})
+
+
 def consumption_appliances():
     return [field.name for field in fields(PowerHubSensors) if "pump" in field.name]
 
