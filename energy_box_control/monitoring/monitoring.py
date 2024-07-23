@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 
 from energy_box_control.monitoring.checks import (
-    AlarmHealthCheck,
     SensorValueCheck,
     Severity,
     UrlHealthCheck,
 )
 from energy_box_control.custom_logging import get_logger
+from energy_box_control.network import NetworkControl
+from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
-from typing import Protocol
+from typing import Optional, Protocol
 from energy_box_control.config import CONFIG
 
 
@@ -56,19 +57,21 @@ class Monitor:
         self,
         sensor_value_checks: list[SensorValueCheck] = [],
         url_health_checks: list[UrlHealthCheck] = [],
-        alarm_checks: list[AlarmHealthCheck] = [],
     ):
-        self._sensor_value_checks = sensor_value_checks
         self._url_health_checks = url_health_checks
-        self._alarm_checks = alarm_checks
+        self._sensor_value_checks = sensor_value_checks
 
-    def run_sensor_values_checks(
-        self, sensor_values: PowerHubSensors, source: str
+    def run_sensor_value_checks(
+        self,
+        sensor_values: PowerHubSensors,
+        source: str,
+        control: Optional[NetworkControl[PowerHub]] = None,
+        power_hub: Optional[PowerHub] = None,
     ) -> list[NotificationEvent]:
         return [
             NotificationEvent(result, source, check.name, check.severity)
             for check in self._sensor_value_checks
-            if (result := check.check(sensor_values)) is not None
+            if (result := check.check(sensor_values, control, power_hub)) is not None
         ]
 
     async def run_url_health_checks(self, source: str) -> list[NotificationEvent]:
@@ -77,14 +80,4 @@ class Monitor:
             NotificationEvent(result, source, check.name, check.severity)
             for check in self._url_health_checks
             if (result := await check.check()) is not None
-        ]
-
-    def run_alarm_checks(
-        self, sensor_values: PowerHubSensors, source: str
-    ) -> list[NotificationEvent]:
-        print("hit")
-        return [
-            NotificationEvent(result, source, check.name, check.severity)
-            for check in self._alarm_checks
-            if (result := check.check(sensor_values)) is not None
         ]
