@@ -33,7 +33,7 @@ YAZAKI_BOUNDS = {
     "hot_pressure": HealthBound(0, 588),
 }
 HOT_CIRCUIT_TEMPERATURE_BOUNDS: HealthBound = HealthBound(
-    50, 90
+    5, 90
 )  # adapt this to a valid value
 HOT_CIRCUIT_FLOW_BOUNDS: HealthBound = HealthBound(0, 5)  # adapt this to a valid value
 HOT_CIRCUIT_PRESSURE_BOUNDS: HealthBound = HealthBound(
