@@ -170,12 +170,8 @@ class Setpoints:
     cooling_in_max_temperature: Celsius = setpoint(
         "maximum temperature of the cooling in temperature"
     )
-    water_treatment_max_fill_percentage: float = setpoint(
-        "maximum level of grey water tank"
-    )
-    water_treatment_min_fill_percentage: float = setpoint(
-        "minimum level of grey water tank"
-    )
+    water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
+    water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
@@ -213,8 +209,8 @@ def initial_control_state() -> PowerHubControlState:
             minimum_preheat_offset=1,
             cooling_in_min_temperature=25,
             cooling_in_max_temperature=33,
-            water_treatment_max_fill_percentage=50,
-            water_treatment_min_fill_percentage=10,
+            water_treatment_max_fill_ratio=0.5,
+            water_treatment_min_fill_ratio=0.1,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
@@ -778,13 +774,13 @@ def water_control(
 
 
 should_treat = Fn.pred(
-    lambda control_state, sensors: sensors.grey_water_tank.percentage_fill
-    > control_state.setpoints.water_treatment_max_fill_percentage
+    lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
+    > control_state.setpoints.water_treatment_max_fill_ratio
 )
 
 stop_treat = Fn.pred(
-    lambda control_state, sensors: sensors.grey_water_tank.percentage_fill
-    < control_state.setpoints.water_treatment_min_fill_percentage
+    lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
+    < control_state.setpoints.water_treatment_min_fill_ratio
 )
 
 water_treatment_transitions: dict[

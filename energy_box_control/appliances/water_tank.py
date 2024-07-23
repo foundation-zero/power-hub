@@ -11,7 +11,7 @@ from energy_box_control.units import Liter
 
 @dataclass(frozen=True, eq=True)
 class WaterTankState(ApplianceState):
-    percentage_fill: float
+    fill_ratio: float
 
 
 class WaterTankPort(Port):
@@ -55,13 +55,13 @@ class WaterTank(WaterAppliance[WaterTankState, None, WaterTankPort]):
             )
         )
 
-        new_fill = (previous_state.percentage_fill / 100 * self.capacity) + delta_fill
+        new_fill = (previous_state.fill_ratio * self.capacity) + delta_fill
 
         if not 0 < new_fill < self.capacity:
             raise TankFullException(
                 f"The water tank has a new fill ({new_fill}) that exceeds the capacity ({self.capacity}) or is lower than 0"
             )
 
-        return WaterTankState(new_fill / self.capacity * 100), {
+        return WaterTankState(new_fill / self.capacity), {
             WaterTankPort.OUT: WaterState(0)
         }

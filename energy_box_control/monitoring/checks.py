@@ -1,9 +1,9 @@
 from dataclasses import dataclass, fields
-from math import isnan
 from typing import Any, Awaitable, Callable, Optional, get_type_hints
 import aiohttp
 from enum import Enum
 from http import HTTPStatus
+from math import isnan
 
 from energy_box_control.monitoring.health_bounds import (
     HealthBound,
@@ -14,7 +14,7 @@ from energy_box_control.monitoring.health_bounds import (
     HOT_CIRCUIT_TEMPERATURE_BOUNDS,
     YAZAKI_BOUNDS,
 )
-from energy_box_control.sensors import Sensor, SensorType
+from energy_box_control.sensors import SensorType, attributes_for_type
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import (
@@ -55,16 +55,15 @@ class WeatherStationAlarm(Alarm):
     NO_ALARM = 0
 
 
-"""
-1: Mechanical travel increased
-2: Actuator cannot move
-8: Internal activity
-9: Gear train disengaged
-10: Bus watchdog triggered
-"""
-
-
 class ValveAlarm(Alarm):
+    """
+    1: Mechanical travel increased
+    2: Actuator cannot move
+    8: Internal activity
+    9: Gear train disengaged
+    10: Bus watchdog triggered
+    """
+
     ACTUATOR_CANNOT_MOVE = 2
     GEAR_TRAIN_DISENGAGED = 9
 
@@ -101,32 +100,36 @@ class UrlHealthCheck(Check):
 
 
 def value_check[
-    A, B, C, D
+    Sensors, SensorValue, Control
 ](
     name: str,
-    sensor_fn: Callable[[A], B],
-    check_fn: Callable[[B, bool], bool],
-    message_fn: Callable[[str, B], str],
-    control_fn: Optional[Callable[[Optional[C], Optional[D]], bool]] = None,
-) -> Callable[[A, Optional[C], Optional[D]], CheckResult]:
+    sensor_fn: Callable[[Sensors], SensorValue],
+    check_fn: Callable[[SensorValue], bool],
+    message_fn: Callable[[str, SensorValue], str],
+    control_fn: Optional[
+        Callable[[Optional[Control], Optional[PowerHub]], bool]
+    ] = None,
+) -> Callable[[Sensors, Optional[Control], Optional[PowerHub]], CheckResult]:
 
     def _check(
-        sensor_values: A,
-        control_values: Optional[C] = None,
-        power_hub: Optional[D] = None,
+        sensor_values: Sensors,
+        control_values: Optional[Control] = None,
+        power_hub: Optional[PowerHub] = None,
     ) -> CheckResult:
-        if not check_fn(
-            sensor_fn(sensor_values),
-            control_fn(control_values, power_hub) if control_fn is not None else True,
-        ):
-            return message_fn(name, sensor_fn(sensor_values))
+        control_active = control_fn is None or control_fn(control_values, power_hub)
+        sensor_value = sensor_fn(sensor_values)
+        check_valid = check_fn(sensor_value)
+        if control_active and not check_valid:
+            return message_fn(name, sensor_value)
         else:
             return None
 
     return _check
 
 
-def url_health_check(name: str, url: str, severity: Severity) -> UrlHealthCheck:
+def url_health_check(
+    name: str, url: str, severity: Severity = Severity.CRITICAL
+) -> UrlHealthCheck:
 
     async def _url_health_check(_: Optional[Any] = None) -> str | None:
         async with aiohttp.ClientSession() as session:
@@ -152,9 +155,9 @@ def valid_value(
         value_check(
             name=name,
             sensor_fn=value_fn,
-            check_fn=lambda value, appliance_on: (
+            check_fn=lambda value: (
                 health_bound.lower_bound < value < health_bound.upper_bound
-                if appliance_on and not isnan(value)
+                if not isnan(value)
                 else True
             ),
             message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value}",
@@ -169,7 +172,7 @@ def alarm(
     value_fn: Callable[[PowerHubSensors], int],
     message_fn: Callable[[str, int], str],
     alarm: Alarm,
-    severity: Severity,
+    severity: Severity = Severity.CRITICAL,
     valid_value: bool = True,
 ) -> SensorValueCheck:
     return SensorValueCheck(
@@ -177,7 +180,7 @@ def alarm(
         check=value_check(
             name=name,
             sensor_fn=value_fn,
-            check_fn=lambda value, _: (
+            check_fn=lambda value: (
                 (value != alarm.value) if valid_value else (value == alarm.value)
             ),
             message_fn=message_fn,
@@ -214,11 +217,8 @@ battery_alarm_checks = [
         value_fn=(lambda sensors, attr=attr: getattr(sensors.electric_battery, attr)),
         message_fn=(lambda name, _: f"{name} is raising an alarm"),
         alarm=ElectricBatteryAlarm.ALARM,
-        severity=Severity.CRITICAL,
     )
-    for attr in dir(ElectricBatterySensors)
-    if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
-    and getattr(ElectricBatterySensors, attr).type == SensorType.ALARM
+    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
 ]
 
 battery_warning_checks = [
@@ -229,9 +229,7 @@ battery_warning_checks = [
         alarm=ElectricBatteryAlarm.WARNING,
         severity=Severity.WARNING,
     )
-    for attr in dir(ElectricBatterySensors)
-    if isinstance(getattr(ElectricBatterySensors, attr), Sensor)
-    and getattr(ElectricBatterySensors, attr).type == SensorType.ALARM
+    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
 ]
 
 container_fancoil_alarm_checks = [
@@ -240,11 +238,8 @@ container_fancoil_alarm_checks = [
         value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
         message_fn=lambda name, _: f"{name} is raising an alarm",
         alarm=FancoilAlarm.ALARM,
-        severity=Severity.CRITICAL,
     )
-    for attr in dir(ContainersSensors)
-    if isinstance(getattr(ContainersSensors, attr), Sensor)
-    and getattr(ContainersSensors, attr).type == SensorType.ALARM
+    for attr in attributes_for_type(ContainersSensors, SensorType.ALARM)
 ]
 
 containers_fancoil_filter_checks = [
@@ -253,11 +248,8 @@ containers_fancoil_filter_checks = [
         value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
         message_fn=lambda name, _: f"{name} gone bad",
         alarm=FancoilAlarm.ALARM,
-        severity=Severity.CRITICAL,
     )
-    for attr in dir(ContainersSensors)
-    if isinstance(getattr(ContainersSensors, attr), Sensor)
-    and getattr(ContainersSensors, attr).type == SensorType.REPLACE_FILTER_ALARM
+    for attr in attributes_for_type(ContainersSensors, SensorType.REPLACE_FILTER_ALARM)
 ]
 
 weather_station_alarm_checks = [
@@ -266,7 +258,6 @@ weather_station_alarm_checks = [
         value_fn=lambda sensors,: getattr(sensors.weather, "alarm"),
         message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
         alarm=WeatherStationAlarm.NO_ALARM,
-        severity=Severity.ERROR,
         valid_value=False,
     )
 ]
@@ -279,7 +270,6 @@ valve_actuator_checks = [
         ).service_info,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=ValveAlarm.ACTUATOR_CANNOT_MOVE,
-        severity=Severity.CRITICAL,
     )
     for valve_name in [
         field.name
@@ -296,7 +286,6 @@ valve_gear_train_checks = [
         ).service_info,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=ValveAlarm.GEAR_TRAIN_DISENGAGED,
-        severity=Severity.CRITICAL,
     )
     for valve_name in [
         field.name
@@ -313,78 +302,49 @@ pump_alarm_checks = [
         ),
         message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
         alarm=PumpAlarm.NO_ALARM,
-        severity=Severity.CRITICAL,
         valid_value=False,
     )
     for appliance_name, appliance_type in get_type_hints(PowerHubSensors).items()
     if appliance_type == SwitchPumpSensors
-    for attr in dir(SwitchPumpSensors)
-    if isinstance(getattr(SwitchPumpSensors, attr), Sensor)
-    and getattr(SwitchPumpSensors, attr).type == SensorType.ALARM
+    for attr in attributes_for_type(SwitchPumpSensors, SensorType.ALARM)
 ]
 
 yazaki_bound_checks = [
     valid_value(
         f"yazaki_{attr}_check",
         lambda sensors, attr=attr: getattr(sensors.yazaki, attr),
-        YAZAKI_BOUNDS[attr],
-        lambda control_values, network: (
+        health_bound=bound,
+        control_fn=lambda control_values, network: (
             control_values.appliance(network.yazaki).get().on
             if control_values and network
             else True
         ),
     )
-    for attr, _ in YAZAKI_BOUNDS.items()
+    for attr, bound in YAZAKI_BOUNDS.items()
 ]
 
 
 water_tank_checks = [
     valid_value(
-        f"{tank_name}_percentage_fill",
-        lambda sensors, tank_name=tank_name: getattr(
-            sensors, tank_name
-        ).percentage_fill,
-        health_bound=TANK_BOUNDS[tank_name],
-        severity=Severity.CRITICAL,
+        f"{tank_name}_fill_ratio",
+        lambda sensors, tank_name=tank_name: getattr(sensors, tank_name).fill_ratio,
+        health_bound=bound,
     )
-    for tank_name in TANK_BOUNDS.keys()
+    for tank_name, bound in TANK_BOUNDS.items()
 ]
 
-
-container_temperature_checks = [
+container_checks = [
     valid_value(
         attr,
         lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        health_bound=CONTAINER_BOUNDS["temperature"],
-        severity=Severity.CRITICAL,
+        health_bound=CONTAINER_BOUNDS[sensor],
     )
-    for attr in dir(ContainersSensors)
-    if isinstance(getattr(ContainersSensors, attr), Sensor)
-    and getattr(ContainersSensors, attr).type == SensorType.TEMPERATURE
-]
-
-container_humidity_checks = [
-    valid_value(
-        attr,
-        lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        health_bound=CONTAINER_BOUNDS["humidity"],
-        severity=Severity.ERROR,
-    )
-    for attr in dir(ContainersSensors)
-    if isinstance(getattr(ContainersSensors, attr), Sensor)
-    and getattr(ContainersSensors, attr).type == SensorType.HUMIDITY
-]
-
-container_co2_checks = [
-    valid_value(
-        attr,
-        lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        health_bound=CONTAINER_BOUNDS["co2"],
-        severity=Severity.CRITICAL,
-    )
-    for attr in dir(ContainersSensors)
-    if isinstance(getattr(ContainersSensors, attr), Sensor)
-    and getattr(ContainersSensors, attr).type == SensorType.CO2
+    for sensor, sensor_type in [
+        ("temperature", SensorType.TEMPERATURE),
+        ("humidity", SensorType.HUMIDITY),
+        ("co2", SensorType.CO2),
+    ]
+    for attr in attributes_for_type(ContainersSensors, sensor_type)
 ]
 
 all_checks = (
@@ -393,9 +353,7 @@ all_checks = (
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
     + sensor_checks
-    + container_temperature_checks
-    + container_humidity_checks
-    + container_co2_checks
+    + container_checks
     + water_tank_checks
     + pump_alarm_checks
     + yazaki_bound_checks
@@ -405,10 +363,8 @@ all_checks = (
 )
 
 service_checks = [
-    url_health_check("Power Hub API", POWER_HUB_API_URL, severity=Severity.CRITICAL),
-    url_health_check("InfluxDB Health", INFLUXDB_URL, severity=Severity.CRITICAL),
-    url_health_check("MQTT Health", MQTT_HEALTH_URL, severity=Severity.CRITICAL),
-    url_health_check(
-        "Front End Health", DISPLAY_HEALTH_URL, severity=Severity.CRITICAL
-    ),
+    url_health_check("Power Hub API", POWER_HUB_API_URL),
+    url_health_check("InfluxDB Health", INFLUXDB_URL),
+    url_health_check("MQTT Health", MQTT_HEALTH_URL),
+    url_health_check("Front End Health", DISPLAY_HEALTH_URL),
 ]

@@ -124,9 +124,7 @@ def test_water_maker_network():
     """
     assert state.appliance(
         water_maker_network.water_tank
-    ).get().percentage_fill / 100 * water_maker_network.water_tank.capacity == approx(
-        45
-    )
+    ).get().fill_ratio * water_maker_network.water_tank.capacity == approx(45)
 
     state = water_maker_network.simulate(state, control)
     """
@@ -139,6 +137,4 @@ def test_water_maker_network():
     """
     assert state.appliance(
         water_maker_network.water_tank
-    ).get().percentage_fill / 100 * water_maker_network.water_tank.capacity == approx(
-        90
-    )
+    ).get().fill_ratio * water_maker_network.water_tank.capacity == approx(90)

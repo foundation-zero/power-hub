@@ -723,11 +723,11 @@ class ElectricBatterySensors(FromState):
 @sensors()
 class WaterTankSensors(FromState):
     spec: WaterTank
-    percentage_fill: Liter = sensor(technical_name="LS-5001")
+    fill_ratio: Liter = sensor(technical_name="LS-5001")
 
     @property
     def fill(self) -> Liter:
-        return self.percentage_fill / 100 * self.spec.capacity
+        return self.fill_ratio * self.spec.capacity
 
 
 @sensors()

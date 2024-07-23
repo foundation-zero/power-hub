@@ -10,7 +10,7 @@ from http import HTTPStatus
 
 def test_value_check():
     value_fn = lambda _value: 0
-    check_fn = lambda value, _: value == 1
+    check_fn = lambda value: value == 1
     name = "testing"
     value_check_fn = value_check(
         name,

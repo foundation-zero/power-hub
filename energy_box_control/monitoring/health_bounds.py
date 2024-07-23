@@ -14,10 +14,10 @@ CONTAINER_BOUNDS = {
 }
 
 TANK_BOUNDS = {
-    "grey_water_tank": HealthBound(0, 100),
-    "black_water_tank": HealthBound(0, 90),
-    "technical_water_tank": HealthBound(40, 100),
-    "fresh_water_tank": HealthBound(40, 100),
+    "grey_water_tank": HealthBound(0, 1),
+    "black_water_tank": HealthBound(0, 0.9),
+    "technical_water_tank": HealthBound(0.4, 1),
+    "fresh_water_tank": HealthBound(0.4, 1),
 }
 
 

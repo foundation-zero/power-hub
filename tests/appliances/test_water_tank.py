@@ -33,6 +33,6 @@ def test_water_tank(simulation_time):
         simulation_time,
     )
 
-    assert state.percentage_fill / 100 * water_tank.capacity == approx(
+    assert state.fill_ratio * water_tank.capacity == approx(
         initial_fill + water_maker_in + water_treatment_in - consumption
     )
