@@ -8,16 +8,16 @@ class HealthBound:
 
 
 CONTAINER_BOUNDS = {
-    "co2": HealthBound(20, 100),
-    "humidity": HealthBound(20, 100),
+    "co2": HealthBound(20, 99),
+    "humidity": HealthBound(20, 99),
     "temperature": HealthBound(15, 35),
 }
 
 TANK_BOUNDS = {
-    "grey_water_tank": HealthBound(0, 1),
+    "grey_water_tank": HealthBound(0, 0.99),
     "black_water_tank": HealthBound(0, 0.9),
-    "technical_water_tank": HealthBound(0.4, 1),
-    "fresh_water_tank": HealthBound(0.4, 1),
+    "technical_water_tank": HealthBound(0.4, 0.99),
+    "fresh_water_tank": HealthBound(0.4, 0.99),
 }
 
 
