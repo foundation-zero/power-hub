@@ -697,6 +697,8 @@ class ChillerSensors(FromState):
     waste_switch_valve: "ValveSensors"
     waste_flow_sensor: FlowSensors
     chilled_flow_sensor: FlowSensors
+    chilled_loop_pump: "SwitchPumpSensors"
+    waste_pressure_sensor: "PressureSensors"
 
     @property
     def waste_flow(self) -> LiterPerSecond:
@@ -750,6 +752,14 @@ class ChillerSensors(FromState):
         )
 
     @property
+    def waste_pressure(self) -> Celsius:
+        return (
+            self.waste_pressure_sensor.pressure
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_CHILLER_POSITION
+            else float("nan")
+        )
+
+    @property
     def chilled_input_temperature(self) -> Celsius:
         return (
             self.rh33_chill.hot_temperature
@@ -778,6 +788,17 @@ class ChillerSensors(FromState):
             if self.chiller_switch_valve.position
             == CHILLER_SWITCH_VALVE_CHILLER_POSITION
             else float("nan")
+        )
+
+    @property
+    def chilled_pressure(
+        self,
+    ) -> LiterPerSecond:
+        return (
+            self.chilled_loop_pump.pressure
+            if self.chiller_switch_valve.position
+            == CHILLER_SWITCH_VALVE_CHILLER_POSITION
+            else 0
         )
 
     @property

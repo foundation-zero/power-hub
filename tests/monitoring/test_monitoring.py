@@ -13,7 +13,9 @@ from energy_box_control.monitoring.monitoring import (
     Notifier,
 )
 from energy_box_control.power_hub.components import (
+    CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
 )
 from energy_box_control.power_hub.control import no_control
@@ -348,6 +350,90 @@ def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value
     sensors.chilled_loop_pump.pressure = out_of_bounds_value
     sensors.chiller_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
     yazaki_test("yazaki_chilled_pressure_check")
+
+
+@pytest.fixture
+def chiller_on(power_hub, yazaki_off):
+    return yazaki_off.replace_control(power_hub.chiller, "on", True)
+
+
+@pytest.fixture
+def chiller_off(power_hub, yazaki_off):
+    return yazaki_off.replace_control(power_hub.chiller, "on", False)
+
+
+@pytest.fixture
+def chiller_sensors(sensors: PowerHubSensors):
+    sensors.chiller_switch_valve.position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
+    sensors.chilled_flow_sensor.flow = 1
+    sensors.waste_switch_valve.position = WASTE_SWITCH_VALVE_CHILLER_POSITION
+    sensors.waste_flow_sensor.flow = 1
+    return sensors
+
+
+@pytest.fixture
+def chiller_test(
+    power_hub,
+    chiller_sensors: PowerHubSensors,
+    chiller_on,
+    chiller_off,
+    source,
+    out_of_bounds_value,
+):
+    def _test(dedup_key):
+        assert not run_monitor(chiller_sensors, source, chiller_off, power_hub)
+        assert run_monitor(chiller_sensors, source, chiller_on, power_hub) == [
+            NotificationEvent(
+                message=f"{dedup_key} is outside valid bounds with value: {out_of_bounds_value}",
+                source=source,
+                dedup_key=dedup_key,
+                severity=Severity.CRITICAL,
+            )
+        ]
+
+    return _test
+
+
+def test_chiller_waste_input_temperature_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.rh33_waste.cold_temperature = out_of_bounds_value
+    chiller_test("chiller_waste_input_temperature_check")
+
+
+def test_chiller_waste_flow_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.waste_flow_sensor.flow = out_of_bounds_value
+    chiller_test("chiller_waste_flow_check")
+
+
+def test_chiller_waste_pressure_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.waste_pressure_sensor.pressure = out_of_bounds_value
+    chiller_test("chiller_waste_pressure_check")
+
+
+def test_chiller_chilled_input_temperature_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.rh33_chill.hot_temperature = out_of_bounds_value
+    chiller_test("chiller_chilled_input_temperature_check")
+
+
+def test_chiller_chilled_flow_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.chilled_flow_sensor.flow = out_of_bounds_value
+    chiller_test("chiller_chilled_flow_check")
+
+
+def test_chiller_chilled_pressure_check(
+    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
+):
+    chiller_sensors.chilled_loop_pump.pressure = out_of_bounds_value
+    chiller_test("chiller_chilled_pressure_check")
 
 
 @pytest.mark.parametrize(

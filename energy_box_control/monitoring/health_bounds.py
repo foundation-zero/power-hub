@@ -32,6 +32,17 @@ YAZAKI_BOUNDS = {
     "waste_pressure": HealthBound(0, 1034),
     "hot_pressure": HealthBound(0, 588),
 }
+
+CHILLER_BOUNDS = {
+    "waste_input_temperature": HealthBound(0, 35),  # adapt this to a valid value
+    "chilled_input_temperature": HealthBound(0, 100),  # adapt this to a valid value
+    "waste_flow": HealthBound(0.95, 10),  # adapt this to a valid value
+    "chilled_flow": HealthBound(0.87, 10),  # adapt this to a valid value
+    "waste_pressure": HealthBound(0, 1500),  # adapt this to a valid value
+    "chilled_pressure": HealthBound(0, 1500),  # adapt this to a valid value
+}
+
+
 HOT_CIRCUIT_TEMPERATURE_BOUNDS: HealthBound = HealthBound(
     5, 90
 )  # adapt this to a valid value

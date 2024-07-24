@@ -11,6 +11,7 @@ from energy_box_control.monitoring.health_bounds import (
     HOT_CIRCUIT_PRESSURE_BOUNDS,
     HOT_CIRCUIT_TEMPERATURE_BOUNDS,
     YAZAKI_BOUNDS,
+    CHILLER_BOUNDS,
 )
 from energy_box_control.sensors import SensorType, attributes_for_type
 from energy_box_control.network import NetworkControl
@@ -22,6 +23,13 @@ from energy_box_control.power_hub.sensors import (
     ElectricBatterySensors,
     ContainersSensors,
 )
+
+# TODO: EChiller - Done
+# TODO: Chilled circuit
+# TODO: Fresh water flow
+# TODO: Battery SOC
+# TODO: Heat pipes
+# TODO: Group voltages
 
 
 class Alarm(Enum):
@@ -288,10 +296,24 @@ yazaki_bound_checks = [
         control_fn=lambda control_values, network: (
             control_values.appliance(network.yazaki).get().on
             if control_values and network
-            else True
+            else False
         ),
     )
     for attr, bound in YAZAKI_BOUNDS.items()
+]
+
+chiller_bound_checks = [
+    valid_value(
+        f"chiller_{attr}_check",
+        lambda sensors, attr=attr: getattr(sensors.chiller, attr),
+        health_bound=bound,
+        control_fn=lambda control_values, network: (
+            control_values.appliance(network.chiller).get().on
+            if control_values and network
+            else False
+        ),
+    )
+    for attr, bound in CHILLER_BOUNDS.items()
 ]
 
 
@@ -331,4 +353,5 @@ all_checks = (
     + weather_station_alarm_checks
     + valve_actuator_checks
     + valve_gear_train_checks
+    + chiller_bound_checks
 )
