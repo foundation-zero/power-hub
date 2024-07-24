@@ -181,6 +181,37 @@ async def test_get_sensor_value_over_time(
     )
 
 
+async def test_get_mean_sensor_value_hourly_over_time(
+    mock_influx_hour_of_day, appliance_name, field_name
+):
+    start = datetime.now() - timedelta(days=7)
+    stop = datetime.now()
+
+    query = f"""import "date"
+ from(bucket: "simulation_data")
+|> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
+|> filter(fn: (r) => r["_field"] == "{appliance_name}_{field_name}")
+|> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
+|> keep(columns: ["_value", "_time"])
+|> aggregateWindow(every: 3600s, fn: mean, createEmpty: true)
+|> map(fn: (r) => ({{_time: r._time, _value: r._value, hour: date.hour(t: r._time)}}))
+|> group(columns: ["hour"])
+|> mean(column: "_value")
+|> group()
+|> sort(columns: ["hour"], desc: false)
+|> map(fn: (r) => ({{_value: r._value, hour: r.hour, _field: "field"}}))
+|> pivot(rowKey: ["hour"], columnKey: ["_field"], valueColumn: "_value")"""
+
+    endpoint = f"/power_hub/appliance_sensors/{appliance_name}/{field_name}/mean/per/hour_of_day?between={start.isoformat()},{stop.isoformat()}"
+    await assert_row_response(
+        await app.test_client().get(
+            endpoint,
+            headers=HEADERS,
+        ),
+        query,
+    )
+
+
 async def test_get_electrical_power_consumption(mock_influx_field, start, stop):
 
     query = f"""from(bucket: "simulation_data")
