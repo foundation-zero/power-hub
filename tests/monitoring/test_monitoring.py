@@ -57,23 +57,31 @@ def test_pcm_values_checks(sensors, source):
     )
 
 
+def test_equal_bounds(sensors, source):
+    sensors.hot_switch_valve.flow = 0
+    sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+    monitor = Monitor(sensor_value_checks=all_checks)
+    source = "test"
+    assert len(monitor.run_sensor_value_checks(sensors, source)) == 0
+
+
 @pytest.mark.parametrize(
     "attr,check_name,valve_name,valve_attr,valve_position",
     [
-        # (
-        #     "charge_input_temperature",
-        #     "hot_circuit_temperature_check",
-        #     "hot_switch_valve",
-        #     "input_temperature",
-        #     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-        # ),
-        # (
-        #     "charge_flow",
-        #     "hot_circuit_flow_check",
-        #     "hot_switch_valve",
-        #     "flow",
-        #     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-        # ),
+        (
+            "charge_input_temperature",
+            "hot_circuit_temperature_check",
+            "hot_switch_valve",
+            "input_temperature",
+            HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+        ),
+        (
+            "charge_flow",
+            "hot_circuit_flow_check",
+            "hot_switch_valve",
+            "flow",
+            HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+        ),
         (
             "charge_pressure",
             "hot_circuit_pressure_check",
@@ -81,7 +89,7 @@ def test_pcm_values_checks(sensors, source):
             "pressure",
             HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
         ),
-        # ("temperature", "pcm_temperature_check", None, None, None),
+        ("temperature", "pcm_temperature_check", None, None, None),
     ],
 )
 def test_hot_circuit_checks(
