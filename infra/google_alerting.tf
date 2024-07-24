@@ -25,7 +25,7 @@ resource "google_monitoring_alert_policy" "cloud_logs_error" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR\n-resource.labels.container_name=\"gke-metrics-agent\"\nNOT textPayload:[INFO]"
+      filter = "severity=ERROR\n-resource.labels.container_name=\"gke-metrics-agent\"\nNOT textPayload:[INFO]\nNOT textPayload:\"see golang.org/issue/25192\""
       label_extractors = {
         "Message" = "EXTRACT(textPayload)"
       }
