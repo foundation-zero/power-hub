@@ -156,7 +156,7 @@ def valid_value(
             name=name,
             sensor_fn=value_fn,
             check_fn=lambda value: (
-                health_bound.lower_bound < value < health_bound.upper_bound
+                health_bound.lower_bound <= value <= health_bound.upper_bound
                 if not isnan(value)
                 else True
             ),
