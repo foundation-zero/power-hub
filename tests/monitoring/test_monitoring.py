@@ -205,30 +205,24 @@ def test_weather_station_alarm_checks(source):
     ]
 
 
-@pytest.mark.parametrize(
-    "alarm,dedup_key",
-    [
-        (ValveAlarm.ACTUATOR_CANNOT_MOVE, "actuator"),
-        (ValveAlarm.GEAR_TRAIN_DISENGAGED, "gear_train"),
-    ],
-)
-def test_valve_alarm_checks(alarm, dedup_key, source):
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]:
-        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(getattr(sensors, valve_name), "service_info", alarm.value)
-        assert run_monitor(sensors, source) == [
-            NotificationEvent(
-                message=f"{valve_name}_{dedup_key}_alarm is raised",
-                source=source,
-                dedup_key=f"{valve_name}_{dedup_key}_alarm",
-                severity=Severity.CRITICAL,
-            )
-        ]
+def test_valve_alarm_checks(source):
+    for alarm in ValveAlarm:
+        for valve_name in [
+            field.name
+            for field in fields(PowerHubSensors)
+            if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+        ]:
+            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+            setattr(getattr(sensors, valve_name), "service_info", alarm.value)
+            assert run_monitor(sensors, source) == [
+                NotificationEvent(
+                    message=f"{valve_name}_{alarm.name.lower()}_alarm is raised",
+                    source=source,
+                    dedup_key=f"{valve_name}_{alarm.name.lower()}_alarm",
+                    severity=Severity.CRITICAL,
+                )
+            ]
 
 
 def test_pump_alarm_checks(source):

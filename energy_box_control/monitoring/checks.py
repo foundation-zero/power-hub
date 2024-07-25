@@ -241,36 +241,22 @@ weather_station_alarm_checks = [
     )
 ]
 
-valve_actuator_checks = [
-    alarm(
-        name=f"{valve_name}_actuator_alarm",
-        value_fn=lambda sensors, valve_name=valve_name: getattr(
-            sensors, valve_name
-        ).service_info,
-        message_fn=lambda name, _: f"{name} is raised",
-        alarm=ValveAlarm.ACTUATOR_CANNOT_MOVE,
-    )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
-]
 
-valve_gear_train_checks = [
+valve_alarm_checks = [
     alarm(
-        name=f"{valve_name}_gear_train_alarm",
+        name=f"{valve_name}_{valve_alarm.name.lower()}_alarm",
         value_fn=lambda sensors, valve_name=valve_name: getattr(
             sensors, valve_name
         ).service_info,
         message_fn=lambda name, _: f"{name} is raised",
-        alarm=ValveAlarm.GEAR_TRAIN_DISENGAGED,
+        alarm=valve_alarm,
     )
     for valve_name in [
         field.name
         for field in fields(PowerHubSensors)
         if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     ]
+    for valve_alarm in ValveAlarm
 ]
 
 pump_alarm_checks = [
@@ -351,7 +337,6 @@ all_checks = (
     + pump_alarm_checks
     + yazaki_bound_checks
     + weather_station_alarm_checks
-    + valve_actuator_checks
-    + valve_gear_train_checks
+    + valve_alarm_checks
     + chiller_bound_checks
 )
