@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from energy_box_control.monitoring.checks import (
     SensorValueCheck,
     Severity,
-    UrlHealthCheck,
 )
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
+from energy_box_control.monitoring.service_checks import UrlHealthCheck
 from energy_box_control.power_hub.sensors import PowerHubSensors
 import pdpyras  # type: ignore
 from typing import Optional, Protocol

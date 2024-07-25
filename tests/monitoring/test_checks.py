@@ -2,8 +2,9 @@ import json
 from energy_box_control.monitoring.checks import (
     value_check,
     valid_value,
-    service_checks,
 )
+
+from energy_box_control.monitoring.service_checks import service_checks
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from http import HTTPStatus
 

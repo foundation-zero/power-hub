@@ -3,12 +3,12 @@ from dataclasses import dataclass
 import schedule
 import queue
 from energy_box_control.config import CONFIG
+from energy_box_control.monitoring.service_checks import service_checks
 from energy_box_control.monitoring.monitoring import (
     Monitor,
     Notifier,
     PagerDutyNotificationChannel,
 )
-from energy_box_control.monitoring.checks import service_checks
 
 
 @dataclass

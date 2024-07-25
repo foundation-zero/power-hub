@@ -15,7 +15,7 @@ class PowerHubConfig(BaseSettings):
     )
     mqtt_host: str = Field(pattern="^[^/:]+$", default=" ")
     mqtt_password: str = Field(default="")
-    mqtt_username: str = Field(default="")
+    mqtt_username: str = Field(default="power-hub")
     api_token: str = Field(default="")
     open_weather_api_key: str = Field(default="")
     logging_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
