@@ -4,12 +4,12 @@ from typing import Any, Callable, Optional, get_type_hints
 from enum import Enum
 
 from energy_box_control.monitoring.health_bounds import (
+    CHILLED_CIRCUIT_BOUNDS,
+    COOLING_DEMAND_CIRCUIT_BOUNDS,
+    HOT_CIRCUIT_BOUNDS,
     HealthBound,
     CONTAINER_BOUNDS,
     TANK_BOUNDS,
-    HOT_CIRCUIT_FLOW_BOUNDS,
-    HOT_CIRCUIT_PRESSURE_BOUNDS,
-    HOT_CIRCUIT_TEMPERATURE_BOUNDS,
     YAZAKI_BOUNDS,
     CHILLER_BOUNDS,
 )
@@ -24,8 +24,6 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 
-# TODO: EChiller - Done
-# TODO: Chilled circuit
 # TODO: Fresh water flow
 # TODO: Battery SOC
 # TODO: Heat pipes
@@ -220,21 +218,60 @@ sensor_checks = [
     valid_value(
         "pcm_temperature_check",
         lambda sensors: sensors.pcm.temperature,
-    ),
+    )
+]
+
+hot_circuit_checks = [
     valid_value(
         "hot_circuit_temperature_check",
         lambda sensors: sensors.pcm.charge_input_temperature,
-        HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+        HOT_CIRCUIT_BOUNDS["temperature"],
     ),
     valid_value(
         "hot_circuit_flow_check",
         lambda sensors: sensors.pcm.charge_flow,
-        HOT_CIRCUIT_FLOW_BOUNDS,
+        HOT_CIRCUIT_BOUNDS["flow"],
     ),
     valid_value(
         "hot_circuit_pressure_check",
         lambda sensors: sensors.pipes_pressure_sensor.pressure,
-        HOT_CIRCUIT_PRESSURE_BOUNDS,
+        HOT_CIRCUIT_BOUNDS["pressure"],
+    ),
+]
+
+chilled_circuit_checks = [
+    valid_value(
+        "chilled_circuit_temperature_check",
+        lambda sensors: sensors.cold_reservoir.exchange_input_temperature,
+        CHILLED_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "chilled_circuit_flow_check",
+        lambda sensors: sensors.cold_reservoir.exchange_flow,
+        CHILLED_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "chilled_circuit_pressure_check",
+        lambda sensors: sensors.chilled_loop_pump.pressure,
+        CHILLED_CIRCUIT_BOUNDS["pressure"],
+    ),
+]
+
+cooling_demand_circuit_checks = [
+    valid_value(
+        "cooling_demand_circuit_temperature_check",
+        lambda sensors: sensors.cold_reservoir.fill_output_temperature,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "cooling_demand_circuit_flow_check",
+        lambda sensors: sensors.cold_reservoir.fill_flow,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "cooling_demand_circuit_pressure_check",
+        lambda sensors: sensors.cooling_demand_pump.pressure,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["pressure"],
     ),
 ]
 
@@ -390,6 +427,9 @@ all_checks = (
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
     + sensor_checks
+    + hot_circuit_checks
+    + chilled_circuit_checks
+    + cooling_demand_circuit_checks
     + container_checks
     + water_tank_checks
     + pump_alarm_checks

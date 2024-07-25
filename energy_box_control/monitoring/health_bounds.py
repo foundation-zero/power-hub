@@ -42,11 +42,20 @@ CHILLER_BOUNDS = {
     "chilled_pressure": HealthBound(0, 1500),  # adapt this to a valid value
 }
 
+HOT_CIRCUIT_BOUNDS = {
+    "temperature": HealthBound(5, 90),  # adapt this to a valid value
+    "flow": HealthBound(0, 5),  # adapt this to a valid value
+    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+}
 
-HOT_CIRCUIT_TEMPERATURE_BOUNDS: HealthBound = HealthBound(
-    5, 90
-)  # adapt this to a valid value
-HOT_CIRCUIT_FLOW_BOUNDS: HealthBound = HealthBound(0, 5)  # adapt this to a valid value
-HOT_CIRCUIT_PRESSURE_BOUNDS: HealthBound = HealthBound(
-    0, 500
-)  # adapt this to a valid value
+CHILLED_CIRCUIT_BOUNDS = {
+    "temperature": HealthBound(5, 90),  # adapt this to a valid value
+    "flow": HealthBound(0, 5),  # adapt this to a valid value
+    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+}
+
+COOLING_DEMAND_CIRCUIT_BOUNDS = {
+    "temperature": HealthBound(5, 90),  # adapt this to a valid value
+    "flow": HealthBound(0, 5),  # adapt this to a valid value
+    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+}
