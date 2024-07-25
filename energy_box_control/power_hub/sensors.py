@@ -822,6 +822,8 @@ class SwitchPumpSensors(FromState):
     pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
     pump_2_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
     pressure: Bar = sensor()
+    pump_1_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    pump_2_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
 
     @property
     def electrical_power(self) -> Watt:

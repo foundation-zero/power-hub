@@ -20,6 +20,8 @@ DEFAULT_PRESSURE = 250
 class SwitchPumpState(ApplianceState):
     pump_1_alarm: int = NO_ALARM
     pump_2_alarm: int = NO_ALARM
+    pump_1_communication_fault: int = NO_ALARM
+    pump_2_communication_fault: int = NO_ALARM
     pressure: Bar = DEFAULT_PRESSURE
 
 
