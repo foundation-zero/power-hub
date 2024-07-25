@@ -26,7 +26,6 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 
-# TODO: Heat pipes
 # TODO: Group voltages
 
 
@@ -284,7 +283,7 @@ heat_pipes_checks = [
     ),
     valid_value(
         "heat_pipes_flow_check",
-        lambda sensors: sensors.heat_pipes.flow,
+        lambda sensors: sensors.heat_pipes_flow_sensor.flow,
         HEAT_PIPES_BOUNDS["flow"],
     ),
     # pressure check is already done in hot switch circuit checks
@@ -441,6 +440,7 @@ container_checks = [
         ("temperature", SensorType.TEMPERATURE),
         ("humidity", SensorType.HUMIDITY),
         ("co2", SensorType.CO2),
+        ("volt", SensorType.VOLT),
     ]
     for attr in attributes_for_type(ContainersSensors, sensor_type)
 ]

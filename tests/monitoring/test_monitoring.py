@@ -29,7 +29,12 @@ from energy_box_control.power_hub.sensors import (
     SwitchPumpSensors,
     ValveSensors,
 )
-from energy_box_control.sensors import Sensor, SensorType, attributes_for_type
+from energy_box_control.sensors import (
+    Sensor,
+    SensorType,
+    attributes_for_type,
+    sensor_encoder,
+)
 
 
 @pytest.fixture
@@ -209,31 +214,30 @@ def test_cooling_demand_circuit_pressure_check(
     ]
 
 
-@pytest.mark.parametrize(
-    "check_name,attr",
-    [
-        (
-            "heat_pipes_temperature_check",
-            "input_temperature",
-        ),
-        (
-            "heat_pipes_flow_check",
-            "flow",
-        ),
-    ],
-)
-def test_heat_pipes_checks(check_name, attr, out_of_bounds_value):
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    setattr(sensors.heat_pipes, attr, out_of_bounds_value)
-    monitor = Monitor(sensor_value_checks=all_checks)
-    source = "test"
-    assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
-        message=f"{check_name} is outside valid bounds with value: {out_of_bounds_value}",
-        source=source,
-        dedup_key=check_name,
-        severity=Severity.CRITICAL,
-    )
+def test_heat_pipes_temperature_check(
+    sensors: PowerHubSensors, source, out_of_bounds_value
+):
+    sensors.rh33_heat_pipes.cold_temperature = out_of_bounds_value
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"heat_pipes_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            source=source,
+            dedup_key="heat_pipes_temperature_check",
+            severity=Severity.CRITICAL,
+        )
+    ]
+
+
+def test_heat_pipes_flow_check(sensors: PowerHubSensors, source, out_of_bounds_value):
+    sensors.heat_pipes_flow_sensor.flow = out_of_bounds_value
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"heat_pipes_flow_check is outside valid bounds with value: {out_of_bounds_value}",
+            source=source,
+            dedup_key="heat_pipes_flow_check",
+            severity=Severity.CRITICAL,
+        )
+    ]
 
 
 def get_attrs(sensor, sensor_type):
@@ -606,6 +610,7 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
         (SensorType.CO2, 3),
         (SensorType.HUMIDITY, 3),
         (SensorType.TEMPERATURE, 100),
+        (SensorType.VOLT, 1000),
     ],
 )
 def test_container_sensor_values(sensor_type, alerting_value, source):

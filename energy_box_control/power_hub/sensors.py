@@ -45,6 +45,7 @@ from energy_box_control.units import (
     Joule,
     Liter,
     LiterPerSecond,
+    Volt,
     Watt,
     WattPerMeterSquared,
 )
@@ -975,6 +976,33 @@ class ContainersSensors(FromState):
     power_hub_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
     supply_box_humidity: float = sensor(type=SensorType.HUMIDITY)
     supply_box_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
+    office_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    office_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    office_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    workshop_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    workshop_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    workshop_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    sim_room_storage_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    sim_room_storage_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    sim_room_storage_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    kitchen_sanitary_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    supply_box_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    supply_box_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    supply_box_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    center_1_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    center_1_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    center_1_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    center_2_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    center_2_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    center_2_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
+    thermo_cabinet_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
+    thermo_cabinet_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
+    thermo_cabinet_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
 
 
 def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:

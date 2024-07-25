@@ -14,3 +14,4 @@ MeterPerSecond = float
 Percentage = float
 Degree = float
 Bar = float
+Volt = float

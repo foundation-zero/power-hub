@@ -11,6 +11,7 @@ CONTAINER_BOUNDS = {
     "co2": HealthBound(20, 99),
     "humidity": HealthBound(20, 99),
     "temperature": HealthBound(15, 35),
+    "volt": HealthBound(100, 200),  # adapt this to a valid value
 }
 
 TANK_BOUNDS = {
