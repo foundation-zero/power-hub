@@ -1,44 +1,44 @@
 services:
   vernemq:
-    image: vernemq/vernemq:2.0.0-alpine
+    image: vernemq:latest-armv7
     container_name: vernemq
+    platform: linux/arm/v7
     restart: always
     ports:
       - "1883:1883"
       - "9001:9001"
     networks:
       - power_hub_control
+    env_file:
+      - .env
     environment:
-      DOCKER_VERNEMQ_ACCEPT_EULA: "yes"
-      DOCKER_VERNEMQ_USER_power-hub: ${MQTT_PASSWORD}
+      DOCKER_VERNEMQ_USER_power-hub: '${MQTT_PASSWORD}'
       DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
       DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
-      DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" #https://docs.vernemq.com/configuring-vernemq/bridge
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0: "${CLOUD_VERNEMQ_URL}"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1: "power_hub/* out 1"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__username: "power_hub"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__password: ${MQTT_PASSWORD}
+      # TODO: Add these variables when the cloud vernemq is set up. 
+      # DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" #https://docs.vernemq.com/configuring-vernemq/bridge
+      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0: "${CLOUD_VERNEMQ_URL}"
+      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1: "power_hub/* out 1"
+      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__username: "power_hub"
+      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__password: ${MQTT_PASSWORD}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
-      interval: 5s
-      timeout: 5s
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/health" ]
+      interval: 30s
+      timeout: 30s
       retries: 5
 
   control:
     depends_on:
       vernemq:
         condition: service_healthy
+    image: python-control-app:latest-armv7
+    platform: linux/arm/v7
     container_name: control
-    build:
-      context: .
-      dockerfile: python_script.Dockerfile
     command: "energy_box_control.power_hub_control"
     networks:
       - power_hub_control
     env_file:
       - .env
-    environment:
-      - PAGERDUTY_KEY=$PAGERDUTY_KEY
     restart: on-failure:5
 
 networks:

@@ -21,7 +21,7 @@ from energy_box_control.mqtt import (
     publish_to_mqtt,
     run_listener,
 )
-from energy_box_control.monitoring.checks import service_checks, all_checks
+from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.control import (
     ChillControlMode,
@@ -198,7 +198,6 @@ async def run(steps: Optional[int] = None):
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(
         sensor_value_checks=all_checks,
-        url_health_checks=service_checks,
     )
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
