@@ -26,8 +26,6 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 
-# TODO: Group voltages
-
 
 class Alarm(Enum):
     pass
@@ -194,6 +192,7 @@ def valid_value(
 def boolean_check(
     name: str,
     value_fn: Callable[[PowerHubSensors], bool],
+    message_fn: Callable[[str, bool], str],
     severity: Severity = Severity.CRITICAL,
     true_is_good: bool = True,
 ) -> SensorValueCheck:
@@ -203,7 +202,7 @@ def boolean_check(
             name=name,
             sensor_fn=value_fn,
             check_fn=lambda value: value if true_is_good else not value,
-            message_fn=lambda _, value: f"estop active is {value}",
+            message_fn=message_fn,
         ),
         severity=severity,
     )
@@ -231,7 +230,7 @@ def alarm(
     )
 
 
-sensor_checks = [
+pcm_checks = [
     valid_value(
         "pcm_temperature_check",
         lambda sensors: sensors.pcm.temperature,
@@ -341,6 +340,7 @@ battery_estop_checks = [
     boolean_check(
         name="estop_active",
         value_fn=lambda sensors: sensors.electric_battery.estop_active,
+        message_fn=lambda _, value: f"estop active is {value}",
         true_is_good=False,
     )
 ]
@@ -437,7 +437,6 @@ chiller_bound_checks = [
     for attr, bound in CHILLER_BOUNDS.items()
 ]
 
-
 chiller_alarm_checks = [
     alarm(
         name=f"chiller_{chiller_alarm.name.lower()}_alarm",
@@ -473,23 +472,23 @@ container_checks = [
 ]
 
 all_checks = (
-    battery_alarm_checks
+    pcm_checks
+    + hot_circuit_checks
+    + chilled_circuit_checks
+    + cooling_demand_circuit_checks
+    + heat_pipes_checks
+    + battery_alarm_checks
     + battery_warning_checks
     + battery_soc_checks
     + battery_estop_checks
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
-    + sensor_checks
-    + hot_circuit_checks
-    + chilled_circuit_checks
-    + cooling_demand_circuit_checks
-    + container_checks
-    + water_tank_checks
-    + pump_alarm_checks
-    + yazaki_bound_checks
     + weather_station_alarm_checks
     + valve_alarm_checks
+    + pump_alarm_checks
+    + yazaki_bound_checks
     + chiller_bound_checks
     + chiller_alarm_checks
-    + heat_pipes_checks
+    + water_tank_checks
+    + container_checks
 )

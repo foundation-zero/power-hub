@@ -7,11 +7,13 @@ class HealthBound:
     upper_bound: int | float
 
 
+# TODO This file needs to be reviewed, if all values make sense.
+
 CONTAINER_BOUNDS = {
     "co2": HealthBound(20, 99),
     "humidity": HealthBound(20, 99),
     "temperature": HealthBound(15, 35),
-    "volt": HealthBound(100, 200),  # adapt this to a valid value
+    "volt": HealthBound(100, 200),
 }
 
 TANK_BOUNDS = {
@@ -35,35 +37,35 @@ YAZAKI_BOUNDS = {
 }
 
 CHILLER_BOUNDS = {
-    "waste_input_temperature": HealthBound(0, 35),  # adapt this to a valid value
-    "chilled_input_temperature": HealthBound(0, 100),  # adapt this to a valid value
-    "waste_flow": HealthBound(0.95, 10),  # adapt this to a valid value
-    "chilled_flow": HealthBound(0.87, 10),  # adapt this to a valid value
-    "waste_pressure": HealthBound(0, 1500),  # adapt this to a valid value
-    "chilled_pressure": HealthBound(0, 1500),  # adapt this to a valid value
+    "waste_input_temperature": HealthBound(0, 35),
+    "chilled_input_temperature": HealthBound(0, 100),
+    "waste_flow": HealthBound(0.95, 10),
+    "chilled_flow": HealthBound(0.87, 10),
+    "waste_pressure": HealthBound(0, 1500),
+    "chilled_pressure": HealthBound(0, 1500),
 }
 
 HOT_CIRCUIT_BOUNDS = {
-    "temperature": HealthBound(5, 90),  # adapt this to a valid value
-    "flow": HealthBound(0, 5),  # adapt this to a valid value
-    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+    "temperature": HealthBound(5, 95),
+    "flow": HealthBound(0, 5),
+    "pressure": HealthBound(0, 500),
 }
 
 CHILLED_CIRCUIT_BOUNDS = {
-    "temperature": HealthBound(5, 90),  # adapt this to a valid value
-    "flow": HealthBound(0, 5),  # adapt this to a valid value
-    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+    "temperature": HealthBound(5, 90),
+    "flow": HealthBound(0, 5),
+    "pressure": HealthBound(0, 500),
 }
 
 COOLING_DEMAND_CIRCUIT_BOUNDS = {
-    "temperature": HealthBound(5, 90),  # adapt this to a valid value
-    "flow": HealthBound(0, 5),  # adapt this to a valid value
-    "pressure": HealthBound(0, 500),  # adapt this to a valid value
+    "temperature": HealthBound(5, 90),
+    "flow": HealthBound(0, 5),
+    "pressure": HealthBound(0, 500),
 }
 
 HEAT_PIPES_BOUNDS = {
-    "temperature": HealthBound(5, 90),  # adapt this to a valid value
-    "flow": HealthBound(0, 5),  # adapt this to a valid value
+    "temperature": HealthBound(5, 90),
+    "flow": HealthBound(0, 5),
 }
 
 

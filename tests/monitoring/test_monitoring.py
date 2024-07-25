@@ -370,21 +370,6 @@ def test_valve_alarm_checks(source):
             ]
 
 
-def test_chiller_alarm_checks(source):
-    for alarm in ChillerAlarm:
-        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.chiller, "fault_code", alarm.value)
-        assert run_monitor(sensors, source) == [
-            NotificationEvent(
-                message=f"chiller_{alarm.name.lower()}_alarm is raised",
-                source=source,
-                dedup_key=f"chiller_{alarm.name.lower()}_alarm",
-                severity=Severity.CRITICAL,
-            )
-        ]
-
-
 def test_pump_alarm_checks(source):
     pump_names = [
         appliance_name
@@ -594,6 +579,21 @@ def test_chiller_chilled_pressure_check(
 ):
     chiller_sensors.chilled_loop_pump.pressure = out_of_bounds_value
     chiller_test("chiller_chilled_pressure_check")
+
+
+def test_chiller_alarm_checks(source):
+    for alarm in ChillerAlarm:
+        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+        setattr(sensors.chiller, "fault_code", alarm.value)
+        assert run_monitor(sensors, source) == [
+            NotificationEvent(
+                message=f"chiller_{alarm.name.lower()}_alarm is raised",
+                source=source,
+                dedup_key=f"chiller_{alarm.name.lower()}_alarm",
+                severity=Severity.CRITICAL,
+            )
+        ]
 
 
 @pytest.mark.parametrize(
