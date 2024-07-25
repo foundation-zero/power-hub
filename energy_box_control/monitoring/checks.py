@@ -1,9 +1,7 @@
 from dataclasses import dataclass, fields
-from typing import Any, Awaitable, Callable, Optional, get_type_hints
-import aiohttp
-from enum import Enum
-from http import HTTPStatus
 from math import isnan
+from typing import Any, Callable, Optional, get_type_hints
+from enum import Enum
 
 from energy_box_control.monitoring.health_bounds import (
     HealthBound,
@@ -21,17 +19,9 @@ from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
     SwitchPumpSensors,
     ValveSensors,
-)
-from energy_box_control.power_hub.sensors import (
     ElectricBatterySensors,
     ContainersSensors,
 )
-
-
-POWER_HUB_API_URL = "https://api.staging.power-hub.foundationzero.org/"
-INFLUXDB_URL = "https://influxdb.staging.power-hub.foundationzero.org/health"
-MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/health"
-DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
 class Alarm(Enum):
@@ -94,11 +84,6 @@ class SensorValueCheck(Check):
     ]
 
 
-@dataclass
-class UrlHealthCheck(Check):
-    check: Callable[[], Awaitable[CheckResult]]
-
-
 def value_check[
     Sensors, SensorValue, Control
 ](
@@ -125,20 +110,6 @@ def value_check[
             return None
 
     return _check
-
-
-def url_health_check(
-    name: str, url: str, severity: Severity = Severity.CRITICAL
-) -> UrlHealthCheck:
-
-    async def _url_health_check(_: Optional[Any] = None) -> str | None:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status != HTTPStatus.OK:
-                    return f"{name} is returning error code {response.status}"
-                return None
-
-    return UrlHealthCheck(name=name, check=_url_health_check, severity=severity)
 
 
 def valid_value(
@@ -361,10 +332,3 @@ all_checks = (
     + valve_actuator_checks
     + valve_gear_train_checks
 )
-
-service_checks = [
-    url_health_check("Power Hub API", POWER_HUB_API_URL),
-    url_health_check("InfluxDB Health", INFLUXDB_URL),
-    url_health_check("MQTT Health", MQTT_HEALTH_URL),
-    url_health_check("Front End Health", DISPLAY_HEALTH_URL),
-]

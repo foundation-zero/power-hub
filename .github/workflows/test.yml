@@ -71,7 +71,7 @@ jobs:
           token_format: "access_token"
           workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{vars.SERVICE_ACCOUNT}}
-      
+
       - run: tofu init
         working-directory: ./infra
       
@@ -129,7 +129,7 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      - name: 'Docker build'
+      - name: 'Docker build Python app'
         run: >
           docker build
           --platform linux/amd64
@@ -137,12 +137,12 @@ jobs:
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
           . -f python_script.Dockerfile
 
-      - name: 'Docker push sha'
+      - name: 'Docker push Python app sha'
         run: >
           docker push
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
 
-      - name: 'Docker push latest'
+      - name: 'Docker push Python app latest'
         run: >
           docker push
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
