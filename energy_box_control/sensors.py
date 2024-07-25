@@ -36,7 +36,9 @@ class NetworkSensors(Timed):
 
     @classmethod
     def sensor_initialization_order(cls) -> list[Field[Any]]:
-        listed_sensors = set((field.name, field.type) for field in fields(cls))
+        listed_sensors = set(
+            (field.name, field.type) for field in fields(cls) if is_sensor(field.type)
+        )
 
         def get_sensor_dependencies(sensor_cls: Any):
             return (
@@ -46,7 +48,7 @@ class NetworkSensors(Timed):
             )
 
         return linearize(
-            set(fields(cls)),
+            set(field for field in fields(cls) if is_sensor(field.type)),
             lambda sensor: get_sensor_dependencies(sensor.type),
             lambda sensor: [(sensor.name, sensor.type)],
         )
@@ -86,7 +88,8 @@ class FromState(Protocol):
     ](
         cls: type[Cls],
         context: "SensorContext[Any]",
-        appliance: ThermalAppliance[State, Control, TPort],
+        network: Network[Any],
+        appliance: ThermalAppliance[State, Control, TPort] | None,
         state: NetworkState[Any],
     ) -> Cls: ...
 
@@ -126,26 +129,27 @@ class SensorContext[T: Timed]:
         for sensor in init_order:
 
             appliance = getattr(network, sensor.name, None)
-            if appliance:
-                self.from_state(
-                    state,
-                    sensor.type,
-                    getattr(self.subject, sensor.name),
-                    appliance,
-                )
+            self.from_state(
+                network,
+                state,
+                getattr(sensors, sensor.name, sensor.type),
+                getattr(self.subject, sensor.name),
+                appliance,
+            )
         return self.result(state.time.timestamp)
 
     def from_state[
         State: ApplianceState, Control: ApplianceControl | None, TPort: Port
     ](
         self,
+        network: Network[Any],
         state: NetworkState[Any],
         klass: FromState,
         _location: Any,
-        appliance: ThermalAppliance[State, Control, TPort],
+        appliance: ThermalAppliance[State, Control, TPort] | None,
     ):
         key = self._accessed.pop()
-        instance = klass.from_state(self, appliance, state)
+        instance = klass.from_state(self, network, appliance, state)
         self._sensors[key] = instance
 
     def without_appliance(
@@ -194,19 +198,26 @@ class Sensor:
     from_port: Port | None = None
     from_ports: tuple[Port, Port] | None = None
     type: SensorType | None = None
+    resolver: Callable[[Network[Any], NetworkState[Any]], Any] | None = None
 
     def value_from_state(
-        self, network_state: NetworkState[Any], appliance: AnyAppliance, name: str
+        self,
+        network: Network[Any],
+        network_state: NetworkState[Any],
+        appliance: AnyAppliance | None,
+        name: str,
     ) -> Any:
-        if self.from_port and self.type == SensorType.FLOW:
+        if self.resolver:
+            return self.resolver(network, network_state)
+        elif appliance and self.from_port and self.type == SensorType.FLOW:
             return network_state.connection(
                 appliance, self.from_port, ThermalState(nan, nan)
             ).flow
-        elif self.from_port and self.type == SensorType.TEMPERATURE:
+        elif appliance and self.from_port and self.type == SensorType.TEMPERATURE:
             return network_state.connection(
                 appliance, self.from_port, ThermalState(nan, nan)
             ).temperature
-        elif self.from_ports and self.type == SensorType.DELTA_T:
+        elif appliance and self.from_ports and self.type == SensorType.DELTA_T:
             return (
                 network_state.connection(
                     appliance, self.from_ports[1], ThermalState(nan, nan)
@@ -215,15 +226,17 @@ class Sensor:
                     appliance, self.from_ports[0], ThermalState(nan, nan)
                 ).temperature
             )
-        else:
+        elif appliance:
             return getattr(network_state.appliance(appliance).get(), name, None)
+        else:
+            raise Exception("unable to resolve value")
 
 
 def sensor(*args: Any, **kwargs: Any) -> Any:
     return Sensor(*args, **kwargs)
 
 
-def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
+def sensors[T: type](from_appliance: bool = True, eq: bool = True) -> Callable[[T], T]:
     def _decorator(cls: T) -> T:
         @functools.wraps(cls.__init__)
         def _init_from_appliance(
@@ -237,9 +250,9 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
                     continue
                 elif isclass(annotation) and issubclass(annotation, Appliance):
                     setattr(self, name, appliance)
-                elif (sub_sensor := context.sensor(name)) and type(
-                    sub_sensor
-                ) == annotation:
+                elif (sub_sensor := context.sensor(name)) and isinstance(
+                    sub_sensor, annotation
+                ):
                     setattr(self, name, sub_sensor)
                 else:
                     setattr(self, name, kwargs[name])
@@ -251,25 +264,29 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
             for name, annotation in get_type_hints(cls).items():
                 if name.startswith("_"):
                     continue
-                elif (sub_sensor := context.sensor(name)) and type(
-                    sub_sensor
-                ) == annotation:
+                elif (sub_sensor := context.sensor(name)) and isinstance(
+                    sub_sensor, annotation
+                ):
                     setattr(self, name, sub_sensor)
                 else:
                     setattr(self, name, kwargs[name])
 
         def _from_state(
             context: SensorContext[Any],
-            appliance: ThermalAppliance[Any, Any, Any],
+            network: Network[Any],
+            appliance: ThermalAppliance[Any, Any, Any] | None,
             state: NetworkState[Any],
         ):
             sensors = {
-                name: description.value_from_state(state, appliance, name)
+                name: description.value_from_state(network, state, appliance, name)
                 for name in get_type_hints(cls).keys()
                 if (description := getattr(cls, name, None))
             }
 
-            return cls(context, appliance, **sensors)  # type: ignore
+            if appliance:
+                return cls(context, appliance, **sensors)  # type: ignore
+            else:
+                return cls(context, **sensors)  # type: ignore
 
         def _values(sensor: Any) -> dict[str, Any]:
             return {name: getattr(sensor, name) for name in get_type_hints(cls).keys()}
@@ -287,8 +304,10 @@ def sensors[T: type](from_appliance: bool = True) -> Callable[[T], T]:
             cls.from_state = _from_state  # type: ignore
         else:
             cls.__init__ = _init_from_args  # type: ignore
+            cls.from_state = _from_state
         cls.is_sensor = True
-        cls.__eq__ = _eq  # type: ignore
+        if eq:
+            cls.__eq__ = _eq  # type: ignore
         cls.__hash__ = _hash  # type: ignore
         return cls
 

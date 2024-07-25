@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Callable, TYPE_CHECKING
 
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
+from energy_box_control.appliances.base import Port, ThermalState
 from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
 from energy_box_control.appliances.electric_battery import BatteryAlarm, ElectricBattery
 from energy_box_control.appliances.heat_exchanger import (
@@ -19,6 +21,7 @@ from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
     WaterTreatmentPort,
 )
+from energy_box_control.network import AnyAppliance, NetworkState
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
@@ -29,6 +32,10 @@ from energy_box_control.power_hub.components import (
     PCM_ZERO_TEMPERATURE,
 )
 
+if TYPE_CHECKING:
+    from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
+
+from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
     Bar,
     Celsius,
@@ -52,6 +59,57 @@ from energy_box_control.sensors import (
     sensors,
     NetworkSensors,
 )
+
+
+def power_hub_sensor[T](resolver: "Callable[[PowerHub, NetworkState[PowerHub]], T]"):
+    return sensor(resolver=resolver)
+
+
+@sensors(from_appliance=False, eq=False)
+class RH33Sensors(WithoutAppliance):
+    hot_temperature: Celsius
+    cold_temperature: Celsius
+    delta_temperature: Celsius
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, RH33Sensors):
+            return False
+        return (
+            self.cold_temperature == value.cold_temperature
+            and self.delta_temperature == value.delta_temperature
+            and self.hot_temperature == value.hot_temperature
+        )
+
+
+type TemperatureResolver = "tuple[Callable[[PowerHub], AnyAppliance], Port]"
+
+
+def rh33(hot: TemperatureResolver, cold: TemperatureResolver) -> Any:
+    hot_appliance, hot_port = hot
+    cold_appliance, cold_port = cold
+
+    @sensors(from_appliance=False, eq=False)
+    class RH33(RH33Sensors):
+        hot_temperature: Celsius = power_hub_sensor(
+            lambda power_hub, state: state.connection(
+                hot_appliance(power_hub), hot_port, ThermalState(0, 0)
+            ).temperature
+        )
+        cold_temperature: Celsius = power_hub_sensor(
+            lambda power_hub, state: state.connection(
+                cold_appliance(power_hub), cold_port, ThermalState(0, 0)
+            ).temperature
+        )
+        delta_temperature: Celsius = power_hub_sensor(
+            lambda power_hub, state: state.connection(
+                hot_appliance(power_hub), hot_port, ThermalState(0, 0)
+            ).temperature
+            - state.connection(
+                hot_appliance(power_hub), hot_port, ThermalState(0, 0)
+            ).temperature
+        )
+
+    return RH33
 
 
 @sensors()
@@ -199,6 +257,7 @@ class PcmSensors(FromState):
 @sensors()
 class YazakiSensors(FromState):
     spec: Yazaki
+    rh33_a: RH33Sensors
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_switch_valve: "WasteSwitchSensors"
@@ -909,11 +968,25 @@ class ContainersSensors(FromState):
     supply_box_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
 
 
+def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
+    return power_hub_sensor(
+        lambda power_hub, state: schedule(power_hub.schedules).at(state.time)
+    )
+
+
+def const_resolver(value: Any) -> "Callable[[PowerHub, NetworkState[PowerHub]], Any]":
+    return lambda _a, _b: value
+
+
 @sensors(from_appliance=False)
 class WeatherSensors(WithoutAppliance):
-    ambient_temperature: Celsius
-    global_irradiance: WattPerMeterSquared
-    alarm: int = sensor(type=SensorType.ALARM)
+    ambient_temperature: Celsius = schedule_sensor(
+        lambda schedules: schedules.ambient_temperature
+    )
+    global_irradiance: WattPerMeterSquared = schedule_sensor(
+        lambda schedules: schedules.global_irradiance
+    )
+    alarm: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
 
 
 @dataclass
@@ -953,6 +1026,10 @@ class PowerHubSensors(NetworkSensors):
     water_maker: WaterMakerSensors
     containers: ContainersSensors
     time: datetime
+    rh33_a: RH33Sensors = rh33(
+        (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_OUT),
+        (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN),
+    )
 
 
 SensorName = str
