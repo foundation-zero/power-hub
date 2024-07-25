@@ -7,6 +7,7 @@ from energy_box_control.monitoring.health_bounds import (
     BATTERY_HEALTH_BOUNDS,
     CHILLED_CIRCUIT_BOUNDS,
     COOLING_DEMAND_CIRCUIT_BOUNDS,
+    HEAT_PIPES_BOUNDS,
     HOT_CIRCUIT_BOUNDS,
     HealthBound,
     CONTAINER_BOUNDS,
@@ -274,6 +275,22 @@ cooling_demand_circuit_checks = [
     ),
 ]
 
+
+heat_pipes_checks = [
+    valid_value(
+        "heat_pipes_temperature_check",
+        lambda sensors: sensors.heat_pipes.input_temperature,
+        HEAT_PIPES_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "heat_pipes_flow_check",
+        lambda sensors: sensors.heat_pipes.flow,
+        HEAT_PIPES_BOUNDS["flow"],
+    ),
+    # pressure check is already done in hot switch circuit checks
+]
+
+
 battery_alarm_checks = [
     alarm(
         name=f"{attr}",
@@ -446,4 +463,5 @@ all_checks = (
     + chiller_bound_checks
     + chiller_alarm_checks
     + battery_soc_checks
+    + heat_pipes_checks
 )

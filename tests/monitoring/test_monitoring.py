@@ -209,6 +209,33 @@ def test_cooling_demand_circuit_pressure_check(
     ]
 
 
+@pytest.mark.parametrize(
+    "check_name,attr",
+    [
+        (
+            "heat_pipes_temperature_check",
+            "input_temperature",
+        ),
+        (
+            "heat_pipes_flow_check",
+            "flow",
+        ),
+    ],
+)
+def test_heat_pipes_checks(check_name, attr, out_of_bounds_value):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    setattr(sensors.heat_pipes, attr, out_of_bounds_value)
+    monitor = Monitor(sensor_value_checks=all_checks)
+    source = "test"
+    assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
+        message=f"{check_name} is outside valid bounds with value: {out_of_bounds_value}",
+        source=source,
+        dedup_key=check_name,
+        severity=Severity.CRITICAL,
+    )
+
+
 def get_attrs(sensor, sensor_type):
     attrs = attributes_for_type(sensor, sensor_type)
     assert len(attrs) != 0
