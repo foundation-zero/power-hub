@@ -261,7 +261,7 @@ def control(power_hub):
         ("hot_flow", None, None, None),
         ("hot_pressure", None, None, None),
         (
-            "cooling_input_temperature",
+            "waste_input_temperature",
             "waste_switch_valve",
             "input_temperature",
             WASTE_SWITCH_VALVE_YAZAKI_POSITION,
@@ -333,7 +333,7 @@ def test_yazaki_health_bound_checks(
         ("hot_flow", None, None, None),
         ("hot_pressure", None, None, None),
         (
-            "cooling_input_temperature",
+            "waste_input_temperature",
             "waste_switch_valve",
             "input_temperature",
             WASTE_SWITCH_VALVE_YAZAKI_POSITION,

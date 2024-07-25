@@ -108,7 +108,7 @@ def test_derived_sensors(power_hub_const, min_max_temperature):
             abs=1e-4,
         )
 
-        assert sensors.yazaki.cooling_input_temperature == approx(
+        assert sensors.yazaki.waste_input_temperature == approx(
             state.connection(power_hub_const.yazaki, YazakiPort.COOLING_IN).temperature,
             abs=1e-4,
         )
@@ -355,7 +355,7 @@ def test_waste_pump_water_maker_on(
     state = scheduled_power_hub.simulate(state, control_values)
     sensors = scheduled_power_hub.sensors_from_state(state)
 
-    sensors.waste_switch_valve.input_temperature = cooling_in_temperature
+    sensors.rh33_waste.hot_temperature = cooling_in_temperature
     sensors.water_maker.on = water_maker_on
 
     control_state, control_values = control_power_hub(

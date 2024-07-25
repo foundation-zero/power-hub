@@ -196,7 +196,6 @@ class SensorType(Enum):
 class Sensor:
     technical_name: str | None = None
     from_port: Port | None = None
-    from_ports: tuple[Port, Port] | None = None
     type: SensorType | None = None
     resolver: Callable[[Network[Any], NetworkState[Any]], Any] | None = None
 
@@ -217,15 +216,6 @@ class Sensor:
             return network_state.connection(
                 appliance, self.from_port, ThermalState(nan, nan)
             ).temperature
-        elif appliance and self.from_ports and self.type == SensorType.DELTA_T:
-            return (
-                network_state.connection(
-                    appliance, self.from_ports[1], ThermalState(nan, nan)
-                ).temperature
-                - network_state.connection(
-                    appliance, self.from_ports[0], ThermalState(nan, nan)
-                ).temperature
-            )
         elif appliance:
             return getattr(network_state.appliance(appliance).get(), name, None)
         else:

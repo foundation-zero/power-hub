@@ -627,10 +627,10 @@ def chill_control(
 
 
 should_cool = Fn.sensors(
-    lambda sensors: sensors.waste_switch_valve.input_temperature
+    lambda sensors: sensors.outboard_exchange.output_temperature
 ) > Fn.state(lambda state: state.setpoints.cooling_in_max_temperature)
 stop_cool = Fn.sensors(
-    lambda sensors: sensors.waste_switch_valve.input_temperature
+    lambda sensors: sensors.outboard_exchange.output_temperature
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
 
 water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
@@ -676,7 +676,7 @@ def waste_control(
 
 
 should_preheat = Fn.pred(
-    lambda control_state, sensors: sensors.preheat_switch_valve.input_temperature
+    lambda control_state, sensors: sensors.rh33_waste.hot_temperature
     + sensors.preheat_reservoir.temperature
     > control_state.setpoints.minimum_preheat_offset
 )
