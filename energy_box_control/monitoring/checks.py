@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, get_type_hints
 from enum import Enum
 
 from energy_box_control.monitoring.health_bounds import (
+    BATTERY_HEALTH_BOUNDS,
     CHILLED_CIRCUIT_BOUNDS,
     COOLING_DEMAND_CIRCUIT_BOUNDS,
     HOT_CIRCUIT_BOUNDS,
@@ -24,8 +25,6 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 
-# TODO: Fresh water flow
-# TODO: Battery SOC
 # TODO: Heat pipes
 # TODO: Group voltages
 
@@ -296,6 +295,14 @@ battery_warning_checks = [
     for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
 ]
 
+battery_soc_checks = [
+    valid_value(
+        "battery_soc",
+        lambda sensors: sensors.electric_battery.soc_battery_system,
+        BATTERY_HEALTH_BOUNDS["soc"],
+    )
+]
+
 container_fancoil_alarm_checks = [
     alarm(
         name=f"{attr}",
@@ -438,4 +445,5 @@ all_checks = (
     + valve_alarm_checks
     + chiller_bound_checks
     + chiller_alarm_checks
+    + battery_soc_checks
 )

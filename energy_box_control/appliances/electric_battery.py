@@ -20,7 +20,7 @@ class ElectricBatteryState(ApplianceState):
     voltage_battery_system: int = 0
     current_battery_system: int = 0
     power_battery_system: int = 0
-    soc_battery_system: float = 0
+    soc_battery_system: float = 75
     battery_alarm: int = NO_ALARM
     battery_low_voltage_alarm: int = NO_ALARM
     battery_high_voltage_alarm: int = NO_ALARM

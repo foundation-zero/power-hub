@@ -245,6 +245,21 @@ def test_battery_warning_checks(source):
         ]
 
 
+def test_battery_soc_checks(source):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    value = 25
+    sensors.electric_battery.soc_battery_system = value
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"battery_soc is outside valid bounds with value: {value}",
+            source=source,
+            dedup_key="battery_soc",
+            severity=Severity.CRITICAL,
+        )
+    ]
+
+
 def test_fancoil_alarm_checks(source):
     for attr in get_attrs(ContainersSensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())

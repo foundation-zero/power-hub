@@ -59,3 +59,5 @@ COOLING_DEMAND_CIRCUIT_BOUNDS = {
     "flow": HealthBound(0, 5),  # adapt this to a valid value
     "pressure": HealthBound(0, 500),  # adapt this to a valid value
 }
+
+BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(50, 100)}
