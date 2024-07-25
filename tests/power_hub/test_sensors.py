@@ -23,6 +23,7 @@ def sensors(power_hub):
 def test_sensors_to_json_roundtrips(power_hub, sensors):
     sensor_json = sensors_to_json(sensors)
     assert not "power" in json.loads(sensor_json)["heat_pipes"]
+    assert not "fault_codes" in json.loads(sensor_json)["chiller"]
     roundtripped = power_hub.sensors_from_json(sensor_json)
     assert sensors == roundtripped
 

@@ -49,7 +49,7 @@ from energy_box_control.units import (
     WattPerMeterSquared,
 )
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
-from energy_box_control.appliances.chiller import Chiller
+from energy_box_control.appliances.chiller import Chiller, ChillerFaultCode
 from energy_box_control.appliances.pcm import Pcm, PcmPort
 from energy_box_control.appliances.valve import Valve, ValvePort, ValveServiceInfo
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
@@ -692,6 +692,7 @@ class ChillerSensors(FromState):
     spec: Chiller
     rh33_chill: RH33Sensors
     rh33_waste: RH33Sensors
+    fault_code: ChillerFaultCode = sensor(type=SensorType.ALARM)
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_switch_valve: "ValveSensors"

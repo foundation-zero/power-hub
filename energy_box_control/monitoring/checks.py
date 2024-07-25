@@ -66,6 +66,54 @@ class ValveAlarm(Alarm):
     GEAR_TRAIN_DISENGAGED = 9
 
 
+class ChillerAlarm(Alarm):
+    DATA_COMMUNICATION = "INIT"
+    SEA_WATER_FLOW_INSUFFICIENT = "SEA"
+    REQUIRED_COLD_WATER_TEMPERATURE_NOT_YET_REACHED = "BA11"
+    COMPRESSORS_DEACTIVATED = "CA11"
+    UNDERVOLTAGE = "AAA"
+    LOW_PRESSURE_COMPRESSOR_1 = "A01"
+    HIGH_PRESSURE_COMPRESSOR_1 = "A02"
+    LOW_PRESSURE_COMPRESSOR_2 = "A03"
+    HIGH_PRESSURE_COMPRESSOR_2 = "A04"
+    CABIN_TEMPERATURE_SENSOR = "A09"
+    COLD_WATER_TEMPERATURE_SENSOR = "A10"
+    COLD_WATER_FLOW = "A15"
+    HIGH_PRESSURE_COMPRESSOR_1_AGAIN = "A20"
+    EXCESS_CURRENT_INVERTER = "A21"
+    EXCESS_TEMPERATURE_INVERTER = "A22"
+    EXCESS_TEMPERATURE_COMPRESSOR_1 = "A23"
+    HIGH_PRESSURE_SENSOR = "A24"
+    LOW_PRESSURE_SENSOR = "A25"
+    COMPRESSOR_TEMPERATURE_SENSOR = "A26"
+    DATA_COMMUNICATION_INVERTER = "A27"
+    CHARACTERISTIC_DIAGRAM = "A28"
+    EXCESS_TEMPERATURE_INVERTER_AGAIN = "A30"
+    EXCESS_CURRENT_INVERTER_AGAIN = "A31"
+    PHASE_CONNECTION_COMPRESSOR_1 = "A32"
+    EARTH_LEAKAGE_CURRENT = "A33"
+    EXCESS_CURRENT_INVERTER_AGAIN2 = "A34"
+    DC_BUS_INVERTER = "A35"
+    UNDERVOLTAGE_INVERTER_PFC = "A36"
+    UNDERVOLTAGE_INVERTER = "A37"
+    COMPRESSOR_SPEED_1 = "A38"
+    CABLE_BRIDGE_INVERTER = "A39"
+    COMPRESSOR_1_OVERLOAD = "A40"
+    OVERVOLTAGE = "A41"
+    UNDER_TEMPERATURE_INVERTER = "A42"
+    EXCESS_TEMPERATURE_COMPRESSOR_1_AGAIN = "A43"
+    IGBT_INVERTER = "A44"
+    CPU_INVERTER = "A45"
+    PARAMETER_INVERTER = "A46"
+    DATA_COMMUNICATION_INVERTER_AGAIN = "A47"
+    THERMISTOR_INVERTER = "A48"
+    AUTOMATIC_ADJUSTMENT_INVERTER = "A49"
+    FAN_INVERTER = "A50"
+    PFC_MODULE_INVERTER = "A51"
+    STO_INVERTER = "A53"
+    NO_DISPLAY_ON_SCREEN = "A54"
+
+
 class Severity(Enum):
     DEBUG = "debug"
     INFO = "info"
@@ -303,6 +351,16 @@ chiller_bound_checks = [
 ]
 
 
+chiller_alarm_checks = [
+    alarm(
+        name=f"chiller_{chiller_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors: getattr(sensors, "chiller").fault_code,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=chiller_alarm,
+    )
+    for chiller_alarm in ChillerAlarm
+]
+
 water_tank_checks = [
     valid_value(
         f"{tank_name}_fill_ratio",
@@ -339,4 +397,5 @@ all_checks = (
     + weather_station_alarm_checks
     + valve_alarm_checks
     + chiller_bound_checks
+    + chiller_alarm_checks
 )

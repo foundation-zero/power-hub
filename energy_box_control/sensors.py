@@ -338,7 +338,11 @@ def sensor_encoder(include_properties: bool = False):
                 return {
                     field: getattr(o, field)
                     for field in sensor_fields(type(o), include_properties)
-                    if not math.isnan(getattr(o, field))
+                    if (
+                        isinstance(getattr(o, field), (float, int))
+                        and not math.isnan(getattr(o, field))
+                    )
+                    or isinstance(getattr(o, field), str)
                 }
             if hasattr(o, "__dict__"):
                 return {attr: value for attr, value in o.__dict__.items()}
