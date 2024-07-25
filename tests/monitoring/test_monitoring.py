@@ -291,6 +291,20 @@ def test_battery_soc_checks(source):
     ]
 
 
+def test_battery_estop_checks(source):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    sensors.electric_battery.estop_active = True
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"estop active is {True}",
+            source=source,
+            dedup_key="estop_active",
+            severity=Severity.CRITICAL,
+        )
+    ]
+
+
 def test_fancoil_alarm_checks(source):
     for attr in get_attrs(ContainersSensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())

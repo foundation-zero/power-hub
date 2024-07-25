@@ -876,6 +876,7 @@ class ElectricBatterySensors(FromState):
     ripple_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
+    estop_active: bool = sensor(type=SensorType.BOOL)
 
 
 @sensors()

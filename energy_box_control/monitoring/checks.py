@@ -191,6 +191,24 @@ def valid_value(
     )
 
 
+def boolean_check(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], bool],
+    severity: Severity = Severity.CRITICAL,
+    true_is_good: bool = True,
+) -> SensorValueCheck:
+    return SensorValueCheck(
+        name=name,
+        check=value_check(
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda value: value if true_is_good else not value,
+            message_fn=lambda _, value: f"estop active is {value}",
+        ),
+        severity=severity,
+    )
+
+
 def alarm(
     name: str,
     value_fn: Callable[[PowerHubSensors], int],
@@ -293,8 +311,8 @@ heat_pipes_checks = [
 battery_alarm_checks = [
     alarm(
         name=f"{attr}",
-        value_fn=(lambda sensors, attr=attr: getattr(sensors.electric_battery, attr)),
-        message_fn=(lambda name, _: f"{name} is raising an alarm"),
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        message_fn=lambda name, _: f"{name} is raising an alarm",
         alarm=ElectricBatteryAlarm.ALARM,
     )
     for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
@@ -304,7 +322,7 @@ battery_warning_checks = [
     alarm(
         name=f"{attr}_warning",
         value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
-        message_fn=(lambda name, _: f"{name} is raising a warning"),
+        message_fn=lambda name, _: f"{name} is raising a warning",
         alarm=ElectricBatteryAlarm.WARNING,
         severity=Severity.WARNING,
     )
@@ -318,6 +336,15 @@ battery_soc_checks = [
         BATTERY_HEALTH_BOUNDS["soc"],
     )
 ]
+
+battery_estop_checks = [
+    boolean_check(
+        name="estop_active",
+        value_fn=lambda sensors: sensors.electric_battery.estop_active,
+        true_is_good=False,
+    )
+]
+
 
 container_fancoil_alarm_checks = [
     alarm(
@@ -448,6 +475,8 @@ container_checks = [
 all_checks = (
     battery_alarm_checks
     + battery_warning_checks
+    + battery_soc_checks
+    + battery_estop_checks
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
     + sensor_checks
@@ -462,6 +491,5 @@ all_checks = (
     + valve_alarm_checks
     + chiller_bound_checks
     + chiller_alarm_checks
-    + battery_soc_checks
     + heat_pipes_checks
 )

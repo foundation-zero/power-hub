@@ -52,6 +52,7 @@ class ElectricBatteryState(ApplianceState):
     ripple_alarm: BatteryAlarm = NO_ALARM
     low_batt_voltage_alarm: BatteryAlarm = NO_ALARM
     high_batt_voltage_alarm: BatteryAlarm = NO_ALARM
+    estop_active: bool = False
 
 
 class ElectricBatteryPort(Port):
