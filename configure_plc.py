@@ -22,7 +22,7 @@ logger.setLevel("DEBUG")
 
 HOST_NAME = "power-hub-plc"
 SSH_USER = "admin"
-REMOTE_HOME_DIR = "/home/admin"
+REMOTE_HOME_DIR = f"/home/{SSH_USER}"
 PASSWORD_ENV_NAME = "POWER_HUB_PLC_PASSWORD"
 PAGERDUTY_KEY_ENV_NAME = "PAGERDUTY_SIMULATION_KEY"
 CLOUD_VERNEMQ_ENV_NAME = ""
@@ -58,6 +58,9 @@ def ssh_client():
 def blocking_command(client: SSHClient, command: str):
     stdin, stdout, stderr = client.exec_command(command)
     _ = stdout.channel.recv_exit_status()
+    error = "".join((line for line in iter(stderr.readline, "")))
+    if error:
+        logger.error(error)
     return "".join((line for line in iter(stdout.readline, "")))
 
 
@@ -73,7 +76,7 @@ def build_for_arch(
             "docker",
             "buildx",
             "build",
-            "--no-cache" if no_cache else "",
+            "--no-cache" if no_cache else None,
             "--platform",
             platform,
             "--tag",
