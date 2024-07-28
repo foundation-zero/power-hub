@@ -92,20 +92,28 @@ def rh33(hot: TemperatureResolver, cold: TemperatureResolver) -> Any:
     class RH33(RH33Sensors):
         hot_temperature: Celsius = power_hub_sensor(
             lambda power_hub, state: state.connection(
-                hot_appliance(power_hub), hot_port, ThermalState(0, 0)
+                hot_appliance(power_hub),
+                hot_port,
+                ThermalState(float("nan"), float("nan")),
             ).temperature
         )
         cold_temperature: Celsius = power_hub_sensor(
             lambda power_hub, state: state.connection(
-                cold_appliance(power_hub), cold_port, ThermalState(0, 0)
+                cold_appliance(power_hub),
+                cold_port,
+                ThermalState(float("nan"), float("nan")),
             ).temperature
         )
         delta_temperature: Celsius = power_hub_sensor(
             lambda power_hub, state: state.connection(
-                hot_appliance(power_hub), hot_port, ThermalState(0, 0)
+                hot_appliance(power_hub),
+                hot_port,
+                ThermalState(float("nan"), float("nan")),
             ).temperature
             - state.connection(
-                cold_appliance(power_hub), cold_port, ThermalState(0, 0)
+                cold_appliance(power_hub),
+                cold_port,
+                ThermalState(float("nan"), float("nan")),
             ).temperature
         )
 
@@ -614,13 +622,6 @@ class WasteMixSensors:
 
 
 @sensors()
-class PreHeatSwitchSensors(ValveSensors):
-    input_flow: LiterPerSecond = sensor(
-        technical_name="FS-1012", type=SensorType.FLOW, from_port=ValvePort.AB
-    )
-
-
-@sensors()
 class ChillerSensors(FromState):
     spec: Chiller
     rh33_chill: RH33Sensors
@@ -629,7 +630,6 @@ class ChillerSensors(FromState):
     cold_reservoir: "ColdReservoirSensors"
     waste_mix: "WasteMixSensors"
     waste_switch_valve: "WasteSwitchSensors"
-    preheat_switch_valve: "PreHeatSwitchSensors"
 
     @property
     def waste_flow(self) -> LiterPerSecond:
@@ -905,7 +905,7 @@ class PowerHubSensors(NetworkSensors):
     chiller_switch_valve: ChillerSwitchSensors
     cold_reservoir: ColdReservoirSensors
     waste_bypass_valve: WasteSwitchSensors
-    preheat_switch_valve: PreHeatSwitchSensors
+    preheat_switch_valve: ValveSensors
     preheat_reservoir: PreHeatSensors
     waste_switch_valve: WasteSwitchSensors
     outboard_exchange: HeatExchangerSensors
@@ -942,8 +942,8 @@ class PowerHubSensors(NetworkSensors):
         (lambda power_hub: power_hub.preheat_reservoir, BoilerPort.FILL_IN),
     )
     rh33_heat_pipes: RH33Sensors = rh33(
-        (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN),
         (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.OUT),
+        (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN),
     )
     rh33_hot_storage: RH33Sensors = rh33(
         (lambda power_hub: power_hub.hot_switch_valve, ValvePort.AB),

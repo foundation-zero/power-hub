@@ -267,13 +267,13 @@ def control(power_hub):
             WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         (
-            "cooling_flow",
+            "waste_flow",
             "preheat_switch_valve",
             "input_flow",
             WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         (
-            "cooling_pressure",
+            "waste_pressure",
             "preheat_switch_valve",
             "pressure",
             WASTE_SWITCH_VALVE_YAZAKI_POSITION,
