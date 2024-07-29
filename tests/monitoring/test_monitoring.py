@@ -83,7 +83,7 @@ def test_hot_circuit_hot_circuit_temperature_check(
 
 
 def test_hot_circuit_flow_check(sensors: PowerHubSensors, source, out_of_bounds_value):
-    sensors.hot_switch_valve.flow = out_of_bounds_value
+    sensors.hot_storage_flow_sensor.flow = out_of_bounds_value
     sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
@@ -301,7 +301,7 @@ def test_yazaki_hot_input_temperature_check(sensors, yazaki_test, out_of_bounds_
 
 
 def test_yazaki_hot_flow_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.yazaki.hot_flow = out_of_bounds_value
+    sensors.yazaki_hot_flow_sensor.flow = out_of_bounds_value
     yazaki_test("yazaki_hot_flow_check")
 
 
@@ -319,7 +319,7 @@ def test_yazaki_waste_input_temperature_check(
 
 
 def test_yazaki_waste_flow_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.waste_mix.flow = out_of_bounds_value
+    sensors.waste_flow_sensor.flow = out_of_bounds_value
     sensors.waste_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
     yazaki_test("yazaki_waste_flow_check")
 
@@ -339,7 +339,7 @@ def test_yazaki_chilled_input_temperature_check(
 
 
 def test_yazaki_chilled_flow_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.cold_reservoir.exchange_flow = out_of_bounds_value
+    sensors.chilled_flow_sensor.flow = out_of_bounds_value
     sensors.chiller_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
     yazaki_test("yazaki_chilled_flow_check")
 
