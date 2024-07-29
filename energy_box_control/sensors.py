@@ -191,6 +191,7 @@ class SensorType(Enum):
     INFO = "info"
     REPLACE_FILTER_ALARM = "replace_filter_alarm"
     PRESSURE = "pressure"
+    LEVEL = "level"
 
 
 @dataclass(eq=True, frozen=True)

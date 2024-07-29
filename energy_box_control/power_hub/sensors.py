@@ -3,7 +3,10 @@ from datetime import datetime
 from typing import Any, Callable, TYPE_CHECKING, Optional
 
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
-from energy_box_control.appliances.base import Port, ThermalState
+from energy_box_control.appliances.base import (
+    Port,
+    ThermalState,
+)
 from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
 from energy_box_control.appliances.electric_battery import BatteryAlarm, ElectricBattery
 from energy_box_control.appliances.heat_exchanger import (
@@ -16,7 +19,7 @@ from energy_box_control.appliances.mix import MixPort
 from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import SwitchPumpAlarm, SwitchPumpPort
 from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
-from energy_box_control.appliances.water_tank import WaterTank, WaterTankPort
+from energy_box_control.appliances.water_tank import WaterTank
 from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
     WaterTreatmentPort,
@@ -63,6 +66,10 @@ from energy_box_control.sensors import (
 DEFAULT_PRESSURE = 2
 
 
+def const_resolver(value: Any) -> "Callable[[PowerHub, NetworkState[PowerHub]], Any]":
+    return lambda _a, _b: value
+
+
 def power_hub_sensor[
     T
 ](
@@ -79,7 +86,6 @@ FlowSensorServiceInfo = int
 @sensors(from_appliance=False, eq=False)
 class FlowSensors(WithoutAppliance):
     flow: LiterPerSecond
-    temperature: Celsius
     service_info: FlowSensorServiceInfo
 
     def __eq__(self, value: object) -> bool:
@@ -91,7 +97,11 @@ class FlowSensors(WithoutAppliance):
 type FlowResolver = "tuple[Callable[[PowerHub], AnyAppliance], Port]"
 
 
-def flow_sensor(resolver: FlowResolver, technical_name: Optional[str]) -> Any:
+def flow_sensor(
+    resolver: FlowResolver,
+    technical_name: Optional[str],
+) -> Any:
+
     appliance, port = resolver
 
     @sensors(from_appliance=False, eq=False)
@@ -103,18 +113,26 @@ def flow_sensor(resolver: FlowResolver, technical_name: Optional[str]) -> Any:
                 appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
             ).flow,
         )
-        temperature: Celsius = power_hub_sensor(
-            None,
-            None,
-            lambda power_hub, state: state.connection(
-                appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
-            ).temperature,
-        )
         service_info: FlowSensorServiceInfo = sensor(
             technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
         )
 
     return Flow
+
+
+def flow_sensor_not_simulated(technical_name: Optional[str]) -> Any:
+    @sensors(from_appliance=False, eq=False)
+    class NotSimulatedFlow(FlowSensors):
+        flow: LiterPerSecond = sensor(
+            technical_name=technical_name,
+            type=SensorType.FLOW,
+            resolver=const_resolver(0),
+        )
+        service_info: FlowSensorServiceInfo = sensor(
+            technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
+        )
+
+    return NotSimulatedFlow
 
 
 @sensors(from_appliance=False, eq=False)
@@ -838,7 +856,7 @@ class ElectricBatterySensors(FromState):
 @sensors()
 class WaterTankSensors(FromState):
     spec: WaterTank
-    fill_ratio: Liter = sensor(technical_name="LS-5001")
+    fill_ratio: float = sensor()
 
     @property
     def fill(self) -> Liter:
@@ -847,37 +865,54 @@ class WaterTankSensors(FromState):
 
 @sensors()
 class FreshWaterTankSensors(WaterTankSensors):
+    water_maker: "WaterMakerSensors"
+    fill_ratio: float = sensor(technical_name="LS-5001", type=SensorType.LEVEL)
+    fresh_to_kitchen_flow_sensor: FlowSensors
+    fresh_to_technical_flow_sensor: FlowSensors
 
-    water_demand_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
-    )
-    secondary_flow_in: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=WaterTankPort.IN_1
-    )
-    primary_flow_in: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=WaterTankPort.IN_0
-    )
+    @property
+    def fill_flow(self) -> LiterPerSecond:
+        return self.water_maker.out_flow
+
+    @property
+    def flow_to_kitchen(self) -> LiterPerSecond:
+        return self.fresh_to_kitchen_flow_sensor.flow
+
+    @property
+    def flow_to_technical(self) -> LiterPerSecond:
+        return self.fresh_to_technical_flow_sensor.flow
+
+    @property
+    def water_demand_flow(self) -> LiterPerSecond:
+        return self.flow_to_kitchen + self.flow_to_technical
+
+
+@sensors(from_appliance=False)
+class TechnicalWaterSensors(WithoutAppliance):
+    fill_ratio: float = sensor(technical_name="LS-4001", type=SensorType.LEVEL)
+    technical_to_wash_off: FlowSensors
+    technical_to_sanitary: FlowSensors
+
+    def flow_to_sanitary(self) -> LiterPerSecond:
+        return self.technical_to_sanitary.flow
+
+    def flow_to_wash_off(self) -> LiterPerSecond:
+        return self.technical_to_wash_off.flow
 
 
 @sensors()
 class GreyWaterTankSensors(WaterTankSensors):
-
-    water_demand_flow: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=WaterTankPort.CONSUMPTION
-    )
-
-    primary_flow_in: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=WaterTankPort.IN_0
-    )
+    fill_ratio: float = sensor(technical_name="LS-3001", type=SensorType.FLOW)
 
 
 @sensors()
 class WaterTreatmentSensors(FromState):
     spec: WaterTreatment
+    treated_water_flow_sensor: FlowSensors
 
-    out_flow: LiterPerSecond = sensor(
-        technical_name="FS-4001", type=SensorType.FLOW, from_port=WaterTreatmentPort.OUT
-    )
+    @property
+    def out_flow(self) -> LiterPerSecond:
+        return self.treated_water_flow_sensor.flow
 
 
 @sensors()
@@ -926,10 +961,6 @@ def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") ->
         None,
         lambda power_hub, state: schedule(power_hub.schedules).at(state.time),
     )
-
-
-def const_resolver(value: Any) -> "Callable[[PowerHub, NetworkState[PowerHub]], Any]":
-    return lambda _a, _b: value
 
 
 @sensors(from_appliance=False)
@@ -1016,6 +1047,17 @@ class PowerHubSensors(NetworkSensors):
     )
     domestic_hot_water_flow_sensor: FlowSensors = flow_sensor(
         (lambda power_hub: power_hub.hot_reservoir, BoilerPort.FILL_OUT), "FS-1010"
+    )
+    fresh_to_kitchen_flow_sensor: FlowSensors = flow_sensor_not_simulated("FS-5001")
+    technical_to_sanitary_flow_sensor: FlowSensors = flow_sensor_not_simulated(
+        "FS-4003"
+    )
+    technical_to_wash_off_flow_sensor: FlowSensors = flow_sensor_not_simulated(
+        "FS-4002"
+    )
+    fresh_to_technical_flow_sensor: FlowSensors = flow_sensor_not_simulated("FS-5002")
+    treated_water_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.water_treatment, WaterTreatmentPort.OUT), "FS-4001"
     )
 
     rh33_pcm_discharge: RH33Sensors = rh33(
