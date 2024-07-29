@@ -24,7 +24,7 @@ from energy_box_control.power_hub.components import HOT_RESERVOIR_PCM_VALVE_PCM_
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     ContainersSensors,
-    ElectricBatterySensors,
+    ElectricalSensors,
     PowerHubSensors,
     SwitchPumpSensors,
     ValveSensors,
@@ -76,7 +76,7 @@ def run_monitor(sensors, source, control=None, power_hub=None):
     return monitor.run_sensor_value_checks(sensors, source, control, power_hub)
 
 
-def test_hot_circuit_hot_circuit_temperature_check(
+def test_hot_circuit_temperature_check(
     sensors: PowerHubSensors, source, out_of_bounds_value
 ):
     sensors.rh33_hot_storage.hot_temperature = out_of_bounds_value
@@ -247,10 +247,10 @@ def get_attrs(sensor, sensor_type):
 
 
 def test_battery_alarm_checks(source):
-    for attr in get_attrs(ElectricBatterySensors, SensorType.ALARM):
+    for attr in get_attrs(ElectricalSensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.electric_battery, attr, 2)
+        setattr(sensors.electrical, attr, 2)
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr} is raising an alarm",
@@ -262,10 +262,10 @@ def test_battery_alarm_checks(source):
 
 
 def test_battery_warning_checks(source):
-    for attr in get_attrs(ElectricBatterySensors, SensorType.ALARM):
+    for attr in get_attrs(ElectricalSensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.electric_battery, attr, 1)
+        setattr(sensors.electrical, attr, 1)
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr}_warning is raising a warning",
@@ -280,7 +280,7 @@ def test_battery_soc_checks(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     value = 25
-    sensors.electric_battery.soc_battery_system = value
+    sensors.electrical.soc_battery_system = value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"battery_soc is outside valid bounds with value: {value}",
@@ -294,7 +294,7 @@ def test_battery_soc_checks(source):
 def test_battery_estop_checks(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    sensors.electric_battery.estop_active = True
+    sensors.electrical.estop_active = True
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"estop active is {True}",
@@ -624,7 +624,6 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
         (SensorType.CO2, 3),
         (SensorType.HUMIDITY, 3),
         (SensorType.TEMPERATURE, 100),
-        (SensorType.VOLT, 1000),
     ],
 )
 def test_container_sensor_values(sensor_type, alerting_value, source):
@@ -632,13 +631,14 @@ def test_container_sensor_values(sensor_type, alerting_value, source):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.containers, attr, alerting_value)
-        monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
-        assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
-            message=f"{attr} is outside valid bounds with value: {alerting_value}",
-            source=source,
-            dedup_key=attr,
-            severity=Severity.CRITICAL,
-        )
+        assert run_monitor(sensors, source) == [
+            NotificationEvent(
+                message=f"{attr} is outside valid bounds with value: {alerting_value}",
+                source=source,
+                dedup_key=attr,
+                severity=Severity.CRITICAL,
+            )
+        ]
 
 
 def test_send_events(mocker):

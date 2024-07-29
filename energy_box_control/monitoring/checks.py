@@ -22,7 +22,7 @@ from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
     SwitchPumpSensors,
     ValveSensors,
-    ElectricBatterySensors,
+    ElectricalSensors,
     ContainersSensors,
 )
 
@@ -31,7 +31,7 @@ class Alarm(Enum):
     pass
 
 
-class ElectricBatteryAlarm(Alarm):
+class ElectricalAlarm(Alarm):
     WARNING = 1
     ALARM = 2
 
@@ -189,19 +189,19 @@ def valid_value(
     )
 
 
-def boolean_check(
+def valid_value_check(
     name: str,
     value_fn: Callable[[PowerHubSensors], bool],
     message_fn: Callable[[str, bool], str],
+    valid: object,
     severity: Severity = Severity.CRITICAL,
-    true_is_good: bool = True,
 ) -> SensorValueCheck:
     return SensorValueCheck(
         name=name,
         check=value_check(
             name=name,
             sensor_fn=value_fn,
-            check_fn=lambda value: value if true_is_good else not value,
+            check_fn=lambda value: value == valid,
             message_fn=message_fn,
         ),
         severity=severity,
@@ -310,41 +310,40 @@ heat_pipes_checks = [
 battery_alarm_checks = [
     alarm(
         name=f"{attr}",
-        value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electrical, attr),
         message_fn=lambda name, _: f"{name} is raising an alarm",
-        alarm=ElectricBatteryAlarm.ALARM,
+        alarm=ElectricalAlarm.ALARM,
     )
-    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
+    for attr in attributes_for_type(ElectricalSensors, SensorType.ALARM)
 ]
 
 battery_warning_checks = [
     alarm(
         name=f"{attr}_warning",
-        value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electrical, attr),
         message_fn=lambda name, _: f"{name} is raising a warning",
-        alarm=ElectricBatteryAlarm.WARNING,
+        alarm=ElectricalAlarm.WARNING,
         severity=Severity.WARNING,
     )
-    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
+    for attr in attributes_for_type(ElectricalSensors, SensorType.ALARM)
 ]
 
 battery_soc_checks = [
     valid_value(
         "battery_soc",
-        lambda sensors: sensors.electric_battery.soc_battery_system,
+        lambda sensors: sensors.electrical.soc_battery_system,
         BATTERY_HEALTH_BOUNDS["soc"],
     )
 ]
 
 battery_estop_checks = [
-    boolean_check(
+    valid_value_check(
         name="estop_active",
-        value_fn=lambda sensors: sensors.electric_battery.estop_active,
+        value_fn=lambda sensors: sensors.electrical.estop_active,
         message_fn=lambda _, value: f"estop active is {value}",
-        true_is_good=False,
+        valid=False,
     )
 ]
-
 
 container_fancoil_alarm_checks = [
     alarm(
@@ -379,18 +378,15 @@ weather_station_alarm_checks = [
 
 valve_alarm_checks = [
     alarm(
-        name=f"{valve_name}_{valve_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors, valve_name=valve_name: getattr(
+        name=f"{field.name}_{valve_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, valve_name=field.name: getattr(
             sensors, valve_name
         ).service_info,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=valve_alarm,
     )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
+    for field in fields(PowerHubSensors)
+    if field.type == ValveSensors or issubclass(field.type, ValveSensors)
     for valve_alarm in ValveAlarm
 ]
 
@@ -440,7 +436,7 @@ chiller_bound_checks = [
 chiller_alarm_checks = [
     alarm(
         name=f"chiller_{chiller_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors: getattr(sensors, "chiller").fault_code,
+        value_fn=lambda sensors: sensors.chiller.fault_code,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=chiller_alarm,
     )
@@ -466,7 +462,6 @@ container_checks = [
         ("temperature", SensorType.TEMPERATURE),
         ("humidity", SensorType.HUMIDITY),
         ("co2", SensorType.CO2),
-        ("volt", SensorType.VOLT),
     ]
     for attr in attributes_for_type(ContainersSensors, sensor_type)
 ]

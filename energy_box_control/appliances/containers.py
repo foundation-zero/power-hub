@@ -8,7 +8,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.time import ProcessTime
 from energy_box_control.schedules import Schedule
-from energy_box_control.units import Celsius, Volt
+from energy_box_control.units import Celsius
 
 FilterAlarm = int  # 0: OK, 1: Filter gone bad, 2: Standby
 FanAlarm = int  # 0: OK, 1: Error, 2: Standby
@@ -16,7 +16,6 @@ DEFAULT_CO2 = 90
 DEFAULT_HUMIDITY = 90
 DEFAULT_TEMPERATURE = 25
 NO_ALARM = 0
-DEFAULT_VOLTAGE = 100
 
 
 @dataclass(frozen=True, eq=True)
@@ -43,33 +42,6 @@ class ContainersState(ApplianceState):
     power_hub_temperature: float = DEFAULT_TEMPERATURE
     supply_box_humidity: float = DEFAULT_CO2
     supply_box_temperature: float = DEFAULT_TEMPERATURE
-    office_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    office_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    office_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    workshop_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    workshop_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    workshop_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    sim_room_storage_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    sim_room_storage_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    sim_room_storage_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    kitchen_sanitary_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    supply_box_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    supply_box_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    supply_box_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    center_1_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    center_1_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    center_1_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    center_2_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    center_2_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    center_2_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
-    thermo_cabinet_low_group_voltage_L1: Volt = DEFAULT_VOLTAGE
-    thermo_cabinet_low_group_voltage_L2: Volt = DEFAULT_VOLTAGE
-    thermo_cabinet_low_group_voltage_L3: Volt = DEFAULT_VOLTAGE
 
 
 class ContainersPort(Port):

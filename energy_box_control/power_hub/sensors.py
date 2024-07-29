@@ -8,7 +8,7 @@ from energy_box_control.appliances.base import (
     ThermalState,
 )
 from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
-from energy_box_control.appliances.electric_battery import BatteryAlarm, ElectricBattery
+from energy_box_control.appliances.electrical import BatteryAlarm, Electrical
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 from energy_box_control.schedules import Schedule
 from energy_box_control.units import (
+    Ampere,
     Bar,
     Celsius,
     Joule,
@@ -688,6 +689,29 @@ class ChillerSwitchSensors(ValveSensors):
     pass
 
 
+# from https://drive.google.com/file/d/1NCEg1okokmtj-2J-3ZsKRvVXCTlQC4ao/view
+# index is aligned with bit position for that code
+CHILLER_FAULTS = [
+    ["AAA"],
+    ["A01"],
+    ["A02"],
+    ["A09"],
+    ["A10"],
+    ["INIT"],
+    ["A15"],
+    ["A20"],
+    ["A21"],
+    ["A22"],
+    ["A23"],
+    ["A24"],
+    ["A25"],
+    ["A26"],
+    ["A27"],
+    ["A28"],
+    [f"A{err}" for err in range(30, 55)],
+]
+
+
 @sensors()
 class ChillerSensors(FromState):
     spec: Chiller
@@ -811,6 +835,14 @@ class ChillerSensors(FromState):
             * self.spec.specific_heat_capacity_chilled
         )
 
+    def faults(self) -> list[str]:
+        return [
+            fault
+            for index, faults in enumerate(CHILLER_FAULTS)
+            if self.fault_code & (1 << index)
+            for fault in faults
+        ]
+
 
 @sensors()
 class SwitchPumpSensors(FromState):
@@ -820,10 +852,8 @@ class SwitchPumpSensors(FromState):
     )
 
     pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pump_2_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
     pressure: Bar = sensor()
     pump_1_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pump_2_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
 
     @property
     def electrical_power(self) -> Watt:
@@ -837,8 +867,8 @@ class PVSensors(FromState):
 
 
 @sensors()
-class ElectricBatterySensors(FromState):
-    spec: ElectricBattery
+class ElectricalSensors(FromState):
+    spec: Electrical
     voltage_battery_system: int = sensor()
     current_battery_system: int = sensor()
     power_battery_system: int = sensor()
@@ -877,6 +907,87 @@ class ElectricBatterySensors(FromState):
     low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
     estop_active: bool = sensor(type=SensorType.BOOL)
+    office_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    office_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    office_power_L1: Watt = sensor(type=SensorType.POWER)
+    office_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    office_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    office_power_L2: Watt = sensor(type=SensorType.POWER)
+    office_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    office_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    office_power_L3: Watt = sensor(type=SensorType.POWER)
+    workshop_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    workshop_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    workshop_power_L1: Watt = sensor(type=SensorType.POWER)
+    workshop_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    workshop_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    workshop_power_L2: Watt = sensor(type=SensorType.POWER)
+    workshop_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    workshop_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    workshop_power_L3: Watt = sensor(type=SensorType.POWER)
+    sim_room_storage_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    sim_room_storage_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    sim_room_storage_power_L1: Watt = sensor(type=SensorType.POWER)
+    sim_room_storage_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    sim_room_storage_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    sim_room_storage_power_L2: Watt = sensor(type=SensorType.POWER)
+    sim_room_storage_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    sim_room_storage_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    sim_room_storage_power_L3: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L1: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L2: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L3: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L1: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L2: Watt = sensor(type=SensorType.POWER)
+    kitchen_sanitary_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    kitchen_sanitary_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    kitchen_sanitary_power_L3: Watt = sensor(type=SensorType.POWER)
+    supply_box_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    supply_box_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    supply_box_power_L1: Watt = sensor(type=SensorType.POWER)
+    supply_box_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    supply_box_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    supply_box_power_L2: Watt = sensor(type=SensorType.POWER)
+    supply_box_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    supply_box_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    supply_box_power_L3: Watt = sensor(type=SensorType.POWER)
+    center_1_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    center_1_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    center_1_power_L1: Watt = sensor(type=SensorType.POWER)
+    center_1_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    center_1_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    center_1_power_L2: Watt = sensor(type=SensorType.POWER)
+    center_1_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    center_1_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    center_1_power_L3: Watt = sensor(type=SensorType.POWER)
+    center_2_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    center_2_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    center_2_power_L1: Watt = sensor(type=SensorType.POWER)
+    center_2_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    center_2_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    center_2_power_L2: Watt = sensor(type=SensorType.POWER)
+    center_2_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    center_2_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    center_2_power_L3: Watt = sensor(type=SensorType.POWER)
+    thermo_cabinet_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
+    thermo_cabinet_current_L1: Ampere = sensor(type=SensorType.CURRENT)
+    thermo_cabinet_power_L1: Watt = sensor(type=SensorType.POWER)
+    thermo_cabinet_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
+    thermo_cabinet_current_L2: Ampere = sensor(type=SensorType.CURRENT)
+    thermo_cabinet_power_L2: Watt = sensor(type=SensorType.POWER)
+    thermo_cabinet_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
+    thermo_cabinet_current_L3: Ampere = sensor(type=SensorType.CURRENT)
+    thermo_cabinet_power_L3: Watt = sensor(type=SensorType.POWER)
 
 
 @sensors()
@@ -979,33 +1090,6 @@ class ContainersSensors(FromState):
     power_hub_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
     supply_box_humidity: float = sensor(type=SensorType.HUMIDITY)
     supply_box_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    office_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    office_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    office_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    workshop_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    workshop_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    workshop_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    sim_room_storage_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    sim_room_storage_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    sim_room_storage_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    kitchen_sanitary_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    supply_box_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    supply_box_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    supply_box_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    center_1_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    center_1_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    center_1_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    center_2_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    center_2_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    center_2_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
-    thermo_cabinet_low_group_voltage_L1: Volt = sensor(type=SensorType.VOLT)
-    thermo_cabinet_low_group_voltage_L2: Volt = sensor(type=SensorType.VOLT)
-    thermo_cabinet_low_group_voltage_L3: Volt = sensor(type=SensorType.VOLT)
 
 
 def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
@@ -1061,7 +1145,7 @@ class PowerHubSensors(NetworkSensors):
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
     pv_panel: PVSensors
-    electric_battery: ElectricBatterySensors
+    electrical: ElectricalSensors
     fresh_water_tank: FreshWaterTankSensors
     grey_water_tank: GreyWaterTankSensors
     black_water_tank: WaterTankSensors

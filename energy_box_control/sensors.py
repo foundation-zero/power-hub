@@ -193,6 +193,9 @@ class SensorType(Enum):
     PRESSURE = "pressure"
     LEVEL = "level"
     VOLT = "volt"
+    VOLTAGE = "voltage"
+    CURRENT = "current"
+    POWER = "power"
     BOOL = "boolean"
 
 
@@ -344,8 +347,7 @@ def sensor_encoder(include_properties: bool = False):
                         isinstance(getattr(o, field), (float, int))
                         and not math.isnan(getattr(o, field))
                     )
-                    or isinstance(getattr(o, field), str)
-                    or isinstance(getattr(o, field), bool)
+                    or isinstance(getattr(o, field), str | bool)
                 }
             if hasattr(o, "__dict__"):
                 return {attr: value for attr, value in o.__dict__.items()}

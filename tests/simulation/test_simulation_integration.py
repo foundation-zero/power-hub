@@ -64,9 +64,9 @@ async def test_app_endpoints(headers):
         "/power_hub/electric/power/consumption/over/time?interval=h",
         "/power_hub/electric/power/production/mean/per/hour_of_day",
         "/power_hub/electric/power/consumption/mean/per/hour_of_day",
-        "/power_hub/appliance_sensors/electric_battery/soc_battery_system/mean/per/hour_of_day",
-        "/power_hub/appliance_sensors/electric_battery/soc_battery_system/last_values",
-        "/power_hub/appliance_sensors/electric_battery/soc_battery_system/over/time?interval=h",
+        "/power_hub/appliance_sensors/electrical/soc_battery_system/mean/per/hour_of_day",
+        "/power_hub/appliance_sensors/electrical/soc_battery_system/last_values",
+        "/power_hub/appliance_sensors/electrical/soc_battery_system/over/time?interval=h",
     ]
     single_value_endpoints = [
         "/power_hub/appliance_sensors/pv_panel/power/mean",
