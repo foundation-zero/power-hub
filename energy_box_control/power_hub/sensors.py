@@ -237,14 +237,6 @@ class PcmSensors(FromState):
             + self.spec.latent_heat * self.state_of_charge
         )
 
-    @property
-    def charge_pressure(self) -> Celsius:
-        return (
-            self.hot_switch_valve.pressure
-            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
-            else float("nan")
-        )
-
 
 @sensors()
 class YazakiSensors(FromState):
@@ -255,8 +247,10 @@ class YazakiSensors(FromState):
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_mix: "WasteMixSensors"
-    waste_switch_valve: "WasteSwitchSensors"
+    waste_switch_valve: "ValveSensors"
     chilled_loop_pump: "SwitchPumpSensors"
+    waste_pressure_sensor: "PressureSensors"
+    pcm_yazaki_pressure_sensor: "PressureSensors"
 
     hot_flow: LiterPerSecond = sensor(
         technical_name="FS-1004", type=SensorType.FLOW, from_port=YazakiPort.HOT_IN
@@ -282,7 +276,13 @@ class YazakiSensors(FromState):
             * self.spec.specific_heat_capacity_hot
         )
 
-    hot_pressure: LiterPerSecond = sensor(technical_name="PS-1001")
+    @property
+    def hot_pressure(self) -> Bar:
+        return (
+            self.pcm_yazaki_pressure_sensor.pressure
+            if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
+            else 0
+        )
 
     @property
     def waste_flow(self) -> LiterPerSecond:
@@ -327,7 +327,7 @@ class YazakiSensors(FromState):
     @property
     def waste_pressure(self) -> Bar:
         return (
-            self.waste_switch_valve.pressure
+            self.waste_pressure_sensor.pressure
             if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
             else 0
         )
@@ -606,13 +606,6 @@ class HotSwitchSensors(ValveSensors):
         technical_name="FS-1011", type=SensorType.FLOW, from_port=ValvePort.AB
     )
 
-    pressure: Bar = sensor(technical_name="PS-1003")
-
-
-@sensors()
-class WasteSwitchSensors(ValveSensors):
-    pressure: Bar = sensor(technical_name="PS-1002")
-
 
 @sensors()
 class WasteMixSensors:
@@ -629,7 +622,7 @@ class ChillerSensors(FromState):
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_mix: "WasteMixSensors"
-    waste_switch_valve: "WasteSwitchSensors"
+    waste_switch_valve: "ValveSensors"
 
     @property
     def waste_flow(self) -> LiterPerSecond:
@@ -892,10 +885,17 @@ class WeatherSensors(WithoutAppliance):
     alarm: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
 
 
+@sensors(from_appliance=False)
+class PressureSensors(WithoutAppliance):
+    pressure: Bar = sensor(type=SensorType.PRESSURE, resolver=const_resolver(2))
+
+
 @dataclass
 class PowerHubSensors(NetworkSensors):
     heat_pipes: HeatPipesSensors
     heat_pipes_valve: ValveSensors
+    heat_pipes_power_hub_pump: SwitchPumpSensors
+    heat_pipes_supply_box_pump: SwitchPumpSensors
     hot_switch_valve: HotSwitchSensors
     hot_reservoir: HotReservoirSensors
     pcm: PcmSensors
@@ -904,14 +904,12 @@ class PowerHubSensors(NetworkSensors):
     chiller: ChillerSensors
     chiller_switch_valve: ChillerSwitchSensors
     cold_reservoir: ColdReservoirSensors
-    waste_bypass_valve: WasteSwitchSensors
+    waste_bypass_valve: ValveSensors
     preheat_switch_valve: ValveSensors
     preheat_reservoir: PreHeatSensors
-    waste_switch_valve: WasteSwitchSensors
+    waste_switch_valve: ValveSensors
     outboard_exchange: HeatExchangerSensors
     weather: WeatherSensors
-    heat_pipes_power_hub_pump: SwitchPumpSensors
-    heat_pipes_supply_box_pump: SwitchPumpSensors
     pcm_to_yazaki_pump: SwitchPumpSensors
     chilled_loop_pump: SwitchPumpSensors
     waste_pump: SwitchPumpSensors
@@ -928,7 +926,11 @@ class PowerHubSensors(NetworkSensors):
     water_treatment: WaterTreatmentSensors
     water_maker: WaterMakerSensors
     containers: ContainersSensors
+    waste_pressure_sensor: PressureSensors
+    pipes_pressure_sensor: PressureSensors
+    pcm_yazaki_pressure_sensor: PressureSensors
     time: datetime
+
     rh33_pcm_discharge: RH33Sensors = rh33(
         (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_OUT),
         (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN),

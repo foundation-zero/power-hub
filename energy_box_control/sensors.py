@@ -190,6 +190,7 @@ class SensorType(Enum):
     CO2 = "co2"
     ALARM = "alarm"
     REPLACE_FILTER_ALARM = "replace_filter_alarm"
+    PRESSURE = "pressure"
 
 
 @dataclass(eq=True, frozen=True)
