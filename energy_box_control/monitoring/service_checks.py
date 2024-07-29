@@ -10,7 +10,7 @@ MQTT_HEALTH_URL = "http://vernemq.staging.power-hub.foundationzero.org:8888/heal
 DISPLAY_HEALTH_URL = "https://power-hub.pages.dev/"
 
 
-@dataclass
+@dataclass(frozen=True)
 class UrlHealthCheck(Check):
     check: Callable[[], Awaitable[CheckResult]]
 

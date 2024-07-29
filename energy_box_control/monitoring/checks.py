@@ -66,7 +66,7 @@ class Severity(Enum):
     CRITICAL = "critical"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Check:
     name: str
     check: Any
@@ -76,7 +76,7 @@ class Check:
 CheckResult = str | None
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class SensorValueCheck(Check):
     check: Callable[
         [PowerHubSensors, Optional[NetworkControl[PowerHub]], Optional[PowerHub]],
