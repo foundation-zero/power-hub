@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING, Optional
 
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
 from energy_box_control.appliances.base import Port, ThermalState
@@ -60,9 +60,61 @@ from energy_box_control.sensors import (
     NetworkSensors,
 )
 
+DEFAULT_PRESSURE = 2
 
-def power_hub_sensor[T](resolver: "Callable[[PowerHub, NetworkState[PowerHub]], T]"):
-    return sensor(resolver=resolver)
+
+def power_hub_sensor[
+    T
+](
+    technical_name: Optional[str],
+    type: Optional[SensorType],
+    resolver: "Callable[[PowerHub, NetworkState[PowerHub]], T]",
+):
+    return sensor(technical_name=technical_name, type=type, resolver=resolver)
+
+
+FlowSensorServiceInfo = int
+
+
+@sensors(from_appliance=False, eq=False)
+class FlowSensors(WithoutAppliance):
+    flow: LiterPerSecond
+    temperature: Celsius
+    service_info: FlowSensorServiceInfo
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, FlowSensors):
+            return False
+        return self.flow == value.flow
+
+
+type FlowResolver = "tuple[Callable[[PowerHub], AnyAppliance], Port]"
+
+
+def flow_sensor(resolver: FlowResolver, technical_name: Optional[str]) -> Any:
+    appliance, port = resolver
+
+    @sensors(from_appliance=False, eq=False)
+    class Flow(FlowSensors):
+        flow: LiterPerSecond = power_hub_sensor(
+            technical_name,
+            SensorType.FLOW,
+            lambda power_hub, state: state.connection(
+                appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
+            ).flow,
+        )
+        temperature: Celsius = power_hub_sensor(
+            None,
+            None,
+            lambda power_hub, state: state.connection(
+                appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
+            ).temperature,
+        )
+        service_info: FlowSensorServiceInfo = sensor(
+            technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
+        )
+
+    return Flow
 
 
 @sensors(from_appliance=False, eq=False)
@@ -84,27 +136,39 @@ class RH33Sensors(WithoutAppliance):
 type TemperatureResolver = "tuple[Callable[[PowerHub], AnyAppliance], Port]"
 
 
-def rh33(hot: TemperatureResolver, cold: TemperatureResolver) -> Any:
+def rh33(
+    hot: TemperatureResolver,
+    cold: TemperatureResolver,
+    hot_technical_name: Optional[str],
+    cold_technical_name: Optional[str],
+    delta_technical_name: Optional[str],
+) -> Any:
     hot_appliance, hot_port = hot
     cold_appliance, cold_port = cold
 
     @sensors(from_appliance=False, eq=False)
     class RH33(RH33Sensors):
         hot_temperature: Celsius = power_hub_sensor(
+            hot_technical_name,
+            SensorType.TEMPERATURE,
             lambda power_hub, state: state.connection(
                 hot_appliance(power_hub),
                 hot_port,
                 ThermalState(float("nan"), float("nan")),
-            ).temperature
+            ).temperature,
         )
         cold_temperature: Celsius = power_hub_sensor(
+            cold_technical_name,
+            SensorType.TEMPERATURE,
             lambda power_hub, state: state.connection(
                 cold_appliance(power_hub),
                 cold_port,
                 ThermalState(float("nan"), float("nan")),
-            ).temperature
+            ).temperature,
         )
         delta_temperature: Celsius = power_hub_sensor(
+            delta_technical_name,
+            SensorType.DELTA_T,
             lambda power_hub, state: state.connection(
                 hot_appliance(power_hub),
                 hot_port,
@@ -114,7 +178,7 @@ def rh33(hot: TemperatureResolver, cold: TemperatureResolver) -> Any:
                 cold_appliance(power_hub),
                 cold_port,
                 ThermalState(float("nan"), float("nan")),
-            ).temperature
+            ).temperature,
         )
 
     return RH33
@@ -123,10 +187,8 @@ def rh33(hot: TemperatureResolver, cold: TemperatureResolver) -> Any:
 @sensors()
 class HeatPipesSensors(FromState):
     spec: HeatPipes
-    flow: LiterPerSecond = sensor(
-        technical_name="FS-1001", type=SensorType.FLOW, from_port=HeatPipesPort.IN
-    )
     rh33_heat_pipes: RH33Sensors
+    heat_pipes_flow_sensor: FlowSensors
 
     @property
     def input_temperature(self) -> Celsius:
@@ -142,7 +204,11 @@ class HeatPipesSensors(FromState):
 
     @property
     def power(self) -> Watt:
-        return self.flow * self.delta_temperature * self.spec.specific_heat_medium
+        return (
+            self.heat_pipes_flow_sensor.flow
+            * self.delta_temperature
+            * self.spec.specific_heat_medium
+        )
 
 
 @sensors()
@@ -152,7 +218,9 @@ class PcmSensors(FromState):
     state_of_charge: float = sensor()
     rh33_pcm_discharge: RH33Sensors
     rh33_hot_storage: RH33Sensors
-    hot_switch_valve: "HotSwitchSensors"
+    hot_switch_valve: "ValveSensors"
+    pcm_discharge_flow_sensor: FlowSensors
+    hot_storage_flow_sensor: FlowSensors
 
     @property
     def discharge_input_temperature(self) -> Celsius:
@@ -166,9 +234,9 @@ class PcmSensors(FromState):
     def discharge_delta_temperature(self) -> Celsius:
         return self.rh33_pcm_discharge.delta_temperature
 
-    discharge_flow: LiterPerSecond = sensor(
-        technical_name="FS-1003", type=SensorType.FLOW, from_port=PcmPort.DISCHARGE_IN
-    )
+    @property
+    def discharge_flow(self) -> LiterPerSecond:
+        return self.pcm_discharge_flow_sensor.flow
 
     @property
     def discharge_power(
@@ -207,7 +275,7 @@ class PcmSensors(FromState):
     @property
     def charge_flow(self) -> LiterPerSecond:
         return (
-            self.hot_switch_valve.flow
+            self.hot_storage_flow_sensor.flow
             if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
             else 0
         )
@@ -246,15 +314,17 @@ class YazakiSensors(FromState):
     rh33_chill: RH33Sensors
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
-    waste_mix: "WasteMixSensors"
     waste_switch_valve: "ValveSensors"
     chilled_loop_pump: "SwitchPumpSensors"
     waste_pressure_sensor: "PressureSensors"
     pcm_yazaki_pressure_sensor: "PressureSensors"
+    yazaki_hot_flow_sensor: "FlowSensors"
+    waste_flow_sensor: "FlowSensors"
+    chilled_flow_sensor: "FlowSensors"
 
-    hot_flow: LiterPerSecond = sensor(
-        technical_name="FS-1004", type=SensorType.FLOW, from_port=YazakiPort.HOT_IN
-    )
+    @property
+    def hot_flow(self) -> LiterPerSecond:
+        return self.yazaki_hot_flow_sensor.flow
 
     @property
     def hot_input_temperature(self) -> Celsius:
@@ -287,7 +357,7 @@ class YazakiSensors(FromState):
     @property
     def waste_flow(self) -> LiterPerSecond:
         return (
-            self.waste_mix.flow
+            self.waste_flow_sensor.flow
             if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_YAZAKI_POSITION
             else 0
         )
@@ -337,7 +407,7 @@ class YazakiSensors(FromState):
         self,
     ) -> LiterPerSecond:
         return (
-            self.cold_reservoir.exchange_flow
+            self.chilled_flow_sensor.flow
             if self.chiller_switch_valve.position
             == CHILLER_SWITCH_VALVE_YAZAKI_POSITION
             else 0
@@ -404,12 +474,11 @@ class YazakiSensors(FromState):
 class HeatExchangerSensors(FromState):
     spec: HeatExchanger
     rh33_heat_dump: RH33Sensors
+    heat_dump_flow_sensor: FlowSensors
 
-    flow: LiterPerSecond = sensor(
-        technical_name="FS-1009",
-        type=SensorType.FLOW,
-        from_port=HeatExchangerPort.A_OUT,
-    )
+    @property
+    def flow(self) -> LiterPerSecond:
+        return self.heat_dump_flow_sensor.flow
 
     @property
     def input_temperature(self) -> Celsius:
@@ -434,12 +503,14 @@ class HotReservoirSensors(FromState):
     temperature: Celsius = sensor(technical_name="TS-1043")
     rh33_hot_storage: RH33Sensors
     rh33_domestic_hot_water: RH33Sensors
-    hot_switch_valve: "HotSwitchSensors"
+    hot_storage_flow_sensor: FlowSensors
+    domestic_hot_water_flow_sensor: FlowSensors
+    hot_switch_valve: "ValveSensors"
 
     @property
     def exchange_flow(self) -> LiterPerSecond:
         return (
-            self.hot_switch_valve.flow
+            self.hot_storage_flow_sensor.flow
             if self.hot_switch_valve.position
             == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
             else 0
@@ -480,11 +551,9 @@ class HotReservoirSensors(FromState):
             * self.spec.specific_heat_capacity_exchange
         )
 
-    fill_flow: LiterPerSecond = sensor(
-        technical_name="FS-1010",
-        type=SensorType.FLOW,
-        from_port=BoilerPort.FILL_OUT,
-    )
+    @property
+    def fill_flow(self) -> LiterPerSecond:
+        return self.domestic_hot_water_flow_sensor.flow
 
     @property
     def DHW_output_temperature(self) -> Celsius:
@@ -533,10 +602,12 @@ class ColdReservoirSensors(FromState):
     temperature: Celsius = sensor(technical_name="TS-1025")
     rh33_chill: RH33Sensors
     rh33_cooling_demand: RH33Sensors
+    chilled_flow_sensor: FlowSensors
+    cooling_demand_flow_sensor: FlowSensors
 
-    fill_flow: LiterPerSecond = sensor(
-        technical_name="FS-1005", type=SensorType.FLOW, from_port=BoilerPort.FILL_OUT
-    )
+    @property
+    def fill_flow(self) -> LiterPerSecond:
+        return self.cooling_demand_flow_sensor.flow
 
     @property
     def fill_input_temperature(self) -> Celsius:
@@ -558,11 +629,9 @@ class ColdReservoirSensors(FromState):
             * self.spec.specific_heat_capacity_fill
         )
 
-    exchange_flow: LiterPerSecond = sensor(
-        technical_name="FS-1006",
-        type=SensorType.FLOW,
-        from_port=BoilerPort.HEAT_EXCHANGE_IN,
-    )
+    @property
+    def exchange_flow(self) -> LiterPerSecond:
+        return self.chilled_flow_sensor.flow
 
     @property
     def exchange_input_temperature(self) -> Celsius:
@@ -601,33 +670,20 @@ class ChillerSwitchSensors(ValveSensors):
 
 
 @sensors()
-class HotSwitchSensors(ValveSensors):
-    flow: LiterPerSecond = sensor(
-        technical_name="FS-1011", type=SensorType.FLOW, from_port=ValvePort.AB
-    )
-
-
-@sensors()
-class WasteMixSensors:
-    flow: LiterPerSecond = sensor(
-        technical_name="FS-1012", type=SensorType.FLOW, from_port=MixPort.AB
-    )
-
-
-@sensors()
 class ChillerSensors(FromState):
     spec: Chiller
     rh33_chill: RH33Sensors
     rh33_waste: RH33Sensors
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
-    waste_mix: "WasteMixSensors"
     waste_switch_valve: "ValveSensors"
+    waste_flow_sensor: FlowSensors
+    chilled_flow_sensor: FlowSensors
 
     @property
     def waste_flow(self) -> LiterPerSecond:
         return (
-            self.waste_mix.flow
+            self.waste_flow_sensor.flow
             if self.waste_switch_valve.position == WASTE_SWITCH_VALVE_CHILLER_POSITION
             else 0
         )
@@ -669,7 +725,7 @@ class ChillerSensors(FromState):
         self,
     ) -> LiterPerSecond:
         return (
-            self.cold_reservoir.exchange_flow
+            self.chilled_flow_sensor.flow
             if self.chiller_switch_valve.position
             == CHILLER_SWITCH_VALVE_CHILLER_POSITION
             else 0
@@ -866,7 +922,9 @@ class ContainersSensors(FromState):
 
 def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
     return power_hub_sensor(
-        lambda power_hub, state: schedule(power_hub.schedules).at(state.time)
+        None,
+        None,
+        lambda power_hub, state: schedule(power_hub.schedules).at(state.time),
     )
 
 
@@ -887,7 +945,9 @@ class WeatherSensors(WithoutAppliance):
 
 @sensors(from_appliance=False)
 class PressureSensors(WithoutAppliance):
-    pressure: Bar = sensor(type=SensorType.PRESSURE, resolver=const_resolver(2))
+    pressure: Bar = sensor(
+        type=SensorType.PRESSURE, resolver=const_resolver(DEFAULT_PRESSURE)
+    )
 
 
 @dataclass
@@ -896,7 +956,7 @@ class PowerHubSensors(NetworkSensors):
     heat_pipes_valve: ValveSensors
     heat_pipes_power_hub_pump: SwitchPumpSensors
     heat_pipes_supply_box_pump: SwitchPumpSensors
-    hot_switch_valve: HotSwitchSensors
+    hot_switch_valve: ValveSensors
     hot_reservoir: HotReservoirSensors
     pcm: PcmSensors
     yazaki_hot_bypass_valve: ValveSensors
@@ -913,7 +973,6 @@ class PowerHubSensors(NetworkSensors):
     pcm_to_yazaki_pump: SwitchPumpSensors
     chilled_loop_pump: SwitchPumpSensors
     waste_pump: SwitchPumpSensors
-    waste_mix: WasteMixSensors
     hot_water_pump: SwitchPumpSensors
     outboard_pump: SwitchPumpSensors
     cooling_demand_pump: SwitchPumpSensors
@@ -930,46 +989,104 @@ class PowerHubSensors(NetworkSensors):
     pipes_pressure_sensor: PressureSensors
     pcm_yazaki_pressure_sensor: PressureSensors
     time: datetime
+    heat_pipes_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN), "FS-1001"
+    )
+    pcm_discharge_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN), "FS-1003"
+    )
+    hot_storage_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.hot_switch_valve, ValvePort.AB), "FS-1011"
+    )
+    yazaki_hot_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_IN), "FS-1004"
+    )
+    waste_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.waste_mix, MixPort.AB), "FS-1012"
+    )
+    chilled_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.chill_mix, MixPort.AB), "FS-1006"
+    )
+    cooling_demand_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.cold_reservoir, BoilerPort.FILL_OUT), "FS-1005"
+    )
+    heat_dump_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.outboard_exchange, HeatExchangerPort.A_OUT),
+        "FS-1009",
+    )
+    domestic_hot_water_flow_sensor: FlowSensors = flow_sensor(
+        (lambda power_hub: power_hub.hot_reservoir, BoilerPort.FILL_OUT), "FS-1010"
+    )
 
     rh33_pcm_discharge: RH33Sensors = rh33(
         (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_OUT),
         (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN),
+        "TS-1031",
+        "TS-1030",
+        "EM-A",
     )
     rh33_preheat: RH33Sensors = rh33(
         (lambda power_hub: power_hub.preheat_reservoir, BoilerPort.HEAT_EXCHANGE_IN),
         (lambda power_hub: power_hub.preheat_reservoir, BoilerPort.HEAT_EXCHANGE_OUT),
+        "TS-1032",
+        "TS-1034",
+        "EM-B",
     )
     rh33_domestic_hot_water: RH33Sensors = rh33(
         (lambda power_hub: power_hub.hot_reservoir, BoilerPort.FILL_OUT),
         (lambda power_hub: power_hub.preheat_reservoir, BoilerPort.FILL_IN),
+        "TS-1040",
+        "TS-1042",
+        "EM-C",
     )
     rh33_heat_pipes: RH33Sensors = rh33(
         (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.OUT),
         (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN),
+        "TS-1002",
+        "TS-1001",
+        "EM-E",
     )
     rh33_hot_storage: RH33Sensors = rh33(
         (lambda power_hub: power_hub.hot_switch_valve, ValvePort.AB),
         (lambda power_hub: power_hub.hot_mix, MixPort.AB),
+        "TS-1005",
+        "TS-1006",
+        "EM-F",
     )
     rh33_yazaki_hot: RH33Sensors = rh33(
         (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_IN),
         (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_OUT),
+        "TS-1010",
+        "TS-1011",
+        "EM-G",
     )
     rh33_waste: RH33Sensors = rh33(
         (lambda power_hub: power_hub.waste_mix, MixPort.AB),
         (lambda power_hub: power_hub.waste_switch_valve, ValvePort.AB),
+        "TS-1014",
+        "TS-1015",
+        "EM-H",
     )
     rh33_chill: RH33Sensors = rh33(
         (lambda power_hub: power_hub.chiller_switch_valve, ValvePort.AB),
         (lambda power_hub: power_hub.chill_mix, MixPort.AB),
+        "TS-1023",
+        "TS-1024",
+        "EM-I",
     )
     rh33_heat_dump: RH33Sensors = rh33(
         (lambda power_hub: power_hub.outboard_exchange, HeatExchangerPort.A_IN),
         (lambda power_hub: power_hub.outboard_exchange, HeatExchangerPort.A_OUT),
+        "TS-1035",
+        "TS-1036",
+        "EM-J",
     )
     rh33_cooling_demand: RH33Sensors = rh33(
         (lambda power_hub: power_hub.cold_reservoir, BoilerPort.FILL_IN),
         (lambda power_hub: power_hub.cold_reservoir, BoilerPort.FILL_OUT),
+        "TS-1026",
+        "TS-1027",
+        "EM-K",
     )
 
 

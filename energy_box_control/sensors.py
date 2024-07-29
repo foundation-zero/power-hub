@@ -18,7 +18,6 @@ from inspect import getmembers, isclass
 from typing import Any, Callable, Deque, Protocol, cast, Self, get_type_hints
 import functools
 from collections import deque
-
 from energy_box_control.linearize import linearize
 from energy_box_control.network import AnyAppliance, NetworkState, Network
 
@@ -189,6 +188,7 @@ class SensorType(Enum):
     HUMIDITY = "humidity"
     CO2 = "co2"
     ALARM = "alarm"
+    INFO = "info"
     REPLACE_FILTER_ALARM = "replace_filter_alarm"
     PRESSURE = "pressure"
 
