@@ -47,7 +47,6 @@ def source():
 def test_pcm_values_checks(sensors, source):
     pcm_fake_value = 1000
     sensors.pcm.temperature = pcm_fake_value
-    source = "test"
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"pcm_temperature_check is outside valid bounds with value: {pcm_fake_value}",
@@ -61,7 +60,6 @@ def test_pcm_values_checks(sensors, source):
 def test_equal_bounds(sensors, source):
     sensors.hot_switch_valve.flow = 0
     sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
-    source = "test"
     assert not run_monitor(sensors, source)
 
 
@@ -100,7 +98,7 @@ def test_hot_circuit_flow_check(sensors: PowerHubSensors, source, out_of_bounds_
 def test_hot_circuit_pressure_check(
     sensors: PowerHubSensors, source, out_of_bounds_value
 ):
-    sensors.hot_switch_valve.pressure = out_of_bounds_value
+    sensors.pipes_pressure_sensor.pressure = out_of_bounds_value
     sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
@@ -130,12 +128,11 @@ def get_attrs(sensor, sensor_type):
     return attrs
 
 
-def test_battery_alarm_checks():
+def test_battery_alarm_checks(source):
     for attr in get_attrs(ElectricBatterySensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.electric_battery, attr, 2)
-        source = "test"
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr} is raising an alarm",
@@ -146,12 +143,11 @@ def test_battery_alarm_checks():
         ]
 
 
-def test_battery_warning_checks():
+def test_battery_warning_checks(source):
     for attr in get_attrs(ElectricBatterySensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.electric_battery, attr, 1)
-        source = "test"
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr}_warning is raising a warning",
@@ -162,12 +158,11 @@ def test_battery_warning_checks():
         ]
 
 
-def test_fancoil_alarm_checks():
+def test_fancoil_alarm_checks(source):
     for attr in get_attrs(ContainersSensors, SensorType.ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.containers, attr, 1)
-        source = "test"
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr} is raising an alarm",
@@ -178,12 +173,11 @@ def test_fancoil_alarm_checks():
         ]
 
 
-def test_fancoil_filter_checks():
+def test_fancoil_filter_checks(source):
     for attr in get_attrs(ContainersSensors, SensorType.REPLACE_FILTER_ALARM):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.containers, attr, 1)
-        source = "test"
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{attr} gone bad",
@@ -194,12 +188,11 @@ def test_fancoil_filter_checks():
         ]
 
 
-def test_weather_station_alarm_checks():
+def test_weather_station_alarm_checks(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     alarm_value = 50
     sensors.weather.alarm = alarm_value
-    source = "test"
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"weather_station is raising an alarm with code {alarm_value}",
@@ -217,7 +210,7 @@ def test_weather_station_alarm_checks():
         (ValveAlarm.GEAR_TRAIN_DISENGAGED, "gear_train"),
     ],
 )
-def test_valve_alarm_checks(alarm, dedup_key):
+def test_valve_alarm_checks(alarm, dedup_key, source):
     for valve_name in [
         field.name
         for field in fields(PowerHubSensors)
@@ -226,7 +219,6 @@ def test_valve_alarm_checks(alarm, dedup_key):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(getattr(sensors, valve_name), "service_info", alarm.value)
-        source = "test"
         assert run_monitor(sensors, source) == [
             NotificationEvent(
                 message=f"{valve_name}_{dedup_key}_alarm is raised",
@@ -237,7 +229,7 @@ def test_valve_alarm_checks(alarm, dedup_key):
         ]
 
 
-def test_pump_alarm_checks():
+def test_pump_alarm_checks(source):
     pump_names = [
         appliance_name
         for appliance_name, type in get_type_hints(PowerHubSensors).items()
@@ -250,7 +242,6 @@ def test_pump_alarm_checks():
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
             alarm_code = 50
             setattr(getattr(sensors, pump_name), attr, alarm_code)
-            source = "test"
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
                     message=f"{pump_name}_{attr} is raising an alarm with code {alarm_code}",
@@ -315,7 +306,7 @@ def test_yazaki_hot_flow_check(sensors, yazaki_test, out_of_bounds_value):
 
 
 def test_yazaki_hot_pressure_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.yazaki.hot_pressure = out_of_bounds_value
+    sensors.pcm_yazaki_pressure_sensor.pressure = out_of_bounds_value
     yazaki_test("yazaki_hot_pressure_check")
 
 
@@ -334,7 +325,7 @@ def test_yazaki_waste_flow_check(sensors, yazaki_test, out_of_bounds_value):
 
 
 def test_yazaki_waste_pressure_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.waste_switch_valve.pressure = out_of_bounds_value
+    sensors.waste_pressure_sensor.pressure = out_of_bounds_value
     sensors.waste_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
     yazaki_test("yazaki_waste_pressure_check")
 
@@ -368,12 +359,11 @@ def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value
         ("black_water_tank", 1),
     ],
 )
-def test_tank_checks(water_tank: str, invalid_tank_fill: int):
+def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     setattr(getattr(sensors, water_tank), "fill_ratio", invalid_tank_fill)
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
-    source = "test"
     assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
         message=f"{water_tank}_fill_ratio is outside valid bounds with value: {invalid_tank_fill}",
         source=source,
@@ -390,13 +380,12 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int):
         (SensorType.TEMPERATURE, 100),
     ],
 )
-def test_container_sensor_values(sensor_type, alerting_value):
+def test_container_sensor_values(sensor_type, alerting_value, source):
     for attr in get_attrs(ContainersSensors, sensor_type):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
         setattr(sensors.containers, attr, alerting_value)
         monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
-        source = "test"
         assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
             message=f"{attr} is outside valid bounds with value: {alerting_value}",
             source=source,

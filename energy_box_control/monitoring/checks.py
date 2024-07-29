@@ -177,7 +177,7 @@ sensor_checks = [
     ),
     valid_value(
         "hot_circuit_pressure_check",
-        lambda sensors: sensors.pcm_yazaki_pressure_sensor.pressure,
+        lambda sensors: sensors.pipes_pressure_sensor.pressure,
         HOT_CIRCUIT_PRESSURE_BOUNDS,
     ),
 ]
