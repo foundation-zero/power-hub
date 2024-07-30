@@ -28,6 +28,17 @@ def test_sensors_to_json_roundtrips(power_hub, sensors):
     assert sensors == roundtripped
 
 
+def test_sensors_to_json_roundtrips_when_stripped(power_hub, sensors):
+    sensor_json = sensors_to_json(sensors)
+
+    json_dict = json.loads(sensor_json)
+    without_empty_dicts = {k: v for k, v in json_dict.items() if v}
+
+    roundtripped = power_hub.sensors_from_json(json.dumps(without_empty_dicts))
+
+    assert sensors == roundtripped
+
+
 def test_enriched_sensors_to_json_roundtrips(power_hub, sensors):
     sensor_json = sensors_to_json(sensors, True)
     assert "power" in json.loads(sensor_json)["heat_pipes"]
