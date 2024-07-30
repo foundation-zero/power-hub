@@ -11,6 +11,7 @@ variable "send_notifications" {
 }
 
 resource "helm_release" "power_hub_simulation" {
+  count  = local.simulation_count
   name   = "power-hub-simulation"
   chart  = "./charts/python-app"
   values = [file("power_hub_simulation.values.yaml")]
@@ -18,11 +19,6 @@ resource "helm_release" "power_hub_simulation" {
     google_container_cluster.primary,
     helm_release.telegraf
   ]
-
-  set {
-    name  = "replicaCount"
-    value = local.simulation_replica_count
-  }
 
   set {
     name  = "image.repository"

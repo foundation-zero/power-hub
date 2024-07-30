@@ -198,9 +198,7 @@ async def run(steps: Optional[int] = None):
     notifier = Notifier(
         [PagerDutyNotificationChannel(CONFIG.pagerduty_control_app_key)]
     )
-    monitor = Monitor(
-        sensor_value_checks=all_checks, url_health_checks=[]
-    )
+    monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     control_state = initial_control_state()

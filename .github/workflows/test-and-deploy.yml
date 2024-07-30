@@ -1,6 +1,8 @@
 name: Test and deploy
 on:
   push:
+  release:
+    types: [released]
 
 jobs:
   test:
@@ -42,14 +44,14 @@ jobs:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
           OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
-          PAGERDUTY_SIMULATION_KEY: "."
+          PAGERDUTY_SIMULATION_KEY: "-"
       
       - name: Clear docker volumes
         run: docker-compose down -v
 
       - run: docker-compose up -d
         env:
-          PAGERDUTY_SIMULATION_KEY: "."
+          PAGERDUTY_SIMULATION_KEY: "-"
   
       - name: Simulation integration tests
         run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py
@@ -90,12 +92,12 @@ jobs:
           TF_VAR_python_app_image_tag: ${{github.sha}}
           TF_VAR_send_notifications: false
 
-  deploy:
+  deploy-staging:
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     concurrency:
-      group: ${{ github.workflow }}-deploy
+      group: ${{ github.workflow }}-deploy-staging
     
     env:
       PROJECT_ID: power-hub-423312
@@ -147,16 +149,16 @@ jobs:
           docker push
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
-  deploy-infra:
-    if: github.ref == 'refs/heads/main'
+  deploy-staging-infra:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     concurrency:
-      group: ${{ github.workflow }}-deploy
+      group: ${{ github.workflow }}-deploy-staging
 
     permissions:
       contents: 'read'
       id-token: 'write'
 
-    needs: deploy
+    needs: deploy-staging
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
@@ -191,4 +193,112 @@ jobs:
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.PAGERDUTY_GKE_KEY}}
           TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_send_notifications: true
+
+  deploy-prod:
+    timeout-minutes: 10
+    if: github.event_name == 'release'
+    needs: test
+    concurrency:
+      group: ${{ github.workflow }}-deploy-prod
+    
+    env:
+      PROJECT_ID: power-hub-prod
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.PROD_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.PROD_SERVICE_ACCOUNT}}
+
+
+      - id: 'login-art-registry'
+        name: 'Login to Artifact Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{env.GAR}}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: 'Docker build Python app'
+        run: >
+          docker build
+          --platform linux/amd64
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${GITHUB_REF}"
+          . -f python_script.Dockerfile
+
+      - name: 'Docker push Python app release'
+        run: >
+          docker push
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${GITHUB_REF}"
+
+  deploy-prod-infra:
+    timeout-minutes: 10
+    if: github.event_name == 'release'
+    needs: deploy-prod
+    concurrency:
+      group: ${{ github.workflow }}-deploy-prod
+    
+    env:
+      PROJECT_ID: power-hub-prod
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.7.1
+      
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.PROD_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.PROD_SERVICE_ACCOUNT}}
+
+      - run: tofu init -backend-config=prod-backend.conf
+        working-directory: ./infra
+
+      - run: tofu apply --auto-approve
+        working-directory: ./infra
+        env:
+          TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
+          TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+          TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
+          TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
+          TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
+          TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
+          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PAGERDUTY_MQTT_CHECKER_PROD_KEY}}
+          TF_VAR_pagerduty_gke_key: ${{secrets.PAGERDUTY_GKE_PROD_KEY}}
+          TF_VAR_python_app_image_tag: "RELEASE-${GITHUB_REF}"
+          TF_VAR_env: "prod"
+          TF_VAR_project_id: ${{env.PROJECT_ID}}
+          TF_VAR_influxdb_bucket: "power_hub"
           TF_VAR_send_notifications: true
