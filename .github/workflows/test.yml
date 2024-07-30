@@ -69,8 +69,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
-          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{vars.SERVICE_ACCOUNT}}
+          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
       - run: tofu init
         working-directory: ./infra
@@ -118,8 +118,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
-          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{vars.SERVICE_ACCOUNT}}
+          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
       - id: 'login-art-registry'
         name: 'Login to Artifact Registry'
@@ -172,8 +172,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
-          workload_identity_provider: ${{vars.WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{vars.SERVICE_ACCOUNT}}
+          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
       
       - run: tofu init
         working-directory: ./infra
