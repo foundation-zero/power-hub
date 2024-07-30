@@ -74,7 +74,7 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/heat_pipes/power/mean",
         "/power_hub/appliance_sensors/chiller/chill_power/mean",
         "/power_hub/appliance_sensors/yazaki/chill_power/mean",
-        "/power_hub/appliance_sensors/cold_reservoir/fill_power/mean",
+        "/power_hub/appliance_sensors/cold_reservoir/cooling_supply/mean",
         "/power_hub/appliance_sensors/water_maker/out_flow/mean",
         "/power_hub/appliance_sensors/water_treatment/out_flow/mean",
         "/power_hub/appliance_sensors/fresh_water_tank/water_demand_flow/mean",
