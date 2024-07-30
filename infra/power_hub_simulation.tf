@@ -20,24 +20,29 @@ resource "helm_release" "power_hub_simulation" {
   ]
 
   set {
+    name  = "replicaCount"
+    value = local.simulation_replica_count
+  }
+
+  set {
     name  = "image.repository"
     value = "${local.power_hub_repo}/python-app"
   }
 
   set {
-    name = "image.tag"
+    name  = "image.tag"
     value = var.python_app_image_tag
   }
 
   set {
-    name = "container.env.PAGERDUTY_SIMULATION_KEY"
+    name  = "container.env.PAGERDUTY_SIMULATION_KEY"
     value = var.pagerduty_simulation_key
-  } 
+  }
 
   set {
-    name = "container.env.SEND_NOTIFICATIONS"
+    name  = "container.env.SEND_NOTIFICATIONS"
     value = var.send_notifications
-  } 
+  }
 
   set {
     name  = "container.envFromSecrets.MQTT_PASSWORD.secretName"

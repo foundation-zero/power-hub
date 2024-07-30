@@ -54,7 +54,7 @@ resource "google_project_iam_member" "default" {
 }
 
 resource "google_storage_bucket" "default" {
-  name          = "power-hub-bucket-tfstate"
+  name          = "${var.name}-${var.env}-bucket-tfstate"
   force_destroy = true
   location      = var.region
   storage_class = "STANDARD"
