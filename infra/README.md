@@ -14,7 +14,9 @@ cd bootstrap
 tofu apply -var-file="../terraform.tfvars"
 ```
 
-Create gke node pool:
+## Create infra 
+
+Create gke node pool (from `infra` directory):
 
 `tofu apply --target=google_container_node_pool.primary_nodes`
 
@@ -23,11 +25,13 @@ We need to apply the cert manager before we can continue, because otherwise the 
 `tofu apply --target=helm_release.cert_manager`
 `tofu apply --target=google_artifact_registry_repository.power_hub`
 
+Add the latest docker image to the repo (from `energy-box-control` dir)
+
 ```
 docker build \                                                                      
-  --tag "europe-west1-docker.pkg.dev/power-hub-423312/power-hub/python-app:latest" --platform linux/amd64 \
+  --tag "europe-west1-docker.pkg.dev/{project_id}/power-hub/python-app:latest" --platform linux/amd64 \
   . -f python_script.Dockerfile
-docker push europe-west1-docker.pkg.dev/power-hub-423312/power-hub/python-app:latest
+docker push europe-west1-docker.pkg.dev/{project_id}/power-hub/python-app:latest
 ```
 
 `tofu apply`
