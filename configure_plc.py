@@ -24,7 +24,7 @@ HOST_NAME = "power-hub-plc"
 SSH_USER = "admin"
 REMOTE_HOME_DIR = f"/home/{SSH_USER}"
 PASSWORD_ENV_NAME = "POWER_HUB_PLC_PASSWORD"
-PAGERDUTY_KEY_ENV_NAME = "PAGERDUTY_SIMULATION_KEY"
+PAGERDUTY_KEY_ENV_NAME = "PAGERDUTY_CONTROL_APP_KEY"
 CLOUD_VERNEMQ_ENV_NAME = ""
 MQTT_PASSWORD_ENV_NAME = "PLC_MQTT_PASSWORD"
 REMOTE_DOCKER_COMPOSE_DIR = os.path.join(REMOTE_HOME_DIR, "plc-docker-compose")
@@ -212,7 +212,7 @@ def create_env_file():
         envs = [
             ("MQTT_PASSWORD", os.getenv(MQTT_PASSWORD_ENV_NAME)),
             ("CLOUD_VERNEMQ_URL", os.getenv(CLOUD_VERNEMQ_ENV_NAME)),
-            ("PAGERDUTY_SIMULATION_KEY", os.getenv(PAGERDUTY_KEY_ENV_NAME)),
+            ("PAGERDUTY_CONTROL_APP_KEY", os.getenv(PAGERDUTY_KEY_ENV_NAME)),
             ("MQTT_HOST", "vernemq"),
         ]
         remote_env_path = os.path.join(REMOTE_DOCKER_COMPOSE_DIR, ".env")
