@@ -7,7 +7,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import LiterPerSecond
+from energy_box_control.units import Celsius, LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -22,6 +22,7 @@ class WaterDemandPort(Port):
 @dataclass(frozen=True, eq=True)
 class WaterDemand(ThermalAppliance[WaterDemandState, None, WaterDemandPort]):
     water_demand_flow_schedule: Schedule[LiterPerSecond]
+    freshwater_temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
@@ -33,6 +34,7 @@ class WaterDemand(ThermalAppliance[WaterDemandState, None, WaterDemandPort]):
 
         return WaterDemandState(), {
             WaterDemandPort.OUT: ThermalState(
-                self.water_demand_flow_schedule.at(simulation_time), float("nan")
+                self.water_demand_flow_schedule.at(simulation_time),
+                self.freshwater_temperature_schedule.at(simulation_time),
             )
         }

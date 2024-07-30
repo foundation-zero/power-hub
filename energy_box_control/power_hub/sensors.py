@@ -28,11 +28,13 @@ from energy_box_control.network import AnyAppliance, NetworkState
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    FRESHWATER_TEMPERATURE,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     PCM_ZERO_TEMPERATURE,
+    DEFAULT_PRESSURE,
 )
 
 if TYPE_CHECKING:
@@ -46,6 +48,7 @@ from energy_box_control.units import (
     Joule,
     Liter,
     LiterPerSecond,
+    Percentage,
     Volt,
     Watt,
     WattPerMeterSquared,
@@ -64,8 +67,6 @@ from energy_box_control.sensors import (
     sensors,
     NetworkSensors,
 )
-
-DEFAULT_PRESSURE = 2
 
 
 def const_resolver(value: Any) -> "Callable[[PowerHub, NetworkState[PowerHub]], Any]":
@@ -88,6 +89,9 @@ FlowSensorServiceInfo = int
 @sensors(from_appliance=False, eq=False)
 class FlowSensors(WithoutAppliance):
     flow: LiterPerSecond
+    temperature: Celsius
+    glycol_concentration: Percentage
+    total_volume: Liter
     service_info: FlowSensorServiceInfo
 
     def __eq__(self, value: object) -> bool:
@@ -115,8 +119,17 @@ def flow_sensor(
                 appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
             ).flow,
         )
+        temperature: Celsius = power_hub_sensor(
+            None,
+            SensorType.TEMPERATURE,
+            lambda power_hub, state: state.connection(
+                appliance(power_hub), port, ThermalState(float("nan"), float("nan"))
+            ).temperature,
+        )
+        glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
+        total_volume: Liter = sensor(resolver=const_resolver(0))
         service_info: FlowSensorServiceInfo = sensor(
-            technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
+            type=SensorType.INFO, resolver=const_resolver(0)
         )
 
     return Flow
@@ -130,6 +143,13 @@ def flow_sensor_not_simulated(technical_name: Optional[str]) -> Any:
             type=SensorType.FLOW,
             resolver=const_resolver(0),
         )
+        temperature: Celsius = sensor(
+            technical_name=None,
+            type=SensorType.TEMPERATURE,
+            resolver=const_resolver(FRESHWATER_TEMPERATURE),
+        )
+        glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
+        total_volume: Liter = sensor(resolver=const_resolver(0))
         service_info: FlowSensorServiceInfo = sensor(
             technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
         )

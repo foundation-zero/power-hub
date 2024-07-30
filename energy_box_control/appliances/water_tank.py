@@ -5,8 +5,11 @@ from energy_box_control.appliances.base import (
     ThermalAppliance,
     ThermalState,
 )
+
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import Liter
+
+DEFAULT_TEMPERATURE = 20
 
 
 @dataclass(frozen=True, eq=True)
@@ -62,6 +65,26 @@ class WaterTank(ThermalAppliance[WaterTankState, None, WaterTankPort]):
                 f"The water tank has a new fill ({new_fill}) that exceeds the capacity ({self.capacity}) or is lower than 0"
             )
 
+        tank_temperature = (
+            (
+                (
+                    inputs[WaterTankPort.IN_0].temperature
+                    * inputs[WaterTankPort.IN_0].flow
+                    if WaterTankPort.IN_0 in inputs
+                    else (
+                        0
+                        + inputs[WaterTankPort.IN_1].temperature
+                        * inputs[WaterTankPort.IN_1].flow
+                        if WaterTankPort.IN_1 in inputs
+                        else 0
+                    )
+                )
+                / (inputs[WaterTankPort.IN_0].flow + inputs[WaterTankPort.IN_1].flow)
+            )
+            if not inputs
+            else DEFAULT_TEMPERATURE
+        )
+
         return WaterTankState(new_fill / self.capacity), {
-            WaterTankPort.OUT: ThermalState(0, float("nan"))
+            WaterTankPort.OUT: ThermalState(0, tank_temperature)
         }

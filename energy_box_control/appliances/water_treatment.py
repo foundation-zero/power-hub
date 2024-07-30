@@ -6,8 +6,9 @@ from energy_box_control.appliances.base import (
     ThermalAppliance,
     ThermalState,
 )
+from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import LiterPerSecond
+from energy_box_control.units import Celsius, LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -30,6 +31,7 @@ class WaterTreatment(
     ThermalAppliance[WaterTreatmentState, WaterTreatmentControl, WaterTreatmentPort]
 ):
     pump_flow: LiterPerSecond
+    freshwater_temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
@@ -43,9 +45,11 @@ class WaterTreatment(
 
         return WaterTreatmentState(on), {
             WaterTreatmentPort.IN: ThermalState(
-                self.pump_flow if on else 0, float("nan")
+                self.pump_flow if on else 0,
+                self.freshwater_temperature_schedule.at(simulation_time),
             ),
             WaterTreatmentPort.OUT: ThermalState(
-                self.pump_flow if on else 0, float("nan")
+                self.pump_flow if on else 0,
+                self.freshwater_temperature_schedule.at(simulation_time),
             ),
         }

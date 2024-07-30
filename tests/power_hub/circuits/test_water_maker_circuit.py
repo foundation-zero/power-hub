@@ -42,9 +42,9 @@ def test_water_maker_network():
         outboard_pump = SwitchPump(100, 0)
         water_maker = WaterMaker(0.5)
         water_tank = WaterTank(100)
-        water_demand = WaterDemand(ConstSchedule(10))
+        water_demand = WaterDemand(ConstSchedule(10), ConstSchedule(10))
         grey_water_supply = Source(0, ConstSchedule(1))
-        water_treatment = WaterTreatment(5)
+        water_treatment = WaterTreatment(5, ConstSchedule(10))
 
         def initial_state(self):
             return (

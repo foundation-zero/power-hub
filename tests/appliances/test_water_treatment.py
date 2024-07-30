@@ -9,6 +9,7 @@ from energy_box_control.appliances.water_treatment import (
     WaterTreatmentPort,
     WaterTreatmentState,
 )
+from energy_box_control.schedules import ConstSchedule
 from energy_box_control.time import ProcessTime
 
 
@@ -19,7 +20,7 @@ def simulation_time():
 
 def test_water_treatment(simulation_time):
     flow_in = 0.03
-    water_treatment = WaterTreatment(1)
+    water_treatment = WaterTreatment(1, ConstSchedule(10))
 
     _, output = water_treatment.simulate(
         {WaterTreatmentPort.IN: ThermalState(flow_in, float("nan"))},

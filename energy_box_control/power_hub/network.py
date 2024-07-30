@@ -188,9 +188,13 @@ class PowerHub(Network[PowerHubSensors]):
             phc.grey_water_tank,
             phc.black_water_tank,
             phc.technical_water_tank,
-            phc.water_demand(schedules.fresh_water_demand),
-            phc.water_demand(schedules.grey_water_supply),
-            phc.water_treatment,
+            phc.water_demand(
+                schedules.fresh_water_demand, schedules.fresh_water_temperature
+            ),
+            phc.water_demand(
+                schedules.grey_water_supply, schedules.fresh_water_temperature
+            ),
+            phc.water_treatment(schedules.fresh_water_temperature),
             phc.water_filter_bypass_valve,
             phc.containers(schedules.ambient_temperature),
             schedules,
