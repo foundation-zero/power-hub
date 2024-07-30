@@ -792,19 +792,19 @@ class PowerHub(Network[PowerHubSensors]):
         context = PowerHubSensors.context()
 
         for sensor in init_order:
+            sensor_values = sensors.get(sensor.name, {})
+
             appliance = getattr(self, sensor.name, None)
             if appliance:
                 context.with_appliance(
-                    sensors[sensor.name],
+                    sensor_values,
                     sensor.type,
                     getattr(context.subject, sensor.name),
                     appliance,
                 )
             else:
                 context.without_appliance(
-                    sensor.type,
-                    getattr(context.subject, sensor.name),
-                    **sensors[sensor.name]
+                    sensor.type, getattr(context.subject, sensor.name), **sensor_values
                 )
 
         return context.result(datetime.fromisoformat(sensors["time"]))
