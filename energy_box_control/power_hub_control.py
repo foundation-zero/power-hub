@@ -195,7 +195,9 @@ async def run(steps: Optional[int] = None):
 
     await run_listener(SURVIVAL_MODE_TOPIC, partial(queue_on_message, survival_queue))
 
-    notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
+    notifier = Notifier(
+        [PagerDutyNotificationChannel(CONFIG.pagerduty_control_app_key)]
+    )
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
