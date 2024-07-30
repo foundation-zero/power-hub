@@ -217,7 +217,7 @@ def test_cooling_demand_circuit_pressure_check(
 def test_heat_pipes_temperature_check(
     sensors: PowerHubSensors, source, out_of_bounds_value
 ):
-    sensors.rh33_heat_pipes.cold_temperature = out_of_bounds_value
+    sensors.rh33_heat_pipes.hot_temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"heat_pipes_temperature_check is outside valid bounds with value: {out_of_bounds_value}",

@@ -240,12 +240,12 @@ pcm_checks = [
 hot_circuit_checks = [
     valid_value(
         "hot_circuit_temperature_check",
-        lambda sensors: sensors.pcm.charge_input_temperature,
+        lambda sensors: sensors.rh33_hot_storage.hot_temperature,
         HOT_CIRCUIT_BOUNDS["temperature"],
     ),
     valid_value(
         "hot_circuit_flow_check",
-        lambda sensors: sensors.pcm.charge_flow,
+        lambda sensors: sensors.hot_storage_flow_sensor.flow,
         HOT_CIRCUIT_BOUNDS["flow"],
     ),
     valid_value(
@@ -258,12 +258,12 @@ hot_circuit_checks = [
 chilled_circuit_checks = [
     valid_value(
         "chilled_circuit_temperature_check",
-        lambda sensors: sensors.cold_reservoir.exchange_input_temperature,
+        lambda sensors: sensors.rh33_chill.cold_temperature,
         CHILLED_CIRCUIT_BOUNDS["temperature"],
     ),
     valid_value(
         "chilled_circuit_flow_check",
-        lambda sensors: sensors.cold_reservoir.exchange_flow,
+        lambda sensors: sensors.chilled_flow_sensor.flow,
         CHILLED_CIRCUIT_BOUNDS["flow"],
     ),
     valid_value(
@@ -276,12 +276,12 @@ chilled_circuit_checks = [
 cooling_demand_circuit_checks = [
     valid_value(
         "cooling_demand_circuit_temperature_check",
-        lambda sensors: sensors.cold_reservoir.fill_output_temperature,
+        lambda sensors: sensors.rh33_cooling_demand.cold_temperature,
         COOLING_DEMAND_CIRCUIT_BOUNDS["temperature"],
     ),
     valid_value(
         "cooling_demand_circuit_flow_check",
-        lambda sensors: sensors.cold_reservoir.fill_flow,
+        lambda sensors: sensors.cooling_demand_flow_sensor.flow,
         COOLING_DEMAND_CIRCUIT_BOUNDS["flow"],
     ),
     valid_value(
@@ -295,7 +295,7 @@ cooling_demand_circuit_checks = [
 heat_pipes_checks = [
     valid_value(
         "heat_pipes_temperature_check",
-        lambda sensors: sensors.heat_pipes.input_temperature,
+        lambda sensors: sensors.rh33_heat_pipes.hot_temperature,
         HEAT_PIPES_BOUNDS["temperature"],
     ),
     valid_value(
