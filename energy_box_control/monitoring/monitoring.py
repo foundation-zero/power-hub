@@ -55,8 +55,8 @@ class Notifier:
 class Monitor:
     def __init__(
         self,
-        sensor_value_checks: list[SensorValueCheck] = [],
-        url_health_checks: list[UrlHealthCheck] = [],
+        sensor_value_checks: list[SensorValueCheck],
+        url_health_checks: list[UrlHealthCheck],
     ):
         self._url_health_checks = url_health_checks
         self._sensor_value_checks = sensor_value_checks

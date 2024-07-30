@@ -14,6 +14,8 @@ from energy_box_control.control.state_machines import (
     State,
     StateMachine,
 )
+from energy_box_control.monitoring.checks import yazaki_bound_checks
+from energy_box_control.monitoring.monitoring import Monitor
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
@@ -531,6 +533,15 @@ def chill_control(
         .value(SwitchPumpControl(True))
     )
 
+    run_yazaki_pumps = (
+        power_hub.control(power_hub.pcm_to_yazaki_pump)
+        .value(SwitchPumpControl(True))
+        .control(power_hub.yazaki)
+        .value(YazakiControl(False))
+        .control(power_hub.chiller)
+        .value(ChillerControl(False))
+        .combine(run_waste_chill)
+    )
     run_yazaki = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
         .value(SwitchPumpControl(True))
@@ -569,7 +580,15 @@ def chill_control(
                 sensors.yazaki.hot_input_temperature,
             )
         )
-        running = run_yazaki
+        yazaki_monitor = Monitor(
+            sensor_value_checks=yazaki_bound_checks, url_health_checks=[]
+        )
+        if not yazaki_monitor.run_sensor_value_checks(
+            sensors, "control", run_yazaki.build(), power_hub
+        ):
+            running = run_yazaki
+        else:
+            running = run_yazaki_pumps
 
     elif chill_control_mode == ChillControlMode.PREPARE_CHILL_CHILLER:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
@@ -627,10 +646,10 @@ def chill_control(
 
 
 should_cool = Fn.sensors(
-    lambda sensors: sensors.waste_switch_valve.input_temperature
+    lambda sensors: sensors.outboard_exchange.output_temperature
 ) > Fn.state(lambda state: state.setpoints.cooling_in_max_temperature)
 stop_cool = Fn.sensors(
-    lambda sensors: sensors.waste_switch_valve.input_temperature
+    lambda sensors: sensors.outboard_exchange.output_temperature
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
 
 water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
@@ -676,7 +695,7 @@ def waste_control(
 
 
 should_preheat = Fn.pred(
-    lambda control_state, sensors: sensors.preheat_switch_valve.input_temperature
+    lambda control_state, sensors: sensors.rh33_waste.hot_temperature
     + sensors.preheat_reservoir.temperature
     > control_state.setpoints.minimum_preheat_offset
 )

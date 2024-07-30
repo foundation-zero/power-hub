@@ -5,7 +5,9 @@ from pytest import approx, fixture, mark
 from energy_box_control.appliances import (
     HeatPipesPort,
 )
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.boiler import BoilerPort
+from energy_box_control.appliances.heat_exchanger import HeatExchangerPort
 from energy_box_control.appliances.water_maker import WaterMakerState
 from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
@@ -108,7 +110,7 @@ def test_derived_sensors(power_hub_const, min_max_temperature):
             abs=1e-4,
         )
 
-        assert sensors.yazaki.cooling_input_temperature == approx(
+        assert sensors.yazaki.waste_input_temperature == approx(
             state.connection(power_hub_const.yazaki, YazakiPort.COOLING_IN).temperature,
             abs=1e-4,
         )
@@ -334,7 +336,7 @@ def test_water_filter_stop(
 
 
 @mark.parametrize(
-    "cooling_in_temperature, water_maker_on, outboard_pump_on",
+    "heat_dump_out_temperature, water_maker_on, outboard_pump_on",
     [(10, True, True), (50, True, True), (50, False, True), (10, False, False)],
 )
 def test_waste_pump_water_maker_on(
@@ -343,7 +345,7 @@ def test_waste_pump_water_maker_on(
     control_state,
     control_values,
     sensors,
-    cooling_in_temperature,
+    heat_dump_out_temperature,
     water_maker_on,
     outboard_pump_on,
 ):
@@ -352,11 +354,16 @@ def test_waste_pump_water_maker_on(
         scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
-    state = scheduled_power_hub.simulate(state, control_values)
+    state = (
+        scheduled_power_hub.simulate(state, control_values)
+        .replace_signal(
+            scheduled_power_hub.outboard_exchange,
+            HeatExchangerPort.A_OUT,
+            ThermalState(0, heat_dump_out_temperature),
+        )
+        .replace_state(scheduled_power_hub.water_maker, WaterMakerState(water_maker_on))
+    )
     sensors = scheduled_power_hub.sensors_from_state(state)
-
-    sensors.waste_switch_valve.input_temperature = cooling_in_temperature
-    sensors.water_maker.on = water_maker_on
 
     control_state, control_values = control_power_hub(
         scheduled_power_hub, control_state, sensors, state.time.timestamp
