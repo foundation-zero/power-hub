@@ -18,11 +18,6 @@ class ThermalState:
 
 
 @dataclass(frozen=True, eq=True)
-class WaterState:
-    flow: LiterPerSecond
-
-
-@dataclass(frozen=True, eq=True)
 class ApplianceState:
     pass
 
@@ -89,21 +84,6 @@ class ThermalAppliance[
         TPort,
         dict[TPort, ThermalState],
         dict[TPort, ThermalState],
-    ],
-    ABC,
-):
-    pass
-
-
-class WaterAppliance[
-    TState: ApplianceState, TControl: ApplianceControl | None, TPort: "Port"
-](
-    Appliance[
-        TState,
-        TControl,
-        TPort,
-        dict[TPort, WaterState],
-        dict[TPort, WaterState],
     ],
     ABC,
 ):

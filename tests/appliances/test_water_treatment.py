@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from pytest import fixture
 
-from energy_box_control.appliances.base import WaterState
+
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
     WaterTreatmentControl,
@@ -21,7 +22,7 @@ def test_water_treatment(simulation_time):
     water_treatment = WaterTreatment(1)
 
     _, output = water_treatment.simulate(
-        {WaterTreatmentPort.IN: WaterState(flow_in)},
+        {WaterTreatmentPort.IN: ThermalState(flow_in, float("nan"))},
         WaterTreatmentState(on=True),
         WaterTreatmentControl(on=True),
         simulation_time,

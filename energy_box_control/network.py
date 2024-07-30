@@ -652,7 +652,10 @@ class Network[Sensors](ABC):
             min_temperature,
             max_temperature,
         ) = min_max_temperature
-        if not min_temperature < signal.temperature < max_temperature:
+        if (
+            signal.temperature == signal.temperature
+            and not min_temperature < signal.temperature < max_temperature
+        ):
             raise Exception(
                 f"{signal} is not within {min_temperature} and {max_temperature}, at appliance {appliance_name} and port {port.value}"
             )

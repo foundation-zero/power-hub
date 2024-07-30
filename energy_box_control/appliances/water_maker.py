@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     ApplianceControl,
-    WaterAppliance,
     ApplianceState,
-    WaterState,
     Port,
+    ThermalAppliance,
+    ThermalState,
 )
 from energy_box_control.time import ProcessTime
 
@@ -26,21 +26,22 @@ class WaterMakerPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterMaker(WaterAppliance[WaterMakerState, WaterMakerControl, WaterMakerPort]):
+class WaterMaker(ThermalAppliance[WaterMakerState, WaterMakerControl, WaterMakerPort]):
     efficiency: float
 
     def simulate(
         self,
-        inputs: dict[WaterMakerPort, WaterState],
+        inputs: dict[WaterMakerPort, ThermalState],
         previous_state: WaterMakerState,
         control: WaterMakerControl,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterMakerState, dict[WaterMakerPort, WaterState]]:
+    ) -> tuple[WaterMakerState, dict[WaterMakerPort, ThermalState]]:
 
         on = control.on if control else previous_state.on
 
         return WaterMakerState(on), {
-            WaterMakerPort.DESALINATED_OUT: WaterState(
-                inputs[WaterMakerPort.IN].flow * self.efficiency if on else 0
+            WaterMakerPort.DESALINATED_OUT: ThermalState(
+                inputs[WaterMakerPort.IN].flow * self.efficiency if on else 0,
+                inputs[WaterMakerPort.IN].temperature,
             )
         }

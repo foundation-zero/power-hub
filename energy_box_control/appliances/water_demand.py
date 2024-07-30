@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    WaterAppliance,
+    ThermalAppliance,
     ApplianceState,
-    WaterState,
     Port,
+    ThermalState,
 )
 from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
@@ -20,19 +20,19 @@ class WaterDemandPort(Port):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterDemand(WaterAppliance[WaterDemandState, None, WaterDemandPort]):
+class WaterDemand(ThermalAppliance[WaterDemandState, None, WaterDemandPort]):
     water_demand_flow_schedule: Schedule[LiterPerSecond]
 
     def simulate(
         self,
-        inputs: dict[WaterDemandPort, WaterState],
+        inputs: dict[WaterDemandPort, ThermalState],
         previous_state: WaterDemandState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterDemandState, dict[WaterDemandPort, WaterState]]:
+    ) -> tuple[WaterDemandState, dict[WaterDemandPort, ThermalState]]:
 
         return WaterDemandState(), {
-            WaterDemandPort.OUT: WaterState(
-                self.water_demand_flow_schedule.at(simulation_time),
+            WaterDemandPort.OUT: ThermalState(
+                self.water_demand_flow_schedule.at(simulation_time), float("nan")
             )
         }

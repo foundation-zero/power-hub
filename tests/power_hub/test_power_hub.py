@@ -82,8 +82,10 @@ def test_power_hub_sensors(power_hub_const):
 
 def test_derived_sensors(power_hub_const, min_max_temperature):
 
-    state = power_hub_const.simple_initial_state(datetime.now())
     control_values = no_control(power_hub_const)
+    state = power_hub_const.simulate(
+        power_hub_const.simple_initial_state(datetime.now()), control_values
+    )
 
     for i in range(500):
         try:

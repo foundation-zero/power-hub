@@ -2,7 +2,6 @@ from typing import Self
 from datetime import datetime, timedelta
 
 from pytest import approx
-from energy_box_control.appliances.base import WaterState
 from energy_box_control.appliances.source import Source, SourcePort, SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
