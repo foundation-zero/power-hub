@@ -68,7 +68,7 @@ export interface Compound {
   overallTemperature: number;
 }
 
-export interface ElectricBattery {
+export interface Electrical {
   socBatterySystem: number;
 }
 
@@ -95,7 +95,7 @@ export interface SensorsTree {
   waterMaker: WaterProcessor;
   weather: Weather;
   compound: Compound;
-  electricBattery: ElectricBattery;
+  electrical: Electrical;
 }
 
 export type Watt = number;

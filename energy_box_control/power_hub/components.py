@@ -1,6 +1,6 @@
 from energy_box_control.appliances.containers import Containers
 from energy_box_control.appliances.cooling_sink import CoolingSink
-from energy_box_control.appliances.electric_battery import ElectricBattery
+from energy_box_control.appliances.electrical import Electrical
 from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.water_demand import WaterDemand
 from energy_box_control.appliances.water_maker import WaterMaker
@@ -186,10 +186,10 @@ def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPan
     )
 
 
-def electric_battery(
+def electrical(
     global_irradiance_schedule: Schedule[WattPerMeterSquared],
-) -> ElectricBattery:
-    return ElectricBattery(global_irradiance_schedule)
+) -> Electrical:
+    return Electrical(global_irradiance_schedule)
 
 
 water_maker = WaterMaker(0.9)

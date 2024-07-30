@@ -113,7 +113,7 @@ const BATTERY_CAPACITY = 218000;
 const { value, unit } = useAsWattHours(
   useObservable(
     powerHub.sensors
-      .useLastValues("electric_battery/soc_battery_system", () => ({
+      .useLastValues("electrical/soc_battery_system", () => ({
         between: between(add(new Date(), { seconds: -100 }), new Date()),
       }))
       .pipe(map((val) => (val.slice(-1)[0].value * BATTERY_CAPACITY) / 100)),

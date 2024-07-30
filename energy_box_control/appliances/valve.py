@@ -12,7 +12,7 @@ from energy_box_control.units import Bar
 
 ValveServiceInfo = int
 NO_SERVICE_INFO = 0
-DEFAULT_PRESSURE = 250
+DEFAULT_PRESSURE = 2.5
 
 
 @dataclass(frozen=True, eq=True)
