@@ -192,6 +192,11 @@ class SensorType(Enum):
     REPLACE_FILTER_ALARM = "replace_filter_alarm"
     PRESSURE = "pressure"
     LEVEL = "level"
+    VOLT = "volt"
+    VOLTAGE = "voltage"
+    CURRENT = "current"
+    POWER = "power"
+    BOOL = "boolean"
 
 
 @dataclass(eq=True, frozen=True)
@@ -338,7 +343,11 @@ def sensor_encoder(include_properties: bool = False):
                 return {
                     field: getattr(o, field)
                     for field in sensor_fields(type(o), include_properties)
-                    if not math.isnan(getattr(o, field))
+                    if (
+                        isinstance(getattr(o, field), (float, int))
+                        and not math.isnan(getattr(o, field))
+                    )
+                    or isinstance(getattr(o, field), str | bool)
                 }
             if hasattr(o, "__dict__"):
                 return {attr: value for attr, value in o.__dict__.items()}

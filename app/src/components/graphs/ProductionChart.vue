@@ -48,7 +48,7 @@ const productionPerTwoHours = useObservable(
 
 const batteryValues = useObservable(
   sensors
-    .useOverTime("electric_battery/soc_battery_system", () => ({
+    .useOverTime("electrical/soc_battery_system", () => ({
       interval: "h",
       between: between(add(startOfYesterday(), { seconds: -1 }), startOfTomorrow()),
     }))

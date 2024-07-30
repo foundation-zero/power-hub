@@ -13,13 +13,13 @@ from energy_box_control.units import Bar, LiterPerSecond, Watt
 
 SwitchPumpAlarm = int  # CRE series alarm codes: https://drive.google.com/file/d/1I8lCpu8UkNt6YmGF5-MU4DgqCUPPA-BV/view?usp=drive_link
 NO_ALARM = 0
-DEFAULT_PRESSURE = 250
+DEFAULT_PRESSURE = 2.5
 
 
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
     pump_1_alarm: int = NO_ALARM
-    pump_2_alarm: int = NO_ALARM
+    pump_1_communication_fault: int = NO_ALARM
     pressure: Bar = DEFAULT_PRESSURE
 
 
