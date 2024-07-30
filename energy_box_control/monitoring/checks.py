@@ -62,7 +62,7 @@ class ValveAlarm(Alarm):
 
 
 class RH33Alarm(Alarm):
-    OK = 1
+    OK = 0
     OPEN_CIRCUIT = 1
     OVER_RANGE = 2
     UNDER_RANGE = 3
