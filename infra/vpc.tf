@@ -11,7 +11,7 @@ variable "name" {
 }
 
 variable "env" {
-  description = "environment (staging for now)"
+  description = "environment"
 }
 
 provider "google" {

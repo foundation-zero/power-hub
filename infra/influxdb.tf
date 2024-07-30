@@ -93,7 +93,7 @@ resource "helm_release" "influxdb" {
 
   set {
     name  = "persistence.enabled"
-    value = var.env == "staging" ? "false" : "true"
+    value = local.influxdb_persistence
   }
 }
 
