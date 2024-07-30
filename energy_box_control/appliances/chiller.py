@@ -10,10 +10,12 @@ from energy_box_control.appliances.base import (
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import JoulePerLiterKelvin, Watt
 
+ChillerFaultCode = int
+
 
 @dataclass(frozen=True, eq=True)
 class ChillerState(ApplianceState):
-    pass
+    fault_code: ChillerFaultCode = 0
 
 
 class ChillerPort(Port):

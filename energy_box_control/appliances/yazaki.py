@@ -20,7 +20,7 @@ from energy_box_control.units import (
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_PRESSURE = 250
+DEFAULT_PRESSURE = 2.5
 
 
 class YazakiPort(Port):

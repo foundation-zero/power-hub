@@ -4,13 +4,16 @@ from typing import Any, Callable, Optional, get_type_hints
 from enum import Enum
 
 from energy_box_control.monitoring.health_bounds import (
+    BATTERY_HEALTH_BOUNDS,
+    CHILLED_CIRCUIT_BOUNDS,
+    COOLING_DEMAND_CIRCUIT_BOUNDS,
+    HEAT_PIPES_BOUNDS,
+    HOT_CIRCUIT_BOUNDS,
     HealthBound,
     CONTAINER_BOUNDS,
     TANK_BOUNDS,
-    HOT_CIRCUIT_FLOW_BOUNDS,
-    HOT_CIRCUIT_PRESSURE_BOUNDS,
-    HOT_CIRCUIT_TEMPERATURE_BOUNDS,
     YAZAKI_BOUNDS,
+    CHILLER_BOUNDS,
 )
 from energy_box_control.sensors import SensorType, attributes_for_type
 from energy_box_control.network import NetworkControl
@@ -19,7 +22,7 @@ from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
     SwitchPumpSensors,
     ValveSensors,
-    ElectricBatterySensors,
+    ElectricalSensors,
     ContainersSensors,
 )
 
@@ -28,7 +31,7 @@ class Alarm(Enum):
     pass
 
 
-class ElectricBatteryAlarm(Alarm):
+class ElectricalAlarm(Alarm):
     WARNING = 1
     ALARM = 2
 
@@ -56,6 +59,54 @@ class ValveAlarm(Alarm):
 
     ACTUATOR_CANNOT_MOVE = 2
     GEAR_TRAIN_DISENGAGED = 9
+
+
+class ChillerAlarm(Alarm):
+    DATA_COMMUNICATION = "INIT"
+    SEA_WATER_FLOW_INSUFFICIENT = "SEA"
+    REQUIRED_COLD_WATER_TEMPERATURE_NOT_YET_REACHED = "BA11"
+    COMPRESSORS_DEACTIVATED = "CA11"
+    UNDERVOLTAGE = "AAA"
+    LOW_PRESSURE_COMPRESSOR_1 = "A01"
+    HIGH_PRESSURE_COMPRESSOR_1 = "A02"
+    LOW_PRESSURE_COMPRESSOR_2 = "A03"
+    HIGH_PRESSURE_COMPRESSOR_2 = "A04"
+    CABIN_TEMPERATURE_SENSOR = "A09"
+    COLD_WATER_TEMPERATURE_SENSOR = "A10"
+    COLD_WATER_FLOW = "A15"
+    HIGH_PRESSURE_COMPRESSOR_1_AGAIN = "A20"
+    EXCESS_CURRENT_INVERTER = "A21"
+    EXCESS_TEMPERATURE_INVERTER = "A22"
+    EXCESS_TEMPERATURE_COMPRESSOR_1 = "A23"
+    HIGH_PRESSURE_SENSOR = "A24"
+    LOW_PRESSURE_SENSOR = "A25"
+    COMPRESSOR_TEMPERATURE_SENSOR = "A26"
+    DATA_COMMUNICATION_INVERTER = "A27"
+    CHARACTERISTIC_DIAGRAM = "A28"
+    EXCESS_TEMPERATURE_INVERTER_AGAIN = "A30"
+    EXCESS_CURRENT_INVERTER_AGAIN = "A31"
+    PHASE_CONNECTION_COMPRESSOR_1 = "A32"
+    EARTH_LEAKAGE_CURRENT = "A33"
+    EXCESS_CURRENT_INVERTER_AGAIN2 = "A34"
+    DC_BUS_INVERTER = "A35"
+    UNDERVOLTAGE_INVERTER_PFC = "A36"
+    UNDERVOLTAGE_INVERTER = "A37"
+    COMPRESSOR_SPEED_1 = "A38"
+    CABLE_BRIDGE_INVERTER = "A39"
+    COMPRESSOR_1_OVERLOAD = "A40"
+    OVERVOLTAGE = "A41"
+    UNDER_TEMPERATURE_INVERTER = "A42"
+    EXCESS_TEMPERATURE_COMPRESSOR_1_AGAIN = "A43"
+    IGBT_INVERTER = "A44"
+    CPU_INVERTER = "A45"
+    PARAMETER_INVERTER = "A46"
+    DATA_COMMUNICATION_INVERTER_AGAIN = "A47"
+    THERMISTOR_INVERTER = "A48"
+    AUTOMATIC_ADJUSTMENT_INVERTER = "A49"
+    FAN_INVERTER = "A50"
+    PFC_MODULE_INVERTER = "A51"
+    STO_INVERTER = "A53"
+    NO_DISPLAY_ON_SCREEN = "A54"
 
 
 class Severity(Enum):
@@ -138,6 +189,25 @@ def valid_value(
     )
 
 
+def valid_value_check(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], bool],
+    message_fn: Callable[[str, bool], str],
+    valid: object,
+    severity: Severity = Severity.CRITICAL,
+) -> SensorValueCheck:
+    return SensorValueCheck(
+        name=name,
+        check=value_check(
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda value: value == valid,
+            message_fn=message_fn,
+        ),
+        severity=severity,
+    )
+
+
 def alarm(
     name: str,
     value_fn: Callable[[PowerHubSensors], int],
@@ -160,47 +230,119 @@ def alarm(
     )
 
 
-sensor_checks = [
+pcm_checks = [
     valid_value(
         "pcm_temperature_check",
         lambda sensors: sensors.pcm.temperature,
-    ),
+    )
+]
+
+hot_circuit_checks = [
     valid_value(
         "hot_circuit_temperature_check",
-        lambda sensors: sensors.pcm.charge_input_temperature,
-        HOT_CIRCUIT_TEMPERATURE_BOUNDS,
+        lambda sensors: sensors.rh33_hot_storage.hot_temperature,
+        HOT_CIRCUIT_BOUNDS["temperature"],
     ),
     valid_value(
         "hot_circuit_flow_check",
-        lambda sensors: sensors.pcm.charge_flow,
-        HOT_CIRCUIT_FLOW_BOUNDS,
+        lambda sensors: sensors.hot_storage_flow_sensor.flow,
+        HOT_CIRCUIT_BOUNDS["flow"],
     ),
     valid_value(
         "hot_circuit_pressure_check",
         lambda sensors: sensors.pipes_pressure_sensor.pressure,
-        HOT_CIRCUIT_PRESSURE_BOUNDS,
+        HOT_CIRCUIT_BOUNDS["pressure"],
     ),
 ]
+
+chilled_circuit_checks = [
+    valid_value(
+        "chilled_circuit_temperature_check",
+        lambda sensors: sensors.rh33_chill.cold_temperature,
+        CHILLED_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "chilled_circuit_flow_check",
+        lambda sensors: sensors.chilled_flow_sensor.flow,
+        CHILLED_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "chilled_circuit_pressure_check",
+        lambda sensors: sensors.chilled_loop_pump.pressure,
+        CHILLED_CIRCUIT_BOUNDS["pressure"],
+    ),
+]
+
+cooling_demand_circuit_checks = [
+    valid_value(
+        "cooling_demand_circuit_temperature_check",
+        lambda sensors: sensors.rh33_cooling_demand.cold_temperature,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "cooling_demand_circuit_flow_check",
+        lambda sensors: sensors.cooling_demand_flow_sensor.flow,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "cooling_demand_circuit_pressure_check",
+        lambda sensors: sensors.cooling_demand_pump.pressure,
+        COOLING_DEMAND_CIRCUIT_BOUNDS["pressure"],
+    ),
+]
+
+
+heat_pipes_checks = [
+    valid_value(
+        "heat_pipes_temperature_check",
+        lambda sensors: sensors.rh33_heat_pipes.hot_temperature,
+        HEAT_PIPES_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "heat_pipes_flow_check",
+        lambda sensors: sensors.heat_pipes_flow_sensor.flow,
+        HEAT_PIPES_BOUNDS["flow"],
+    ),
+    # pressure check is already done in hot switch circuit checks
+]
+
 
 battery_alarm_checks = [
     alarm(
         name=f"{attr}",
-        value_fn=(lambda sensors, attr=attr: getattr(sensors.electric_battery, attr)),
-        message_fn=(lambda name, _: f"{name} is raising an alarm"),
-        alarm=ElectricBatteryAlarm.ALARM,
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electrical, attr),
+        message_fn=lambda name, _: f"{name} is raising an alarm",
+        alarm=ElectricalAlarm.ALARM,
     )
-    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
+    for attr in attributes_for_type(ElectricalSensors, SensorType.ALARM)
 ]
 
 battery_warning_checks = [
     alarm(
         name=f"{attr}_warning",
-        value_fn=lambda sensors, attr=attr: getattr(sensors.electric_battery, attr),
-        message_fn=(lambda name, _: f"{name} is raising a warning"),
-        alarm=ElectricBatteryAlarm.WARNING,
+        value_fn=lambda sensors, attr=attr: getattr(sensors.electrical, attr),
+        message_fn=lambda name, _: f"{name} is raising a warning",
+        alarm=ElectricalAlarm.WARNING,
         severity=Severity.WARNING,
     )
-    for attr in attributes_for_type(ElectricBatterySensors, SensorType.ALARM)
+    for attr in attributes_for_type(ElectricalSensors, SensorType.ALARM)
+]
+
+battery_soc_checks = [
+    valid_value(
+        "battery_soc",
+        lambda sensors: sensors.electrical.soc_battery_system,
+        BATTERY_HEALTH_BOUNDS["soc"],
+    )
+]
+
+battery_estop_checks = [
+    valid_value_check(
+        name="estop_active",
+        value_fn=lambda sensors: sensors.electrical.estop_active,
+        message_fn=lambda _, value: f"estop active is {value}",
+        valid=False,
+    )
 ]
 
 container_fancoil_alarm_checks = [
@@ -233,36 +375,19 @@ weather_station_alarm_checks = [
     )
 ]
 
-valve_actuator_checks = [
-    alarm(
-        name=f"{valve_name}_actuator_alarm",
-        value_fn=lambda sensors, valve_name=valve_name: getattr(
-            sensors, valve_name
-        ).service_info,
-        message_fn=lambda name, _: f"{name} is raised",
-        alarm=ValveAlarm.ACTUATOR_CANNOT_MOVE,
-    )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
-]
 
-valve_gear_train_checks = [
+valve_alarm_checks = [
     alarm(
-        name=f"{valve_name}_gear_train_alarm",
-        value_fn=lambda sensors, valve_name=valve_name: getattr(
+        name=f"{field.name}_{valve_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, valve_name=field.name: getattr(
             sensors, valve_name
         ).service_info,
         message_fn=lambda name, _: f"{name} is raised",
-        alarm=ValveAlarm.GEAR_TRAIN_DISENGAGED,
+        alarm=valve_alarm,
     )
-    for valve_name in [
-        field.name
-        for field in fields(PowerHubSensors)
-        if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    ]
+    for field in fields(PowerHubSensors)
+    if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    for valve_alarm in ValveAlarm
 ]
 
 pump_alarm_checks = [
@@ -288,12 +413,35 @@ yazaki_bound_checks = [
         control_fn=lambda control_values, network: (
             control_values.appliance(network.yazaki).get().on
             if control_values and network
-            else True
+            else False
         ),
     )
     for attr, bound in YAZAKI_BOUNDS.items()
 ]
 
+chiller_bound_checks = [
+    valid_value(
+        f"chiller_{attr}_check",
+        lambda sensors, attr=attr: getattr(sensors.chiller, attr),
+        health_bound=bound,
+        control_fn=lambda control_values, network: (
+            control_values.appliance(network.chiller).get().on
+            if control_values and network
+            else False
+        ),
+    )
+    for attr, bound in CHILLER_BOUNDS.items()
+]
+
+chiller_alarm_checks = [
+    alarm(
+        name=f"chiller_{chiller_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors: sensors.chiller.fault_code,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=chiller_alarm,
+    )
+    for chiller_alarm in ChillerAlarm
+]
 
 water_tank_checks = [
     valid_value(
@@ -319,16 +467,23 @@ container_checks = [
 ]
 
 all_checks = (
-    battery_alarm_checks
+    pcm_checks
+    + hot_circuit_checks
+    + chilled_circuit_checks
+    + cooling_demand_circuit_checks
+    + heat_pipes_checks
+    + battery_alarm_checks
     + battery_warning_checks
+    + battery_soc_checks
+    + battery_estop_checks
     + container_fancoil_alarm_checks
     + containers_fancoil_filter_checks
-    + sensor_checks
-    + container_checks
-    + water_tank_checks
+    + weather_station_alarm_checks
+    + valve_alarm_checks
     + pump_alarm_checks
     + yazaki_bound_checks
-    + weather_station_alarm_checks
-    + valve_actuator_checks
-    + valve_gear_train_checks
+    + chiller_bound_checks
+    + chiller_alarm_checks
+    + water_tank_checks
+    + container_checks
 )
