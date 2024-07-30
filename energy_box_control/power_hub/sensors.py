@@ -83,7 +83,7 @@ def power_hub_sensor[
     return sensor(technical_name=technical_name, type=type, resolver=resolver)
 
 
-FlowSensorServiceInfo = int
+FlowSensorAlarm = int
 
 
 @sensors(from_appliance=False, eq=False)
@@ -92,7 +92,7 @@ class FlowSensors(WithoutAppliance):
     temperature: Celsius
     glycol_concentration: Percentage
     total_volume: Liter
-    service_info: FlowSensorServiceInfo
+    service_info: FlowSensorAlarm
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, FlowSensors):
@@ -128,7 +128,7 @@ def flow_sensor(
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowSensorServiceInfo = sensor(
+        service_info: FlowSensorAlarm = sensor(
             type=SensorType.INFO, resolver=const_resolver(0)
         )
 
@@ -150,11 +150,14 @@ def flow_sensor_not_simulated(technical_name: Optional[str]) -> Any:
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowSensorServiceInfo = sensor(
+        service_info: FlowSensorAlarm = sensor(
             technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
         )
 
     return NotSimulatedFlow
+
+
+RH33Alarm = int
 
 
 @sensors(from_appliance=False, eq=False)
@@ -162,6 +165,7 @@ class RH33Sensors(WithoutAppliance):
     hot_temperature: Celsius
     cold_temperature: Celsius
     delta_temperature: Celsius
+    status: RH33Alarm
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, RH33Sensors):
@@ -220,6 +224,7 @@ def rh33(
                 ThermalState(float("nan"), float("nan")),
             ).temperature,
         )
+        status: RH33Alarm = sensor(resolver=const_resolver(1))
 
     return RH33
 
