@@ -83,7 +83,6 @@ from energy_box_control.network import (
 from energy_box_control.power_hub.schedules import PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
-    WeatherSensors,
 )
 
 import energy_box_control.power_hub.components as phc
@@ -779,13 +778,6 @@ class PowerHub(Network[PowerHubSensors]):
 
     def sensors_from_state(self, state: NetworkState[Self]) -> PowerHubSensors:
         context = PowerHubSensors.context()
-        context.without_appliance(
-            WeatherSensors,
-            context.subject.weather,
-            ambient_temperature=self.schedules.ambient_temperature.at(state.time),
-            global_irradiance=self.schedules.global_irradiance.at(state.time),
-            alarm=0,
-        )
 
         return context.resolve_for_network(
             PowerHubSensors,
@@ -799,9 +791,6 @@ class PowerHub(Network[PowerHubSensors]):
 
         context = PowerHubSensors.context()
 
-        context.without_appliance(
-            WeatherSensors, context.subject.weather, **sensors["weather"]
-        )
         for sensor in init_order:
             appliance = getattr(self, sensor.name, None)
             if appliance:
@@ -810,6 +799,12 @@ class PowerHub(Network[PowerHubSensors]):
                     sensor.type,
                     getattr(context.subject, sensor.name),
                     appliance,
+                )
+            else:
+                context.without_appliance(
+                    sensor.type,
+                    getattr(context.subject, sensor.name),
+                    **sensors[sensor.name]
                 )
 
         return context.result(datetime.fromisoformat(sensors["time"]))
