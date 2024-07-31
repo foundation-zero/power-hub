@@ -19,8 +19,10 @@ from energy_box_control.sensors import SensorType, attributes_for_type
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import (
+    FlowSensors,
     PowerHubSensors,
     SmartPumpSensors,
+    RH33Sensors,
     ValveSensors,
     ElectricalSensors,
     ContainersSensors,
@@ -62,7 +64,6 @@ class ValveAlarm(Alarm):
 
 
 class RH33Alarm(Alarm):
-    OK = 0
     OPEN_CIRCUIT = 1
     OVER_RANGE = 2
     UNDER_RANGE = 3
@@ -403,20 +404,6 @@ weather_station_alarm_checks = [
 ]
 
 
-valve_alarm_checks = [
-    alarm(
-        name=f"{field.name}_{valve_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors, valve_name=field.name: getattr(
-            sensors, valve_name
-        ).service_info,
-        message_fn=lambda name, _: f"{name} is raised",
-        alarm=valve_alarm,
-    )
-    for field in fields(PowerHubSensors)
-    if field.type == ValveSensors or issubclass(field.type, ValveSensors)
-    for valve_alarm in ValveAlarm
-]
-
 pump_alarm_checks = [
     alarm(
         name=f"{appliance_name}_{attr}",
@@ -431,6 +418,63 @@ pump_alarm_checks = [
     if issubclass(appliance_type, SmartPumpSensors)
     for attr in attributes_for_type(SmartPumpSensors, SensorType.ALARM)
 ]
+
+flow_sensor_alarm_checks = [
+    alarm(
+        name=f"{field.name}_{flow_sensor_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, flow_sensor_name=field.name: getattr(
+            sensors, flow_sensor_name
+        ).service_info,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=flow_sensor_alarm,
+        severity=Severity.ERROR,
+    )
+    for field in fields(PowerHubSensors)
+    if field.type == FlowSensors
+    for flow_sensor_alarm in FlowSensorAlarm
+]
+
+rh33_alarm_checks = [
+    alarm(
+        name=f"{field.name}_{rh33_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, rh33_name=field.name: getattr(
+            sensors, rh33_name
+        ).status,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=rh33_alarm,
+        severity=Severity.ERROR,
+    )
+    for field in fields(PowerHubSensors)
+    if field.type == RH33Sensors
+    for rh33_alarm in RH33Alarm
+]
+
+
+valve_alarm_checks = [
+    alarm(
+        name=f"{field.name}_{valve_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, valve_name=field.name: getattr(
+            sensors, valve_name
+        ).service_info,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=valve_alarm,
+        severity=Severity.ERROR,
+    )
+    for field in fields(PowerHubSensors)
+    if field.type == ValveSensors or issubclass(field.type, ValveSensors)
+    for valve_alarm in ValveAlarm
+]
+
+chiller_alarm_checks = [
+    alarm(
+        name=f"chiller_{chiller_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors: sensors.chiller.fault_code,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=chiller_alarm,
+    )
+    for chiller_alarm in ChillerAlarm
+]
+
 
 yazaki_bound_checks = [
     valid_value(
@@ -470,7 +514,7 @@ chiller_alarm_checks = [
     for chiller_alarm in ChillerAlarm
 ]
 
-water_maker_checks = [
+water_maker_alarm_checks = [
     alarm(
         name=f"water maker error",
         value_fn=lambda sensors: (
@@ -538,5 +582,7 @@ all_checks = (
     + chiller_alarm_checks
     + water_tank_checks
     + container_checks
-    + water_maker_checks
+    + water_maker_alarm_checks
+    + flow_sensor_alarm_checks
+    + rh33_alarm_checks
 )
