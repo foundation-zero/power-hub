@@ -36,6 +36,7 @@ COOLING_DEMAND: Watt = 100 * 1000 / 24  # 100 kWh / day
 WATER_DEMAND: LiterPerSecond = 10
 PERCENT_WATER_CAPTURED: float = 0.1
 PCM_ZERO_TEMPERATURE = 50
+DEFAULT_PRESSURE = 2
 
 
 HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION = ValveControl.b_position()
@@ -201,11 +202,15 @@ technical_water_tank = WaterTank(1000)
 
 def water_demand(
     water_demand_flow_schedule: Schedule[LiterPerSecond],
+    freshwater_temperature_schedule: Schedule[Celsius],
 ) -> WaterDemand:
-    return WaterDemand(water_demand_flow_schedule)
+    return WaterDemand(water_demand_flow_schedule, freshwater_temperature_schedule)
 
 
-water_treatment = WaterTreatment(1)  # Specs unknown
+def water_treatment(freshwater_temperature_schedule: Schedule[Celsius]):
+    return WaterTreatment(1, freshwater_temperature_schedule)  # Specs unknown
+
+
 water_filter_bypass_valve = Valve()
 
 
