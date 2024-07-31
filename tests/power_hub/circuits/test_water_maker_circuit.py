@@ -19,7 +19,6 @@ from energy_box_control.appliances.water_maker import (
     WaterMakerPort,
     WaterMakerState,
     WaterMakerStatus,
-    WaterMakerTankStatus,
 )
 from energy_box_control.appliances.water_tank import (
     WaterTank,
@@ -55,12 +54,7 @@ def test_water_maker_network():
                 .define_state(self.outboard_pump)
                 .value(SwitchPumpState())
                 .define_state(self.water_maker)
-                .value(
-                    WaterMakerState(
-                        WaterMakerStatus.WATER_PRODUCTION.value,
-                        WaterMakerTankStatus.EMPTY.value,
-                    )
-                )
+                .value(WaterMakerState(WaterMakerStatus.WATER_PRODUCTION))
                 .define_state(self.water_tank)
                 .value(WaterTankState(0))
                 .define_state(self.water_demand)

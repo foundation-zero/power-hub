@@ -653,11 +653,11 @@ stop_cool = Fn.sensors(
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
 
 water_maker_on = Fn.pred(
-    lambda _, sensors: sensors.water_maker.system_status
+    lambda _, sensors: sensors.water_maker.status
     == WaterMakerStatus.WATER_PRODUCTION.value
 )
 water_maker_off = Fn.pred(
-    lambda _, sensors: not sensors.water_maker.system_status
+    lambda _, sensors: not sensors.water_maker.status
     == WaterMakerStatus.WATER_PRODUCTION.value
 )
 

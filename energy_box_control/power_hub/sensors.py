@@ -1098,8 +1098,8 @@ class WaterMakerSensors(FromState):
     production_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
-    tank_status: int = sensor()
-    system_status: int = sensor()
+    tank_empty: bool = sensor(type=SensorType.BOOL)
+    status: int = sensor(SensorType.INFO)
     error: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
     warning: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
     last_error_id: int = sensor(resolver=const_resolver(0))

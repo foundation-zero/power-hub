@@ -11,7 +11,6 @@ from energy_box_control.appliances.heat_exchanger import HeatExchangerPort
 from energy_box_control.appliances.water_maker import (
     WaterMakerState,
     WaterMakerStatus,
-    WaterMakerTankStatus,
 )
 from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
@@ -374,7 +373,7 @@ def test_waste_pump_water_maker_on(
         )
         .replace_state(
             scheduled_power_hub.water_maker,
-            WaterMakerState(water_maker_on, WaterMakerTankStatus.EMPTY.value),
+            WaterMakerState(water_maker_on),
         )
     )
     sensors = scheduled_power_hub.sensors_from_state(state)

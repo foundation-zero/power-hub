@@ -56,7 +56,6 @@ from energy_box_control.appliances.water_maker import (
     WaterMakerPort,
     WaterMakerState,
     WaterMakerStatus,
-    WaterMakerTankStatus,
 )
 from energy_box_control.appliances.water_tank import (
     WaterTank,
@@ -405,8 +404,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.water_maker)
             .value(
                 WaterMakerState(
-                    WaterMakerStatus.WATER_PRODUCTION.value,
-                    WaterMakerTankStatus.EMPTY.value,
+                    WaterMakerStatus.WATER_PRODUCTION,
                 )
             )
             .define_state(self.fresh_water_tank)

@@ -224,7 +224,9 @@ class Sensor:
                 appliance, self.from_port, ThermalState(nan, nan)
             ).temperature
         elif appliance:
-            return getattr(network_state.appliance(appliance).get(), name, None)
+            value = getattr(network_state.appliance(appliance).get(), name, None)
+            return value.value if isinstance(value, Enum) else value
+
         else:
             raise Exception("unable to resolve value")
 
