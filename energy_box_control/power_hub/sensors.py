@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, TYPE_CHECKING, Optional
 
@@ -100,8 +100,7 @@ type FlowResolver = "tuple[Callable[[PowerHub], AnyAppliance], Port]"
 
 
 def flow_sensor(
-    resolver: FlowResolver,
-    technical_name: Optional[str],
+    resolver: FlowResolver, technical_name: Optional[str], address: Optional[str] = None
 ) -> Any:
 
     appliance, port = resolver
@@ -122,7 +121,9 @@ def flow_sensor(
     return Flow
 
 
-def flow_sensor_not_simulated(technical_name: Optional[str]) -> Any:
+def flow_sensor_not_simulated(
+    technical_name: Optional[str], address: Optional[str] = None
+) -> Any:
     @sensors(from_appliance=False, eq=False)
     class NotSimulatedFlow(FlowSensors):
         flow: LiterPerSecond = sensor(
@@ -1118,83 +1119,101 @@ class PressureSensors(WithoutAppliance):
     )
 
 
+def describe(technical_name: str, address: Optional[str] = None) -> Any:
+    return field(metadata={"technical_name": technical_name, "address": address})
+
+
 @dataclass
 class PowerHubSensors(NetworkSensors):
-    heat_pipes: HeatPipesSensors
-    heat_pipes_valve: ValveSensors
-    heat_pipes_power_hub_pump: SwitchPumpSensors
-    heat_pipes_supply_box_pump: SwitchPumpSensors
-    hot_switch_valve: ValveSensors
-    hot_reservoir: HotReservoirSensors
-    pcm: PcmSensors
-    yazaki_hot_bypass_valve: ValveSensors
-    yazaki: YazakiSensors
-    chiller: ChillerSensors
-    chiller_switch_valve: ChillerSwitchSensors
-    cold_reservoir: ColdReservoirSensors
-    waste_bypass_valve: ValveSensors
-    preheat_switch_valve: ValveSensors
-    preheat_reservoir: PreHeatSensors
-    waste_switch_valve: ValveSensors
-    outboard_exchange: HeatExchangerSensors
-    weather: WeatherSensors
-    pcm_to_yazaki_pump: SwitchPumpSensors
-    chilled_loop_pump: SwitchPumpSensors
-    waste_pump: SwitchPumpSensors
-    hot_water_pump: SwitchPumpSensors
-    outboard_pump: SwitchPumpSensors
-    cooling_demand_pump: SwitchPumpSensors
-    pv_panel: PVSensors
-    electrical: ElectricalSensors
-    fresh_water_tank: FreshWaterTankSensors
-    grey_water_tank: GreyWaterTankSensors
-    black_water_tank: WaterTankSensors
-    technical_water_tank: WaterTankSensors
-    water_treatment: WaterTreatmentSensors
-    water_maker: WaterMakerSensors
-    containers: ContainersSensors
-    waste_pressure_sensor: PressureSensors
-    pipes_pressure_sensor: PressureSensors
-    pcm_yazaki_pressure_sensor: PressureSensors
     time: datetime
+
+    heat_pipes: HeatPipesSensors = describe("W-1001")
+    heat_pipes_valve: ValveSensors = describe("CV-1006", "35k10/4")
+    heat_pipes_power_hub_pump: SwitchPumpSensors = describe("P-1008", "35k17/1")
+    heat_pipes_supply_box_pump: SwitchPumpSensors = describe("P-1009", "11k11/0")
+    hot_switch_valve: ValveSensors = describe("CV-1001", "35k10/1")
+    hot_reservoir: HotReservoirSensors = describe("W-1002")
+    pcm: PcmSensors = describe("W-1003")
+    yazaki_hot_bypass_valve: ValveSensors = describe("CV-1010", "35k10/7")
+    yazaki: YazakiSensors = describe("W-1005", "35k10/8")
+    chiller: ChillerSensors = describe("W-1009")
+    chiller_switch_valve: ChillerSwitchSensors = describe("CV-1008", "35k10/6")
+    cold_reservoir: ColdReservoirSensors = describe("W-1006")
+    waste_bypass_valve: ValveSensors = describe("CV-1004", "35k10/3")
+    preheat_switch_valve: ValveSensors = describe("CV-1003", "35k10/2")
+    preheat_reservoir: PreHeatSensors = describe("W-1008")
+    waste_switch_valve: ValveSensors = describe("CV-1007", "35k10/5")
+    outboard_exchange: HeatExchangerSensors = describe("W-1007")
+    weather: WeatherSensors = describe("WSC-11", "35k10/10")
+    pcm_to_yazaki_pump: SwitchPumpSensors = describe("P-1003", "35k10/11")
+    chilled_loop_pump: SwitchPumpSensors = describe("P-1005", "35k10/13")
+    waste_pump: SwitchPumpSensors = describe("P-1004", "35k10/12")
+    hot_water_pump: SwitchPumpSensors = describe("simulation-only")
+    outboard_pump: SwitchPumpSensors = describe("P-1002", "35k17/0, 35k16/0")
+    cooling_demand_pump: SwitchPumpSensors = describe("P-1007", "192.168.1.46")
+    pv_panel: PVSensors = describe("not-in-drawing")
+    electrical: ElectricalSensors = describe("electrical-plc", "192.168.1.15")
+    fresh_water_tank: FreshWaterTankSensors = describe("K-5001")
+    grey_water_tank: GreyWaterTankSensors = describe("K-3001")
+    black_water_tank: WaterTankSensors = describe("K-2001/K-2002")
+    technical_water_tank: WaterTankSensors = describe("K-4001")
+    water_treatment: WaterTreatmentSensors = describe("F-3001", "35k10/9")
+    water_maker: WaterMakerSensors = describe("F-5001")
+    containers: ContainersSensors = describe("not-in-drawing")
+    waste_pressure_sensor: PressureSensors = describe("PS-1002", "35k13/1")
+    pipes_pressure_sensor: PressureSensors = describe("PS-1003", "35k13/2")
+    pcm_yazaki_pressure_sensor: PressureSensors = describe("PS-1001", "35k13/0")
     heat_pipes_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN), "FS-1001"
+        (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN), "FS-1001", "35k9/1"
     )
     pcm_discharge_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN), "FS-1003"
+        (lambda power_hub: power_hub.pcm, PcmPort.DISCHARGE_IN), "FS-1003", "35k9/2"
     )
     hot_storage_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.hot_switch_valve, ValvePort.AB), "FS-1011"
+        (lambda power_hub: power_hub.hot_switch_valve, ValvePort.AB),
+        "FS-1011",
+        "35k9/7",
     )
     yazaki_hot_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_IN), "FS-1004"
+        (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_IN), "FS-1004", "35k9/3"
     )
     waste_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.waste_mix, MixPort.AB), "FS-1012"
+        (lambda power_hub: power_hub.waste_mix, MixPort.AB), "FS-1012", "35k9/8"
     )
     chilled_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.chill_mix, MixPort.AB), "FS-1006"
+        (lambda power_hub: power_hub.chill_mix, MixPort.AB), "FS-1006", "35k9/4"
     )
     cooling_demand_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.cold_reservoir, BoilerPort.FILL_OUT), "FS-1005"
+        (lambda power_hub: power_hub.cold_reservoir, BoilerPort.FILL_OUT),
+        "FS-1005",
+        "35k18/7",
     )
     heat_dump_flow_sensor: FlowSensors = flow_sensor(
         (lambda power_hub: power_hub.outboard_exchange, HeatExchangerPort.A_OUT),
         "FS-1009",
+        "35k9/5",
     )
     domestic_hot_water_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.hot_reservoir, BoilerPort.FILL_OUT), "FS-1010"
+        (lambda power_hub: power_hub.hot_reservoir, BoilerPort.FILL_OUT),
+        "FS-1010",
+        "35k9/6",
     )
-    fresh_to_kitchen_flow_sensor: FlowSensors = flow_sensor_not_simulated("FS-5001")
+    fresh_to_kitchen_flow_sensor: FlowSensors = flow_sensor_not_simulated(
+        "FS-5001", "35k9/10"
+    )
     technical_to_sanitary_flow_sensor: FlowSensors = flow_sensor_not_simulated(
-        "FS-4003"
+        "FS-4003", "35k18/2"
     )
     technical_to_wash_off_flow_sensor: FlowSensors = flow_sensor_not_simulated(
-        "FS-4002"
+        "FS-4002", "35k18/1"
     )
-    fresh_to_technical_flow_sensor: FlowSensors = flow_sensor_not_simulated("FS-5002")
+    fresh_to_technical_flow_sensor: FlowSensors = flow_sensor_not_simulated(
+        "FS-5002", "35k18/3"
+    )
     treated_water_flow_sensor: FlowSensors = flow_sensor(
-        (lambda power_hub: power_hub.water_treatment, WaterTreatmentPort.OUT), "FS-4001"
+        (lambda power_hub: power_hub.water_treatment, WaterTreatmentPort.OUT),
+        "FS-4001",
+        "35k9/9",
     )
 
     rh33_pcm_discharge: RH33Sensors = rh33(
