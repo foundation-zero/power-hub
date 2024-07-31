@@ -248,7 +248,7 @@ jobs:
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${{ github.event.release.tag_name }}"
 
   deploy-prod-infra:
-    timeout-minutes: 10
+    timeout-minutes: 30
     if: github.event_name == 'release'
     needs: deploy-prod
     concurrency:
