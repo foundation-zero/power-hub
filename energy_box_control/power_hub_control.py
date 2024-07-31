@@ -1,12 +1,9 @@
 import asyncio
-from dataclasses import dataclass, replace
-import dataclasses
-from datetime import datetime, timezone
-import enum
+from dataclasses import fields, replace
 from functools import partial
 import json
 import queue
-from typing import Any, Optional
+from typing import Optional
 from paho.mqtt import client as mqtt_client
 
 from energy_box_control.config import CONFIG
@@ -24,11 +21,8 @@ from energy_box_control.mqtt import (
 from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.control import (
-    ChillControlMode,
-    HotControlMode,
     PowerHubControlState,
     Setpoints,
-    WasteControlMode,
     control_power_hub,
     control_to_json,
     initial_control_state,
@@ -52,25 +46,6 @@ SURVIVAL_MODE_TOPIC = f"{MQTT_TOPIC_BASE}/survival"
 sensor_values_queue: queue.Queue[str] = queue.Queue()
 setpoints_queue: queue.Queue[str] = queue.Queue()
 survival_queue: queue.Queue[str] = queue.Queue()
-
-
-@dataclass
-class ControlModes:
-    hot: HotControlMode
-    chill: ChillControlMode
-    waste: WasteControlMode
-    time: datetime
-
-    class ControlModesEncoder(json.JSONEncoder):
-        def default(self, o: Any):
-            if type(o) == datetime:
-                return o.isoformat()
-            if dataclasses.is_dataclass(o):
-                return dataclasses.asdict(o)
-            if issubclass(type(o), enum.Enum):
-                return o.value
-            else:
-                return json.JSONEncoder.default(self, o)
 
 
 def queue_on_message(
@@ -113,13 +88,11 @@ def publish_control_modes(
         mqtt_client,
         CONTROL_MODES_TOPIC,
         json.dumps(
-            ControlModes(
-                control_state.hot_control.control_mode,
-                control_state.chill_control.control_mode,
-                control_state.waste_control.control_mode,
-                datetime.now(timezone.utc),
-            ),
-            cls=ControlModes.ControlModesEncoder,
+            {
+                name: getattr(control_state, name).control_mode.value
+                for name in [f.name for f in fields(control_state)]
+                if "control" in name
+            }
         ),
         notifier,
     )
