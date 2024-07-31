@@ -37,10 +37,6 @@ from energy_box_control.appliances.electrical import (
     ElectricalState,
 )
 from energy_box_control.appliances.heat_pipes import HeatPipesState
-from energy_box_control.appliances.ignore_temperature import (
-    IgnoreTemperature,
-    IgnoreTemperaturePort,
-)
 from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.appliances.source import SourceState
@@ -132,7 +128,6 @@ class PowerHub(Network[PowerHubSensors]):
     pv_panel: PVPanel
     electrical: Electrical
     sea_water_source: Source
-    sea_water_temperature_filter: IgnoreTemperature
     water_maker: WaterMaker
     fresh_water_tank: WaterTank
     grey_water_tank: WaterTank
@@ -188,15 +183,18 @@ class PowerHub(Network[PowerHubSensors]):
             phc.pv_panel(schedules.global_irradiance),
             phc.electrical(schedules.global_irradiance),
             phc.sea_water_source(schedules.sea_water_temperature),
-            IgnoreTemperature(),
             phc.water_maker,
             phc.fresh_water_tank,
             phc.grey_water_tank,
             phc.black_water_tank,
             phc.technical_water_tank,
-            phc.water_demand(schedules.fresh_water_demand),
-            phc.water_demand(schedules.grey_water_supply),
-            phc.water_treatment,
+            phc.water_demand(
+                schedules.fresh_water_demand, schedules.fresh_water_temperature
+            ),
+            phc.water_demand(
+                schedules.grey_water_supply, schedules.fresh_water_temperature
+            ),
+            phc.water_treatment(schedules.fresh_water_temperature),
             phc.water_filter_bypass_valve,
             phc.containers(schedules.ambient_temperature),
             schedules,
@@ -289,8 +287,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.cooling_demand_pump)
             .value(SwitchPumpState())
-            .define_state(power_hub.sea_water_temperature_filter)
-            .value(ApplianceState())
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
@@ -396,8 +392,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(PVPanelState(0))
             .define_state(self.electrical)
             .value(ElectricalState())
-            .define_state(self.sea_water_temperature_filter)
-            .value(ApplianceState())
             .define_state(self.sea_water_source)
             .value(SourceState())
             .define_state(self.water_maker)
@@ -741,11 +735,6 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self.connect(self.sea_water_source)
             .at(SourcePort.OUTPUT)
-            .to(self.sea_water_temperature_filter)
-            .at(IgnoreTemperaturePort.INPUT)
-
-            .connect(self.sea_water_temperature_filter)
-            .at(IgnoreTemperaturePort.OUTPUT)
             .to(self.water_maker)
             .at(WaterMakerPort.IN)
 

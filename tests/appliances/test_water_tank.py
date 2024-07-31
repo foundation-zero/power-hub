@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pytest import approx, fixture
 
-from energy_box_control.appliances.base import WaterState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.water_tank import (
     WaterTank,
     WaterTankPort,
@@ -24,9 +24,9 @@ def test_water_tank(simulation_time):
 
     state, _ = water_tank.simulate(
         {
-            WaterTankPort.IN_0: WaterState(water_maker_in),
-            WaterTankPort.IN_1: WaterState(water_treatment_in),
-            WaterTankPort.CONSUMPTION: WaterState(consumption),
+            WaterTankPort.IN_0: ThermalState(water_maker_in, float("nan")),
+            WaterTankPort.IN_1: ThermalState(water_treatment_in, float("nan")),
+            WaterTankPort.CONSUMPTION: ThermalState(consumption, float("nan")),
         },
         WaterTankState(0),
         None,

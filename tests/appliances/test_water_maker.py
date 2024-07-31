@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
 from pytest import fixture
 
-from energy_box_control.appliances.base import WaterState
+from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.water_maker import (
     WaterMaker,
-    WaterMakerControl,
     WaterMakerPort,
     WaterMakerState,
 )
@@ -22,9 +21,9 @@ def test_water_maker(simulation_time):
     water_maker = WaterMaker(efficiency)
 
     _, output = water_maker.simulate(
-        {WaterMakerPort.IN: WaterState(flow_in)},
+        {WaterMakerPort.IN: ThermalState(flow_in, float("nan"))},
         WaterMakerState(True),
-        WaterMakerControl(True),
+        None,
         simulation_time,
     )
 

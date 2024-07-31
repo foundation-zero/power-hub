@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
-    WaterAppliance,
     ApplianceState,
-    WaterState,
     Port,
+    ThermalAppliance,
+    ThermalState,
 )
+
 from energy_box_control.time import ProcessTime
 from energy_box_control.units import Liter
+
+DEFAULT_TEMPERATURE = 20
 
 
 @dataclass(frozen=True, eq=True)
@@ -26,16 +29,16 @@ class TankFullException(Exception):
 
 
 @dataclass(frozen=True, eq=True)
-class WaterTank(WaterAppliance[WaterTankState, None, WaterTankPort]):
+class WaterTank(ThermalAppliance[WaterTankState, None, WaterTankPort]):
     capacity: Liter
 
     def simulate(
         self,
-        inputs: dict[WaterTankPort, WaterState],
+        inputs: dict[WaterTankPort, ThermalState],
         previous_state: WaterTankState,
         control: None,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterTankState, dict[WaterTankPort, WaterState]]:
+    ) -> tuple[WaterTankState, dict[WaterTankPort, ThermalState]]:
 
         delta_fill = (
             (
@@ -62,6 +65,26 @@ class WaterTank(WaterAppliance[WaterTankState, None, WaterTankPort]):
                 f"The water tank has a new fill ({new_fill}) that exceeds the capacity ({self.capacity}) or is lower than 0"
             )
 
+        tank_temperature = (
+            (
+                (
+                    inputs[WaterTankPort.IN_0].temperature
+                    * inputs[WaterTankPort.IN_0].flow
+                    if WaterTankPort.IN_0 in inputs
+                    else (
+                        0
+                        + inputs[WaterTankPort.IN_1].temperature
+                        * inputs[WaterTankPort.IN_1].flow
+                        if WaterTankPort.IN_1 in inputs
+                        else 0
+                    )
+                )
+                / (inputs[WaterTankPort.IN_0].flow + inputs[WaterTankPort.IN_1].flow)
+            )
+            if not inputs
+            else DEFAULT_TEMPERATURE
+        )
+
         return WaterTankState(new_fill / self.capacity), {
-            WaterTankPort.OUT: WaterState(0)
+            WaterTankPort.OUT: ThermalState(0, tank_temperature)
         }

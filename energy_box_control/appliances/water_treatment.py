@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 from energy_box_control.appliances.base import (
     ApplianceControl,
-    WaterAppliance,
     ApplianceState,
-    WaterState,
     Port,
+    ThermalAppliance,
+    ThermalState,
 )
+from energy_box_control.schedules import Schedule
 from energy_box_control.time import ProcessTime
-from energy_box_control.units import LiterPerSecond
+from energy_box_control.units import Celsius, LiterPerSecond
 
 
 @dataclass(frozen=True, eq=True)
@@ -27,21 +28,28 @@ class WaterTreatmentPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class WaterTreatment(
-    WaterAppliance[WaterTreatmentState, WaterTreatmentControl, WaterTreatmentPort]
+    ThermalAppliance[WaterTreatmentState, WaterTreatmentControl, WaterTreatmentPort]
 ):
     pump_flow: LiterPerSecond
+    freshwater_temperature_schedule: Schedule[Celsius]
 
     def simulate(
         self,
-        inputs: dict[WaterTreatmentPort, WaterState],
+        inputs: dict[WaterTreatmentPort, ThermalState],
         previous_state: WaterTreatmentState,
         control: WaterTreatmentControl,
         simulation_time: ProcessTime,
-    ) -> tuple[WaterTreatmentState, dict[WaterTreatmentPort, WaterState]]:
+    ) -> tuple[WaterTreatmentState, dict[WaterTreatmentPort, ThermalState]]:
 
         on = control.on if control else previous_state.on
 
         return WaterTreatmentState(on), {
-            WaterTreatmentPort.IN: WaterState(self.pump_flow if on else 0),
-            WaterTreatmentPort.OUT: WaterState(self.pump_flow if on else 0),
+            WaterTreatmentPort.IN: ThermalState(
+                self.pump_flow if on else 0,
+                self.freshwater_temperature_schedule.at(simulation_time),
+            ),
+            WaterTreatmentPort.OUT: ThermalState(
+                self.pump_flow if on else 0,
+                self.freshwater_temperature_schedule.at(simulation_time),
+            ),
         }

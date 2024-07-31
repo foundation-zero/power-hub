@@ -4,7 +4,6 @@ from functools import reduce
 import json
 from typing import Any, cast
 from energy_box_control.appliances.base import control_class
-from energy_box_control.appliances.water_maker import WaterMakerControl
 from energy_box_control.appliances.water_treatment import WaterTreatmentControl
 from energy_box_control.control.state_machines import (
     Context,
@@ -948,8 +947,6 @@ def survival_control(
         .value(ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION))
         .control(power_hub.hot_water_pump)
         .value(SwitchPumpControl(False))
-        .control(power_hub.water_maker)
-        .value(WaterMakerControl(on=False))
     )
 
     water_treatment_control = power_hub.control(power_hub.water_treatment).value(
