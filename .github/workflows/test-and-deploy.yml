@@ -68,6 +68,11 @@ jobs:
       contents: 'read'
       id-token: 'write'
 
+    env:
+      PROJECT_ID: power-hub-423312
+      ENV: staging
+      INFLUXDB_BUCKET: simulation_data
+
     runs-on: ubuntu-latest
 
     steps:
@@ -102,6 +107,9 @@ jobs:
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
           TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_env: ${{env.ENV}}
+          TF_VAR_project_id: ${{env.PROJECT_ID}}
+          TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
           TF_VAR_send_notifications: false
 
   deploy-staging:
@@ -113,6 +121,7 @@ jobs:
     
     env:
       PROJECT_ID: power-hub-423312
+      ENV: staging
       ZONE: europe-west1
       GAR: europe-west1-docker.pkg.dev
       REPO: power-hub
@@ -173,6 +182,10 @@ jobs:
     needs: deploy-staging
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    env: 
+      PROJECT_ID: power-hub-423312
+      ENV: staging
+      INFLUXDB_BUCKET: simulation_data
 
     steps:
       - uses: actions/checkout@v4
@@ -205,6 +218,9 @@ jobs:
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
           TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_env: ${{env.ENV}}
+          TF_VAR_project_id: ${{env.PROJECT_ID}}
+          TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
           TF_VAR_send_notifications: true
 
   deploy-prod:
@@ -268,9 +284,8 @@ jobs:
     
     env:
       PROJECT_ID: power-hub-prod
-      ZONE: europe-west1
-      GAR: europe-west1-docker.pkg.dev
-      REPO: power-hub
+      ENV: prod
+      INFLUXDB_BUCKET: power_hub
 
     permissions:
       contents: 'read'
@@ -310,7 +325,7 @@ jobs:
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PROD_PAGERDUTY_MQTT_CHECKER_PROD_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.PROD_PAGERDUTY_GKE_PROD_KEY}}
           TF_VAR_python_app_image_tag: "RELEASE-${{ github.event.release.tag_name }}"
-          TF_VAR_env: "prod"
+          TF_VAR_env: ${{env.ENV}}
           TF_VAR_project_id: ${{env.PROJECT_ID}}
-          TF_VAR_influxdb_bucket: "power_hub"
+          TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
           TF_VAR_send_notifications: true
