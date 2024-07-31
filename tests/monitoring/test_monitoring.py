@@ -26,6 +26,7 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
     ElectricalSensors,
     PowerHubSensors,
+    SmartPumpSensors,
     SwitchPumpSensors,
     ValveSensors,
 )
@@ -374,11 +375,11 @@ def test_pump_alarm_checks(source):
     pump_names = [
         appliance_name
         for appliance_name, type in get_type_hints(PowerHubSensors).items()
-        if type == SwitchPumpSensors
+        if issubclass(type, SmartPumpSensors)
     ]
     assert len(pump_names) != 0
     for pump_name in pump_names:
-        for attr in get_attrs(SwitchPumpSensors, SensorType.ALARM):
+        for attr in get_attrs(SmartPumpSensors, SensorType.ALARM):
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
             alarm_code = 50
