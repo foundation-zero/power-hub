@@ -9,10 +9,6 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
     steps:
       - uses: actions/checkout@v4
 
@@ -61,11 +57,27 @@ jobs:
       
       - name: Run simulation notebook
         run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
+
+  test-tofu-staging:
+    timeout-minutes: 10
+    needs: test
+    concurrency:
+      group: ${{ github.workflow }}-deploy-staging
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
       
       - uses: opentofu/setup-opentofu@v1
         with:
           tofu_version: 1.7.1
-      
+          
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: google-github-actions/auth@v2
