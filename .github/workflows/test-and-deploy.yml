@@ -189,7 +189,7 @@ jobs:
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
-          TF_VAR_pagerduty_simulation_key: ${{secrets.PAGERDUTY_SIMULATION_KEY}}
+          TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
           TF_VAR_python_app_image_tag: ${{github.sha}}
