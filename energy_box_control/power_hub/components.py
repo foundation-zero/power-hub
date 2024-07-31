@@ -193,7 +193,9 @@ def electrical(
     return Electrical(global_irradiance_schedule)
 
 
-water_maker = WaterMaker(0.9)
+water_maker = WaterMaker(
+    9
+)  # set to make simulation run with sea water supply and grey water supply of 10 and 1 resp
 fresh_water_tank = WaterTank(1000)
 grey_water_tank = WaterTank(1000)
 black_water_tank = WaterTank(1000)

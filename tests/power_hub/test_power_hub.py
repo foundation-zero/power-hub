@@ -8,7 +8,11 @@ from energy_box_control.appliances import (
 from energy_box_control.appliances.base import ThermalState
 from energy_box_control.appliances.boiler import BoilerPort
 from energy_box_control.appliances.heat_exchanger import HeatExchangerPort
-from energy_box_control.appliances.water_maker import WaterMakerState
+from energy_box_control.appliances.water_maker import (
+    WaterMakerState,
+    WaterMakerStatus,
+    WaterMakerTankStatus,
+)
 from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
 from dataclasses import replace
@@ -339,7 +343,12 @@ def test_water_filter_stop(
 
 @mark.parametrize(
     "heat_dump_out_temperature, water_maker_on, outboard_pump_on",
-    [(10, True, True), (50, True, True), (50, False, True), (10, False, False)],
+    [
+        (10, WaterMakerStatus.WATER_PRODUCTION.value, True),
+        (50, WaterMakerStatus.WATER_PRODUCTION.value, True),
+        (50, WaterMakerStatus.STANDBY.value, True),
+        (10, WaterMakerStatus.STANDBY.value, False),
+    ],
 )
 def test_waste_pump_water_maker_on(
     scheduled_power_hub,
@@ -363,7 +372,10 @@ def test_waste_pump_water_maker_on(
             HeatExchangerPort.A_OUT,
             ThermalState(0, heat_dump_out_temperature),
         )
-        .replace_state(scheduled_power_hub.water_maker, WaterMakerState(water_maker_on))
+        .replace_state(
+            scheduled_power_hub.water_maker,
+            WaterMakerState(water_maker_on, WaterMakerTankStatus.EMPTY.value),
+        )
     )
     sensors = scheduled_power_hub.sensors_from_state(state)
 

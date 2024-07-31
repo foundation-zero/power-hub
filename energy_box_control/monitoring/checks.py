@@ -84,6 +84,10 @@ class FlowSensorAlarm(Alarm):
     GLYCOL_DETECTED = 12
 
 
+class WaterMakerAlarm(Alarm):
+    NO_ALARM = 0
+
+
 class ChillerAlarm(Alarm):
     DATA_COMMUNICATION = "INIT"
     SEA_WATER_FLOW_INSUFFICIENT = "SEA"
@@ -466,6 +470,31 @@ chiller_alarm_checks = [
     for chiller_alarm in ChillerAlarm
 ]
 
+water_maker_checks = [
+    alarm(
+        name=f"water maker error",
+        value_fn=lambda sensors: (
+            sensors.water_maker.last_error_id if sensors.water_maker.error == 1 else 0
+        ),
+        message_fn=lambda name, value: f"{name} with code {value}",
+        alarm=WaterMakerAlarm.NO_ALARM,
+        severity=Severity.ERROR,
+        valid_value=False,
+    ),
+    alarm(
+        name=f"water maker warning",
+        value_fn=lambda sensors: (
+            sensors.water_maker.last_warning_id
+            if sensors.water_maker.warning == 1
+            else 0
+        ),
+        message_fn=lambda name, value: f"{name} with code {value}",
+        alarm=WaterMakerAlarm.NO_ALARM,
+        severity=Severity.WARNING,
+        valid_value=False,
+    ),
+]
+
 water_tank_checks = [
     valid_value(
         f"{tank_name}_fill_ratio",
@@ -509,4 +538,5 @@ all_checks = (
     + chiller_alarm_checks
     + water_tank_checks
     + container_checks
+    + water_maker_checks
 )

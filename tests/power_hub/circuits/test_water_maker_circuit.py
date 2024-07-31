@@ -18,6 +18,8 @@ from energy_box_control.appliances.water_maker import (
     WaterMaker,
     WaterMakerPort,
     WaterMakerState,
+    WaterMakerStatus,
+    WaterMakerTankStatus,
 )
 from energy_box_control.appliances.water_tank import (
     WaterTank,
@@ -40,7 +42,7 @@ def test_water_maker_network():
 
         outboard_source = Source(0, ConstSchedule(1))
         outboard_pump = SwitchPump(100, 0)
-        water_maker = WaterMaker(0.5)
+        water_maker = WaterMaker(50)
         water_tank = WaterTank(100)
         water_demand = WaterDemand(ConstSchedule(10), ConstSchedule(10))
         grey_water_supply = Source(0, ConstSchedule(1))
@@ -53,7 +55,12 @@ def test_water_maker_network():
                 .define_state(self.outboard_pump)
                 .value(SwitchPumpState())
                 .define_state(self.water_maker)
-                .value(WaterMakerState(True))
+                .value(
+                    WaterMakerState(
+                        WaterMakerStatus.WATER_PRODUCTION.value,
+                        WaterMakerTankStatus.EMPTY.value,
+                    )
+                )
                 .define_state(self.water_tank)
                 .value(WaterTankState(0))
                 .define_state(self.water_demand)
@@ -115,7 +122,7 @@ def test_water_maker_network():
     """
     first simulation step we expect:
         0l current fill
-        50% efficiency from the water maker on 100 l/s from the pump = +50l/s
+        +50 l/s from the water maker 
         +5 l/s from the water treatment
         -10 l/s from the water demand
         1 second per timestep so the fill is:
@@ -129,7 +136,7 @@ def test_water_maker_network():
     """
     second simulation step we expect:
         45l current fill
-        50% efficiency from the water maker on 100l/s from the pump = +50l/s
+        +50 l/s from the water maker 
         +5 l/s from the water demand = +10l/s
         -10l/s from the water demand
         45 + (50 * 1) + (5 * 1) - (10 * 1) = 90l 

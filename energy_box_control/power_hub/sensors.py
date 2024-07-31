@@ -18,7 +18,10 @@ from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import SwitchPumpAlarm
-from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
+from energy_box_control.appliances.water_maker import (
+    WaterMaker,
+    WaterMakerPort,
+)
 from energy_box_control.appliances.water_tank import WaterTank
 from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
@@ -45,9 +48,11 @@ from energy_box_control.units import (
     Ampere,
     Bar,
     Celsius,
+    Hours,
     Joule,
     Liter,
     LiterPerSecond,
+    Ppm,
     Percentage,
     Volt,
     Watt,
@@ -1044,7 +1049,7 @@ class FreshWaterTankSensors(WaterTankSensors):
 
     @property
     def fill_flow(self) -> LiterPerSecond:
-        return self.water_maker.out_flow
+        return self.water_maker.production_flow
 
     @property
     def flow_to_kitchen(self) -> LiterPerSecond:
@@ -1090,10 +1095,22 @@ class WaterTreatmentSensors(FromState):
 @sensors()
 class WaterMakerSensors(FromState):
     spec: WaterMaker
-    on: bool = sensor()
-    out_flow: LiterPerSecond = sensor(
+    production_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
+    tank_status: int = sensor()
+    system_status: int = sensor()
+    error: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    warning: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    last_error_id: int = sensor(resolver=const_resolver(0))
+    last_warning_id: int = sensor(resolver=const_resolver(0))
+    feed_pressure: Bar = sensor(resolver=const_resolver(0))
+    membrane_pressure: Bar = sensor(resolver=const_resolver(0))
+    cumulative_operation_time: Hours = sensor(resolver=const_resolver(0))
+    salinity: Ppm = sensor(resolver=const_resolver(0))
+    time_to_service: float = sensor(resolver=const_resolver(0))
+    total_water_production: Liter = sensor(resolver=const_resolver(0))
+    current_water_production: Liter = sensor(resolver=const_resolver(0))
 
 
 @sensors()

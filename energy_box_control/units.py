@@ -16,3 +16,5 @@ Degree = float
 Bar = float
 Volt = float
 Ampere = float
+Hours = float
+Ppm = float
