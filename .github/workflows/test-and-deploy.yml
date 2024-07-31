@@ -239,13 +239,13 @@ jobs:
         run: >
           docker build
           --platform linux/amd64
-          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${GITHUB_REF}"
+          --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${{ github.event.release.tag_name }}"
           . -f python_script.Dockerfile
 
       - name: 'Docker push Python app release'
         run: >
           docker push
-          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${GITHUB_REF}"
+          "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:RELEASE-${{ github.event.release.tag_name }}"
 
   deploy-prod-infra:
     timeout-minutes: 10
@@ -297,7 +297,7 @@ jobs:
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PROD_PAGERDUTY_MQTT_CHECKER_PROD_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.PROD_PAGERDUTY_GKE_PROD_KEY}}
-          TF_VAR_python_app_image_tag: "RELEASE-${GITHUB_REF}"
+          TF_VAR_python_app_image_tag: "RELEASE-${{ github.event.release.tag_name }}"
           TF_VAR_env: "prod"
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: "power_hub"
