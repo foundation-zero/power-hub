@@ -33,6 +33,7 @@ from energy_box_control.power_hub_control import (
     SETPOINTS_TOPIC,
     CONTROL_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
+    SURVIVAL_MODE_TOPIC,
     combine_survival_setpoints,
     publish_control_modes,
     publish_control_values,
@@ -40,6 +41,8 @@ from energy_box_control.power_hub_control import (
     unqueue_setpoints,
     queue_on_message,
     unqueue_survival_mode,
+    survival_queue,
+    setpoints_queue,
 )
 
 import asyncio
@@ -49,7 +52,6 @@ logger = get_logger(__name__)
 
 
 control_values_queue: queue.Queue[str] = queue.Queue()
-setpoints_queue: queue.Queue[str] = queue.Queue()
 sensor_values_queue: queue.Queue[str] = queue.Queue()
 
 
@@ -119,6 +121,7 @@ async def run(
         SENSOR_VALUES_TOPIC, partial(queue_on_message, sensor_values_queue)
     )
     await run_listener(SETPOINTS_TOPIC, partial(queue_on_message, setpoints_queue))
+    await run_listener(SURVIVAL_MODE_TOPIC, partial(queue_on_message, survival_queue))
 
     notifier = Notifier([PagerDutyNotificationChannel(CONFIG.pagerduty_simulation_key)])
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
