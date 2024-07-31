@@ -1,9 +1,10 @@
 import asyncio
 from dataclasses import fields, replace
+from datetime import datetime, timezone
 from functools import partial
 import json
 import queue
-from typing import Optional
+from typing import Any, Optional
 from paho.mqtt import client as mqtt_client
 
 from energy_box_control.config import CONFIG
@@ -48,6 +49,14 @@ setpoints_queue: queue.Queue[str] = queue.Queue()
 survival_queue: queue.Queue[str] = queue.Queue()
 
 
+class ControlModesEncoder(json.JSONEncoder):
+    def default(self, o: Any):
+        if type(o) == datetime:
+            return o.isoformat()
+        else:
+            return json.JSONEncoder.default(self, o)
+
+
 def queue_on_message(
     queue: queue.Queue[str],
     client: mqtt_client.Client,
@@ -89,10 +98,14 @@ def publish_control_modes(
         CONTROL_MODES_TOPIC,
         json.dumps(
             {
-                name: getattr(control_state, name).control_mode.value
-                for name in [f.name for f in fields(control_state)]
-                if "control" in name
-            }
+                **{
+                    name: getattr(control_state, name).control_mode.value
+                    for name in [f.name for f in fields(control_state)]
+                    if "control" in name
+                },
+                **{"time": datetime.now(tz=timezone.utc)},
+            },
+            cls=ControlModesEncoder,
         ),
         notifier,
     )
