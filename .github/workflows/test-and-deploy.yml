@@ -35,7 +35,7 @@ jobs:
       - name: Test
         run: poetry run pytest
 
-      - run: docker-compose up -d telegraf
+      - run: docker compose up -d telegraf
 
       - name: Integration tests
         run: poetry run pytest -s --runintegration tests/api/test_api_integration.py
@@ -47,9 +47,9 @@ jobs:
           PAGERDUTY_SIMULATION_KEY: "-"
       
       - name: Clear docker volumes
-        run: docker-compose down -v
+        run: docker compose down -v
 
-      - run: docker-compose up -d
+      - run: docker compose up -d
         env:
           PAGERDUTY_SIMULATION_KEY: "-"
   
