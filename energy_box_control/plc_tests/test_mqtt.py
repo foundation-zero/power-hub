@@ -5,8 +5,7 @@ from energy_box_control.monitoring.monitoring import (
     PagerDutyNotificationChannel,
 )
 from energy_box_control.mqtt import create_and_connect_client, publish_to_mqtt
-import json
-import os
+from pathlib import Path
 
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.schedules import PowerHubSchedules
@@ -23,15 +22,10 @@ def main():
 
     topic = "power_hub/sensor_values"
     client = create_and_connect_client()
-    with open(
-        os.path.join(os.getcwd(), "energy_box_control/plc_tests/test_json.json"), "r"
-    ) as file:
-        data = json.dumps(json.load(file))
-        publish_to_mqtt(client, topic, data, notifier)
-        sensor_values = power_hub.sensors_from_json(data)
-        notifier.send_events(
-            monitor.run_sensor_value_checks(sensor_values, "testing_mqtt")
-        )
+    data = Path("energy_box_control/plc_tests/test_json.json").read_text()
+    publish_to_mqtt(client, topic, data, notifier)
+    sensor_values = power_hub.sensors_from_json(data)
+    notifier.send_events(monitor.run_sensor_value_checks(sensor_values, "testing_mqtt"))
 
 
 if __name__ == "__main__":

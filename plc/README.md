@@ -24,6 +24,6 @@ You might need to enable qemu by running:
 ## Test
 To test whether the script ran succesful you can docker exec into the control-app container and run:
 
-`/app/env/bin/python -m energy_box_control.plc.mqtt_test`
+`/app/env/bin/python -m energy_box_control.plc_tests.test_mqtt`
 
 Which should put a sensor_values json on MQTT (if the bridge is enabled it will propagate to Telegraf and InfluxDB) and trigger an alert to PagerDuty. Try to clean up after. 
