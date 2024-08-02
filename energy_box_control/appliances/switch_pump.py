@@ -21,6 +21,7 @@ class SwitchPumpState(ApplianceState):
     pump_1_alarm: int = NO_ALARM
     pump_1_communication_fault: int = NO_ALARM
     pressure: Bar = DEFAULT_PRESSURE
+    on: bool = False
 
 
 class SwitchPumpPort(Port):
@@ -46,7 +47,7 @@ class SwitchPump(ThermalAppliance[SwitchPumpState, SwitchPumpControl, SwitchPump
         simulation_time: ProcessTime,
     ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ThermalState]]:
         input = inputs[SwitchPumpPort.IN]
-        return SwitchPumpState(), {
+        return SwitchPumpState(on=control.on), {
             SwitchPumpPort.OUT: ThermalState(
                 self.flow if control.on else 0, input.temperature
             )
