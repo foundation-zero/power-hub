@@ -36,6 +36,7 @@ from energy_box_control.appliances.chiller import ChillerControl
 from energy_box_control.appliances.switch_pump import SwitchPumpControl
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
+from energy_box_control.appliances.water_maker import WaterMakerStatus
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import ControlBuilder, NetworkControl
@@ -651,8 +652,14 @@ stop_cool = Fn.sensors(
     lambda sensors: sensors.outboard_exchange.output_temperature
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
 
-water_maker_on = Fn.pred(lambda _, sensors: sensors.water_maker.on)
-water_maker_off = Fn.pred(lambda _, sensors: not sensors.water_maker.on)
+water_maker_on = Fn.pred(
+    lambda _, sensors: sensors.water_maker.status
+    == WaterMakerStatus.WATER_PRODUCTION.value
+)
+water_maker_off = Fn.pred(
+    lambda _, sensors: not sensors.water_maker.status
+    == WaterMakerStatus.WATER_PRODUCTION.value
+)
 
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
