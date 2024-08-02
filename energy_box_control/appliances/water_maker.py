@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from energy_box_control.appliances.base import (
     ApplianceState,
     Port,
@@ -6,11 +7,20 @@ from energy_box_control.appliances.base import (
     ThermalState,
 )
 from energy_box_control.time import ProcessTime
+from energy_box_control.units import LiterPerSecond
+
+
+class WaterMakerStatus(Enum):
+    PASSIVE = 0
+    STANDBY = 1
+    WATER_PRODUCTION = 2
+    FLUSHING = 3
 
 
 @dataclass(frozen=True, eq=True)
 class WaterMakerState(ApplianceState):
-    on: bool
+    status: WaterMakerStatus
+    tank_empty: bool = True
 
 
 class WaterMakerPort(Port):
@@ -21,7 +31,7 @@ class WaterMakerPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class WaterMaker(ThermalAppliance[WaterMakerState, None, WaterMakerPort]):
-    efficiency: float
+    production_flow: LiterPerSecond
 
     def simulate(
         self,
@@ -31,11 +41,11 @@ class WaterMaker(ThermalAppliance[WaterMakerState, None, WaterMakerPort]):
         simulation_time: ProcessTime,
     ) -> tuple[WaterMakerState, dict[WaterMakerPort, ThermalState]]:
 
-        return WaterMakerState(previous_state.on), {
+        return WaterMakerState(previous_state.status), {
             WaterMakerPort.DESALINATED_OUT: ThermalState(
                 (
-                    inputs[WaterMakerPort.IN].flow * self.efficiency
-                    if previous_state.on
+                    self.production_flow
+                    if previous_state.status == WaterMakerStatus.WATER_PRODUCTION
                     else 0
                 ),
                 inputs[WaterMakerPort.IN].temperature,
