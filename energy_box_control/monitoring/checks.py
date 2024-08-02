@@ -20,7 +20,7 @@ from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import (
     PowerHubSensors,
-    SwitchPumpSensors,
+    SmartPumpSensors,
     ValveSensors,
     ElectricalSensors,
     ContainersSensors,
@@ -424,8 +424,8 @@ pump_alarm_checks = [
         valid_value=False,
     )
     for appliance_name, appliance_type in get_type_hints(PowerHubSensors).items()
-    if appliance_type == SwitchPumpSensors
-    for attr in attributes_for_type(SwitchPumpSensors, SensorType.ALARM)
+    if issubclass(appliance_type, SmartPumpSensors)
+    for attr in attributes_for_type(SmartPumpSensors, SensorType.ALARM)
 ]
 
 yazaki_bound_checks = [

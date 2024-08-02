@@ -17,7 +17,7 @@ from energy_box_control.appliances.heat_exchanger import (
 from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
-from energy_box_control.appliances.switch_pump import SwitchPumpAlarm, SwitchPumpPort
+from energy_box_control.appliances.switch_pump import SwitchPumpAlarm
 from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
 from energy_box_control.appliances.water_tank import WaterTank
 from energy_box_control.appliances.water_treatment import (
@@ -261,7 +261,6 @@ class HeatPipesSensors(FromState):
 class PcmSensors(FromState):
     spec: Pcm
     temperature: Celsius = sensor(technical_name="TS-1007")
-    state_of_charge: float = sensor()
     rh33_pcm_discharge: RH33Sensors
     rh33_hot_storage: RH33Sensors
     hot_switch_valve: "ValveSensors"
@@ -345,6 +344,11 @@ class PcmSensors(FromState):
         return self.temperature > self.spec.phase_change_temperature
 
     @property
+    def state_of_charge(self) -> float:
+        # TODO: improve this based on reality
+        return 1 if self.charged else 0
+
+    @property
     def heat(self) -> Joule:
         return (
             self.spec.sensible_capacity * (self.temperature - PCM_ZERO_TEMPERATURE)
@@ -361,7 +365,7 @@ class YazakiSensors(FromState):
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_switch_valve: "ValveSensors"
-    chilled_loop_pump: "SwitchPumpSensors"
+    chilled_loop_pump: "PressuredPumpSensors"
     waste_pressure_sensor: "PressureSensors"
     pcm_yazaki_pressure_sensor: "PressureSensors"
     yazaki_hot_flow_sensor: "FlowSensors"
@@ -749,7 +753,7 @@ class ChillerSensors(FromState):
     waste_switch_valve: "ValveSensors"
     waste_flow_sensor: FlowSensors
     chilled_flow_sensor: FlowSensors
-    chilled_loop_pump: "SwitchPumpSensors"
+    chilled_loop_pump: "PressuredPumpSensors"
     waste_pressure_sensor: "PressureSensors"
 
     @property
@@ -873,17 +877,22 @@ class ChillerSensors(FromState):
 @sensors()
 class SwitchPumpSensors(FromState):
     spec: SwitchPump
-    flow_out: LiterPerSecond = sensor(
-        type=SensorType.FLOW, from_port=SwitchPumpPort.OUT
-    )
-
-    pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pressure: Bar = sensor()
-    pump_1_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    on: bool = sensor()
 
     @property
     def electrical_power(self) -> Watt:
-        return self.spec.electrical_power if self.flow_out > 0 else 0
+        return self.spec.electrical_power if self.on else 0
+
+
+@sensors()
+class SmartPumpSensors(SwitchPumpSensors):
+    pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    pump_1_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+
+
+@sensors()
+class PressuredPumpSensors(SmartPumpSensors):
+    pressure: Bar = sensor()
 
 
 @sensors()
@@ -1170,12 +1179,12 @@ class PowerHubSensors(NetworkSensors):
     waste_switch_valve: ValveSensors = describe("CV-1007", "35k10/5")
     outboard_exchange: HeatExchangerSensors = describe("W-1007")
     weather: WeatherSensors = describe("WSC-11", "35k10/10")
-    pcm_to_yazaki_pump: SwitchPumpSensors = describe("P-1003", "35k10/11")
-    chilled_loop_pump: SwitchPumpSensors = describe("P-1005", "35k10/13")
-    waste_pump: SwitchPumpSensors = describe("P-1004", "35k10/12")
+    pcm_to_yazaki_pump: PressuredPumpSensors = describe("P-1003", "35k10/11")
+    chilled_loop_pump: PressuredPumpSensors = describe("P-1005", "35k10/13")
+    waste_pump: SmartPumpSensors = describe("P-1004", "35k10/12")
     hot_water_pump: SwitchPumpSensors = describe("simulation-only")
     outboard_pump: SwitchPumpSensors = describe("P-1002", "35k17/0, 35k16/0")
-    cooling_demand_pump: SwitchPumpSensors = describe("P-1007", "192.168.1.46")
+    cooling_demand_pump: PressuredPumpSensors = describe("P-1007", "192.168.1.46")
     pv_panel: PVSensors = describe("not-in-drawing")
     electrical: ElectricalSensors = describe("electrical-plc", "192.168.1.15")
     fresh_water_tank: FreshWaterTankSensors = describe("K-5001")
@@ -1188,6 +1197,8 @@ class PowerHubSensors(NetworkSensors):
     waste_pressure_sensor: PressureSensors = describe("PS-1002", "35k13/1")
     pipes_pressure_sensor: PressureSensors = describe("PS-1003", "35k13/2")
     pcm_yazaki_pressure_sensor: PressureSensors = describe("PS-1001", "35k13/0")
+    technical_water_regulator: ValveSensors = describe("CV-4001", "35k18/4")
+    water_filter_bypass_valve: ValveSensors = describe("CV-5001", "35k18/5")
     heat_pipes_flow_sensor: FlowSensors = flow_sensor(
         (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN), "FS-1001", "35k9/1"
     )
