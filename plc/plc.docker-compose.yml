@@ -7,25 +7,28 @@ services:
     ports:
       - "1883:1883"
       - "9001:9001"
+    volumes:
+      - ${CERTIFICATE_DIR}/ISRG_ROOT_X1.crt:/etc/ssl/vernemq/cafile.crt:ro
     networks:
       - power_hub_control
     env_file:
       - .env
     environment:
-      DOCKER_VERNEMQ_USER_power-hub: '${MQTT_PASSWORD}'
+      DOCKER_VERNEMQ_USER_power-hub: '${PROD_MQTT_PASSWORD}'
       DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
       DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
-      # TODO: Add these variables when the cloud vernemq is set up. 
-      # DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" #https://docs.vernemq.com/configuring-vernemq/bridge
-      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0: "${CLOUD_VERNEMQ_URL}"
-      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1: "power_hub/* out 1"
-      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__username: "power_hub"
-      # DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__password: ${MQTT_PASSWORD}
+      DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" #https://docs.vernemq.com/configuring-vernemq/bridge
+      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0: "${PROD_VERNEMQ_URL}"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__TOPIC__1: "power_hub/* out 1"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__username: "power-hub"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__password: "${PROD_MQTT_PASSWORD}"
+      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__cafile: "/etc/ssl/vernemq/cafile.crt"
+
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8888/health" ]
-      interval: 30s
-      timeout: 30s
-      retries: 5
+      interval: 60s
+      timeout: 60s
+      retries: 10
 
   control:
     depends_on:

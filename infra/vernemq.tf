@@ -165,28 +165,6 @@ resource "helm_release" "vernemq" {
     name  = "persistentVolume.enabled"
     value = var.env == "staging" ? "false" : "true"
   }
-
-  set {
-    name  = "additionalEnv[9].name"
-    value = "DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE"
-  }
-
-  set {
-    name  = "additionalEnv[9].value"
-    value = "on"
-    type  = "string"
-  }
-
-  set {
-    name  = "additionalEnv[10].name"
-    value = "DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_PROTOCOL_VERSIONS"
-  }
-
-  set {
-    name  = "additionalEnv[10].value"
-    value = "3,4,5,131,132"
-    type  = "string"
-  }
 }
 
 resource "kubernetes_service" "vernemq_internal" {

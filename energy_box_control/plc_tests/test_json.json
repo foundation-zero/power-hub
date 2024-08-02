@@ -1,0 +1,422 @@
+{
+  "time": "2024-08-02T10:54:10.809389+00:00",
+  "heat_pipes": {},
+  "heat_pipes_valve": {
+    "position": 0,
+    "service_info": 0
+  },
+  "heat_pipes_power_hub_pump": {
+    "pressure": 2.5,
+    "flow_out": 0.25,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "heat_pipes_supply_box_pump": {
+    "pressure": 2.5,
+    "flow_out": 0.25,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "hot_switch_valve": {
+    "position": 0.0,
+    "service_info": 0
+  },
+  "hot_reservoir": {
+    "temperature": 65.41736205689416
+  },
+  "pcm": {
+    "temperature": 1000,
+    "state_of_charge": 1
+  },
+  "yazaki_hot_bypass_valve": {
+    "position": 0,
+    "service_info": 0
+  },
+  "yazaki": {},
+  "chiller": {
+    "fault_code": 0
+  },
+  "chiller_switch_valve": {
+    "position": 0.0,
+    "service_info": 0
+  },
+  "cold_reservoir": {
+    "temperature": 11.459636808442083
+  },
+  "waste_bypass_valve": {
+    "position": 1.0,
+    "service_info": 0
+  },
+  "preheat_switch_valve": {
+    "position": 0.0,
+    "service_info": 0
+  },
+  "preheat_reservoir": {
+    "temperature": 24.064752613815816
+  },
+  "waste_switch_valve": {
+    "position": 0.0,
+    "service_info": 0
+  },
+  "outboard_exchange": {},
+  "weather": {
+    "alarm": 0,
+    "ambient_temperature": 24.0,
+    "global_irradiance": 744.0
+  },
+  "pcm_to_yazaki_pump": {
+    "pressure": 2.5,
+    "flow_out": 1.2,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "chilled_loop_pump": {
+    "pressure": 2.5,
+    "flow_out": 1.1666666666666667,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "waste_pump": {
+    "pressure": 2.5,
+    "flow_out": 1.6666666666666667,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "hot_water_pump": {
+    "pressure": 2.5,
+    "flow_out": 0,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "outboard_pump": {
+    "pressure": 2.5,
+    "flow_out": 5.0,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "cooling_demand_pump": {
+    "pressure": 2.5,
+    "flow_out": 1.1666666666666667,
+    "pump_1_communication_fault": 0,
+    "pump_1_alarm": 0
+  },
+  "pv_panel": {
+    "power": 25296.0
+  },
+  "electrical": {
+    "battery_high_internal_temperature_alarm": 0,
+    "sim_room_storage_current_L2": 1,
+    "high_temperature_alarm": 0,
+    "center_1_voltage_L1": 230,
+    "kitchen_sanitary_voltage_L3": 230,
+    "kitchen_sanitary_current_L2": 1,
+    "center_2_voltage_L3": 230,
+    "thermo_cabinet_voltage_L1": 230,
+    "low_temperature_alarm": 0,
+    "thermo_cabinet_voltage_L3": 230,
+    "center_1_power_L2": 230,
+    "office_power_L2": 230,
+    "overload_alarm": 0,
+    "supply_box_power_L3": 230,
+    "center_2_voltage_L1": 230,
+    "workshop_power_L3": 230,
+    "office_current_L3": 1,
+    "ripple_alarm": 0,
+    "workshop_current_L2": 1,
+    "battery_error": 0,
+    "battery_alarm": 0,
+    "high_batt_voltage_alarm": 0,
+    "center_2_current_L1": 1,
+    "supply_box_voltage_L2": 230,
+    "battery_low_soc_alarm": 0,
+    "high_battery_voltage_alarm": 0,
+    "supply_box_power_L1": 230,
+    "workshop_current_L3": 1,
+    "office_current_L1": 1,
+    "thermo_cabinet_current_L2": 1,
+    "office_voltage_L2": 230,
+    "battery_internal_failure_alarm": 0,
+    "battery_high_temperature_alarm": 0,
+    "sim_room_storage_power_L1": 230,
+    "battery_fuse_blown_alarm": 0,
+    "supply_box_current_L2": 1,
+    "high_ac_out_voltage_alarm": 0,
+    "battery_high_voltage_alarm": 0,
+    "sim_room_storage_power_L3": 230,
+    "battery_low_charge_temperature_alarm": 0,
+    "kitchen_sanitary_voltage_L2": 230,
+    "center_1_voltage_L2": 230,
+    "center_2_current_L2": 1,
+    "office_power_L1": 230,
+    "center_2_power_L3": 230,
+    "battery_high_charge_current_alarm": 0,
+    "workshop_voltage_L1": 230,
+    "estop_active": false,
+    "battery_mid_voltage_alarm": 0,
+    "low_ac_out_voltage_alarm": 0,
+    "sim_room_storage_current_L3": 1,
+    "thermo_cabinet_current_L3": 1,
+    "low_batt_voltage_alarm": 0,
+    "center_1_power_L3": 230,
+    "center_1_power_L1": 230,
+    "sim_room_storage_voltage_L1": 230,
+    "kitchen_sanitary_current_L3": 1,
+    "supply_box_current_L3": 1,
+    "workshop_voltage_L2": 230,
+    "thermo_cabinet_voltage_L2": 230,
+    "battery_high_charge_temperature_alarm": 0,
+    "current_battery_system": 0,
+    "supply_box_current_L1": 1,
+    "center_1_current_L3": 1,
+    "office_current_L2": 1,
+    "thermo_cabinet_power_L2": 230,
+    "sim_room_storage_power_L2": 230,
+    "kitchen_sanitary_voltage_L1": 230,
+    "workshop_voltage_L3": 230,
+    "center_2_power_L2": 230,
+    "thermo_cabinet_current_L1": 1,
+    "kitchen_sanitary_power_L3": 230,
+    "supply_box_power_L2": 230,
+    "thermo_cabinet_power_L1": 230,
+    "battery_high_starter_voltage_alarm": 0,
+    "kitchen_sanitary_power_L1": 230,
+    "sim_room_storage_current_L1": 1,
+    "thermo_cabinet_power_L3": 230,
+    "power_battery_system": 0,
+    "workshop_power_L1": 230,
+    "center_2_power_L1": 230,
+    "battery_low_temperature_alarm": 0,
+    "battery_low_cell_voltage_alarm": 0,
+    "center_1_current_L2": 1,
+    "low_battery_voltage_alarm": 0,
+    "supply_box_voltage_L3": 230,
+    "office_power_L3": 230,
+    "soc_battery_system": 74.4,
+    "center_2_voltage_L2": 230,
+    "battery_low_starter_voltage_alarm": 0,
+    "battery_low_fused_voltage_alarm": 0,
+    "center_1_current_L1": 1,
+    "battery_high_fused_voltage_alarm": 0,
+    "center_1_voltage_L3": 230,
+    "battery_low_voltage_alarm": 0,
+    "center_2_current_L3": 1,
+    "battery_cell_imbalance_alarm": 0,
+    "workshop_current_L1": 1,
+    "office_voltage_L3": 230,
+    "office_voltage_L1": 230,
+    "voltage_battery_system": 0,
+    "sim_room_storage_voltage_L3": 230,
+    "battery_high_discharge_current_alarm": 0,
+    "supply_box_voltage_L1": 230,
+    "workshop_power_L2": 230,
+    "kitchen_sanitary_power_L2": 230,
+    "kitchen_sanitary_current_L1": 1,
+    "sim_room_storage_voltage_L2": 230
+  },
+  "fresh_water_tank": {
+    "fill_ratio": 0.499
+  },
+  "grey_water_tank": {
+    "fill_ratio": 0.501
+  },
+  "black_water_tank": {
+    "fill_ratio": 0.5
+  },
+  "technical_water_tank": {
+    "fill_ratio": 0.5
+  },
+  "water_treatment": {},
+  "water_maker": {
+    "on": true,
+    "out_flow": 9.0
+  },
+  "containers": {
+    "kitchen_ventilation_error": 0,
+    "kitchen_co2": 90,
+    "simulator_storage_co2": 90,
+    "simulator_storage_humidity": 90,
+    "power_hub_humidity": 90,
+    "office_ventilation_error": 0,
+    "office_temperature": 24.0,
+    "kitchen_temperature": 24.0,
+    "office_humidity": 90,
+    "supply_box_temperature": 24.0,
+    "kitchen_humidity": 90,
+    "simulator_storage_temperature": 24.0,
+    "simulator_storage_ventilation_filter_status": 0,
+    "simulator_storage_ventilation_error": 0,
+    "power_hub_temperature": 24.0,
+    "office_co2": 90,
+    "sanitary_temperature": 24.0,
+    "kitchen_ventilation_filter_status": 0,
+    "supply_box_humidity": 90,
+    "office_ventilation_filter_status": 0
+  },
+  "waste_pressure_sensor": {
+    "pressure": 2
+  },
+  "pipes_pressure_sensor": {
+    "pressure": 2
+  },
+  "pcm_yazaki_pressure_sensor": {
+    "pressure": 2
+  },
+  "heat_pipes_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 81.5315227783357,
+    "flow": 0.25,
+    "glycol_concentration": 0
+  },
+  "pcm_discharge_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 79.21208763345747,
+    "flow": 0.0,
+    "glycol_concentration": 0
+  },
+  "hot_storage_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 89.17318801747338,
+    "flow": 0.25,
+    "glycol_concentration": 0
+  },
+  "yazaki_hot_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 79.21208763345747,
+    "flow": 1.2,
+    "glycol_concentration": 0
+  },
+  "waste_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24.004023125251514,
+    "flow": 1.6666666666666667,
+    "glycol_concentration": 0
+  },
+  "chilled_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 11.458721283366408,
+    "flow": 1.1666666666666667,
+    "glycol_concentration": 0
+  },
+  "cooling_demand_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 11.459636808442083,
+    "flow": 1.1666666666666667,
+    "glycol_concentration": 0
+  },
+  "heat_dump_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24.015994605361865,
+    "flow": 1.6666666666666667,
+    "glycol_concentration": 0
+  },
+  "domestic_hot_water_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 65.41736205689416,
+    "flow": 0,
+    "glycol_concentration": 0
+  },
+  "fresh_to_kitchen_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24,
+    "flow": 0,
+    "glycol_concentration": 0
+  },
+  "technical_to_sanitary_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24,
+    "flow": 0,
+    "glycol_concentration": 0
+  },
+  "technical_to_wash_off_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24,
+    "flow": 0,
+    "glycol_concentration": 0
+  },
+  "fresh_to_technical_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24,
+    "flow": 0,
+    "glycol_concentration": 0
+  },
+  "treated_water_flow_sensor": {
+    "total_volume": 0,
+    "service_info": 0,
+    "temperature": 24,
+    "flow": 1,
+    "glycol_concentration": 0
+  },
+  "rh33_pcm_discharge": {
+    "status": 1,
+    "cold_temperature": 79.21208763345747,
+    "delta_temperature": 0.0,
+    "hot_temperature": 79.21208763345747
+  },
+  "rh33_preheat": {
+    "status": 1,
+    "cold_temperature": 24.064752613815816,
+    "delta_temperature": -0.06072948856430216,
+    "hot_temperature": 24.004023125251514
+  },
+  "rh33_domestic_hot_water": {
+    "status": 1,
+    "cold_temperature": 24,
+    "delta_temperature": 41.41736205689416,
+    "hot_temperature": 65.41736205689416
+  },
+  "rh33_heat_pipes": {
+    "status": 1,
+    "cold_temperature": 81.5315227783357,
+    "delta_temperature": 7.64166523913768,
+    "hot_temperature": 89.17318801747338
+  },
+  "rh33_hot_storage": {
+    "status": 1,
+    "cold_temperature": 81.5390261228567,
+    "delta_temperature": 7.634161894616682,
+    "hot_temperature": 89.17318801747338
+  },
+  "rh33_yazaki_hot": {
+    "status": 1,
+    "cold_temperature": 79.21208763345747,
+    "delta_temperature": 0.0,
+    "hot_temperature": 79.21208763345747
+  },
+  "rh33_waste": {
+    "status": 1,
+    "cold_temperature": 24.004023125251518,
+    "delta_temperature": -3.552713678800501e-15,
+    "hot_temperature": 24.004023125251514
+  },
+  "rh33_chill": {
+    "status": 1,
+    "cold_temperature": 11.458721283366408,
+    "delta_temperature": 0.0,
+    "hot_temperature": 11.458721283366408
+  },
+  "rh33_heat_dump": {
+    "status": 1,
+    "cold_temperature": 24.015994605361865,
+    "delta_temperature": 0.04875800845395162,
+    "hot_temperature": 24.064752613815816
+  },
+  "rh33_cooling_demand": {
+    "status": 1,
+    "cold_temperature": 11.459636808442083,
+    "delta_temperature": 0.6287041483930267,
+    "hot_temperature": 12.08834095683511
+  }
+}
