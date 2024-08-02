@@ -18,7 +18,10 @@ from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import SwitchPumpAlarm
-from energy_box_control.appliances.water_maker import WaterMaker, WaterMakerPort
+from energy_box_control.appliances.water_maker import (
+    WaterMaker,
+    WaterMakerPort,
+)
 from energy_box_control.appliances.water_tank import WaterTank
 from energy_box_control.appliances.water_treatment import (
     WaterTreatment,
@@ -45,9 +48,11 @@ from energy_box_control.units import (
     Ampere,
     Bar,
     Celsius,
+    Hours,
     Joule,
     Liter,
     LiterPerSecond,
+    Ppm,
     Percentage,
     Volt,
     Watt,
@@ -83,7 +88,7 @@ def power_hub_sensor[
     return sensor(technical_name=technical_name, type=type, resolver=resolver)
 
 
-FlowSensorAlarm = int
+FlowServiceInfo = int
 
 
 @sensors(from_appliance=False, eq=False)
@@ -92,7 +97,7 @@ class FlowSensors(WithoutAppliance):
     temperature: Celsius
     glycol_concentration: Percentage
     total_volume: Liter
-    service_info: FlowSensorAlarm
+    service_info: FlowServiceInfo
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, FlowSensors):
@@ -127,7 +132,7 @@ def flow_sensor(
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowSensorAlarm = sensor(
+        service_info: FlowServiceInfo = sensor(
             type=SensorType.INFO, resolver=const_resolver(0)
         )
 
@@ -151,7 +156,7 @@ def flow_sensor_not_simulated(
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowSensorAlarm = sensor(
+        service_info: FlowServiceInfo = sensor(
             technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
         )
 
@@ -225,7 +230,7 @@ def rh33(
                 ThermalState(float("nan"), float("nan")),
             ).temperature,
         )
-        status: RH33Alarm = sensor(resolver=const_resolver(1))
+        status: RH33Alarm = sensor(resolver=const_resolver(0))
 
     return RH33
 
@@ -1044,7 +1049,7 @@ class FreshWaterTankSensors(WaterTankSensors):
 
     @property
     def fill_flow(self) -> LiterPerSecond:
-        return self.water_maker.out_flow
+        return self.water_maker.production_flow
 
     @property
     def flow_to_kitchen(self) -> LiterPerSecond:
@@ -1090,10 +1095,22 @@ class WaterTreatmentSensors(FromState):
 @sensors()
 class WaterMakerSensors(FromState):
     spec: WaterMaker
-    on: bool = sensor()
-    out_flow: LiterPerSecond = sensor(
+    production_flow: LiterPerSecond = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
+    tank_empty: bool = sensor(type=SensorType.BOOL)
+    status: int = sensor(SensorType.INFO)
+    error: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    warning: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    last_error_id: int = sensor(resolver=const_resolver(0))
+    last_warning_id: int = sensor(resolver=const_resolver(0))
+    feed_pressure: Bar = sensor(resolver=const_resolver(0))
+    membrane_pressure: Bar = sensor(resolver=const_resolver(0))
+    cumulative_operation_time: Hours = sensor(resolver=const_resolver(0))
+    salinity: Ppm = sensor(resolver=const_resolver(0))
+    time_to_service: float = sensor(resolver=const_resolver(0))
+    total_water_production: Liter = sensor(resolver=const_resolver(0))
+    current_water_production: Liter = sensor(resolver=const_resolver(0))
 
 
 @sensors()

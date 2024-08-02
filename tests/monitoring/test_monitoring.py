@@ -3,6 +3,8 @@ from typing import get_type_hints
 import pytest
 from energy_box_control.monitoring.checks import (
     ChillerAlarm,
+    FlowSensorAlarm,
+    RH33Alarm,
     ValveAlarm,
     Severity,
     all_checks,
@@ -25,9 +27,10 @@ from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     ContainersSensors,
     ElectricalSensors,
+    FlowSensors,
     PowerHubSensors,
     SmartPumpSensors,
-    SwitchPumpSensors,
+    RH33Sensors,
     ValveSensors,
 )
 from energy_box_control.sensors import (
@@ -351,6 +354,38 @@ def test_weather_station_alarm_checks(source):
     ]
 
 
+def test_water_maker_error_check(source):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    error_value = 50
+    sensors.water_maker.error = 1
+    sensors.water_maker.last_error_id = error_value
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"water maker error with code {error_value}",
+            source=source,
+            dedup_key="water maker error",
+            severity=Severity.ERROR,
+        )
+    ]
+
+
+def test_water_maker_warning_check(source):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    warning_value = 50
+    sensors.water_maker.warning = 1
+    sensors.water_maker.last_warning_id = warning_value
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"water maker warning with code {warning_value}",
+            source=source,
+            dedup_key="water maker warning",
+            severity=Severity.WARNING,
+        )
+    ]
+
+
 def test_valve_alarm_checks(source):
     for alarm in ValveAlarm:
         for valve_name in [
@@ -366,7 +401,25 @@ def test_valve_alarm_checks(source):
                     message=f"{valve_name}_{alarm.name.lower()}_alarm is raised",
                     source=source,
                     dedup_key=f"{valve_name}_{alarm.name.lower()}_alarm",
-                    severity=Severity.CRITICAL,
+                    severity=Severity.ERROR,
+                )
+            ]
+
+
+def test_flow_sensor_alarm_checks(source):
+    for alarm in FlowSensorAlarm:
+        for flow_sensor_name in [
+            field.name for field in fields(PowerHubSensors) if field.type == FlowSensors
+        ]:
+            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+            setattr(getattr(sensors, flow_sensor_name), "service_info", alarm.value)
+            assert run_monitor(sensors, source) == [
+                NotificationEvent(
+                    message=f"{flow_sensor_name}_{alarm.name.lower()}_alarm is raised",
+                    source=source,
+                    dedup_key=f"{flow_sensor_name}_{alarm.name.lower()}_alarm",
+                    severity=Severity.ERROR,
                 )
             ]
 
@@ -390,6 +443,25 @@ def test_pump_alarm_checks(source):
                     source=source,
                     dedup_key=f"{pump_name}_{attr}",
                     severity=Severity.CRITICAL,
+                )
+            ]
+
+
+def test_rh33_alarm_checks(source):
+    for alarm in RH33Alarm:
+        for rh33_name in [
+            field.name for field in fields(PowerHubSensors) if field.type == RH33Sensors
+        ]:
+            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+            setattr(getattr(sensors, rh33_name), "status", alarm.value)
+
+            assert run_monitor(sensors, source) == [
+                NotificationEvent(
+                    message=f"{rh33_name}_{alarm.name.lower()}_alarm is raised",
+                    source=source,
+                    dedup_key=f"{rh33_name}_{alarm.name.lower()}_alarm",
+                    severity=Severity.ERROR,
                 )
             ]
 
