@@ -136,7 +136,8 @@ class PowerHub(Network[PowerHubSensors]):
     fresh_water_demand: WaterDemand
     grey_water_supply: WaterDemand
     water_treatment: WaterTreatment
-    water_filter_bypass_valve: Valve
+    technical_water_regulator: Valve  # CV-4001
+    water_filter_bypass_valve: Valve  # CV-5001
     containers: Containers
     schedules: PowerHubSchedules
 
@@ -195,6 +196,7 @@ class PowerHub(Network[PowerHubSensors]):
                 schedules.grey_water_supply, schedules.fresh_water_temperature
             ),
             phc.water_treatment(schedules.fresh_water_temperature),
+            phc.technical_water_regulator,
             phc.water_filter_bypass_valve,
             phc.containers(schedules.ambient_temperature),
             schedules,
@@ -287,6 +289,10 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(power_hub.cooling_demand_pump)
             .value(SwitchPumpState())
+            .define_state(power_hub.technical_water_regulator)
+            .value(initial_valve_state)
+            .define_state(power_hub.water_filter_bypass_valve)
+            .value(initial_valve_state)
             .build(ProcessTime(timedelta(seconds=1), 0, datetime.now()))
         )
 
@@ -412,6 +418,10 @@ class PowerHub(Network[PowerHubSensors]):
             .value(WaterTreatmentState(True))
             .define_state(self.containers)
             .value(ContainersState())
+            .define_state(self.technical_water_regulator)
+            .value(ValveState(0))
+            .define_state(self.water_filter_bypass_valve)
+            .value(ValveState(phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION))
             .build(ProcessTime(step_size, 0, start_time))
         )
 
@@ -762,6 +772,9 @@ class PowerHub(Network[PowerHubSensors]):
             .at(WaterTreatmentPort.OUT)
             .to(self.fresh_water_tank)
             .at(WaterTankPort.IN_1)
+
+            .unconnected(self.technical_water_regulator) # TODO: actually connect this
+            .unconnected(self.water_filter_bypass_valve) # TODO: actually connect this
         )
         # fmt: on
 

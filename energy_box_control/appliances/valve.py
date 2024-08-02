@@ -51,6 +51,8 @@ class Valve(ThermalAppliance[ValveState, ValveControl, ValvePort]):
         control: ValveControl | None,
         simulation_time: ProcessTime,
     ) -> tuple[ValveState, dict[ValvePort, ThermalState]]:
+        if ValvePort.AB not in inputs:
+            return previous_state, {}
 
         input = inputs[ValvePort.AB]
         position = control.position if control else previous_state.position

@@ -211,6 +211,7 @@ def water_treatment(freshwater_temperature_schedule: Schedule[Celsius]):
     return WaterTreatment(1, freshwater_temperature_schedule)  # Specs unknown
 
 
+technical_water_regulator = Valve()
 water_filter_bypass_valve = Valve()
 
 
