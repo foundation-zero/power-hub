@@ -64,7 +64,7 @@ from energy_box_control.units import (
 from energy_box_control.appliances.boiler import Boiler, BoilerPort
 from energy_box_control.appliances.chiller import Chiller, ChillerFaultCode
 from energy_box_control.appliances.pcm import Pcm, PcmPort
-from energy_box_control.appliances.valve import Valve, ValvePort, ValveServiceInfo
+from energy_box_control.appliances.valve import Valve, ValvePort, ValveStatus
 from energy_box_control.appliances.yazaki import Yazaki, YazakiPort
 from energy_box_control.sensors import (
     FromState,
@@ -726,7 +726,7 @@ class ColdReservoirSensors(FromState):
 class ValveSensors(FromState):
     spec: Valve
     position: float = sensor()
-    service_info: ValveServiceInfo = sensor()
+    status: ValveStatus = sensor()
 
     def in_position(self, position: float, diff: float = 0.05) -> bool:
         return abs(self.position - position) < diff
