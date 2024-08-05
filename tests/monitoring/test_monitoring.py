@@ -636,6 +636,21 @@ def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value
     yazaki_test("yazaki_chilled_pressure_check")
 
 
+def test_yazaki_alarm_check(source):
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    sensors.yazaki.error_status = 1
+
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"yazaki_alarm is raised",
+            source=source,
+            dedup_key=f"yazaki_alarm",
+            severity=Severity.CRITICAL,
+        )
+    ]
+
+
 @pytest.fixture
 def chiller_on(power_hub, yazaki_off):
     return yazaki_off.replace_control(power_hub.chiller, "on", True)

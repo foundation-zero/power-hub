@@ -33,7 +33,8 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    pass
+    operation_status: int = 0
+    error_status: int = 0
 
 
 @dataclass(frozen=True, eq=True)
