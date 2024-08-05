@@ -68,15 +68,15 @@ class ValveAlarm(Alarm):
 
 
 class RH33Alarm(Alarm):
-    OPEN_CIRCUIT = 1
-    OVER_RANGE = 2
-    UNDER_RANGE = 3
-    INVALID_MEASUREMENT_VALUE = 4
-    REPLACEMENT_VALUE = 5
-    SENSOR_ERROR = 6
-    LOWER_LIMIT_VALUE_VIOLATED = 7
-    UPPER_LIMIT_VALUE_VIOLATED = 8
-    COUNTER_OVERFLOW = 16
+    OPEN_CIRCUIT = 0b1
+    OVER_RANGE = 0b10
+    UNDER_RANGE = 0b11
+    INVALID_MEASUREMENT_VALUE = 0b100
+    REPLACEMENT_VALUE = 0b110
+    SENSOR_ERROR = 0b111
+    LOWER_LIMIT_VALUE_VIOLATED = 0b1000
+    UPPER_LIMIT_VALUE_VIOLATED = 0b10000
+    COUNTER_OVERFLOW = 0b100000000000000
 
 
 class FlowSensorAlarm(Alarm):
@@ -454,18 +454,20 @@ flow_sensor_alarm_checks = [
     for flow_sensor_alarm in FlowSensorAlarm
 ]
 
+
 rh33_alarm_checks = [
     alarm(
-        name=f"{field.name}_{rh33_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors, rh33_name=field.name: getattr(
-            sensors, rh33_name
-        ).status,
+        name=f"{field.name}_{attr}_{rh33_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, rh33_name=field.name, attr=attr: getattr(
+            getattr(sensors, rh33_name), attr
+        ),
         message_fn=lambda name, _: f"{name} is raised",
         alarm=rh33_alarm,
         severity=Severity.ERROR,
     )
     for field in fields(PowerHubSensors)
     if field.type == RH33Sensors
+    for attr in attributes_for_type(RH33Sensors, SensorType.ALARM)
     for rh33_alarm in RH33Alarm
 ]
 

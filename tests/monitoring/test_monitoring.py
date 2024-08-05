@@ -475,18 +475,19 @@ def test_rh33_alarm_checks(source):
         for rh33_name in [
             field.name for field in fields(PowerHubSensors) if field.type == RH33Sensors
         ]:
-            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-            setattr(getattr(sensors, rh33_name), "status", alarm.value)
+            for attr in get_attrs(RH33Sensors, SensorType.ALARM):
+                power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+                sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+                setattr(getattr(sensors, rh33_name), attr, alarm.value)
 
-            assert run_monitor(sensors, source) == [
-                NotificationEvent(
-                    message=f"{rh33_name}_{alarm.name.lower()}_alarm is raised",
-                    source=source,
-                    dedup_key=f"{rh33_name}_{alarm.name.lower()}_alarm",
-                    severity=Severity.ERROR,
-                )
-            ]
+                assert run_monitor(sensors, source) == [
+                    NotificationEvent(
+                        message=f"{rh33_name}_{attr}_{alarm.name.lower()}_alarm is raised",
+                        source=source,
+                        dedup_key=f"{rh33_name}_{attr}_{alarm.name.lower()}_alarm",
+                        severity=Severity.ERROR,
+                    )
+                ]
 
 
 @pytest.fixture
