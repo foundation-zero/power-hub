@@ -43,6 +43,10 @@ class FancoilAlarm(Alarm):
 
 
 class PumpAlarm(Alarm):
+    """
+    For the alarm codes, see page 50 of https://drive.google.com/drive/folders/1XeCJmo5KDtKEwL4Dtf3eJ0gkJdJpffFI
+    """
+
     NO_ALARM = 0
 
 
@@ -410,13 +414,29 @@ pump_alarm_checks = [
         value_fn=lambda sensors, attr=attr, appliance_name=appliance_name: getattr(
             getattr(sensors, appliance_name), attr
         ),
-        message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
+        message_fn=lambda name, alarm_code: f"{name} is raised with code {alarm_code}",
         alarm=PumpAlarm.NO_ALARM,
         valid_value=False,
     )
     for appliance_name, appliance_type in get_type_hints(PowerHubSensors).items()
     if issubclass(appliance_type, SmartPumpSensors)
     for attr in attributes_for_type(SmartPumpSensors, SensorType.ALARM)
+]
+
+pump_warning_checks = [
+    alarm(
+        name=f"{appliance_name}_{attr}",
+        value_fn=lambda sensors, attr=attr, appliance_name=appliance_name: getattr(
+            getattr(sensors, appliance_name), attr
+        ),
+        message_fn=lambda name, alarm_code: f"{name} is raised with code {alarm_code}",
+        alarm=PumpAlarm.NO_ALARM,
+        valid_value=False,
+        severity=Severity.WARNING,
+    )
+    for appliance_name, appliance_type in get_type_hints(PowerHubSensors).items()
+    if issubclass(appliance_type, SmartPumpSensors)
+    for attr in attributes_for_type(SmartPumpSensors, SensorType.WARNING)
 ]
 
 flow_sensor_alarm_checks = [
@@ -577,6 +597,7 @@ all_checks = (
     + weather_station_alarm_checks
     + valve_alarm_checks
     + pump_alarm_checks
+    + pump_warning_checks
     + yazaki_bound_checks
     + chiller_bound_checks
     + chiller_alarm_checks

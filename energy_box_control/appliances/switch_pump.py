@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 
 from energy_box_control.appliances.base import (
     ThermalAppliance,
@@ -16,12 +17,16 @@ NO_ALARM = 0
 DEFAULT_PRESSURE = 2.5
 
 
+class SwitchPumpStatusBit(Enum):
+    ON_OFF = 0b000100000000
+
+
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
     pump_1_alarm: int = NO_ALARM
-    pump_1_communication_fault: int = NO_ALARM
+    pump_1_warning: int = NO_ALARM
+    status: int = 0
     pressure: Bar = DEFAULT_PRESSURE
-    on: bool = False
 
 
 class SwitchPumpPort(Port):
@@ -47,7 +52,9 @@ class SwitchPump(ThermalAppliance[SwitchPumpState, SwitchPumpControl, SwitchPump
         simulation_time: ProcessTime,
     ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ThermalState]]:
         input = inputs[SwitchPumpPort.IN]
-        return SwitchPumpState(on=control.on), {
+        return SwitchPumpState(
+            status=SwitchPumpStatusBit.ON_OFF.value if control.on else 0
+        ), {
             SwitchPumpPort.OUT: ThermalState(
                 self.flow if control.on else 0, input.temperature
             )
