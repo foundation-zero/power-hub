@@ -16,6 +16,7 @@ ChillerFaultCode = int
 @dataclass(frozen=True, eq=True)
 class ChillerState(ApplianceState):
     fault_code: ChillerFaultCode = 0
+    status: int = 0
 
 
 class ChillerPort(Port):

@@ -756,6 +756,18 @@ CHILLER_FAULTS = [
     [f"A{err}" for err in range(30, 55)],
 ]
 
+CHILLER_STATUSES = [
+    "Fan 1",
+    "Fan 2",
+    "Inverter/compr.",
+    "Sea water pump",
+    "Cold water pump",
+    "Valve",
+    "Relay 1",
+    "Relay 2",
+    "Relay 3",
+]
+
 
 @sensors()
 class ChillerSensors(FromState):
@@ -763,6 +775,7 @@ class ChillerSensors(FromState):
     rh33_chill: RH33Sensors
     rh33_waste: RH33Sensors
     fault_code: ChillerFaultCode = sensor(type=SensorType.ALARM)
+    status: int = sensor()
     chiller_switch_valve: "ChillerSwitchSensors"
     cold_reservoir: "ColdReservoirSensors"
     waste_switch_valve: "ValveSensors"
@@ -886,6 +899,13 @@ class ChillerSensors(FromState):
             for index, faults in enumerate(CHILLER_FAULTS)
             if self.fault_code & (1 << index)
             for fault in faults
+        ]
+
+    def statuses(self) -> list[str]:
+        return [
+            status
+            for index, status in enumerate(CHILLER_STATUSES)
+            if self.status & (1 << index)
         ]
 
 

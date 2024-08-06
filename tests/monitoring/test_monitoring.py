@@ -2,7 +2,6 @@ from dataclasses import fields
 from typing import get_type_hints
 import pytest
 from energy_box_control.monitoring.checks import (
-    ChillerAlarm,
     FlowSensorAlarm,
     RH33AlarmLowerBitsValues,
     RH33AlarmUpperBits,
@@ -25,6 +24,7 @@ from energy_box_control.power_hub.control import no_control
 from energy_box_control.power_hub.components import HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
+    CHILLER_FAULTS,
     ContainersSensors,
     ElectricalSensors,
     FlowSensors,
@@ -724,38 +724,32 @@ def test_chiller_chilled_pressure_check(
 
 
 def test_chiller_alarm_checks(source):
-    for alarm in ChillerAlarm:
+    for bit, fault in enumerate(CHILLER_FAULTS):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
         sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.chiller, "fault_code", 1 << alarm.value)
+        sensors.chiller.fault_code = 1 << bit
         assert run_monitor(sensors, source) == [
             NotificationEvent(
-                message=f"chiller_{alarm.name.lower()}_alarm is raised",
+                message=f"chiller faults are raised: {", ".join(fault)}",
                 source=source,
-                dedup_key=f"chiller_{alarm.name.lower()}_alarm",
+                dedup_key=f"chiller_fault_alarm",
                 severity=Severity.CRITICAL,
             )
         ]
 
 
 def test_chiller_two_alarm_checks(source):
-    fault_code = 8320  # 7th and 13th bits are set
+    fault_code = 4160  # 7th and 13th bits are set
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    setattr(sensors.chiller, "fault_code", fault_code)
+    sensors.chiller.fault_code = fault_code
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"chiller_{ChillerAlarm.HIGH_PRESSURE_COMPRESSOR_1_AGAIN.name.lower()}_alarm is raised",
+            message=f"chiller faults are raised: A15, A25",
             source=source,
-            dedup_key=f"chiller_{ChillerAlarm.HIGH_PRESSURE_COMPRESSOR_1_AGAIN.name.lower()}_alarm",
+            dedup_key=f"chiller_fault_alarm",
             severity=Severity.CRITICAL,
-        ),
-        NotificationEvent(
-            message=f"chiller_{ChillerAlarm.COMPRESSOR_TEMPERATURE_SENSOR.name.lower()}_alarm is raised",
-            source=source,
-            dedup_key=f"chiller_{ChillerAlarm.COMPRESSOR_TEMPERATURE_SENSOR.name.lower()}_alarm",
-            severity=Severity.CRITICAL,
-        ),
+        )
     ]
 
 

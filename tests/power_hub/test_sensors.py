@@ -51,7 +51,12 @@ def test_sensors_to_json_doesnt_include_is_sensor(sensors):
     assert all("is_sensor" not in value for value in returned.values())
 
 
-def test_sensor_values(power_hub, sensors):
+def test_sensor_values(sensors):
     for field in fields(sensors):
         values = sensor_values(field.name, sensors)
         assert "is_sensor" not in values
+
+
+def test_chiller_sensor_statuses(sensors):
+    sensors.chiller.status = 5
+    assert sensors.chiller.statuses() == ["Fan 1", "Inverter/compr."]

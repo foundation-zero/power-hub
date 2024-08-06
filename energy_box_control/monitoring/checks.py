@@ -110,30 +110,6 @@ class WaterMakerAlarm(AlarmValue):
     NO_ALARM = 0
 
 
-class ChillerAlarm(AlarmBit):
-    UNDERVOLTAGE = 0
-    LOW_PRESSURE_COMPRESSOR_1 = 1
-    HIGH_PRESSURE_COMPRESSOR_1 = 2
-    CABIN_TEMPERATURE_SENSOR = 3
-    COLD_WATER_TEMPERATURE_SENSOR = 4
-    DATA_COMMUNICATION = 5
-    COLD_WATER_FLOW = 6
-    HIGH_PRESSURE_COMPRESSOR_1_AGAIN = 7
-    EXCESS_CURRENT_INVERTER = 8
-    EXCESS_TEMPERATURE_INVERTER = 9
-    EXCESS_TEMPERATURE_COMPRESSOR_1 = 10
-    HIGH_PRESSURE_SENSOR = 11
-    LOW_PRESSURE_SENSOR = 12
-    COMPRESSOR_TEMPERATURE_SENSOR = 13
-    DATA_COMMUNICATION_INVERTER = 14
-    CHARACTERISTIC_DIAGRAM = 15
-    A30_A54 = 16
-    NO_CALIBRATION = 28
-    EEPROM = 29
-    INVALID_PARAMETER_LIST = 30
-    INVALID_RUNTIME_DATA = 31
-
-
 class Severity(Enum):
     DEBUG = "debug"
     INFO = "info"
@@ -545,14 +521,26 @@ chiller_bound_checks = [
     for attr, bound in CHILLER_BOUNDS.items()
 ]
 
-chiller_alarm_checks = [
-    bit_check(
-        name=f"chiller_{chiller_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors: sensors.chiller.fault_code,
-        message_fn=lambda name, _: f"{name} is raised",
-        alarm=chiller_alarm,
+
+def chiller_fault_check(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], list[str]],
+    severity: Severity = Severity.CRITICAL,
+):
+    return SensorValueCheck(
+        name,
+        value_check(
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda faults: len(faults) == 0,
+            message_fn=lambda _, faults: f"chiller faults are raised: {", ".join(faults)}",
+        ),
+        severity=severity,
     )
-    for chiller_alarm in ChillerAlarm
+
+
+chiller_alarm_checks = [
+    chiller_fault_check("chiller_fault_alarm", lambda sensors: sensors.chiller.faults())
 ]
 
 water_maker_alarm_checks = [
