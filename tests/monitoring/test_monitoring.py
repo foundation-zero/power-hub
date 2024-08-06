@@ -439,10 +439,33 @@ def test_pump_alarm_checks(source):
             setattr(getattr(sensors, pump_name), attr, alarm_code)
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
-                    message=f"{pump_name}_{attr} is raising an alarm with code {alarm_code}",
+                    message=f"{pump_name}_{attr} is raised with code {alarm_code}",
                     source=source,
                     dedup_key=f"{pump_name}_{attr}",
                     severity=Severity.CRITICAL,
+                )
+            ]
+
+
+def test_pump_warning_checks(source):
+    pump_names = [
+        appliance_name
+        for appliance_name, type in get_type_hints(PowerHubSensors).items()
+        if issubclass(type, SmartPumpSensors)
+    ]
+    assert len(pump_names) != 0
+    for pump_name in pump_names:
+        for attr in get_attrs(SmartPumpSensors, SensorType.WARNING):
+            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+            alarm_code = 50
+            setattr(getattr(sensors, pump_name), attr, alarm_code)
+            assert run_monitor(sensors, source) == [
+                NotificationEvent(
+                    message=f"{pump_name}_{attr} is raised with code {alarm_code}",
+                    source=source,
+                    dedup_key=f"{pump_name}_{attr}",
+                    severity=Severity.WARNING,
                 )
             ]
 

@@ -17,7 +17,10 @@ from energy_box_control.appliances.heat_exchanger import (
 from energy_box_control.appliances.mix import MixPort
 
 from energy_box_control.appliances.pv_panel import PVPanel
-from energy_box_control.appliances.switch_pump import SwitchPumpAlarm
+from energy_box_control.appliances.switch_pump import (
+    SwitchPumpAlarm,
+    SwitchPumpStatusBit,
+)
 from energy_box_control.appliances.water_maker import (
     WaterMaker,
     WaterMakerPort,
@@ -882,17 +885,36 @@ class ChillerSensors(FromState):
 @sensors()
 class SwitchPumpSensors(FromState):
     spec: SwitchPump
-    on: bool = sensor()
-
-    @property
-    def electrical_power(self) -> Watt:
-        return self.spec.electrical_power if self.on else 0
 
 
 @sensors()
 class SmartPumpSensors(SwitchPumpSensors):
+    """
+    Status bit:
+    1: Copy remote settings to local
+    3: Reset alarm ack
+    4: Setpoint influence status
+    5: At max power
+    6: Rotation (any pump running)
+    8: Access mode (0=local / 1=remote)
+    9: On/off
+    10: Alarm active
+    11: Warning active
+    13: At max speed
+    15: At min speed
+    """
+
     pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pump_1_communication_fault: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    pump_1_warning: SwitchPumpAlarm = sensor(type=SensorType.WARNING)
+    status: int = sensor()
+
+    @property
+    def on(self) -> bool:
+        return (self.status & SwitchPumpStatusBit.ON_OFF.value) != 0
+
+    @property
+    def rated_power_consumption(self) -> Watt:
+        return self.spec.rated_power_consumption if self.on else 0
 
 
 @sensors()

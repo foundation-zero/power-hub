@@ -302,7 +302,7 @@ async def get_electrical_power_consumption(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {"_field": f"{appliance_name}_electrical_power"}
+                        {"_field": f"{appliance_name}_rated_power_consumption"}
                         for appliance_name in appliance_names
                     ],
                 ),
@@ -329,7 +329,7 @@ async def get_electrical_power_consumption_per_hour(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {"_field": f"{appliance_name}_electrical_power"}
+                        {"_field": f"{appliance_name}_rated_power_consumption"}
                         for appliance_name in appliance_names
                     ],
                 ),
@@ -355,7 +355,7 @@ async def get_electrical_power_consumption_mean(
                 fluxy.any(
                     fluxy.conform,
                     [
-                        {"_field": f"{appliance_name}_electrical_power"}
+                        {"_field": f"{appliance_name}_rated_power_consumption"}
                         for appliance_name in appliance_names
                     ],
                 ),
