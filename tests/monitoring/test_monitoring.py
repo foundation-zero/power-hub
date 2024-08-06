@@ -4,7 +4,8 @@ import pytest
 from energy_box_control.monitoring.checks import (
     ChillerAlarm,
     FlowSensorAlarm,
-    RH33Alarm,
+    RH33AlarmLowerBitsValues,
+    RH33AlarmUpperBits,
     ValveAlarm,
     Severity,
     all_checks,
@@ -17,7 +18,6 @@ from energy_box_control.monitoring.monitoring import (
 )
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
-    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
 )
@@ -470,8 +470,8 @@ def test_pump_warning_checks(source):
             ]
 
 
-def test_rh33_alarm_checks(source):
-    for alarm in RH33Alarm:
+def test_rh33_lower_bits_alarm_checks(source):
+    for alarm in RH33AlarmLowerBitsValues:
         for rh33_name in [
             field.name for field in fields(PowerHubSensors) if field.type == RH33Sensors
         ]:
@@ -488,6 +488,51 @@ def test_rh33_alarm_checks(source):
                         severity=Severity.ERROR,
                     )
                 ]
+
+
+def test_rh33_upper_bits_alarm_checks(source):
+    for alarm in RH33AlarmUpperBits:
+        for rh33_name in [
+            field.name for field in fields(PowerHubSensors) if field.type == RH33Sensors
+        ]:
+            for attr in get_attrs(RH33Sensors, SensorType.ALARM):
+                power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+                sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+                setattr(getattr(sensors, rh33_name), attr, 1 << alarm.value)
+                assert run_monitor(sensors, source) == [
+                    NotificationEvent(
+                        message=f"{rh33_name}_{attr}_{alarm.name.lower()}_alarm is raised",
+                        source=source,
+                        dedup_key=f"{rh33_name}_{attr}_{alarm.name.lower()}_alarm",
+                        severity=Severity.ERROR,
+                    )
+                ]
+
+
+def test_rh33_upper_and_lower_alarm_check(source):
+    alarm_value = 0b100011  # if 5th bit is set, Upper limit value is violated, if 0+1 is set, there is an Under range
+    for rh33_name in [
+        field.name for field in fields(PowerHubSensors) if field.type == RH33Sensors
+    ]:
+        for attr in get_attrs(RH33Sensors, SensorType.ALARM):
+            power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+            sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+            setattr(getattr(sensors, rh33_name), attr, alarm_value)
+
+            assert run_monitor(sensors, source) == [
+                NotificationEvent(
+                    message=f"{rh33_name}_{attr}_{RH33AlarmUpperBits.UPPER_LIMIT_VALUE_VIOLATED.name.lower()}_alarm is raised",
+                    source=source,
+                    dedup_key=f"{rh33_name}_{attr}_{RH33AlarmUpperBits.UPPER_LIMIT_VALUE_VIOLATED.name.lower()}_alarm",
+                    severity=Severity.ERROR,
+                ),
+                NotificationEvent(
+                    message=f"{rh33_name}_{attr}_{RH33AlarmLowerBitsValues.UNDER_RANGE.name.lower()}_alarm is raised",
+                    source=source,
+                    dedup_key=f"{rh33_name}_{attr}_{RH33AlarmLowerBitsValues.UNDER_RANGE.name.lower()}_alarm",
+                    severity=Severity.ERROR,
+                ),
+            ]
 
 
 @pytest.fixture

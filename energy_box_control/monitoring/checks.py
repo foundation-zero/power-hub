@@ -28,21 +28,31 @@ from energy_box_control.power_hub.sensors import (
     ContainersSensors,
 )
 
+RH33_LOWER_BITS_MASK = 0b1111
+
 
 class Alarm(Enum):
     pass
 
 
-class ElectricalAlarm(Alarm):
+class AlarmValue(Alarm):
+    pass
+
+
+class AlarmBit(Alarm):
+    pass
+
+
+class ElectricalAlarm(AlarmValue):
     WARNING = 1
     ALARM = 2
 
 
-class FancoilAlarm(Alarm):
+class FancoilAlarm(AlarmValue):
     ALARM = 1
 
 
-class PumpAlarm(Alarm):
+class PumpAlarm(AlarmValue):
     """
     For the alarm codes, see page 50 of https://drive.google.com/drive/folders/1XeCJmo5KDtKEwL4Dtf3eJ0gkJdJpffFI
     """
@@ -50,11 +60,11 @@ class PumpAlarm(Alarm):
     NO_ALARM = 0
 
 
-class WeatherStationAlarm(Alarm):
+class WeatherStationAlarm(AlarmValue):
     NO_ALARM = 0
 
 
-class ValveAlarm(Alarm):
+class ValveAlarm(AlarmValue):
     """
     1: Mechanical travel increased
     2: Actuator cannot move
@@ -67,19 +77,22 @@ class ValveAlarm(Alarm):
     GEAR_TRAIN_DISENGAGED = 9
 
 
-class RH33Alarm(Alarm):
-    OPEN_CIRCUIT = 0b1
-    OVER_RANGE = 0b10
-    UNDER_RANGE = 0b11
-    INVALID_MEASUREMENT_VALUE = 0b100
-    REPLACEMENT_VALUE = 0b110
-    SENSOR_ERROR = 0b111
-    LOWER_LIMIT_VALUE_VIOLATED = 0b1000
-    UPPER_LIMIT_VALUE_VIOLATED = 0b10000
-    COUNTER_OVERFLOW = 0b100000000000000
+class RH33AlarmLowerBitsValues(AlarmValue):
+    OPEN_CIRCUIT = 1
+    OVER_RANGE = 2
+    UNDER_RANGE = 3
+    INVALID_MEASUREMENT_VALUE = 4
+    REPLACEMENT_VALUE = 6
+    SENSOR_ERROR = 7
 
 
-class FlowSensorAlarm(Alarm):
+class RH33AlarmUpperBits(AlarmBit):
+    LOWER_LIMIT_VALUE_VIOLATED = 4
+    UPPER_LIMIT_VALUE_VIOLATED = 5
+    COUNTER_OVERFLOW = 15
+
+
+class FlowSensorAlarm(AlarmValue):
     REVERSE_FLOW = 3
     FLOW_ACTUAL_EXCEEDS_FS = 6
     FLOW_MEASUREMENT_ERROR = 7
@@ -89,11 +102,11 @@ class FlowSensorAlarm(Alarm):
     GLYCOL_DETECTED = 12
 
 
-class WaterMakerAlarm(Alarm):
+class WaterMakerAlarm(AlarmValue):
     NO_ALARM = 0
 
 
-class ChillerAlarm(Alarm):
+class ChillerAlarm(AlarmValue):
     DATA_COMMUNICATION = "INIT"
     SEA_WATER_FLOW_INSUFFICIENT = "SEA"
     REQUIRED_COLD_WATER_TEMPERATURE_NOT_YET_REACHED = "BA11"
@@ -244,7 +257,7 @@ def alarm(
     name: str,
     value_fn: Callable[[PowerHubSensors], int],
     message_fn: Callable[[str, int], str],
-    alarm: Alarm,
+    alarm: AlarmValue,
     severity: Severity = Severity.CRITICAL,
     valid_value: bool = True,
 ) -> SensorValueCheck:
@@ -256,6 +269,25 @@ def alarm(
             check_fn=lambda value: (
                 (value != alarm.value) if valid_value else (value == alarm.value)
             ),
+            message_fn=message_fn,
+        ),
+        severity=severity,
+    )
+
+
+def bit_check(
+    name: str,
+    value_fn: Callable[[PowerHubSensors], int],
+    message_fn: Callable[[str, int], str],
+    alarm: AlarmBit,
+    severity: Severity = Severity.CRITICAL,
+) -> SensorValueCheck:
+    return SensorValueCheck(
+        name=name,
+        check=value_check(
+            name=name,
+            sensor_fn=value_fn,
+            check_fn=lambda value: (value & 1 << (alarm.value)) == 0,
             message_fn=message_fn,
         ),
         severity=severity,
@@ -455,8 +487,8 @@ flow_sensor_alarm_checks = [
 ]
 
 
-rh33_alarm_checks = [
-    alarm(
+rh33_upper_bits_checks = [
+    bit_check(
         name=f"{field.name}_{attr}_{rh33_alarm.name.lower()}_alarm",
         value_fn=lambda sensors, rh33_name=field.name, attr=attr: getattr(
             getattr(sensors, rh33_name), attr
@@ -468,9 +500,26 @@ rh33_alarm_checks = [
     for field in fields(PowerHubSensors)
     if field.type == RH33Sensors
     for attr in attributes_for_type(RH33Sensors, SensorType.ALARM)
-    for rh33_alarm in RH33Alarm
+    for rh33_alarm in RH33AlarmUpperBits
 ]
 
+
+rh33_lower_bits_checks = [
+    alarm(
+        name=f"{field.name}_{attr}_{rh33_alarm.name.lower()}_alarm",
+        value_fn=lambda sensors, rh33_name=field.name, attr=attr: getattr(
+            getattr(sensors, rh33_name), attr
+        )
+        & RH33_LOWER_BITS_MASK,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=rh33_alarm,
+        severity=Severity.ERROR,
+    )
+    for field in fields(PowerHubSensors)
+    if field.type == RH33Sensors
+    for attr in attributes_for_type(RH33Sensors, SensorType.ALARM)
+    for rh33_alarm in RH33AlarmLowerBitsValues
+]
 
 valve_alarm_checks = [
     alarm(
@@ -607,5 +656,6 @@ all_checks = (
     + container_checks
     + water_maker_alarm_checks
     + flow_sensor_alarm_checks
-    + rh33_alarm_checks
+    + rh33_upper_bits_checks
+    + rh33_lower_bits_checks
 )

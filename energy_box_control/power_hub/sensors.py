@@ -176,6 +176,7 @@ class RH33Sensors(WithoutAppliance):
     cold_temperature: Celsius
     cold_temperature_status: int = sensor(type=SensorType.ALARM)
     delta_temperature: Celsius
+    delta_temperature_status: int = sensor(type=SensorType.ALARM)
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, RH33Sensors):
@@ -184,6 +185,7 @@ class RH33Sensors(WithoutAppliance):
             self.cold_temperature == value.cold_temperature
             and self.cold_temperature_status == value.cold_temperature_status
             and self.delta_temperature == value.delta_temperature
+            and self.delta_temperature_status == value.delta_temperature_status
             and self.hot_temperature == value.hot_temperature
             and self.hot_temperature_status == value.hot_temperature_status
         )
@@ -238,6 +240,7 @@ def rh33(
         )
         hot_temperature_status: int = sensor(resolver=const_resolver(0))
         cold_temperature_status: int = sensor(resolver=const_resolver(0))
+        delta_temperature_status: int = sensor(resolver=const_resolver(0))
 
     return RH33
 
