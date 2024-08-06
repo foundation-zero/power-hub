@@ -913,8 +913,8 @@ class SmartPumpSensors(SwitchPumpSensors):
         return (self.status & SwitchPumpStatusBit.ON_OFF.value) != 0
 
     @property
-    def electrical_power(self) -> Watt:
-        return self.spec.electrical_power if self.on else 0
+    def rated_power_consumption(self) -> Watt:
+        return self.spec.rated_power_consumption if self.on else 0
 
 
 @sensors()

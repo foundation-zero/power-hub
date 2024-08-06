@@ -18,7 +18,7 @@ DEFAULT_PRESSURE = 2.5
 
 
 class SwitchPumpStatusBit(Enum):
-    ON_OFF = 0b000100000000
+    ON_OFF = 1 << 8
 
 
 @dataclass(frozen=True, eq=True)
@@ -42,7 +42,7 @@ class SwitchPumpControl(ApplianceControl):
 @dataclass(frozen=True, eq=True)
 class SwitchPump(ThermalAppliance[SwitchPumpState, SwitchPumpControl, SwitchPumpPort]):
     flow: LiterPerSecond
-    electrical_power: Watt
+    rated_power_consumption: Watt
 
     def simulate(
         self,
