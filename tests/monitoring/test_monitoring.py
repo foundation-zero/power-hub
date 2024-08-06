@@ -8,6 +8,7 @@ from energy_box_control.monitoring.checks import (
     RH33AlarmUpperBits,
     ValveAlarm,
     Severity,
+    WeatherStationAlarm,
     all_checks,
 )
 from energy_box_control.monitoring.monitoring import (
@@ -340,18 +341,18 @@ def test_fancoil_filter_checks(source):
 
 
 def test_weather_station_alarm_checks(source):
-    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    alarm_value = 50
-    sensors.weather.alarm = alarm_value
-    assert run_monitor(sensors, source) == [
-        NotificationEvent(
-            message=f"weather_station is raising an alarm with code {alarm_value}",
-            source=source,
-            dedup_key="weather_station",
-            severity=Severity.CRITICAL,
-        )
-    ]
+    for alarm in WeatherStationAlarm:
+        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+        sensors.weather.status = 1 << alarm.value
+        assert run_monitor(sensors, source) == [
+            NotificationEvent(
+                message=f"weather_station_{alarm.name.lower()} is raised",
+                source=source,
+                dedup_key=f"weather_station_{alarm.name.lower()}",
+                severity=Severity.CRITICAL,
+            )
+        ]
 
 
 def test_water_maker_error_check(source):

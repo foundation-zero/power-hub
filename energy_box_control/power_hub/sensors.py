@@ -1189,7 +1189,7 @@ class WeatherSensors(WithoutAppliance):
     global_irradiance: WattPerMeterSquared = schedule_sensor(
         lambda schedules: schedules.global_irradiance
     )
-    alarm: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    status: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
 
 
 @sensors(from_appliance=False)
