@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Optional
 
 from energy_box_control.appliances.base import (
     ThermalAppliance,
@@ -47,7 +48,7 @@ class Boiler(ThermalAppliance[BoilerState, BoilerControl, BoilerPort]):
         self,
         inputs: dict[BoilerPort, ThermalState],
         previous_state: BoilerState,
-        control: BoilerControl,
+        control: Optional[BoilerControl],
         simulation_time: ProcessTime,
     ) -> tuple[BoilerState, dict[BoilerPort, ThermalState]]:
 
@@ -55,7 +56,9 @@ class Boiler(ThermalAppliance[BoilerState, BoilerControl, BoilerPort]):
         # assuming a perfect heat exchange and mixing, reaching thermal equilibrium in every time step
 
         element_heat = (
-            self.heater_power * simulation_time.step_seconds * control.heater_on
+            self.heater_power
+            * simulation_time.step_seconds
+            * (control.heater_on if control is not None else True)
         )
         tank_heat = self.tank_capacity * previous_state.temperature
 
