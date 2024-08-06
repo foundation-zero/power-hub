@@ -65,7 +65,7 @@ class WeatherStationAlarm(AlarmValue):
 
 
 class YazakiAlarm(AlarmValue):
-    NO_ALARM = 0
+    NO_ALARM = False
 
 
 class ValveAlarm(AlarmValue):

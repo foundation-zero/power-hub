@@ -387,8 +387,8 @@ class YazakiSensors(FromState):
     waste_flow_sensor: "FlowSensors"
     chilled_flow_sensor: "FlowSensors"
 
-    operation_status: int = sensor(type=SensorType.ALARM)
-    error_status: int = sensor(type=SensorType.ALARM)
+    operation_status: bool = sensor(type=SensorType.ALARM)
+    error_status: bool = sensor(type=SensorType.ALARM)
 
     @property
     def hot_flow(self) -> LiterPerSecond:
