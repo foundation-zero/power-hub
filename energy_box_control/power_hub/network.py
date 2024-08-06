@@ -802,16 +802,21 @@ class PowerHub(Network[PowerHubSensors]):
             sensor_values = sensors.get(sensor.name, {})
 
             appliance = getattr(self, sensor.name, None)
-            if appliance:
-                context.with_appliance(
-                    sensor_values,
-                    sensor.type,
-                    getattr(context.subject, sensor.name),
-                    appliance,
-                )
-            else:
-                context.without_appliance(
-                    sensor.type, getattr(context.subject, sensor.name), **sensor_values
-                )
+            try:
+                if appliance:
+                    context.with_appliance(
+                        sensor_values,
+                        sensor.type,
+                        getattr(context.subject, sensor.name),
+                        appliance,
+                    )
+                else:
+                    context.without_appliance(
+                        sensor.type,
+                        getattr(context.subject, sensor.name),
+                        **sensor_values,
+                    )
+            except KeyError as e:
+                raise KeyError(f"Got error on key {str(e)} for {sensor.name}")
 
         return context.result(datetime.fromisoformat(sensors["time"]))
