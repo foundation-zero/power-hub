@@ -64,6 +64,10 @@ class WeatherStationAlarm(AlarmValue):
     NO_ALARM = 0
 
 
+class YazakiAlarm(AlarmValue):
+    NO_ALARM = False
+
+
 class ValveAlarm(AlarmValue):
     """
     1: Mechanical travel increased
@@ -561,6 +565,17 @@ yazaki_bound_checks = [
     for attr, bound in YAZAKI_BOUNDS.items()
 ]
 
+yazaki_alarm_checks = [
+    alarm(
+        name=f"yazaki_alarm",
+        value_fn=lambda sensors: sensors.yazaki.error_status,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=YazakiAlarm.NO_ALARM,
+        valid_value=False,
+    )
+]
+
+
 chiller_bound_checks = [
     valid_value(
         f"chiller_{attr}_check",
@@ -650,6 +665,7 @@ all_checks = (
     + pump_alarm_checks
     + pump_warning_checks
     + yazaki_bound_checks
+    + yazaki_alarm_checks
     + chiller_bound_checks
     + chiller_alarm_checks
     + water_tank_checks
