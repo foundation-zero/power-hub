@@ -40,6 +40,10 @@ class AlarmValue(Alarm):
 
 
 class AlarmBit(Alarm):
+    """
+    Alarm bits start at 0.
+    """
+
     pass
 
 
@@ -106,52 +110,28 @@ class WaterMakerAlarm(AlarmValue):
     NO_ALARM = 0
 
 
-class ChillerAlarm(AlarmValue):
-    DATA_COMMUNICATION = "INIT"
-    SEA_WATER_FLOW_INSUFFICIENT = "SEA"
-    REQUIRED_COLD_WATER_TEMPERATURE_NOT_YET_REACHED = "BA11"
-    COMPRESSORS_DEACTIVATED = "CA11"
-    UNDERVOLTAGE = "AAA"
-    LOW_PRESSURE_COMPRESSOR_1 = "A01"
-    HIGH_PRESSURE_COMPRESSOR_1 = "A02"
-    LOW_PRESSURE_COMPRESSOR_2 = "A03"
-    HIGH_PRESSURE_COMPRESSOR_2 = "A04"
-    CABIN_TEMPERATURE_SENSOR = "A09"
-    COLD_WATER_TEMPERATURE_SENSOR = "A10"
-    COLD_WATER_FLOW = "A15"
-    HIGH_PRESSURE_COMPRESSOR_1_AGAIN = "A20"
-    EXCESS_CURRENT_INVERTER = "A21"
-    EXCESS_TEMPERATURE_INVERTER = "A22"
-    EXCESS_TEMPERATURE_COMPRESSOR_1 = "A23"
-    HIGH_PRESSURE_SENSOR = "A24"
-    LOW_PRESSURE_SENSOR = "A25"
-    COMPRESSOR_TEMPERATURE_SENSOR = "A26"
-    DATA_COMMUNICATION_INVERTER = "A27"
-    CHARACTERISTIC_DIAGRAM = "A28"
-    EXCESS_TEMPERATURE_INVERTER_AGAIN = "A30"
-    EXCESS_CURRENT_INVERTER_AGAIN = "A31"
-    PHASE_CONNECTION_COMPRESSOR_1 = "A32"
-    EARTH_LEAKAGE_CURRENT = "A33"
-    EXCESS_CURRENT_INVERTER_AGAIN2 = "A34"
-    DC_BUS_INVERTER = "A35"
-    UNDERVOLTAGE_INVERTER_PFC = "A36"
-    UNDERVOLTAGE_INVERTER = "A37"
-    COMPRESSOR_SPEED_1 = "A38"
-    CABLE_BRIDGE_INVERTER = "A39"
-    COMPRESSOR_1_OVERLOAD = "A40"
-    OVERVOLTAGE = "A41"
-    UNDER_TEMPERATURE_INVERTER = "A42"
-    EXCESS_TEMPERATURE_COMPRESSOR_1_AGAIN = "A43"
-    IGBT_INVERTER = "A44"
-    CPU_INVERTER = "A45"
-    PARAMETER_INVERTER = "A46"
-    DATA_COMMUNICATION_INVERTER_AGAIN = "A47"
-    THERMISTOR_INVERTER = "A48"
-    AUTOMATIC_ADJUSTMENT_INVERTER = "A49"
-    FAN_INVERTER = "A50"
-    PFC_MODULE_INVERTER = "A51"
-    STO_INVERTER = "A53"
-    NO_DISPLAY_ON_SCREEN = "A54"
+class ChillerAlarm(AlarmBit):
+    UNDERVOLTAGE = 0
+    LOW_PRESSURE_COMPRESSOR_1 = 1
+    HIGH_PRESSURE_COMPRESSOR_1 = 2
+    CABIN_TEMPERATURE_SENSOR = 3
+    COLD_WATER_TEMPERATURE_SENSOR = 4
+    DATA_COMMUNICATION = 5
+    COLD_WATER_FLOW = 6
+    HIGH_PRESSURE_COMPRESSOR_1_AGAIN = 7
+    EXCESS_CURRENT_INVERTER = 8
+    EXCESS_TEMPERATURE_INVERTER = 9
+    EXCESS_TEMPERATURE_COMPRESSOR_1 = 10
+    HIGH_PRESSURE_SENSOR = 11
+    LOW_PRESSURE_SENSOR = 12
+    COMPRESSOR_TEMPERATURE_SENSOR = 13
+    DATA_COMMUNICATION_INVERTER = 14
+    CHARACTERISTIC_DIAGRAM = 15
+    A30_A54 = 16
+    NO_CALIBRATION = 28
+    EEPROM = 29
+    INVALID_PARAMETER_LIST = 30
+    INVALID_RUNTIME_DATA = 31
 
 
 class Severity(Enum):
@@ -287,7 +267,7 @@ def bit_check(
         check=value_check(
             name=name,
             sensor_fn=value_fn,
-            check_fn=lambda value: (value & 1 << (alarm.value)) == 0,
+            check_fn=lambda value: (value & 1 << alarm.value) == 0,
             message_fn=message_fn,
         ),
         severity=severity,
@@ -536,16 +516,6 @@ valve_alarm_checks = [
     for valve_alarm in ValveAlarm
 ]
 
-chiller_alarm_checks = [
-    alarm(
-        name=f"chiller_{chiller_alarm.name.lower()}_alarm",
-        value_fn=lambda sensors: sensors.chiller.fault_code,
-        message_fn=lambda name, _: f"{name} is raised",
-        alarm=chiller_alarm,
-    )
-    for chiller_alarm in ChillerAlarm
-]
-
 
 yazaki_bound_checks = [
     valid_value(
@@ -576,7 +546,7 @@ chiller_bound_checks = [
 ]
 
 chiller_alarm_checks = [
-    alarm(
+    bit_check(
         name=f"chiller_{chiller_alarm.name.lower()}_alarm",
         value_fn=lambda sensors: sensors.chiller.fault_code,
         message_fn=lambda name, _: f"{name} is raised",
