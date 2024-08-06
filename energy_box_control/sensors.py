@@ -15,7 +15,17 @@ from energy_box_control.appliances.base import (
     Port,
 )
 from inspect import getmembers, isclass
-from typing import Any, Callable, Deque, Protocol, cast, Self, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Deque,
+    Protocol,
+    Type,
+    Union,
+    cast,
+    Self,
+    get_type_hints,
+)
 import functools
 from collections import deque
 from energy_box_control.linearize import linearize
@@ -366,7 +376,9 @@ def sensors_to_json(sensors: Any, include_properties: bool = False):
     return json.dumps(sensors, cls=sensor_encoder(include_properties))
 
 
-def attributes_for_type(cls: FromState, type: SensorType) -> list[str]:
+def attributes_for_type(
+    cls: Union[FromState, Type[WithoutAppliance]], type: SensorType
+) -> list[str]:
     return [
         attr
         for attr in dir(cls)
