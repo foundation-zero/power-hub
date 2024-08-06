@@ -216,7 +216,7 @@ async def test_get_electrical_power_consumption(mock_influx_field, start, stop):
 
     query = f"""from(bucket: "simulation_data")
 |> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
-|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "hot_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_rated_power_consumption" or r["_field"] == "heat_pipes_supply_box_pump_rated_power_consumption" or r["_field"] == "pcm_to_yazaki_pump_rated_power_consumption" or r["_field"] == "chilled_loop_pump_rated_power_consumption" or r["_field"] == "waste_pump_rated_power_consumption" or r["_field"] == "hot_water_pump_rated_power_consumption" or r["_field"] == "outboard_pump_rated_power_consumption" or r["_field"] == "cooling_demand_pump_rated_power_consumption")
 |> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
 |> keep(columns: ["_value", "_time"])
 |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
@@ -241,7 +241,7 @@ async def test_get_electrical_power_consumption_hourly_over_time(
     query = f"""import "date"
  from(bucket: "simulation_data")
 |> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
-|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "hot_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_rated_power_consumption" or r["_field"] == "heat_pipes_supply_box_pump_rated_power_consumption" or r["_field"] == "pcm_to_yazaki_pump_rated_power_consumption" or r["_field"] == "chilled_loop_pump_rated_power_consumption" or r["_field"] == "waste_pump_rated_power_consumption" or r["_field"] == "hot_water_pump_rated_power_consumption" or r["_field"] == "outboard_pump_rated_power_consumption" or r["_field"] == "cooling_demand_pump_rated_power_consumption")
 |> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
 |> keep(columns: ["_value", "_time"])
 |> aggregateWindow(every: 3600s, fn: mean, createEmpty: true)
@@ -267,7 +267,7 @@ async def test_get_mean_electrical_power_consumption(mock_influx_field, start, s
 
     query = f"""from(bucket: "simulation_data")
 |> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
-|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_electrical_power" or r["_field"] == "heat_pipes_supply_box_pump_electrical_power" or r["_field"] == "pcm_to_yazaki_pump_electrical_power" or r["_field"] == "chilled_loop_pump_electrical_power" or r["_field"] == "waste_pump_electrical_power" or r["_field"] == "hot_water_pump_electrical_power" or r["_field"] == "outboard_pump_electrical_power" or r["_field"] == "cooling_demand_pump_electrical_power")
+|> filter(fn: (r) => r["_field"] == "heat_pipes_power_hub_pump_rated_power_consumption" or r["_field"] == "heat_pipes_supply_box_pump_rated_power_consumption" or r["_field"] == "pcm_to_yazaki_pump_rated_power_consumption" or r["_field"] == "chilled_loop_pump_rated_power_consumption" or r["_field"] == "waste_pump_rated_power_consumption" or r["_field"] == "hot_water_pump_rated_power_consumption" or r["_field"] == "outboard_pump_rated_power_consumption" or r["_field"] == "cooling_demand_pump_rated_power_consumption")
 |> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
 |> keep(columns: ["_value", "_time"])
 |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)

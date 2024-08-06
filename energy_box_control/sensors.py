@@ -188,6 +188,7 @@ class SensorType(Enum):
     HUMIDITY = "humidity"
     CO2 = "co2"
     ALARM = "alarm"
+    WARNING = "warning"
     INFO = "info"
     REPLACE_FILTER_ALARM = "replace_filter_alarm"
     PRESSURE = "pressure"
