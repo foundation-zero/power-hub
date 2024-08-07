@@ -448,7 +448,7 @@ containers_fancoil_filter_checks = [
 weather_station_alarm_checks = [
     bit_check(
         name=f"weather_station_{alarm.name.lower()}",
-        value_fn=lambda sensors,: getattr(sensors.weather, "status"),
+        value_fn=lambda sensors,: sensors.weather.status,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=alarm,
     )
