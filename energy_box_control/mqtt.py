@@ -19,7 +19,6 @@ from energy_box_control.config import CONFIG
 logger = get_logger(__name__)
 
 
-PORT = 1883
 MIN_CLIENT_ID_INT = 0
 MAX_CLIEND_ID_INT = 1000000000
 
@@ -74,11 +73,15 @@ def create_and_connect_client(
     on_connect_callback: Callable[..., None] | None = None
 ) -> mqtt_client.Client:
     client_id = f"python-mqtt-{random.randint(MIN_CLIENT_ID_INT, MAX_CLIEND_ID_INT)}"
-    logger.info(f"Connecting to {CONFIG.mqtt_host}:{PORT} for client {client_id}")
+    logger.info(
+        f"Connecting to {CONFIG.mqtt_host}:{CONFIG.mqtt_port} for client {client_id}"
+    )
     client = mqtt_client.Client(CallbackAPIVersion.VERSION1, client_id)
     client.enable_logger(logger)
     client.on_connect = partial(on_connect, client_id, on_connect_callback)
-    client.connect(CONFIG.mqtt_host, PORT)
+    if CONFIG.mqtt_tls_enabled:
+        client.tls_set(CONFIG.mqtt_tls_path)  # type: ignore
+    client.connect(CONFIG.mqtt_host, CONFIG.mqtt_port)
     if CONFIG.mqtt_username and CONFIG.mqtt_password:
         client.username_pw_set(
             username=CONFIG.mqtt_username, password=CONFIG.mqtt_password
