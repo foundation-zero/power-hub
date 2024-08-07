@@ -408,7 +408,7 @@ def test_valve_alarm_both_raised(source):
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    sensors.yazaki_hot_bypass_valve.status = (1 << 3) | (1 << 10)
+    sensors.yazaki_hot_bypass_valve.status = (1 << 2) | (1 << 9)
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"yazaki_hot_bypass_valve_{alarm.name.lower()}_alarm is raised",
