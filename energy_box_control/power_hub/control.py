@@ -22,7 +22,6 @@ from energy_box_control.power_hub.components import (
     HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
     HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
-    PREHEAT_SWITCH_VALVE_BYPASS_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
@@ -88,17 +87,6 @@ class WasteControlMode(State):
 class WasteControlState:
     context: Context
     control_mode: WasteControlMode
-
-
-class PreHeatControlMode(State):
-    PREHEAT = "preheat"
-    NO_PREHEAT = "no_preheat"
-
-
-@dataclass
-class PreHeatControlState:
-    context: Context
-    control_mode: PreHeatControlMode
 
 
 class WaterControlMode(State):
@@ -184,7 +172,6 @@ class PowerHubControlState:
     hot_control: HotControlState
     chill_control: ChillControlState
     waste_control: WasteControlState
-    preheat_control: PreHeatControlState
     water_control: WaterControlState
     water_treatment_control: WaterTreatmentControlState
     setpoints: Setpoints
@@ -235,10 +222,6 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-        ),
-        preheat_control=PreHeatControlState(
-            context=Context(),
-            control_mode=PreHeatControlMode.NO_PREHEAT,
         ),
         water_control=WaterControlState(
             context=Context(), control_mode=WaterControlMode.READY
@@ -413,8 +396,6 @@ def hot_control(
         .value(ValveControl(feedback_valve_control))
         .control(power_hub.hot_switch_valve)
         .value(ValveControl(hot_switch_valve_position))
-        .control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=False))
     )
     return hot_control_state, control
 
@@ -700,61 +681,6 @@ def waste_control(
     )
 
 
-should_preheat = Fn.pred(
-    lambda control_state, sensors: sensors.rh33_waste.hot_temperature
-    + sensors.preheat_reservoir.temperature
-    > control_state.setpoints.minimum_preheat_offset
-)
-
-stop_preheat = Fn.pred(
-    lambda control_state, sensors: sensors.preheat_reservoir.exchange_input_temperature
-    - sensors.preheat_reservoir.temperature
-    < control_state.setpoints.minimum_preheat_offset
-)
-
-preheat_transitions: dict[
-    tuple[PreHeatControlMode, PreHeatControlMode],
-    Predicate[
-        PowerHubControlState,
-        PowerHubSensors,
-    ],
-] = {
-    (PreHeatControlMode.NO_PREHEAT, PreHeatControlMode.PREHEAT): should_preheat,
-    (PreHeatControlMode.PREHEAT, PreHeatControlMode.NO_PREHEAT): stop_preheat,
-}
-
-preheat_control_machine = StateMachine(PreHeatControlMode, preheat_transitions)
-
-
-def preheat_control(
-    power_hub: PowerHub,
-    control_state: PowerHubControlState,
-    sensors: PowerHubSensors,
-    time: datetime,
-):
-
-    preheat_control_mode, context = preheat_control_machine.run(
-        control_state.preheat_control.control_mode,
-        control_state.preheat_control.context,
-        control_state,
-        sensors,
-        time,
-    )
-
-    valve_position = (
-        PREHEAT_SWITCH_VALVE_PREHEAT_POSITION
-        if preheat_control_mode == PreHeatControlMode.PREHEAT
-        else PREHEAT_SWITCH_VALVE_BYPASS_POSITION
-    )
-
-    return (
-        PreHeatControlState(context, preheat_control_mode),
-        power_hub.control(power_hub.preheat_switch_valve).value(
-            ValveControl(valve_position)
-        ),
-    )
-
-
 water_transitions: dict[
     tuple[WaterControlMode, WaterControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
@@ -867,9 +793,6 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
         water_control=WaterControlState(
             control_state.water_control.context, WaterControlMode.READY
         ),
-        preheat_control=PreHeatControlState(
-            control_state.preheat_control.context, PreHeatControlMode.NO_PREHEAT
-        ),
         water_treatment_control=WaterTreatmentControlState(
             control_state.water_treatment_control.context,
             WaterTreatmentControlMode.NO_RUN,
@@ -892,10 +815,6 @@ def survival_control(
         .value(ValveControl(HEAT_PIPES_BYPASS_OPEN_POSITION))
         .control(power_hub.hot_switch_valve)
         .value(ValveControl(control_state.hot_control.hot_switch_valve_position))
-        .control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.preheat_reservoir)
-        .value(BoilerControl(False))
     )
 
     valves_in_position = all(
@@ -988,27 +907,17 @@ def control_power_hub(
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
-    preheat_control_state, preheat = preheat_control(
-        power_hub, control_state, sensors, time
-    )
     water_control_state, water = water_control(power_hub, control_state, sensors, time)
     water_treatment_control_state, water_treatment = water_treatment_control(
         power_hub, control_state, sensors, time
     )
 
     control = (
-        power_hub.control(power_hub.hot_reservoir)
-        .value(BoilerControl(False))
-        .control(power_hub.preheat_reservoir)
-        .value(BoilerControl(False))
-        .control(power_hub.cold_reservoir)
-        .value(BoilerControl(False))
-        .control(power_hub.cooling_demand_pump)
+        power_hub.control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .combine(hot)
         .combine(chill)
         .combine(waste)
-        .combine(preheat)
         .combine(water)
         .combine(water_treatment)
         .build()
@@ -1019,7 +928,6 @@ def control_power_hub(
             hot_control=hot_control_state,
             chill_control=chill_control_state,
             waste_control=waste_control_state,
-            preheat_control=preheat_control_state,
             water_control=water_control_state,
             water_treatment_control=water_treatment_control_state,
             setpoints=control_state.setpoints,

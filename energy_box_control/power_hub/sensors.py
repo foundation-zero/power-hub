@@ -649,7 +649,6 @@ class PreHeatSensors(FromState):
     spec: Boiler
     rh33_preheat: RH33Sensors
     rh33_domestic_hot_water: RH33Sensors
-    temperature: Celsius = sensor(technical_name="TS-1039")
 
     @property
     def exchange_input_temperature(self) -> Celsius:
