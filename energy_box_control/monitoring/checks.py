@@ -134,7 +134,7 @@ class Severity(Enum):
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
-    ERROR = "current_error_id"
+    ERROR = "error"
     CRITICAL = "critical"
 
 
