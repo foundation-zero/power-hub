@@ -33,8 +33,8 @@ class YazakiPort(Port):
 
 @dataclass(frozen=True, eq=True)
 class YazakiState(ApplianceState):
-    operation_status: bool = False
-    error_status: bool = False
+    operation_output: bool = False
+    error_output: bool = False
 
 
 @dataclass(frozen=True, eq=True)
@@ -173,7 +173,7 @@ class Yazaki(ThermalAppliance[YazakiState, YazakiControl, YazakiPort]):
                 else chilled_in.temperature
             )
 
-        return YazakiState(operation_status=True), {
+        return YazakiState(operation_output=True), {
             YazakiPort.HOT_OUT: ThermalState(
                 inputs[YazakiPort.HOT_IN].flow, hot_temp_out
             ),
