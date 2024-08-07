@@ -91,7 +91,7 @@ def power_hub_sensor[
     return sensor(technical_name=technical_name, type=type, resolver=resolver)
 
 
-FlowServiceInfo = int
+FlowStatus = int
 
 
 @sensors(from_appliance=False, eq=False)
@@ -100,7 +100,7 @@ class FlowSensors(WithoutAppliance):
     temperature: Celsius
     glycol_concentration: Percentage
     total_volume: Liter
-    service_info: FlowServiceInfo
+    status: FlowStatus
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, FlowSensors):
@@ -135,9 +135,7 @@ def flow_sensor(
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowServiceInfo = sensor(
-            type=SensorType.INFO, resolver=const_resolver(0)
-        )
+        status: FlowStatus = sensor(type=SensorType.INFO, resolver=const_resolver(0))
 
     return Flow
 
@@ -159,7 +157,7 @@ def flow_sensor_not_simulated(
         )
         glycol_concentration: Percentage = sensor(resolver=const_resolver(0))
         total_volume: Liter = sensor(resolver=const_resolver(0))
-        service_info: FlowServiceInfo = sensor(
+        status: FlowStatus = sensor(
             technical_name=None, type=SensorType.INFO, resolver=const_resolver(0)
         )
 
