@@ -68,7 +68,7 @@ class YazakiAlarm(AlarmValue):
     NO_ALARM = False
 
 
-class ValveAlarm(AlarmValue):
+class ValveAlarm(AlarmBit):
     """
     1: Mechanical travel increased
     2: Actuator cannot move
@@ -291,7 +291,7 @@ def bit_check(
         check=value_check(
             name=name,
             sensor_fn=value_fn,
-            check_fn=lambda value: (value & 1 << (alarm.value)) == 0,
+            check_fn=lambda value: (value & 1 << alarm.value) == 0,
             message_fn=message_fn,
         ),
         severity=severity,
@@ -526,11 +526,11 @@ rh33_lower_bits_checks = [
 ]
 
 valve_alarm_checks = [
-    alarm(
+    bit_check(
         name=f"{field.name}_{valve_alarm.name.lower()}_alarm",
         value_fn=lambda sensors, valve_name=field.name: getattr(
             sensors, valve_name
-        ).service_info,
+        ).status,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=valve_alarm,
         severity=Severity.ERROR,
