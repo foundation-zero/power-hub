@@ -1003,8 +1003,6 @@ def control_power_hub(
         .value(BoilerControl(False))
         .control(power_hub.cold_reservoir)
         .value(BoilerControl(False))
-        .control(power_hub.hot_water_pump)
-        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .combine(hot)
@@ -1048,8 +1046,6 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(SwitchPumpControl(on=False))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=False))
-        .control(power_hub.hot_water_pump)
-        .value(SwitchPumpControl(on=False))
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=False))
         .control(power_hub.outboard_pump)
@@ -1083,8 +1079,6 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(SwitchPumpControl(on=True))
         .control(power_hub.waste_pump)
         .value(SwitchPumpControl(on=True))
-        .control(power_hub.hot_water_pump)
-        .value(SwitchPumpControl(on=False))  # no fresh hot water demand
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)

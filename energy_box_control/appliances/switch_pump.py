@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from energy_box_control.appliances.base import (
     ThermalAppliance,
@@ -48,14 +49,14 @@ class SwitchPump(ThermalAppliance[SwitchPumpState, SwitchPumpControl, SwitchPump
         self,
         inputs: dict[SwitchPumpPort, ThermalState],
         previous_state: SwitchPumpState,
-        control: SwitchPumpControl,
+        control: Optional[SwitchPumpControl],
         simulation_time: ProcessTime,
     ) -> tuple[SwitchPumpState, dict[SwitchPumpPort, ThermalState]]:
         input = inputs[SwitchPumpPort.IN]
         return SwitchPumpState(
-            status=SwitchPumpStatusBit.ON_OFF.value if control.on else 0
+            status=SwitchPumpStatusBit.ON_OFF.value if (control and control.on) else 0
         ), {
             SwitchPumpPort.OUT: ThermalState(
-                self.flow if control.on else 0, input.temperature
+                self.flow if (control and control.on) else 0, input.temperature
             )
         }
