@@ -530,7 +530,7 @@ yazaki_bound_checks = [
 yazaki_alarm_checks = [
     alarm(
         name=f"yazaki_alarm",
-        value_fn=lambda sensors: sensors.yazaki.error_status,
+        value_fn=lambda sensors: sensors.yazaki.error_output,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=YazakiAlarm.NO_ALARM,
         valid_value=False,

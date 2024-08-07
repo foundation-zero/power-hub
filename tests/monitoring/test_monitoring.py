@@ -654,7 +654,7 @@ def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value
 def test_yazaki_alarm_check(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    sensors.yazaki.error_status = True
+    sensors.yazaki.error_output = True
 
     assert run_monitor(sensors, source) == [
         NotificationEvent(
