@@ -34,10 +34,8 @@ from energy_box_control.power_hub.sensors import (
     ValveSensors,
 )
 from energy_box_control.sensors import (
-    Sensor,
     SensorType,
     attributes_for_type,
-    sensor_encoder,
 )
 
 
@@ -395,7 +393,7 @@ def test_valve_alarm_checks(source):
         ]:
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-            setattr(getattr(sensors, valve_name), "service_info", alarm.value)
+            getattr(sensors, valve_name).status = 1 << alarm.value
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
                     message=f"{valve_name}_{alarm.name.lower()}_alarm is raised",
@@ -404,6 +402,22 @@ def test_valve_alarm_checks(source):
                     severity=Severity.ERROR,
                 )
             ]
+
+
+def test_valve_alarm_both_raised(source):
+
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    sensors.yazaki_hot_bypass_valve.status = (1 << 2) | (1 << 9)
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"yazaki_hot_bypass_valve_{alarm.name.lower()}_alarm is raised",
+            source=source,
+            dedup_key=f"yazaki_hot_bypass_valve_{alarm.name.lower()}_alarm",
+            severity=Severity.ERROR,
+        )
+        for alarm in ValveAlarm
+    ]
 
 
 def test_flow_sensor_alarm_checks(source):
