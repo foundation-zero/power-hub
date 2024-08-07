@@ -578,7 +578,9 @@ water_maker_alarm_checks = [
     alarm(
         name=f"water maker error",
         value_fn=lambda sensors: (
-            sensors.water_maker.last_error_id if sensors.water_maker.error == 1 else 0
+            sensors.water_maker.last_error_id
+            if sensors.water_maker.current_error_id == 1
+            else 0
         ),
         message_fn=lambda name, value: f"{name} with code {value}",
         alarm=WaterMakerAlarm.NO_ALARM,
@@ -589,7 +591,7 @@ water_maker_alarm_checks = [
         name=f"water maker warning",
         value_fn=lambda sensors: (
             sensors.water_maker.last_warning_id
-            if sensors.water_maker.warning == 1
+            if sensors.water_maker.current_warning_id == 1
             else 0
         ),
         message_fn=lambda name, value: f"{name} with code {value}",
