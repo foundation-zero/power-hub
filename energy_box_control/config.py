@@ -14,6 +14,9 @@ class PowerHubConfig(BaseSettings):
         pattern="(https?)://([a-zA-Z0-9.-]+)", default="http://influxdb:8086"
     )
     mqtt_host: str = Field(pattern="^[^/:]+$", default=" ")
+    mqtt_port: int = Field(default=1883)
+    mqtt_tls_enabled: bool = Field(default=False)
+    mqtt_tls_path: str = Field(default="")
     mqtt_password: str = Field(default="")
     mqtt_username: str = Field(default="power-hub")
     api_token: str = Field(default="")
