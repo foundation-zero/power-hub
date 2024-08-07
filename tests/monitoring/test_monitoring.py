@@ -393,7 +393,7 @@ def test_valve_alarm_checks(source):
         ]:
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-            getattr(sensors, valve_name).status = 1 << alarm.value)
+            getattr(sensors, valve_name).status = 1 << alarm.value
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
                     message=f"{valve_name}_{alarm.name.lower()}_alarm is raised",
