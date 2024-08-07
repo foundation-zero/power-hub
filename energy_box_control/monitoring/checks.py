@@ -64,8 +64,24 @@ class PumpAlarm(AlarmValue):
     NO_ALARM = 0
 
 
-class WeatherStationAlarm(AlarmValue):
-    NO_ALARM = 0
+class WeatherStationAlarm(AlarmBit):
+    GPS_NO_VALID_RMC_TELEGRAM_RECEIVED = 2
+    GPS_TIME_INVALID = 3
+    ADC_INVALID_VALUES = 4
+    INVALID_AIR_PRESSURE_VALUE = 5
+    INVALID_BRIGHTNESS_NORTH_VALUE = 6
+    INVALID_BRIGHTNESS_EAST_VALUE = 7
+    INVALID_BRIGHTNESS_SOUTCH_VALUE = 8
+    INVALID_BRIGHNESS_WEST_VALUE = 9
+    INVALID_TWILIGHT_VALUE = 10
+    INVALID_GLOBAL_IRRADIANCE_VALUE = 11
+    INVALID_AIR_TEMPERATURE_VALUE = 12
+    INVALID_PRECIPITATION_VALUE = 13
+    INVALID_WIND_SPEED_VALUE = 14
+    INVALID_WIND_DIRECTION_VALUE = 15
+    INVALID_HUMIDITY_VALUE = 16
+    WATCHDOG_RESET = 17
+    INVALID_INTERNAL_EEPROM_PARAMS = 18
 
 
 class YazakiAlarm(AlarmValue):
@@ -390,13 +406,13 @@ containers_fancoil_filter_checks = [
 ]
 
 weather_station_alarm_checks = [
-    alarm(
-        name=f"weather_station",
-        value_fn=lambda sensors,: getattr(sensors.weather, "alarm"),
-        message_fn=lambda name, alarm_code: f"{name} is raising an alarm with code {alarm_code}",
-        alarm=WeatherStationAlarm.NO_ALARM,
-        valid_value=False,
+    bit_check(
+        name=f"weather_station_{alarm.name.lower()}",
+        value_fn=lambda sensors,: sensors.weather.status,
+        message_fn=lambda name, _: f"{name} is raised",
+        alarm=alarm,
     )
+    for alarm in WeatherStationAlarm
 ]
 
 
