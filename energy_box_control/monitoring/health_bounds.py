@@ -31,7 +31,7 @@ YAZAKI_BOUNDS = {
     "waste_flow": HealthBound(2.55, 3.06),
     "chilled_flow": HealthBound(0.608, 0.912),
     "chilled_pressure": HealthBound(0, 5.88),
-    "waste_pressure": HealthBound(0, 10.34),
+    "waste_pressure": HealthBound(0, 5.88),
     "hot_pressure": HealthBound(0, 5.88),
 }
 
