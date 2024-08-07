@@ -739,7 +739,7 @@ def test_chiller_alarm_checks(source):
 
 
 def test_chiller_two_alarm_checks(source):
-    fault_code = 4160  # 7th and 13th bits are set
+    fault_code = (1 << 7) | (1 << 13)
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     sensors.chiller.fault_code = fault_code
