@@ -55,6 +55,8 @@ def test_sensor_values(sensors):
     for field in fields(sensors):
         values = sensor_values(field.name, sensors)
         assert "is_sensor" not in values
+
+
 def test_chiller_sensor_statuses(sensors):
     sensors.chiller.status = 5
     assert sensors.chiller.statuses() == ["Fan 1", "Inverter/compr."]
