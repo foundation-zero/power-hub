@@ -933,8 +933,8 @@ class SmartPumpSensors(SwitchPumpSensors):
     15: At min speed
     """
 
-    pump_1_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
-    pump_1_warning: SwitchPumpAlarm = sensor(type=SensorType.WARNING)
+    pump_alarm: SwitchPumpAlarm = sensor(type=SensorType.ALARM)
+    pump_warning: SwitchPumpAlarm = sensor(type=SensorType.WARNING)
     status: int = sensor()
 
     @property

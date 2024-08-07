@@ -24,8 +24,8 @@ class SwitchPumpStatusBit(Enum):
 
 @dataclass(frozen=True, eq=True)
 class SwitchPumpState(ApplianceState):
-    pump_1_alarm: int = NO_ALARM
-    pump_1_warning: int = NO_ALARM
+    pump_alarm: int = NO_ALARM
+    pump_warning: int = NO_ALARM
     status: int = 0
     pressure: Bar = DEFAULT_PRESSURE
 
