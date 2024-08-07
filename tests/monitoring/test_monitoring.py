@@ -428,15 +428,36 @@ def test_flow_sensor_alarm_checks(source):
         ]:
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-            setattr(getattr(sensors, flow_sensor_name), "service_info", alarm.value)
+            getattr(sensors, flow_sensor_name).status = 1 << alarm.value
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
                     message=f"{flow_sensor_name}_{alarm.name.lower()}_alarm is raised",
                     source=source,
                     dedup_key=f"{flow_sensor_name}_{alarm.name.lower()}_alarm",
-                    severity=Severity.ERROR,
+                    severity=Severity.CRITICAL,
                 )
             ]
+
+
+def test_flow_two_alarm_checks(source):
+    fault_code = (1 << 3) | (1 << 6)
+    power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
+    sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
+    sensors.chilled_flow_sensor.status = fault_code
+    assert run_monitor(sensors, source) == [
+        NotificationEvent(
+            message=f"chilled_flow_sensor_reverse_flow_alarm is raised",
+            source=source,
+            dedup_key=f"chilled_flow_sensor_reverse_flow_alarm",
+            severity=Severity.CRITICAL,
+        ),
+        NotificationEvent(
+            message=f"chilled_flow_sensor_flow_actual_exceeds_fs_alarm is raised",
+            source=source,
+            dedup_key=f"chilled_flow_sensor_flow_actual_exceeds_fs_alarm",
+            severity=Severity.CRITICAL,
+        ),
+    ]
 
 
 def test_pump_alarm_checks(source):
