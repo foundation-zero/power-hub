@@ -1149,8 +1149,8 @@ class WaterMakerSensors(FromState):
     )
     tank_empty: bool = sensor(type=SensorType.BOOL)
     status: int = sensor(SensorType.INFO)
-    error: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
-    warning: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    current_error_id: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
+    current_warning_id: int = sensor(type=SensorType.ALARM, resolver=const_resolver(0))
     last_error_id: int = sensor(resolver=const_resolver(0))
     last_warning_id: int = sensor(resolver=const_resolver(0))
     feed_pressure: Bar = sensor(resolver=const_resolver(0))
@@ -1158,8 +1158,8 @@ class WaterMakerSensors(FromState):
     cumulative_operation_time: Hours = sensor(resolver=const_resolver(0))
     salinity: Ppm = sensor(resolver=const_resolver(0))
     time_to_service: float = sensor(resolver=const_resolver(0))
-    total_water_production: Liter = sensor(resolver=const_resolver(0))
-    current_water_production: Liter = sensor(resolver=const_resolver(0))
+    total_production: Liter = sensor(resolver=const_resolver(0))
+    current_production: Liter = sensor(resolver=const_resolver(0))
 
 
 @sensors()

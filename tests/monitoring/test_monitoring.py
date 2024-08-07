@@ -357,7 +357,7 @@ def test_water_maker_error_check(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     error_value = 50
-    sensors.water_maker.error = 1
+    sensors.water_maker.current_error_id = 1
     sensors.water_maker.last_error_id = error_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
@@ -373,7 +373,7 @@ def test_water_maker_warning_check(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     warning_value = 50
-    sensors.water_maker.warning = 1
+    sensors.water_maker.current_warning_id = 1
     sensors.water_maker.last_warning_id = warning_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
