@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 
 MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/control_values"
-SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/sensor_values_plc"
+SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/sensor_values"
 CONTROL_MODES_TOPIC = f"{MQTT_TOPIC_BASE}/control_modes"
 ENRICHED_SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/enriched_sensor_values"
 SETPOINTS_TOPIC = f"{MQTT_TOPIC_BASE}/setpoints"
