@@ -393,7 +393,7 @@ def test_valve_alarm_checks(source):
         ]:
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-            setattr(getattr(sensors, valve_name), "status", 1 << alarm.value)
+            getattr(sensors, valve_name).status = 1 << alarm.value)
             assert run_monitor(sensors, source) == [
                 NotificationEvent(
                     message=f"{valve_name}_{alarm.name.lower()}_alarm is raised",
@@ -408,9 +408,7 @@ def test_valve_alarm_both_raised(source):
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-    setattr(
-        sensors.yazaki_hot_bypass_valve, "status", 516
-    )  # 516 is the number in which both 3rd and 10th bit are activated
+    sensors.yazaki_hot_bypass_valve.status = (1 << 3) | (1 << 10)
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"yazaki_hot_bypass_valve_{alarm.name.lower()}_alarm is raised",
