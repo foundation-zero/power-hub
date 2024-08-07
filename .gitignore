@@ -2,3 +2,4 @@
 .pytest_cache
 .hypothesis
 local.env
+icons/output
