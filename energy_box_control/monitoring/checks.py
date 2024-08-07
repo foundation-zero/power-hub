@@ -116,7 +116,7 @@ class RH33AlarmUpperBits(AlarmBit):
     COUNTER_OVERFLOW = 15
 
 
-class FlowSensorAlarm(AlarmValue):
+class FlowSensorAlarm(AlarmBit):
     REVERSE_FLOW = 3
     FLOW_ACTUAL_EXCEEDS_FS = 6
     FLOW_MEASUREMENT_ERROR = 7
@@ -448,14 +448,14 @@ pump_warning_checks = [
 ]
 
 flow_sensor_alarm_checks = [
-    alarm(
+    bit_check(
         name=f"{field.name}_{flow_sensor_alarm.name.lower()}_alarm",
         value_fn=lambda sensors, flow_sensor_name=field.name: getattr(
             sensors, flow_sensor_name
-        ).service_info,
+        ).status,
         message_fn=lambda name, _: f"{name} is raised",
         alarm=flow_sensor_alarm,
-        severity=Severity.ERROR,
+        severity=Severity.CRITICAL,
     )
     for field in fields(PowerHubSensors)
     if field.type == FlowSensors
