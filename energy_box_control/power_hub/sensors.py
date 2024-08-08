@@ -1361,8 +1361,8 @@ class PowerHubSensors(NetworkSensors):
     rh33_yazaki_hot: RH33Sensors = rh33(
         (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_IN),
         (lambda power_hub: power_hub.yazaki, YazakiPort.HOT_OUT),
-        "TS-1010",
         "TS-1011",
+        "TS-1010",
         "EM-G",
     )
     rh33_waste: RH33Sensors = rh33(
