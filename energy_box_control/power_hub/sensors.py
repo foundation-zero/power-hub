@@ -35,8 +35,8 @@ from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     FRESHWATER_TEMPERATURE,
-    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    HOT_SWITCH_VALVE_PCM_POSITION,
+    HOT_SWITCH_VALVE_RESERVOIR_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     PCM_ZERO_TEMPERATURE,
@@ -310,7 +310,7 @@ class PcmSensors(FromState):
     def charge_input_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.hot_temperature
-            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_PCM_POSITION
             else float("nan")
         )
 
@@ -318,7 +318,7 @@ class PcmSensors(FromState):
     def charge_output_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.cold_temperature
-            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_PCM_POSITION
             else float("nan")
         )
 
@@ -326,7 +326,7 @@ class PcmSensors(FromState):
     def charge_delta_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.delta_temperature
-            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_PCM_POSITION
             else float("nan")
         )
 
@@ -334,7 +334,7 @@ class PcmSensors(FromState):
     def charge_flow(self) -> LiterPerSecond:
         return (
             self.hot_storage_flow_sensor.flow
-            if self.hot_switch_valve.position == HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_PCM_POSITION
             else 0
         )
 
@@ -566,7 +566,6 @@ class HeatExchangerSensors(FromState):
 @sensors()
 class HotReservoirSensors(FromState):
     spec: Boiler
-    temperature: Celsius = sensor(technical_name="TS-1043")
     rh33_hot_storage: RH33Sensors
     rh33_domestic_hot_water: RH33Sensors
     hot_storage_flow_sensor: FlowSensors
@@ -577,8 +576,7 @@ class HotReservoirSensors(FromState):
     def exchange_flow(self) -> LiterPerSecond:
         return (
             self.hot_storage_flow_sensor.flow
-            if self.hot_switch_valve.position
-            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_RESERVOIR_POSITION
             else 0
         )
 
@@ -586,8 +584,7 @@ class HotReservoirSensors(FromState):
     def exchange_input_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.hot_temperature
-            if self.hot_switch_valve.position
-            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_RESERVOIR_POSITION
             else float("nan")
         )
 
@@ -595,8 +592,7 @@ class HotReservoirSensors(FromState):
     def exchange_output_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.cold_temperature
-            if self.hot_switch_valve.position
-            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_RESERVOIR_POSITION
             else float("nan")
         )
 
@@ -604,8 +600,7 @@ class HotReservoirSensors(FromState):
     def exchange_delta_temperature(self) -> Celsius:
         return (
             self.rh33_hot_storage.delta_temperature
-            if self.hot_switch_valve.position
-            == HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
+            if self.hot_switch_valve.position == HOT_SWITCH_VALVE_RESERVOIR_POSITION
             else float("nan")
         )
 
