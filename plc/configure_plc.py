@@ -202,27 +202,6 @@ def build_and_push_docker_compose():
             )
 
 
-def build_and_push_vernemq():
-    vernemq_image_name = "vernemq:latest-armv7"
-    with cwd("vernemq"):
-        build_for_arch(
-            vernemq_image_name,
-            os.path.join(os.getcwd(), "vernemq.Dockerfile"),
-            no_cache=False,
-        )
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            docker_local_image_path = save_docker_image(
-                tmpdirname, vernemq_image_name, "vernemq.tar"
-            )
-
-            with ssh_client() as ssh:
-                remote_image_path = copy_file_to_remote(ssh, docker_local_image_path)
-                add_docker_image_on_remote(ssh, remote_image_path)
-                remove_file_on_remote(  # could be disabled if enough space
-                    ssh, remote_image_path
-                )
-
-
 def build_and_push_control_app():
     control_app_image_name = "python-control-app:latest-armv7"
 
@@ -254,7 +233,7 @@ def copy_docker_compose_files_to_plc():
         logger.debug(f"Creating directory {os.path.dirname(remote_file_path)}")
         blocking_command(ssh, f"mkdir {REMOTE_DOCKER_COMPOSE_DIR}")
         copy_file_to_remote(ssh, local_file_path, remote_file_path)
-        local_cert_path = "vernemq/bridge/certificate/ISRG_ROOT_X1.crt"
+        local_cert_path = "mosquitto/ISRG_ROOT_X1.crt"
         copy_file_to_remote(
             ssh,
             os.path.join(os.getcwd(), local_cert_path),
@@ -269,7 +248,7 @@ def create_env_file():
             (CLOUD_VERNEMQ_ENV_NAME, os.getenv(CLOUD_VERNEMQ_ENV_NAME)),
             (PAGERDUTY_KEY_ENV_NAME, os.getenv(PAGERDUTY_KEY_ENV_NAME)),
             ("CERTIFICATE_DIR", REMOTE_DOCKER_COMPOSE_DIR),
-            ("MQTT_HOST", "vernemq"),
+            ("MQTT_HOST", "mosquitto"),
             ("SEND_NOTIFICATIONS", True),
         ]
         remote_env_path = os.path.join(REMOTE_DOCKER_COMPOSE_DIR, ".env")
@@ -298,7 +277,6 @@ def run_docker_compose():
 if __name__ == "__main__":
     start = time.time()
     build_and_push_docker_compose()
-    build_and_push_vernemq()
     build_and_push_control_app()
     copy_docker_compose_files_to_plc()
     create_env_file()

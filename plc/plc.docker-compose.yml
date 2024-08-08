@@ -1,38 +1,44 @@
 services:
-  vernemq:
-    image: vernemq:latest-armv7
-    container_name: vernemq
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
     platform: linux/arm/v7
     restart: always
     ports:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ${CERTIFICATE_DIR}/ISRG_ROOT_X1.crt:/etc/ssl/vernemq/cafile.crt:ro
-    networks:
-      - power_hub_control
-    env_file:
-      - .env
-    environment:
-      DOCKER_VERNEMQ_USER_power-hub: '${PROD_MQTT_PASSWORD}'
-      DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
-      DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
-      DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE: "on" #https://docs.vernemq.com/configuring-vernemq/bridge
-      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0: "${PROD_VERNEMQ_URL}"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__TOPIC__1: "power_hub/* out 1"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__username: "power-hub"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__password: "${PROD_MQTT_PASSWORD}"
-      DOCKER_VERNEMQ_VMQ_BRIDGE__SSL__BR0__cafile: "/etc/ssl/vernemq/cafile.crt"
+      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto:/local-config
+      - ./mosquitto/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt:ro
+
+    command: >
+      sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf && 
+             echo 'remote_password ${PROD_MQTT_PASSWORD}' >> /mosquitto/config/mosquitto.conf && 
+             mosquitto -c /mosquitto/config/mosquitto.conf"
 
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8888/health" ]
-      interval: 60s
-      timeout: 60s
-      retries: 10
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   control:
     depends_on:
-      vernemq:
+      mosquitto:
         condition: service_healthy
     image: python-control-app:latest-armv7
     platform: linux/arm/v7
@@ -41,7 +47,7 @@ services:
     networks:
       - power_hub_control
     env_file:
-      - .env
+      - ../.env
     restart: on-failure:5
 
 networks:
