@@ -20,8 +20,7 @@ from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HEAT_PIPES_BYPASS_OPEN_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    HOT_SWITCH_VALVE_PCM_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
@@ -42,23 +41,6 @@ from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, WattPerMeterSquared
-
-
-class HotControlMode(State):
-    WAITING_FOR_SUN = "waiting_for_sun"
-    IDLE = "idle"
-    PREPARE_HEAT_RESERVOIR = "prepare_heat_reservoir"
-    HEAT_RESERVOIR = "heat_reservoir"
-    PREPARE_HEAT_PCM = "prepare_heat_pcm"
-    HEAT_PCM = "heat_pcm"
-
-
-@dataclass
-class HotControlState:
-    context: Context
-    control_mode: HotControlMode
-    feedback_valve_controller: Pid
-    hot_switch_valve_position: float
 
 
 class ChillControlMode(State):
@@ -117,18 +99,6 @@ def setpoint(description: str):
 
 @dataclass
 class Setpoints:
-    hot_reservoir_min_temperature: Celsius = setpoint(
-        "minimum temperature of hot reservoir to be maintained, hot reservoir is prioritized over pcm"
-    )
-    hot_reservoir_max_temperature: Celsius = setpoint(
-        "maximum temperature of hot reservoir to be maintained, hot reservoir is prioritized over pcm"
-    )
-    pcm_min_temperature: Celsius = setpoint(
-        "minimum temperature of pcm to be maintained"
-    )
-    pcm_max_temperature: Celsius = setpoint(
-        "maximum temperature of pcm to be maintained"
-    )
     target_charging_temperature_offset: Celsius = setpoint(
         "target offset to target temperature of temperature of charging medium"
     )
@@ -151,9 +121,6 @@ class Setpoints:
     cold_reservoir_min_temperature: Celsius = setpoint(
         "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    minimum_preheat_offset: Celsius = setpoint(
-        "minimal offset of waste heat to preheat reservoir temperature"
-    )
     cooling_in_min_temperature: Celsius = setpoint(
         "minimum temperature of the cooling in temperature"
     )
@@ -169,7 +136,6 @@ class Setpoints:
 
 @dataclass
 class PowerHubControlState:
-    hot_control: HotControlState
     chill_control: ChillControlState
     waste_control: WasteControlState
     water_control: WaterControlState
@@ -183,10 +149,6 @@ Fn = Functions(PowerHubControlState, PowerHubSensors)
 def initial_control_state() -> PowerHubControlState:
     return PowerHubControlState(
         setpoints=Setpoints(
-            hot_reservoir_max_temperature=65,  # hot reservoir not connected, does not need to be heated
-            hot_reservoir_min_temperature=60,
-            pcm_min_temperature=90,
-            pcm_max_temperature=95,
             target_charging_temperature_offset=5,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
@@ -195,7 +157,6 @@ def initial_control_state() -> PowerHubControlState:
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
-            minimum_preheat_offset=1,
             cooling_in_min_temperature=25,
             cooling_in_max_temperature=33,
             water_treatment_max_fill_ratio=0.5,
@@ -205,12 +166,6 @@ def initial_control_state() -> PowerHubControlState:
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
             survival_mode=False,
-        ),
-        hot_control=HotControlState(
-            context=Context(),
-            control_mode=HotControlMode.IDLE,
-            feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
-            hot_switch_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
             context=Context(),
@@ -230,174 +185,6 @@ def initial_control_state() -> PowerHubControlState:
             context=Context(), control_mode=WaterTreatmentControlMode.NO_RUN
         ),
     )
-
-
-should_heat_reservoir = Fn.sensors(
-    lambda sensors: sensors.hot_reservoir.temperature
-) < Fn.state(lambda state: state.setpoints.hot_reservoir_min_temperature)
-stop_heat_reservoir = Fn.sensors(
-    lambda sensors: sensors.hot_reservoir.temperature
-) > Fn.state(lambda state: state.setpoints.hot_reservoir_max_temperature)
-cannot_heat_reservoir = Fn.pred(
-    lambda control_state, sensors: sensors.heat_pipes.output_temperature
-    < (
-        sensors.hot_reservoir.temperature
-        + control_state.setpoints.minimum_charging_temperature_offset
-    )
-)
-ready_for_reservoir = Fn.pred(
-    lambda _, sensors: sensors.hot_switch_valve.in_position(
-        HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-    )
-)
-should_heat_pcm = (
-    Fn.sensors(lambda sensors: sensors.pcm.temperature)
-    < Fn.state(lambda state: state.setpoints.pcm_min_temperature)
-) & ~should_heat_reservoir
-stop_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
-    lambda state: state.setpoints.pcm_max_temperature
-)
-cannot_heat_pcm = Fn.pred(
-    lambda control_state, sensors: sensors.heat_pipes.output_temperature
-    < (
-        sensors.pcm.temperature
-        + control_state.setpoints.minimum_charging_temperature_offset
-    )
-)
-ready_for_pcm = Fn.pred(
-    lambda _, sensors: sensors.hot_switch_valve.in_position(
-        HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
-    )
-)
-sufficient_sunlight = Fn.sensors(
-    lambda sensors: sensors.weather.global_irradiance
-) > Fn.state(lambda state: state.setpoints.minimum_global_irradiance)
-hot_transitions: dict[
-    tuple[HotControlMode, HotControlMode],
-    Predicate[PowerHubControlState, PowerHubSensors],
-] = {
-    (
-        HotControlMode.IDLE,
-        HotControlMode.PREPARE_HEAT_RESERVOIR,
-    ): should_heat_reservoir
-    & (~cannot_heat_reservoir).holds_true(
-        Marker("Heat pipes output temperature high enough for reservoir"),
-        timedelta(minutes=5),
-    ),
-    (
-        HotControlMode.PREPARE_HEAT_RESERVOIR,
-        HotControlMode.HEAT_RESERVOIR,
-    ): ready_for_reservoir,
-    (HotControlMode.IDLE, HotControlMode.PREPARE_HEAT_PCM): should_heat_pcm
-    & (~cannot_heat_pcm).holds_true(
-        Marker("Heat pipes output temperature high enough for pcm"),
-        timedelta(minutes=5),
-    ),
-    (HotControlMode.PREPARE_HEAT_PCM, HotControlMode.HEAT_PCM): ready_for_pcm,
-    (HotControlMode.HEAT_RESERVOIR, HotControlMode.IDLE): stop_heat_reservoir
-    | cannot_heat_reservoir.holds_true(
-        Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
-    ),
-    (HotControlMode.HEAT_PCM, HotControlMode.HEAT_RESERVOIR): should_heat_reservoir,
-    (HotControlMode.HEAT_PCM, HotControlMode.IDLE): stop_heat_pcm
-    | cannot_heat_pcm.holds_true(
-        Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
-    ),
-    (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (
-        ~sufficient_sunlight
-    ).holds_true(Marker("Global irradiance below treshold"), timedelta(minutes=10)),
-    (
-        HotControlMode.WAITING_FOR_SUN,
-        HotControlMode.IDLE,
-    ): sufficient_sunlight.holds_true(
-        Marker("Global irradiance above treshold"), timedelta(minutes=10)
-    )
-    & (should_heat_reservoir | should_heat_pcm),
-}
-
-hot_control_state_machine = StateMachine(HotControlMode, hot_transitions)
-
-
-def hot_control(
-    power_hub: PowerHub,
-    control_state: PowerHubControlState,
-    sensors: PowerHubSensors,
-    time: datetime,
-):
-    # hot water usage
-    # PID heat pipes feedback valve by ~ +5 degrees above the heat destination with max of 95 degrees (depending on the hot_switch_valve)
-
-    hot_control_mode, context = hot_control_state_machine.run(
-        control_state.hot_control.control_mode,
-        control_state.hot_control.context,
-        control_state,
-        sensors,
-        time,
-    )
-
-    if hot_control_mode == HotControlMode.PREPARE_HEAT_RESERVOIR:
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-        run_heat_pipes_pump = True
-        feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
-    elif hot_control_mode == HotControlMode.HEAT_RESERVOIR:
-        heat_setpoint = (
-            sensors.hot_reservoir.temperature
-            + control_state.setpoints.target_charging_temperature_offset
-        )
-        feedback_valve_controller, feedback_valve_control = (
-            control_state.hot_control.feedback_valve_controller.run(
-                heat_setpoint, sensors.hot_reservoir.exchange_input_temperature
-            )
-        )
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-        run_heat_pipes_pump = True
-    elif hot_control_mode == HotControlMode.PREPARE_HEAT_PCM:
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
-        run_heat_pipes_pump = True
-        feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
-    elif hot_control_mode == HotControlMode.HEAT_PCM:
-        heat_setpoint = (
-            sensors.pcm.temperature
-            + control_state.setpoints.target_charging_temperature_offset
-        )
-        feedback_valve_controller, feedback_valve_control = (
-            control_state.hot_control.feedback_valve_controller.run(
-                heat_setpoint, sensors.pcm.charge_input_temperature
-            )
-        )
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
-        run_heat_pipes_pump = True
-    elif hot_control_mode == HotControlMode.IDLE:
-        feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
-        hot_switch_valve_position = control_state.hot_control.hot_switch_valve_position
-        run_heat_pipes_pump = True
-    else:  # hot_control_mode == HotControlMode.WAITING_FOR_SUN:
-        feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
-        hot_switch_valve_position = control_state.hot_control.hot_switch_valve_position
-        run_heat_pipes_pump = False
-
-    hot_control_state = HotControlState(
-        context=context,
-        control_mode=hot_control_mode,
-        feedback_valve_controller=feedback_valve_controller,
-        hot_switch_valve_position=hot_switch_valve_position,
-    )
-
-    control = (
-        power_hub.control(power_hub.heat_pipes_power_hub_pump)
-        .value(SwitchPumpControl(on=run_heat_pipes_pump))
-        .control(power_hub.heat_pipes_supply_box_pump)
-        .value(SwitchPumpControl(on=run_heat_pipes_pump))
-        .control(power_hub.heat_pipes_valve)
-        .value(ValveControl(feedback_valve_control))
-        .control(power_hub.hot_switch_valve)
-        .value(ValveControl(hot_switch_valve_position))
-    )
-    return hot_control_state, control
 
 
 should_chill = Fn.sensors(
@@ -774,12 +561,6 @@ def water_treatment_control(
 
 def survival_control_state(control_state: PowerHubControlState) -> PowerHubControlState:
     return PowerHubControlState(
-        hot_control=HotControlState(
-            control_state.hot_control.context,
-            HotControlMode.IDLE,
-            control_state.hot_control.feedback_valve_controller,
-            control_state.hot_control.hot_switch_valve_position,
-        ),
         chill_control=ChillControlState(
             control_state.chill_control.context,
             ChillControlMode.CHILL_CHILLER,
@@ -814,7 +595,7 @@ def survival_control(
         .control(power_hub.heat_pipes_valve)
         .value(ValveControl(HEAT_PIPES_BYPASS_OPEN_POSITION))
         .control(power_hub.hot_switch_valve)
-        .value(ValveControl(control_state.hot_control.hot_switch_valve_position))
+        .value(ValveControl(HOT_SWITCH_VALVE_PCM_POSITION))
     )
 
     valves_in_position = all(
@@ -904,7 +685,6 @@ def control_power_hub(
     if control_state.setpoints.survival_mode:
         return survival_control(power_hub, sensors, control_state)
 
-    hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
     water_control_state, water = water_control(power_hub, control_state, sensors, time)
@@ -915,7 +695,6 @@ def control_power_hub(
     control = (
         power_hub.control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
-        .combine(hot)
         .combine(chill)
         .combine(waste)
         .combine(water)
@@ -925,7 +704,6 @@ def control_power_hub(
 
     return (
         PowerHubControlState(
-            hot_control=hot_control_state,
             chill_control=chill_control_state,
             waste_control=waste_control_state,
             water_control=water_control_state,
@@ -964,6 +742,8 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .value(ChillerControl(on=False))
         .control(power_hub.water_filter_bypass_valve)
         .value(ValveControl(position=WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION))
+        .control(power_hub.hot_switch_valve)
+        .value(ValveControl(position=HOT_SWITCH_VALVE_PCM_POSITION))
         .build()
     )
 
