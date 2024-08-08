@@ -58,10 +58,10 @@ YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = (
     ValveControl.a_position()
 )  # CV-1010, 0 position: bypass open
 YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
-WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION = (
+WATER_FILTER_BYPASS_VALVE_FILTER_POSITION = (
     ValveControl.a_position()
-)  # TODO: CV 5001, 0 position: bypass open
-WATER_FILTER_BYPASS_VALVE_FILTER_POSITION = ValveControl.b_position()
+)  # CV-5001, 0 position: bypass open
+WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION = ValveControl.b_position()
 PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = (
     ValveControl.a_position()
 )  # CV-1003, 0 position: waste return -> preheat
@@ -69,6 +69,10 @@ PREHEAT_SWITCH_VALVE_BYPASS_POSITION = ValveControl.b_position()
 HEAT_PIPES_BYPASS_OPEN_POSITION = (
     ValveControl.a_position()
 )  # CV-1006, 0 position: bypass open
+TECHNICAL_WATER_REGULATOR_CLOSED_POSITION = (
+    ValveControl.a_position()
+)  # CV-4001, 0 position: closed
+TECHNICAL_WATER_REGULATOR_OPEN_POSITION = ValveControl.b_position()
 
 
 PV_PANEL_SURFACE_AREA = 200

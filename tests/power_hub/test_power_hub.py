@@ -103,11 +103,11 @@ def test_derived_sensors(power_hub_const, min_max_temperature):
             abs=1e-4,
         )
         assert sensors.pcm.charge_flow == approx(
-            state.connection(power_hub_const.pcm, PcmPort.CHARGE_IN).flow, abs=0.25
+            state.connection(power_hub_const.pcm, PcmPort.CHARGE_IN).flow, abs=1e-4
         )
         assert sensors.pcm.discharge_output_temperature == approx(
             state.connection(power_hub_const.pcm, PcmPort.DISCHARGE_OUT).temperature,
-            abs=0.25,
+            abs=1e-4,
         )
 
         sensors.chiller_switch_valve.position = phc.CHILLER_SWITCH_VALVE_YAZAKI_POSITION

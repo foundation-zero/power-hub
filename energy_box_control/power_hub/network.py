@@ -331,14 +331,14 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.chiller_switch_valve)
             .value(
                 ValveState(phc.CHILLER_SWITCH_VALVE_CHILLER_POSITION)
-            )  # everything to Yazaki, nothing to chiller
+            )  # everything to chiller, nothing to Yazaki
             .define_state(self.yazaki)
             .value(YazakiState())
             .define_state(self.pcm_to_yazaki_pump)
             .value(SwitchPumpState())
             .define_state(self.yazaki_hot_bypass_valve)
             .value(
-                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION)
+                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION)
             )  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
