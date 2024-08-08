@@ -314,7 +314,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.heat_pipes_valve)
             .value(
-                ValveState(phc.HEAT_PIPES_BYPASS_OPEN_POSITION)
+                ValveState(phc.HEAT_PIPES_BYPASS_CLOSED_POSITION)
             )  # all to circuit, no bypass
             .define_state(self.heat_pipes_mix)
             .value(ApplianceState())
@@ -359,7 +359,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.waste_switch_valve)
             .value(
                 ValveState(phc.WASTE_SWITCH_VALVE_CHILLER_POSITION)
-            )  # all to Chiller
+            )  # all to chiller
             .define_state(self.waste_mix)
             .value(ApplianceState())
             .define_state(self.preheat_switch_valve)
@@ -478,17 +478,17 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.AB)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.heat_pipes_mix)
             .at(MixPort.B)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.hot_switch_valve)
             .at(ValvePort.AB)
 
             .connect(self.hot_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.hot_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
 
@@ -498,7 +498,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.B)
 
             .connect(self.hot_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.pcm)
             .at(PcmPort.CHARGE_IN)
 
@@ -606,12 +606,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(BoilerPort.FILL_IN)
 
             .connect(self.chiller_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.yazaki)
             .at(YazakiPort.CHILLED_IN)
 
             .connect(self.chiller_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.chiller)
             .at(ChillerPort.CHILLED_IN)
             )
@@ -647,7 +647,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.AB)
 
             .connect(self.waste_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.chiller)
             .at(ChillerPort.COOLING_IN)
 
@@ -657,7 +657,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.B)
 
             .connect(self.waste_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.yazaki)
             .at(YazakiPort.COOLING_IN)
 

@@ -21,8 +21,6 @@ from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_SWITCH_VALVE_PCM_POSITION,
-    HOT_SWITCH_VALVE_RESERVOIR_POSITION,
-    HOT_SWITCH_VALVE_PCM_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
@@ -118,12 +116,6 @@ def setpoint(description: str):
 
 @dataclass
 class Setpoints:
-    hot_reservoir_min_temperature: Celsius = setpoint(
-        "minimum temperature of hot reservoir to be maintained, hot reservoir is prioritized over pcm"
-    )
-    hot_reservoir_max_temperature: Celsius = setpoint(
-        "maximum temperature of hot reservoir to be maintained, hot reservoir is prioritized over pcm"
-    )
     pcm_min_temperature: Celsius = setpoint(
         "minimum temperature of pcm to be maintained"
     )
@@ -184,8 +176,6 @@ Fn = Functions(PowerHubControlState, PowerHubSensors)
 def initial_control_state() -> PowerHubControlState:
     return PowerHubControlState(
         setpoints=Setpoints(
-            hot_reservoir_max_temperature=65,  # hot reservoir not connected, does not need to be heated
-            hot_reservoir_min_temperature=60,
             pcm_min_temperature=90,
             pcm_max_temperature=95,
             target_charging_temperature_offset=5,
@@ -266,6 +256,11 @@ hot_transitions: dict[
     (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (
         ~sufficient_sunlight
     ).holds_true(Marker("Global irradiance below treshold"), timedelta(minutes=10)),
+    (HotControlMode.IDLE, HotControlMode.PREPARE_HEAT_PCM): should_heat_pcm
+    & (~cannot_heat_pcm).holds_true(
+        Marker("Heat pipes output temperature high enough for pcm"),
+        timedelta(minutes=5),
+    ),
     (
         HotControlMode.WAITING_FOR_SUN,
         HotControlMode.IDLE,
