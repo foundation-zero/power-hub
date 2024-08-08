@@ -330,7 +330,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(PcmState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.chiller_switch_valve)
             .value(
-                ValveState(phc.CHILLER_SWITCH_VALVE_YAZAKI_POSITION)
+                ValveState(phc.CHILLER_SWITCH_VALVE_CHILLER_POSITION)
             )  # everything to Yazaki, nothing to chiller
             .define_state(self.yazaki)
             .value(YazakiState())
@@ -338,7 +338,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.yazaki_hot_bypass_valve)
             .value(
-                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION)
+                ValveState(phc.YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION)
             )  # all to pcm, no bypass
             .define_state(self.yazaki_bypass_mix)
             .value(ApplianceState())
@@ -357,11 +357,13 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.waste_bypass_mix)
             .value(ApplianceState())
             .define_state(self.waste_switch_valve)
-            .value(ValveState(phc.WASTE_SWITCH_VALVE_YAZAKI_POSITION))  # all to Yazaki
+            .value(
+                ValveState(phc.WASTE_SWITCH_VALVE_CHILLER_POSITION)
+            )  # all to Chiller
             .define_state(self.waste_mix)
             .value(ApplianceState())
             .define_state(self.preheat_switch_valve)
-            .value(ValveState(phc.PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))  # no preheat
+            .value(ValveState(phc.PREHEAT_SWITCH_VALVE_BYPASS_POSITION))  # no preheat
             .define_state(self.preheat_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.preheat_mix)

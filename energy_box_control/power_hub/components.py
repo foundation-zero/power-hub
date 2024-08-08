@@ -39,22 +39,37 @@ PCM_ZERO_TEMPERATURE = 50
 DEFAULT_PRESSURE = 2
 
 
-HOT_SWITCH_VALVE_RESERVOIR_POSITION = ValveControl.a_position()
+HOT_SWITCH_VALVE_RESERVOIR_POSITION = (
+    ValveControl.a_position()
+)  # CV-1001, 0 position: heat pipes -> boiler
 HOT_SWITCH_VALVE_PCM_POSITION = ValveControl.b_position()
-CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-CHILLER_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.a_position()
-WASTE_SWITCH_VALVE_CHILLER_POSITION = ValveControl.b_position()
-WASTE_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
-YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = ValveControl.a_position()
+CHILLER_SWITCH_VALVE_CHILLER_POSITION = (
+    ValveControl.a_position()
+)  # CV-1008, 0 position: to chiller
+CHILLER_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.b_position()
+WASTE_SWITCH_VALVE_CHILLER_POSITION = (
+    ValveControl.a_position()
+)  # CV-1007, 0 position: to chiller
+WASTE_SWITCH_VALVE_YAZAKI_POSITION = ValveControl.b_position()
+WASTE_BYPASS_VALVE_CLOSED_POSITION = (
+    ValveControl.a_position()
+)  # CV-1004, 0 position: bypass closed
+YAZAKI_HOT_BYPASS_VALVE_OPEN_POSITION = (
+    ValveControl.a_position()
+)  # CV-1010, 0 position: bypass open
 YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION = ValveControl.b_position()
+WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION = (
+    ValveControl.a_position()
+)  # TODO: CV 5001, 0 position: bypass open
 WATER_FILTER_BYPASS_VALVE_FILTER_POSITION = ValveControl.b_position()
-WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION = ValveControl.a_position()
-
-PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = ValveControl.a_position()
+PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = (
+    ValveControl.a_position()
+)  # CV-1003, 0 position: waste return -> preheat
 PREHEAT_SWITCH_VALVE_BYPASS_POSITION = ValveControl.b_position()
+HEAT_PIPES_BYPASS_OPEN_POSITION = (
+    ValveControl.a_position()
+)  # CV-1006, 0 position: bypass open
 
-HEAT_PIPES_BYPASS_OPEN_POSITION = ValveControl.b_position()
 
 PV_PANEL_SURFACE_AREA = 200
 PV_PANEL_EFFICIENCY = (

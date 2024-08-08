@@ -18,6 +18,7 @@ from energy_box_control.monitoring.monitoring import (
 )
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
+    CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
 )
@@ -602,6 +603,9 @@ def yazaki_test(
 ):
     def _test(dedup_key):
         before = run_monitor(sensors, source, yazaki_off, power_hub)
+        sensors.chiller_switch_valve.position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+        sensors.waste_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+
         after = run_monitor(sensors, source, yazaki_on, power_hub)
         assert (set(after) - set(before)) == set(
             [
