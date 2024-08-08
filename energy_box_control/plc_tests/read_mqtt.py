@@ -8,6 +8,12 @@ from energy_box_control.power_hub_control import SENSOR_VALUES_TOPIC
 import paho.mqtt.client as mqtt
 
 
+def int_to_bit_list(val: int):
+    bin_str = list(reversed(bin(val)))
+
+    return [i for i in range(0, len(bin_str) - 2) if bin_str[i] == "1"]
+
+
 def message(
     appliance: str,
     fut: asyncio.Future[None],
@@ -19,6 +25,9 @@ def message(
     content = content.replace("-#Inf", '"-#Inf"').replace("#Inf", '"#Inf"')
     dict = json.loads(content)
     if appliance in dict:
+        if "status" in dict[appliance]:
+            status = dict[appliance]["status"]
+            dict[appliance]["status"] = {"raw": status, "bins": int_to_bit_list(status)}
         print(dict[appliance])
     else:
         print(f"didn't find {appliance} in {content}")
