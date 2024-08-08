@@ -22,7 +22,7 @@ from energy_box_control.power_hub.components import (
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
 )
 from energy_box_control.power_hub.control import no_control
-from energy_box_control.power_hub.components import HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+from energy_box_control.power_hub.components import HOT_SWITCH_VALVE_PCM_POSITION
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     CHILLER_FAULTS,
@@ -70,7 +70,7 @@ def test_pcm_values_checks(sensors, source):
 
 def test_equal_bounds(sensors, source):
     sensors.hot_switch_valve.flow = 0
-    sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+    sensors.hot_switch_valve.position = HOT_SWITCH_VALVE_PCM_POSITION
     assert not run_monitor(sensors, source)
 
 
@@ -95,7 +95,7 @@ def test_hot_circuit_temperature_check(
 
 def test_hot_circuit_flow_check(sensors: PowerHubSensors, source, out_of_bounds_value):
     sensors.hot_storage_flow_sensor.flow = out_of_bounds_value
-    sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+    sensors.hot_switch_valve.position = HOT_SWITCH_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"hot_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value}",
@@ -110,7 +110,7 @@ def test_hot_circuit_pressure_check(
     sensors: PowerHubSensors, source, out_of_bounds_value
 ):
     sensors.pipes_pressure_sensor.pressure = out_of_bounds_value
-    sensors.hot_switch_valve.position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+    sensors.hot_switch_valve.position = HOT_SWITCH_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
             message=f"hot_circuit_pressure_check is outside valid bounds with value: {out_of_bounds_value}",
