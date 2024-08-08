@@ -20,8 +20,7 @@ from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HEAT_PIPES_BYPASS_OPEN_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
-    HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION,
+    HOT_SWITCH_VALVE_PCM_POSITION,
     PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
@@ -210,7 +209,7 @@ def initial_control_state() -> PowerHubControlState:
             context=Context(),
             control_mode=HotControlMode.IDLE,
             feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
-            hot_switch_valve_position=HOT_RESERVOIR_PCM_VALVE_PCM_POSITION,
+            hot_switch_valve_position=HOT_SWITCH_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
             context=Context(),
@@ -232,28 +231,9 @@ def initial_control_state() -> PowerHubControlState:
     )
 
 
-should_heat_reservoir = Fn.sensors(
-    lambda sensors: sensors.hot_reservoir.temperature
-) < Fn.state(lambda state: state.setpoints.hot_reservoir_min_temperature)
-stop_heat_reservoir = Fn.sensors(
-    lambda sensors: sensors.hot_reservoir.temperature
-) > Fn.state(lambda state: state.setpoints.hot_reservoir_max_temperature)
-cannot_heat_reservoir = Fn.pred(
-    lambda control_state, sensors: sensors.heat_pipes.output_temperature
-    < (
-        sensors.hot_reservoir.temperature
-        + control_state.setpoints.minimum_charging_temperature_offset
-    )
+should_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state(
+    lambda state: state.setpoints.pcm_min_temperature
 )
-ready_for_reservoir = Fn.pred(
-    lambda _, sensors: sensors.hot_switch_valve.in_position(
-        HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-    )
-)
-should_heat_pcm = (
-    Fn.sensors(lambda sensors: sensors.pcm.temperature)
-    < Fn.state(lambda state: state.setpoints.pcm_min_temperature)
-) & ~should_heat_reservoir
 stop_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
     lambda state: state.setpoints.pcm_max_temperature
 )
@@ -266,7 +246,7 @@ cannot_heat_pcm = Fn.pred(
 )
 ready_for_pcm = Fn.pred(
     lambda _, sensors: sensors.hot_switch_valve.in_position(
-        HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+        HOT_SWITCH_VALVE_PCM_POSITION
     )
 )
 sufficient_sunlight = Fn.sensors(
@@ -276,29 +256,7 @@ hot_transitions: dict[
     tuple[HotControlMode, HotControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
-    (
-        HotControlMode.IDLE,
-        HotControlMode.PREPARE_HEAT_RESERVOIR,
-    ): should_heat_reservoir
-    & (~cannot_heat_reservoir).holds_true(
-        Marker("Heat pipes output temperature high enough for reservoir"),
-        timedelta(minutes=5),
-    ),
-    (
-        HotControlMode.PREPARE_HEAT_RESERVOIR,
-        HotControlMode.HEAT_RESERVOIR,
-    ): ready_for_reservoir,
-    (HotControlMode.IDLE, HotControlMode.PREPARE_HEAT_PCM): should_heat_pcm
-    & (~cannot_heat_pcm).holds_true(
-        Marker("Heat pipes output temperature high enough for pcm"),
-        timedelta(minutes=5),
-    ),
     (HotControlMode.PREPARE_HEAT_PCM, HotControlMode.HEAT_PCM): ready_for_pcm,
-    (HotControlMode.HEAT_RESERVOIR, HotControlMode.IDLE): stop_heat_reservoir
-    | cannot_heat_reservoir.holds_true(
-        Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
-    ),
-    (HotControlMode.HEAT_PCM, HotControlMode.HEAT_RESERVOIR): should_heat_reservoir,
     (HotControlMode.HEAT_PCM, HotControlMode.IDLE): stop_heat_pcm
     | cannot_heat_pcm.holds_true(
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
@@ -312,7 +270,7 @@ hot_transitions: dict[
     ): sufficient_sunlight.holds_true(
         Marker("Global irradiance above treshold"), timedelta(minutes=10)
     )
-    & (should_heat_reservoir | should_heat_pcm),
+    & should_heat_pcm,
 }
 
 hot_control_state_machine = StateMachine(HotControlMode, hot_transitions)
@@ -335,25 +293,8 @@ def hot_control(
         time,
     )
 
-    if hot_control_mode == HotControlMode.PREPARE_HEAT_RESERVOIR:
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-        run_heat_pipes_pump = True
-        feedback_valve_controller = control_state.hot_control.feedback_valve_controller
-        feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
-    elif hot_control_mode == HotControlMode.HEAT_RESERVOIR:
-        heat_setpoint = (
-            sensors.hot_reservoir.temperature
-            + control_state.setpoints.target_charging_temperature_offset
-        )
-        feedback_valve_controller, feedback_valve_control = (
-            control_state.hot_control.feedback_valve_controller.run(
-                heat_setpoint, sensors.hot_reservoir.exchange_input_temperature
-            )
-        )
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_RESERVOIR_POSITION
-        run_heat_pipes_pump = True
-    elif hot_control_mode == HotControlMode.PREPARE_HEAT_PCM:
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+    if hot_control_mode == HotControlMode.PREPARE_HEAT_PCM:
+        hot_switch_valve_position = HOT_SWITCH_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
         feedback_valve_control = HEAT_PIPES_BYPASS_OPEN_POSITION
@@ -367,7 +308,7 @@ def hot_control(
                 heat_setpoint, sensors.pcm.charge_input_temperature
             )
         )
-        hot_switch_valve_position = HOT_RESERVOIR_PCM_VALVE_PCM_POSITION
+        hot_switch_valve_position = HOT_SWITCH_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
     elif hot_control_mode == HotControlMode.IDLE:
         feedback_valve_controller = control_state.hot_control.feedback_valve_controller
@@ -938,13 +879,7 @@ def control_power_hub(
 
 def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
     return (
-        power_hub.control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.preheat_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.cold_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.heat_pipes_power_hub_pump)
+        power_hub.control(power_hub.heat_pipes_power_hub_pump)
         .value(SwitchPumpControl(on=False))
         .control(power_hub.heat_pipes_supply_box_pump)
         .value(SwitchPumpControl(on=False))
@@ -971,13 +906,7 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
 def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
     # control function that implements no control - all boilers off and all pumps on
     return (
-        power_hub.control(power_hub.hot_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.preheat_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.cold_reservoir)
-        .value(BoilerControl(heater_on=False))
-        .control(power_hub.heat_pipes_power_hub_pump)
+        power_hub.control(power_hub.heat_pipes_power_hub_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.heat_pipes_supply_box_pump)
         .value(SwitchPumpControl(on=True))

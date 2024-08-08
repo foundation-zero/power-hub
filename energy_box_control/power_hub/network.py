@@ -322,7 +322,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.hot_switch_valve)
             .value(
-                ValveState(phc.HOT_RESERVOIR_PCM_VALVE_PCM_POSITION)
+                ValveState(phc.HOT_SWITCH_VALVE_PCM_POSITION)
             )  # everything to pcm, nothing to hot reservoir
             .define_state(self.hot_mix)
             .value(ApplianceState())
