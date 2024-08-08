@@ -123,7 +123,6 @@ class FlowSensorAlarm(AlarmBit):
     FLOWBODY_TEMPERATURE_SENSOR = 9
     COMMUNICATION_TO_SENSOR_INTERRUPTED = 10
     FREEZE_WARNING = 11
-    GLYCOL_DETECTED = 12
 
 
 class WaterMakerAlarm(AlarmValue):
