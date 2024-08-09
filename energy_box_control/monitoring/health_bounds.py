@@ -6,6 +6,9 @@ class HealthBound:
     lower_bound: int | float
     upper_bound: int | float
 
+    def within(self, value: int | float):
+        return self.lower_bound < value < self.upper_bound
+
 
 # TODO This file needs to be reviewed on whether all values make sense.
 
