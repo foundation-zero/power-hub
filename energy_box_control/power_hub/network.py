@@ -637,12 +637,12 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.waste_bypass_mix)
             .at(MixPort.B)
 
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
 

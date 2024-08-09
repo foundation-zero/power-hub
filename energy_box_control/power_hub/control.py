@@ -556,11 +556,6 @@ def chill_control(
         .control(power_hub.waste_bypass_valve)
         .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
         .combine(running)
-        .combine(
-            power_hub.control(power_hub.yazaki_hot_bypass_valve).value(
-                ValveControl(yazaki_feedback_valve_control)
-            )
-        )
     )
 
 
