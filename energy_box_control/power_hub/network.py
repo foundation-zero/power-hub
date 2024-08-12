@@ -85,7 +85,7 @@ from energy_box_control.power_hub.sensors import (
 import energy_box_control.power_hub.components as phc
 from datetime import datetime, timedelta
 
-from energy_box_control.time import ProcessTime
+from energy_box_control.time import ProcessTime, ms_to_datetime
 
 
 @dataclass
@@ -819,6 +819,8 @@ class PowerHub(Network[PowerHubSensors]):
                         **sensor_values,
                     )
             except KeyError as e:
-                raise KeyError(f"Got error on key {str(e)} for {sensor.name}")
+                raise KeyError(
+                    f"Got error on key {str(e)} for {sensor.name} with {sensor_json}"
+                )
 
-        return context.result(datetime.fromisoformat(sensors["time"]))
+        return context.result(ms_to_datetime(sensors["time"]))

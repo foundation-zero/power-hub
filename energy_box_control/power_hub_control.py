@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import fields, replace
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import partial
 import json
 import queue
@@ -31,6 +31,7 @@ from energy_box_control.power_hub.control import (
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.sensors import sensors_to_json
+from energy_box_control.time import time_ms
 
 
 logger = get_logger(__name__)
@@ -103,7 +104,7 @@ def publish_control_modes(
                     for name in [f.name for f in fields(control_state)]
                     if "control" in name
                 },
-                **{"time": datetime.now(tz=timezone.utc)},
+                **{"time": time_ms()},
             },
             cls=ControlModesEncoder,
         ),
