@@ -110,6 +110,8 @@ def test_derived_sensors(power_hub_const, min_max_temperature):
             abs=1e-4,
         )
 
+        sensors.chiller_switch_valve.position = phc.CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+        sensors.waste_switch_valve.position = phc.WASTE_SWITCH_VALVE_YAZAKI_POSITION
         assert sensors.yazaki.chilled_input_temperature == approx(
             state.connection(power_hub_const.yazaki, YazakiPort.CHILLED_IN).temperature,
             abs=1e-4,

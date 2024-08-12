@@ -314,7 +314,7 @@ class PowerHub(Network[PowerHubSensors]):
             .value(SwitchPumpState())
             .define_state(self.heat_pipes_valve)
             .value(
-                ValveState(phc.HEAT_PIPES_BYPASS_OPEN_POSITION)
+                ValveState(phc.HEAT_PIPES_BYPASS_CLOSED_POSITION)
             )  # all to circuit, no bypass
             .define_state(self.heat_pipes_mix)
             .value(ApplianceState())
@@ -330,8 +330,8 @@ class PowerHub(Network[PowerHubSensors]):
             .value(PcmState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.chiller_switch_valve)
             .value(
-                ValveState(phc.CHILLER_SWITCH_VALVE_YAZAKI_POSITION)
-            )  # everything to Yazaki, nothing to chiller
+                ValveState(phc.CHILLER_SWITCH_VALVE_CHILLER_POSITION)
+            )  # everything to chiller, nothing to Yazaki
             .define_state(self.yazaki)
             .value(YazakiState())
             .define_state(self.pcm_to_yazaki_pump)
@@ -357,11 +357,13 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.waste_bypass_mix)
             .value(ApplianceState())
             .define_state(self.waste_switch_valve)
-            .value(ValveState(phc.WASTE_SWITCH_VALVE_YAZAKI_POSITION))  # all to Yazaki
+            .value(
+                ValveState(phc.WASTE_SWITCH_VALVE_CHILLER_POSITION)
+            )  # all to chiller
             .define_state(self.waste_mix)
             .value(ApplianceState())
             .define_state(self.preheat_switch_valve)
-            .value(ValveState(phc.PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))  # no preheat
+            .value(ValveState(phc.PREHEAT_SWITCH_VALVE_BYPASS_POSITION))  # no preheat
             .define_state(self.preheat_reservoir)
             .value(BoilerState(phc.AMBIENT_TEMPERATURE))
             .define_state(self.preheat_mix)
@@ -476,17 +478,17 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.AB)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.heat_pipes_mix)
             .at(MixPort.B)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.hot_switch_valve)
             .at(ValvePort.AB)
 
             .connect(self.hot_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.hot_reservoir)
             .at(BoilerPort.HEAT_EXCHANGE_IN)
 
@@ -496,7 +498,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.B)
 
             .connect(self.hot_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.pcm)
             .at(PcmPort.CHARGE_IN)
 
@@ -604,12 +606,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(BoilerPort.FILL_IN)
 
             .connect(self.chiller_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.yazaki)
             .at(YazakiPort.CHILLED_IN)
 
             .connect(self.chiller_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.chiller)
             .at(ChillerPort.CHILLED_IN)
             )
@@ -635,17 +637,17 @@ class PowerHub(Network[PowerHubSensors]):
         return (
             self
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.waste_bypass_mix)
             .at(MixPort.B)
 
             .connect(self.waste_bypass_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.waste_switch_valve)
             .at(ValvePort.AB)
 
             .connect(self.waste_switch_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.chiller)
             .at(ChillerPort.COOLING_IN)
 
@@ -655,7 +657,7 @@ class PowerHub(Network[PowerHubSensors]):
             .at(MixPort.B)
 
             .connect(self.waste_switch_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.yazaki)
             .at(YazakiPort.COOLING_IN)
 
