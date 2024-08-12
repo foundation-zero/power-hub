@@ -23,17 +23,17 @@ resource "helm_release" "openvpn" {
     value = var.openvpn_admin_password
   }
 
-  set_list {
-    name = "openvpn.users"
-    value = [
-      jsonencode({
-        "user" : "power_hub",
-        "password" : var.openvpn_power_hub_password
-      }),
-      jsonencode({
-        "user" : "developer",
-        "password" : var.openvpn_developer_password
-      })
-    ]
-  }
+  # set_list {
+  #   name = "openvpn.users"
+  #   value = [
+  #     jsonencode({
+  #       "user" : "power_hub",
+  #       "password" : var.openvpn_power_hub_password
+  #     }),
+  #     jsonencode({
+  #       "user" : "developer",
+  #       "password" : var.openvpn_developer_password
+  #     })
+  #   ]
+  # }
 }
