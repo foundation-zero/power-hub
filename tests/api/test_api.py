@@ -287,7 +287,7 @@ async def test_get_mean_electrical_power_consumption(mock_influx_field, start, s
 async def test_get_electrical_power_production(mock_influx_field, start, stop):
     query = f"""from(bucket: "simulation_data")
 |> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
-|> filter(fn: (r) => r["_field"] == "pv_panel_power")
+|> filter(fn: (r) => r["_field"] == "electrical_solar_1_PV_power" or r["_field"] == "electrical_solar_2_PV_power" or r["_field"] == "electrical_solar_3_PV_power" or r["_field"] == "electrical_solar_4_PV_power")
 |> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
 |> keep(columns: ["_value", "_time"])
 |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
@@ -312,7 +312,7 @@ async def test_get_electrical_power_production_hourly_over_time(
     query = f"""import "date"
  from(bucket: "simulation_data")
 |> range(start: {start.replace(tzinfo=timezone.utc).isoformat()}, stop: {stop.replace(tzinfo=timezone.utc).isoformat()})
-|> filter(fn: (r) => r["_field"] == "pv_panel_power")
+|> filter(fn: (r) => r["_field"] == "electrical_solar_1_PV_power" or r["_field"] == "electrical_solar_2_PV_power" or r["_field"] == "electrical_solar_3_PV_power" or r["_field"] == "electrical_solar_4_PV_power")
 |> filter(fn: (r) => r["topic"] == "power_hub/enriched_sensor_values")
 |> keep(columns: ["_value", "_time"])
 |> aggregateWindow(every: 3600s, fn: mean, createEmpty: true)
@@ -331,18 +331,6 @@ async def test_get_electrical_power_production_hourly_over_time(
         ),
         query,
     )
-
-
-async def test_get_electrical_power_production_non_pv_panel(mock_influx_field):
-    response = await app.test_client().get(
-        f"/power_hub/electric/power/production/over/time?appliances=test",
-        headers=HEADERS,
-    )
-
-    assert response.status_code == 422
-    assert (await response.get_data()).decode(
-        "utf-8"
-    ) == "Please only provide pv_panel(s)"
 
 
 INVALID_VALUES_ERROR_MESSAGE = "Invalid value for query param 'between'. 'between' be formatted as 'start,stop', where 'start' & 'stop' follow ISO8601 and 'stop' > 'start'."

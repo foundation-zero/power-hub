@@ -368,17 +368,8 @@ battery_warning_checks = [
 battery_soc_checks = [
     valid_value(
         "battery_soc",
-        lambda sensors: sensors.electrical.soc_battery_system,
+        lambda sensors: sensors.electrical.battery_system_soc,
         BATTERY_HEALTH_BOUNDS["soc"],
-    )
-]
-
-battery_estop_checks = [
-    valid_value_check(
-        name="estop_active",
-        value_fn=lambda sensors: sensors.electrical.estop_active,
-        message_fn=lambda _, value: f"estop active is {value}",
-        valid=False,
     )
 ]
 
@@ -597,7 +588,6 @@ all_checks = (
     + battery_alarm_checks
     + battery_warning_checks
     + battery_soc_checks
-    + battery_estop_checks
     + weather_station_alarm_checks
     + valve_alarm_checks
     + pump_alarm_checks

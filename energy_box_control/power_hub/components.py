@@ -1,6 +1,4 @@
 from energy_box_control.appliances.cooling_sink import CoolingSink
-from energy_box_control.appliances.electrical import Electrical
-from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.water_demand import WaterDemand
 from energy_box_control.appliances.water_maker import WaterMaker
 from energy_box_control.appliances.water_tank import WaterTank
@@ -38,6 +36,11 @@ PCM_ZERO_TEMPERATURE = 50
 DEFAULT_PRESSURE = 2
 DEFAULT_TEMPERATURE = 25
 DEFAULT_HUMIDITY = 70
+DEFAULT_VOLTAGE = 0
+DEFAULT_CURRENT = 0
+DEFAULT_POWER = 0
+NO_ALARM = 0
+DEFAULT_BATTERY_SOC = 75
 
 
 HOT_SWITCH_VALVE_RESERVOIR_POSITION = (
@@ -200,18 +203,6 @@ cooling_demand_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 
 def cooling_demand(cooling_demand_schedule: Schedule[Watt]) -> CoolingSink:
     return CoolingSink(WATER_SPECIFIC_HEAT, cooling_demand_schedule)
-
-
-def pv_panel(global_irradiance_schedule: Schedule[WattPerMeterSquared]) -> PVPanel:
-    return PVPanel(
-        global_irradiance_schedule, PV_PANEL_SURFACE_AREA, PV_PANEL_EFFICIENCY
-    )
-
-
-def electrical(
-    global_irradiance_schedule: Schedule[WattPerMeterSquared],
-) -> Electrical:
-    return Electrical(global_irradiance_schedule)
 
 
 water_maker = WaterMaker(
