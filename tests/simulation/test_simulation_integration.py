@@ -73,7 +73,7 @@ async def test_app_endpoints(headers):
         "/power_hub/electric/power/consumption/mean",
         "/power_hub/appliance_sensors/heat_pipes/power/mean",
         "/power_hub/appliance_sensors/chiller/chill_power/mean",
-        "/power_hub/appliance_sensors/yazaki/chill_power/mean",
+        # "/power_hub/appliance_sensors/yazaki/chill_power/mean", yazaki is not activated in test period
         "/power_hub/appliance_sensors/cold_reservoir/cooling_supply/mean",
         "/power_hub/appliance_sensors/water_maker/production_flow/mean",
         "/power_hub/appliance_sensors/water_treatment/out_flow/mean",
@@ -84,11 +84,11 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/pcm/charge_power/mean",
         "/power_hub/appliance_sensors/pcm/discharge_power/mean",
         "/power_hub/appliance_sensors/pcm/temperature/mean",
-        "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean",
+        # "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean", yazaki is not activated in test period
         "/power_hub/appliance_sensors/pcm/fill/current",
         "/power_hub/appliance_sensors/containers/office_temperature/mean",
         "/power_hub/appliance_sensors/weather/global_irradiance/mean",
-        "/power_hub/appliance_sensors/yazaki/used_power/mean",
+        # "/power_hub/appliance_sensors/yazaki/used_power/mean", yazaki is not activated in test period
     ]
 
     for endpoint in multiple_value_endpoints:
