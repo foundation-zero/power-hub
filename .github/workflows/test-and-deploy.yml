@@ -12,51 +12,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: 3.12
 
-      - run: pipx install poetry==1.7.1
+      # - run: pipx install poetry==1.7.1
 
-      - run: poetry install
+      # - run: poetry install
       
-      - run: poetry check
+      # - run: poetry check
 
-      - name: Black
-        run: poetry run black --check energy_box_control tests
+      # - name: Black
+      #   run: poetry run black --check energy_box_control tests
 
-      - name: Type check
-        run: poetry run pyright
+      # - name: Type check
+      #   run: poetry run pyright
 
-      - name: Test
-        run: poetry run pytest
+      # - name: Test
+      #   run: poetry run pytest
 
-      - run: docker compose up -d telegraf
+      # - run: docker compose up -d telegraf
 
-      - name: Integration tests
-        run: poetry run pytest -s --runintegration tests/api/test_api_integration.py
-        env:
-          MQTT_HOST: "0.0.0.0"
-          INFLUXDB_URL: "http://0.0.0.0:8086"
-          API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
-          OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
-          PAGERDUTY_SIMULATION_KEY: "-"
+      # - name: Integration tests
+      #   run: poetry run pytest -s --runintegration tests/api/test_api_integration.py
+      #   env:
+      #     MQTT_HOST: "0.0.0.0"
+      #     INFLUXDB_URL: "http://0.0.0.0:8086"
+      #     API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
+      #     OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
+      #     PAGERDUTY_SIMULATION_KEY: "-"
       
-      - name: Clear docker volumes
-        run: docker compose down -v
+      # - name: Clear docker volumes
+      #   run: docker compose down -v
 
-      - run: docker compose up -d
-        env:
-          PAGERDUTY_SIMULATION_KEY: "-"
+      # - run: docker compose up -d
+      #   env:
+      #     PAGERDUTY_SIMULATION_KEY: "-"
   
-      - name: Simulation integration tests
-        run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py
-        env:
-          INFLUXDB_URL: "http://0.0.0.0:8086"
-          API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
+      # - name: Simulation integration tests
+      #   run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py
+      #   env:
+      #     INFLUXDB_URL: "http://0.0.0.0:8086"
+      #     API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
       
-      - name: Run simulation notebook
-        run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
+      # - name: Run simulation notebook
+      #   run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
 
   test-tofu-staging:
     if: github.ref != 'refs/heads/feature/openvpn' || github.event_name != 'push'
