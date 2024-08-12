@@ -40,6 +40,7 @@ from energy_box_control.simulation_json import encoder
 from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.time import time_ms
 from energy_box_control.units import Celsius, WattPerMeterSquared
 
 
@@ -958,7 +959,7 @@ def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> s
     return json.dumps(
         {
             **control.name_to_control_values_mapping(power_hub),
-            **{"time": datetime.now(tz=timezone.utc)},
+            **{"time": time_ms()},
         },
         cls=encoder(),
     )

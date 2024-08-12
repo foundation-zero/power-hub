@@ -1235,7 +1235,6 @@ class PowerHubSensors(NetworkSensors):
     chiller_switch_valve: ChillerSwitchSensors = describe("CV-1008", "35k10/6")
     cold_reservoir: ColdReservoirSensors = describe("W-1006")
     waste_bypass_valve: ValveSensors = describe("CV-1004", "35k10/3")
-    preheat_switch_valve: ValveSensors = describe("CV-1003", "35k10/2")
     preheat_reservoir: PreHeatSensors = describe("W-1008")
     waste_switch_valve: ValveSensors = describe("CV-1007", "35k10/5")
     outboard_exchange: HeatExchangerSensors = describe("W-1007")
