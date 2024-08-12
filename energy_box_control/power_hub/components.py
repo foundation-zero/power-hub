@@ -1,4 +1,3 @@
-from energy_box_control.appliances.containers import Containers
 from energy_box_control.appliances.cooling_sink import CoolingSink
 from energy_box_control.appliances.electrical import Electrical
 from energy_box_control.appliances.pv_panel import PVPanel
@@ -37,6 +36,8 @@ WATER_DEMAND: LiterPerSecond = 10
 PERCENT_WATER_CAPTURED: float = 0.1
 PCM_ZERO_TEMPERATURE = 50
 DEFAULT_PRESSURE = 2
+DEFAULT_TEMPERATURE = 25
+DEFAULT_HUMIDITY = 70
 
 
 HOT_SWITCH_VALVE_RESERVOIR_POSITION = (
@@ -235,7 +236,3 @@ def water_treatment(freshwater_temperature_schedule: Schedule[Celsius]):
 
 technical_water_regulator = Valve()
 water_filter_bypass_valve = Valve()
-
-
-def containers(ambient_temperature_schedule: Schedule[Celsius]) -> Containers:
-    return Containers(ambient_temperature_schedule)
