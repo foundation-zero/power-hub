@@ -40,6 +40,7 @@ from energy_box_control.simulation_json import encoder
 from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.time import time_ms
 from energy_box_control.units import Celsius, WattPerMeterSquared
 
 
@@ -757,9 +758,6 @@ def survival_control(
             ),
             sensors.waste_switch_valve.in_position(WASTE_SWITCH_VALVE_CHILLER_POSITION),
             sensors.waste_bypass_valve.in_position(WASTE_BYPASS_VALVE_CLOSED_POSITION),
-            sensors.preheat_switch_valve.in_position(
-                PREHEAT_SWITCH_VALVE_PREHEAT_POSITION
-            ),
         ]
     )
 
@@ -950,7 +948,7 @@ def control_to_json(power_hub: PowerHub, control: NetworkControl[PowerHub]) -> s
     return json.dumps(
         {
             **control.name_to_control_values_mapping(power_hub),
-            **{"time": datetime.now(tz=timezone.utc)},
+            **{"time": time_ms()},
         },
         cls=encoder(),
     )
