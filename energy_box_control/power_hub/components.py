@@ -152,7 +152,7 @@ def cold_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler:
     )
 
 
-chilled_loop_pump = SwitchPump(70 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
+chilled_loop_pump = SwitchPump(50 / 60, SWITCH_PUMP_POWER)  # 42 - 100 l/min
 waste_switch_valve = Valve()
 waste_bypass_valve = Valve()
 waste_mix = Mix()
@@ -172,10 +172,9 @@ def preheat_reservoir(ambient_temperature_schedule: Schedule[Celsius]) -> Boiler
 
 
 preheat_mix = Mix()
-waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
+waste_pump = SwitchPump(160 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 outboard_exchange = HeatExchanger(SEAWATER_SPECIFIC_HEAT, WATER_SPECIFIC_HEAT)
 waste_switch_valve = Valve()
-waste_pump = SwitchPump(100 / 60, SWITCH_PUMP_POWER)  # 50 - 170 l/m
 hot_water_pump = SwitchPump(35 / 60, SWITCH_PUMP_POWER)
 
 

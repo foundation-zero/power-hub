@@ -182,7 +182,7 @@ def initial_control_state() -> PowerHubControlState:
             target_charging_temperature_offset=5,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=78,
+            pcm_discharged=75,
             pcm_charged=78,
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
@@ -372,9 +372,9 @@ within_yazaki_bounds = Fn.pred(
             YAZAKI_BOUNDS["chilled_input_temperature"].within(
                 sensors.yazaki.chilled_input_temperature
             ),
-            # YAZAKI_BOUNDS["hot_flow"].within(sensors.yazaki.hot_flow),
-            # YAZAKI_BOUNDS["waste_flow"].within(sensors.yazaki.waste_flow),
-            # YAZAKI_BOUNDS["chilled_flow"].within(sensors.yazaki.chilled_flow),
+            YAZAKI_BOUNDS["hot_flow"].within(sensors.yazaki.hot_flow),
+            YAZAKI_BOUNDS["waste_flow"].within(sensors.yazaki.waste_flow),
+            YAZAKI_BOUNDS["chilled_flow"].within(sensors.yazaki.chilled_flow),
         ]
     )
 )
