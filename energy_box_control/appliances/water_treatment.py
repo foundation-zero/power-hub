@@ -11,9 +11,15 @@ from energy_box_control.time import ProcessTime
 from energy_box_control.units import Celsius, LiterPerSecond
 
 
+DEFAULT_PH = 7
+DEFAULT_ELECTRICAL_CONDUCTIVITY = 50
+
+
 @dataclass(frozen=True, eq=True)
 class WaterTreatmentState(ApplianceState):
     on: bool
+    ph: int = DEFAULT_PH
+    electrical_conductivity: int = DEFAULT_ELECTRICAL_CONDUCTIVITY
 
 
 @dataclass(frozen=True, eq=True)
