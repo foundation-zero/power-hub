@@ -59,6 +59,7 @@ jobs:
         run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
 
   test-tofu-staging:
+    if: github.ref != 'refs/heads/feature/openvpn' || github.event_name != 'push'
     timeout-minutes: 10
     needs: test
     concurrency:
@@ -99,6 +100,9 @@ jobs:
         env:
           TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
           TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_admin_password: ${{secrets.OPENVPN_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_power_hub_password: ${{secrets.OPENVPN_POWER_HUB_PASSWORD}}
+          TF_VAR_openvpn_developer_password: ${{secrets.OPENVPN_DEVELOPER_PASSWORD}}
           TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
@@ -114,7 +118,7 @@ jobs:
 
   deploy-staging:
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/feature/openvpn' && github.event_name == 'push'
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
@@ -171,7 +175,7 @@ jobs:
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-staging-infra:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/feature/openvpn' && github.event_name == 'push'
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
 
@@ -210,6 +214,9 @@ jobs:
         env:
           TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
           TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_admin_password: ${{secrets.OPENVPN_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_power_hub_password: ${{secrets.OPENVPN_POWER_HUB_PASSWORD}}
+          TF_VAR_openvpn_developer_password: ${{secrets.OPENVPN_DEVELOPER_PASSWORD}}
           TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
@@ -222,7 +229,7 @@ jobs:
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
           TF_VAR_send_notifications: false
-
+  
   deploy-prod:
     timeout-minutes: 10
     if: github.event_name == 'release'
@@ -318,13 +325,17 @@ jobs:
         env:
           TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
           TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_admin_password: ${{secrets.OPENVPN_ADMIN_PASSWORD}}
+          TF_VAR_openvpn_power_hub_password: ${{secrets.OPENVPN_POWER_HUB_PASSWORD}}
+          TF_VAR_openvpn_developer_password: ${{secrets.OPENVPN_DEVELOPER_PASSWORD}}
           TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
           TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
-          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PROD_PAGERDUTY_MQTT_CHECKER_PROD_KEY}}
-          TF_VAR_pagerduty_gke_key: ${{secrets.PROD_PAGERDUTY_GKE_PROD_KEY}}
-          TF_VAR_python_app_image_tag: "RELEASE-${{ github.event.release.tag_name }}"
+          TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
+          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
+          TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
+          TF_VAR_python_app_image_tag: ${{github.sha}}
           TF_VAR_env: ${{env.ENV}}
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
