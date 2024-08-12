@@ -27,7 +27,6 @@ from energy_box_control.power_hub.components import HOT_SWITCH_VALVE_PCM_POSITIO
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (
     CHILLER_FAULTS,
-    ContainersSensors,
     ElectricalSensors,
     FlowSensors,
     PowerHubSensors,
@@ -307,36 +306,6 @@ def test_battery_estop_checks(source):
             severity=Severity.CRITICAL,
         )
     ]
-
-
-def test_fancoil_alarm_checks(source):
-    for attr in get_attrs(ContainersSensors, SensorType.ALARM):
-        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.containers, attr, 1)
-        assert run_monitor(sensors, source) == [
-            NotificationEvent(
-                message=f"{attr} is raising an alarm",
-                source=source,
-                dedup_key=attr,
-                severity=Severity.CRITICAL,
-            )
-        ]
-
-
-def test_fancoil_filter_checks(source):
-    for attr in get_attrs(ContainersSensors, SensorType.REPLACE_FILTER_ALARM):
-        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.containers, attr, 1)
-        assert run_monitor(sensors, source) == [
-            NotificationEvent(
-                message=f"{attr} gone bad",
-                source=source,
-                dedup_key=attr,
-                severity=Severity.CRITICAL,
-            )
-        ]
 
 
 def test_weather_station_alarm_checks(source):
@@ -828,29 +797,6 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
         dedup_key=f"{water_tank}_fill_ratio",
         severity=Severity.CRITICAL,
     )
-
-
-@pytest.mark.parametrize(
-    "sensor_type,alerting_value",
-    [
-        (SensorType.CO2, 3),
-        (SensorType.HUMIDITY, 3),
-        (SensorType.TEMPERATURE, 100),
-    ],
-)
-def test_container_sensor_values(sensor_type, alerting_value, source):
-    for attr in get_attrs(ContainersSensors, sensor_type):
-        power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
-        setattr(sensors.containers, attr, alerting_value)
-        assert run_monitor(sensors, source) == [
-            NotificationEvent(
-                message=f"{attr} is outside valid bounds with value: {alerting_value}",
-                source=source,
-                dedup_key=attr,
-                severity=Severity.CRITICAL,
-            )
-        ]
 
 
 def test_send_events(mocker):

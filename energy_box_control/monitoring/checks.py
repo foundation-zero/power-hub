@@ -10,7 +10,6 @@ from energy_box_control.monitoring.health_bounds import (
     HEAT_PIPES_BOUNDS,
     HOT_CIRCUIT_BOUNDS,
     HealthBound,
-    CONTAINER_BOUNDS,
     TANK_BOUNDS,
     YAZAKI_BOUNDS,
     CHILLER_BOUNDS,
@@ -25,7 +24,6 @@ from energy_box_control.power_hub.sensors import (
     RH33Sensors,
     ValveSensors,
     ElectricalSensors,
-    ContainersSensors,
 )
 
 RH33_LOWER_BITS_MASK = 0b1111
@@ -384,26 +382,6 @@ battery_estop_checks = [
     )
 ]
 
-container_fancoil_alarm_checks = [
-    alarm(
-        name=f"{attr}",
-        value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        message_fn=lambda name, _: f"{name} is raising an alarm",
-        alarm=FancoilAlarm.ALARM,
-    )
-    for attr in attributes_for_type(ContainersSensors, SensorType.ALARM)
-]
-
-containers_fancoil_filter_checks = [
-    alarm(
-        name=f"{attr}",
-        value_fn=lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        message_fn=lambda name, _: f"{name} gone bad",
-        alarm=FancoilAlarm.ALARM,
-    )
-    for attr in attributes_for_type(ContainersSensors, SensorType.REPLACE_FILTER_ALARM)
-]
-
 weather_station_alarm_checks = [
     bit_check(
         name=f"weather_station_{alarm.name.lower()}",
@@ -609,19 +587,6 @@ water_tank_checks = [
     for tank_name, bound in TANK_BOUNDS.items()
 ]
 
-container_checks = [
-    valid_value(
-        attr,
-        lambda sensors, attr=attr: getattr(sensors.containers, attr),
-        health_bound=CONTAINER_BOUNDS[sensor],
-    )
-    for sensor, sensor_type in [
-        ("temperature", SensorType.TEMPERATURE),
-        ("humidity", SensorType.HUMIDITY),
-        ("co2", SensorType.CO2),
-    ]
-    for attr in attributes_for_type(ContainersSensors, sensor_type)
-]
 
 all_checks = (
     pcm_checks
@@ -633,8 +598,6 @@ all_checks = (
     + battery_warning_checks
     + battery_soc_checks
     + battery_estop_checks
-    + container_fancoil_alarm_checks
-    + containers_fancoil_filter_checks
     + weather_station_alarm_checks
     + valve_alarm_checks
     + pump_alarm_checks
@@ -644,7 +607,6 @@ all_checks = (
     + chiller_bound_checks
     + chiller_alarm_checks
     + water_tank_checks
-    + container_checks
     + water_maker_alarm_checks
     + flow_sensor_alarm_checks
     + rh33_upper_bits_checks

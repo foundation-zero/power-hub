@@ -86,7 +86,7 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/pcm/temperature/mean",
         # "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean", yazaki is not activated in test period
         "/power_hub/appliance_sensors/pcm/fill/current",
-        "/power_hub/appliance_sensors/containers/office_temperature/mean",
+        "/power_hub/appliance_sensors/office_1_fancoil/ambient_temperature/mean",
         "/power_hub/appliance_sensors/weather/global_irradiance/mean",
         # "/power_hub/appliance_sensors/yazaki/used_power/mean", yazaki is not activated in test period
     ]
