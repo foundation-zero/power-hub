@@ -7,7 +7,6 @@ from energy_box_control.appliances.base import (
     Port,
     ThermalState,
 )
-from energy_box_control.appliances.electrical import BatteryAlarm, Electrical
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -15,7 +14,6 @@ from energy_box_control.appliances.heat_exchanger import (
 
 from energy_box_control.appliances.mix import MixPort
 
-from energy_box_control.appliances.pv_panel import PVPanel
 from energy_box_control.appliances.switch_pump import (
     SwitchPumpAlarm,
     SwitchPumpStatusBit,
@@ -33,10 +31,17 @@ from energy_box_control.network import AnyAppliance, NetworkState
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    DEFAULT_BATTERY_SOC,
+    DEFAULT_CURRENT,
+    DEFAULT_POWER,
     DEFAULT_TEMPERATURE,
+    DEFAULT_VOLTAGE,
     FRESHWATER_TEMPERATURE,
     HOT_SWITCH_VALVE_PCM_POSITION,
     HOT_SWITCH_VALVE_RESERVOIR_POSITION,
+    NO_ALARM,
+    PV_PANEL_EFFICIENCY,
+    PV_PANEL_SURFACE_AREA,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     PCM_ZERO_TEMPERATURE,
@@ -93,6 +98,7 @@ def power_hub_sensor[
 
 
 FlowStatus = int
+ElectricalAlarm = int
 
 
 @sensors(from_appliance=False, eq=False)
@@ -955,134 +961,700 @@ class PressuredPumpSensors(SmartPumpSensors):
     pressure: Bar = sensor()
 
 
-@sensors()
-class PVSensors(FromState):
-    spec: PVPanel
-    power: Watt = sensor()
-
-
-@sensors()
-class ElectricalSensors(FromState):
-    spec: Electrical
-    voltage_battery_system: int = sensor()
-    current_battery_system: int = sensor()
-    power_battery_system: int = sensor()
-    soc_battery_system: float = sensor()
-    battery_alarm: int = sensor()
-    battery_low_voltage_alarm: int = sensor()
-    battery_high_voltage_alarm: int = sensor()
-    battery_low_starter_voltage_alarm: int = sensor()
-    battery_high_starter_voltage_alarm: int = sensor()
-    battery_low_soc_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_mid_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_low_fused_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_high_fused_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_fuse_blown_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_high_internal_temperature_alarm: BatteryAlarm = sensor(
-        type=SensorType.ALARM
+def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
+    return power_hub_sensor(
+        None,
+        None,
+        lambda power_hub, state: schedule(power_hub.schedules).at(state.time),
     )
-    battery_high_charge_current_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_high_discharge_current_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_cell_imbalance_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_internal_failure_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_high_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_low_charge_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_low_cell_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    battery_error: int = sensor()
-    high_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    high_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    high_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    low_temperature_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    low_battery_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    low_ac_out_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    overload_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    ripple_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    low_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    high_batt_voltage_alarm: BatteryAlarm = sensor(type=SensorType.ALARM)
-    estop_active: bool = sensor(type=SensorType.BOOL)
-    office_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    office_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    office_power_L1: Watt = sensor(type=SensorType.POWER)
-    office_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    office_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    office_power_L2: Watt = sensor(type=SensorType.POWER)
-    office_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    office_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    office_power_L3: Watt = sensor(type=SensorType.POWER)
-    workshop_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    workshop_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    workshop_power_L1: Watt = sensor(type=SensorType.POWER)
-    workshop_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    workshop_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    workshop_power_L2: Watt = sensor(type=SensorType.POWER)
-    workshop_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    workshop_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    workshop_power_L3: Watt = sensor(type=SensorType.POWER)
-    sim_room_storage_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    sim_room_storage_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    sim_room_storage_power_L1: Watt = sensor(type=SensorType.POWER)
-    sim_room_storage_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    sim_room_storage_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    sim_room_storage_power_L2: Watt = sensor(type=SensorType.POWER)
-    sim_room_storage_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    sim_room_storage_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    sim_room_storage_power_L3: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L1: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L2: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L3: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L1: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L2: Watt = sensor(type=SensorType.POWER)
-    kitchen_sanitary_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    kitchen_sanitary_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    kitchen_sanitary_power_L3: Watt = sensor(type=SensorType.POWER)
-    supply_box_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    supply_box_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    supply_box_power_L1: Watt = sensor(type=SensorType.POWER)
-    supply_box_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    supply_box_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    supply_box_power_L2: Watt = sensor(type=SensorType.POWER)
-    supply_box_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    supply_box_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    supply_box_power_L3: Watt = sensor(type=SensorType.POWER)
-    center_1_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    center_1_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    center_1_power_L1: Watt = sensor(type=SensorType.POWER)
-    center_1_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    center_1_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    center_1_power_L2: Watt = sensor(type=SensorType.POWER)
-    center_1_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    center_1_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    center_1_power_L3: Watt = sensor(type=SensorType.POWER)
-    center_2_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    center_2_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    center_2_power_L1: Watt = sensor(type=SensorType.POWER)
-    center_2_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    center_2_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    center_2_power_L2: Watt = sensor(type=SensorType.POWER)
-    center_2_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    center_2_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    center_2_power_L3: Watt = sensor(type=SensorType.POWER)
-    thermo_cabinet_voltage_L1: Volt = sensor(type=SensorType.VOLTAGE)
-    thermo_cabinet_current_L1: Ampere = sensor(type=SensorType.CURRENT)
-    thermo_cabinet_power_L1: Watt = sensor(type=SensorType.POWER)
-    thermo_cabinet_voltage_L2: Volt = sensor(type=SensorType.VOLTAGE)
-    thermo_cabinet_current_L2: Ampere = sensor(type=SensorType.CURRENT)
-    thermo_cabinet_power_L2: Watt = sensor(type=SensorType.POWER)
-    thermo_cabinet_voltage_L3: Volt = sensor(type=SensorType.VOLTAGE)
-    thermo_cabinet_current_L3: Ampere = sensor(type=SensorType.CURRENT)
-    thermo_cabinet_power_L3: Watt = sensor(type=SensorType.POWER)
+
+
+def pv_panel_power_sensor(
+    schedule: "Callable[[PowerHubSchedules], Schedule[Any]]",
+) -> Any:
+    return power_hub_sensor(
+        None,
+        None,
+        lambda power_hub, state: schedule(power_hub.schedules).at(state.time)
+        * PV_PANEL_EFFICIENCY
+        * PV_PANEL_SURFACE_AREA,
+    )
+
+
+@sensors(from_appliance=False)
+class ElectricalSensors(WithoutAppliance):
+
+    status: int = sensor(resolver=const_resolver(0))
+
+    e1_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e1_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e1_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e1_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e1_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e1_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e1_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e1_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e1_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e2_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e2_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e2_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e2_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e2_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e2_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e2_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e2_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e2_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e3_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e3_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e3_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e3_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e3_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e3_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e3_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e3_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e3_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e4_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e4_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e4_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e4_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e4_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e4_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e4_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e4_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e4_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e5_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e5_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e5_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e5_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e5_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e5_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e5_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e5_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e5_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e6_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e6_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e6_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e6_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e6_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e6_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e6_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e6_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e6_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e7_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e7_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e7_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e7_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e7_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e7_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e7_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e7_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e7_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e8_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e8_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e8_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    e8_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e8_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e8_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    e8_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e8_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    e8_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    thermo_cabinet_voltage_L1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    thermo_cabinet_voltage_L2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    thermo_cabinet_voltage_L3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    thermo_cabinet_current_L1: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    thermo_cabinet_current_L2: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    thermo_cabinet_current_L3: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    thermo_cabinet_power_L1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    thermo_cabinet_power_L2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    thermo_cabinet_power_L3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_battery_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_battery_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_1_battery_temp: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    solar_1_on_off: int = sensor(resolver=const_resolver(0))
+    solar_1_state: int = sensor(resolver=const_resolver(0))
+    solar_1_pv_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_pv_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_1_equalization_pending: int = sensor(resolver=const_resolver(0))
+    solar_1_equalization_time_remaining: int = sensor(resolver=const_resolver(0))
+    solar_1_relay_on_the_charger: int = sensor(resolver=const_resolver(0))
+    solar_1_yield_today: int = sensor(resolver=const_resolver(0))
+    solar_1_max_charge_power_today: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_yield_yesterday: int = sensor(resolver=const_resolver(0))
+    solar_1_max_charge_power_yesterday: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_error_code: int = sensor(resolver=const_resolver(0))
+    solar_1_PV_power: Watt = pv_panel_power_sensor(
+        lambda schedules: schedules.global_irradiance
+    )
+
+    sensor(type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER))
+    solar_1_User_yield: int = sensor(resolver=const_resolver(0))
+    solar_1_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
+    solar_1_low_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_1_high_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_1_PV_voltage_for_tracker_0: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_PV_voltage_for_tracker_1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_PV_voltage_for_tracker_2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_PV_voltage_for_tracker_3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_1_PV_power_for_tracker_0: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_PV_power_for_tracker_1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_PV_power_for_tracker_2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_1_PV_power_for_tracker_3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_battery_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_battery_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_2_battery_temp: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    solar_2_on_off: int = sensor(resolver=const_resolver(0))
+    solar_2_state: int = sensor(resolver=const_resolver(0))
+    solar_2_pv_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_pv_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_2_equalization_pending: int = sensor(resolver=const_resolver(0))
+    solar_2_equalization_time_remaining: int = sensor(resolver=const_resolver(0))
+    solar_2_relay_on_the_charger: int = sensor(resolver=const_resolver(0))
+    solar_2_yield_today: int = sensor(resolver=const_resolver(0))
+    solar_2_max_charge_power_today: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_yield_yesterday: int = sensor(resolver=const_resolver(0))
+    solar_2_max_charge_power_yesterday: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_error_code: int = sensor(resolver=const_resolver(0))
+    solar_2_PV_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_User_yield: int = sensor(resolver=const_resolver(0))
+    solar_2_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
+    solar_2_low_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_2_high_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_2_PV_voltage_for_tracker_0: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_PV_voltage_for_tracker_1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_PV_voltage_for_tracker_2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_PV_voltage_for_tracker_3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_2_PV_power_for_tracker_0: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_PV_power_for_tracker_1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_PV_power_for_tracker_2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_2_PV_power_for_tracker_3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_battery_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_battery_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_3_battery_temp: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    solar_3_on_off: int = sensor(resolver=const_resolver(0))
+    solar_3_state: int = sensor(resolver=const_resolver(0))
+    solar_3_pv_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_pv_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_3_equalization_pending: int = sensor(resolver=const_resolver(0))
+    solar_3_equalization_time_remaining: int = sensor(resolver=const_resolver(0))
+    solar_3_relay_on_the_charger: int = sensor(resolver=const_resolver(0))
+    solar_3_yield_today: int = sensor(resolver=const_resolver(0))
+    solar_3_max_charge_power_today: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_yield_yesterday: int = sensor(resolver=const_resolver(0))
+    solar_3_max_charge_power_yesterday: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_error_code: int = sensor(resolver=const_resolver(0))
+    solar_3_PV_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_User_yield: int = sensor(resolver=const_resolver(0))
+    solar_3_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
+    solar_3_low_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_3_high_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_3_PV_voltage_for_tracker_0: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_PV_voltage_for_tracker_1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_PV_voltage_for_tracker_2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_PV_voltage_for_tracker_3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_3_PV_power_for_tracker_0: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_PV_power_for_tracker_1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_PV_power_for_tracker_2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_3_PV_power_for_tracker_3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_battery_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_battery_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_4_battery_temp: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    solar_4_on_off: int = sensor(resolver=const_resolver(0))
+    solar_4_state: int = sensor(resolver=const_resolver(0))
+    solar_4_pv_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_pv_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    solar_4_equalization_pending: int = sensor(resolver=const_resolver(0))
+    solar_4_equalization_time_remaining: int = sensor(resolver=const_resolver(0))
+    solar_4_relay_on_the_charger: int = sensor(resolver=const_resolver(0))
+    solar_4_yield_today: int = sensor(resolver=const_resolver(0))
+    solar_4_max_charge_power_today: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_yield_yesterday: int = sensor(resolver=const_resolver(0))
+    solar_4_max_charge_power_yesterday: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_error_code: int = sensor(resolver=const_resolver(0))
+    solar_4_PV_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_User_yield: int = sensor(resolver=const_resolver(0))
+    solar_4_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
+    solar_4_low_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_4_high_battery_voltage_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    solar_4_PV_voltage_for_tracker_0: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_PV_voltage_for_tracker_1: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_PV_voltage_for_tracker_2: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_PV_voltage_for_tracker_3: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    solar_4_PV_power_for_tracker_0: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_PV_power_for_tracker_1: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_PV_power_for_tracker_2: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    solar_4_PV_power_for_tracker_3: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    battery_system_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    battery_system_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    battery_system_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    battery_system_soc: int = sensor(resolver=const_resolver(DEFAULT_BATTERY_SOC))
+    general_estop_active: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    general_ups_24v_not_ready: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    general_ups_24v_replace_battery: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e1_input_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e1_input_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e1_input_frequency: int = sensor(resolver=const_resolver(0))
+    vebus_e1_input_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e1_output_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e1_output_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e1_output_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e1_temperature_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e1_lowBattery_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e1_overload_alarmv: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e1_ripple_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e2_input_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e2_input_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e2_input_frequency: int = sensor(resolver=const_resolver(0))
+    vebus_e2_input_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e2_output_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e2_output_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e2_output_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e2_temperature_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e2_lowBattery_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e2_overload_alarmv: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e2_ripple_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e3_input_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e3_input_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e3_input_frequency: int = sensor(resolver=const_resolver(0))
+    vebus_e3_input_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e3_output_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_e3_output_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_e3_output_power: Watt = sensor(
+        type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
+    )
+    vebus_e3_temperature_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e3_lowBattery_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e3_overload_alarmv: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_e3_ripple_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_output_frequency: int = sensor(resolver=const_resolver(0))
+    vebus_battery_voltage: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_battery_current: Ampere = sensor(
+        type=SensorType.CURRENT, resolver=const_resolver(DEFAULT_CURRENT)
+    )
+    vebus_phase_count: int = sensor(resolver=const_resolver(0))
+    vebus_active_input: int = sensor(resolver=const_resolver(0))
+    vebus_state: int = sensor(resolver=const_resolver(0))
+    vebus_error: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_temperature_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_low_battery_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_overload_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_temperatur_sensor_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_voltage_sensor_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_battery_charge_allowed: int = sensor(resolver=const_resolver(0))
+    vebus_battery_discharge_allowed: int = sensor(resolver=const_resolver(0))
+    vebus_bms_expected: int = sensor(resolver=const_resolver(0))
+    vebus_ms_error: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_battery_temperature: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    vebus_phase_rotation_warning: int = sensor(resolver=const_resolver(0))
+    vebus_gridLost_alarm: ElectricalAlarm = sensor(
+        type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
+    )
+    vebus_sustain_active: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acIn1_to_acOut: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acIn1_to_battery: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acOut_toAcIn1: int = sensor(resolver=const_resolver(0))
+    vebus_energy_battery_to_acIn1: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acIn2_to_acOut: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acIn2_to_battery: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acOut_to_acIn2: int = sensor(resolver=const_resolver(0))
+    vebus_energy_battery_to_acIn2: int = sensor(resolver=const_resolver(0))
+    vebus_energy_battery_to_acOut: int = sensor(resolver=const_resolver(0))
+    vebus_energy_acOut_to_battery: int = sensor(resolver=const_resolver(0))
+    vebus_low_cell_voltage_imminent: Volt = sensor(
+        type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
+    )
+    vebus_charge_state: int = sensor(resolver=const_resolver(0))
 
 
 @sensors()
@@ -1178,14 +1750,6 @@ class TemperatureHumiditySensors(WithoutAppliance):
     )
 
 
-def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
-    return power_hub_sensor(
-        None,
-        None,
-        lambda power_hub, state: schedule(power_hub.schedules).at(state.time),
-    )
-
-
 @sensors(from_appliance=False)
 class ContainersSensors(WithoutAppliance):
     pass
@@ -1268,7 +1832,6 @@ class PowerHubSensors(NetworkSensors):
     hot_water_pump: SwitchPumpSensors = describe("simulation-only")
     outboard_pump: SwitchPumpSensors = describe("P-1002", "35k17/0, 35k16/0")
     cooling_demand_pump: PressuredPumpSensors = describe("P-1007", "192.168.1.46")
-    pv_panel: PVSensors = describe("not-in-drawing")
     electrical: ElectricalSensors = describe("electrical-plc", "192.168.1.15")
     fresh_water_tank: FreshWaterTankSensors = describe("K-5001")
     grey_water_tank: GreyWaterTankSensors = describe("K-3001")
