@@ -1141,6 +1141,8 @@ class GreyWaterTankSensors(WaterTankSensors):
 class WaterTreatmentSensors(FromState):
     spec: WaterTreatment
     treated_water_flow_sensor: FlowSensors
+    ph: int = sensor()
+    electrical_conductivity: int = sensor()
 
     @property
     def out_flow(self) -> LiterPerSecond:
