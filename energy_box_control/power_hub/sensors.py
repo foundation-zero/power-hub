@@ -1169,7 +1169,7 @@ class WaterMakerSensors(FromState):
 
 
 @sensors(from_appliance=False)
-class FG6485ASensors(WithoutAppliance):
+class TemperatureHumiditySensors(WithoutAppliance):
     humidity: float = sensor(
         type=SensorType.HUMIDITY, resolver=const_resolver(DEFAULT_HUMIDITY)
     )
@@ -1215,8 +1215,8 @@ def describe(technical_name: str, address: Optional[str] = None) -> Any:
 
 @sensors(from_appliance=False)
 class FancoilSensors(WithoutAppliance):
-    ambient_temperature = sensor(
-        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    ambient_temperature: Celsius = schedule_sensor(
+        lambda schedules: schedules.ambient_temperature
     )
     mode: int = sensor(resolver=const_resolver(0))
     fan_speed_mode: int = sensor(resolver=const_resolver(0))
@@ -1233,18 +1233,18 @@ class FancoilSensors(WithoutAppliance):
 class PowerHubSensors(NetworkSensors):
     time: datetime
 
-    simulator_fancoil: FancoilSensors
-    power_hub_fancoil: FancoilSensors
-    office_1_fancoil: FancoilSensors
-    office_2_fancoil: FancoilSensors
-    kitchen_fancoil: FancoilSensors
-    sanitary_fancoil: FancoilSensors
-
-    supply_box: FG6485ASensors
-    workshop: FG6485ASensors
-    pv_1_temperature_sensor: FG6485ASensors
-    pv_2_temperature_sensor: FG6485ASensors
     containers: ContainersSensors = describe("not-in-drawing")
+    simulator_fancoil: FancoilSensors = describe("FC-1006")
+    power_hub_fancoil: FancoilSensors = describe("FC-1001")
+    office_1_fancoil: FancoilSensors = describe("FC-1002")
+    office_2_fancoil: FancoilSensors = describe("FC-1003")
+    kitchen_fancoil: FancoilSensors = describe("FC-1004")
+    sanitary_fancoil: FancoilSensors = describe("FC-1005")
+
+    supply_box: TemperatureHumiditySensors = describe("TH-1001")
+    workshop: TemperatureHumiditySensors = describe("TH-1002")
+    pv_1_temperature_sensor: TemperatureHumiditySensors = describe("TH-1003")
+    pv_2_temperature_sensor: TemperatureHumiditySensors = describe("TH-1004")
     heat_pipes: HeatPipesSensors = describe("W-1001")
     heat_pipes_valve: ValveSensors = describe("CV-1006", "35k10/4")
     heat_pipes_power_hub_pump: SwitchPumpSensors = describe("P-1008", "35k17/1")
