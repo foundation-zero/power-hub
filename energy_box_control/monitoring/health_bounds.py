@@ -9,12 +9,6 @@ class HealthBound:
 
 # TODO This file needs to be reviewed on whether all values make sense.
 
-CONTAINER_BOUNDS = {
-    "co2": HealthBound(20, 99),
-    "humidity": HealthBound(20, 99),
-    "temperature": HealthBound(15, 35),
-}
-
 TANK_BOUNDS = {
     "grey_water_tank": HealthBound(0, 0.99),
     "black_water_tank": HealthBound(0, 0.9),
