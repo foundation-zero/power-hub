@@ -30,6 +30,7 @@ import functools
 from collections import deque
 from energy_box_control.linearize import linearize
 from energy_box_control.network import AnyAppliance, NetworkState, Network
+from energy_box_control.time import datetime_to_ms
 
 
 class Timed(Protocol):
@@ -351,7 +352,7 @@ def sensor_encoder(include_properties: bool = False):
 
         def default(self, o: Any):
             if type(o) == datetime:
-                return o.isoformat()
+                return datetime_to_ms(o)
             if is_sensor(o):
                 return {
                     field: getattr(o, field)
