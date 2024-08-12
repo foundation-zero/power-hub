@@ -56,20 +56,10 @@ async def assert_get_url(url: str, headers: dict[str, str]):
             return json.loads(await response.text())
 
 
-@pytest.mark.integration
-async def test_app_endpoints(headers):
-    multiple_value_endpoints = [
-        "/power_hub/appliance_sensors/fresh_water_tank/fill/last_values",
-        "/power_hub/electric/power/production/over/time?interval=h",
-        "/power_hub/electric/power/consumption/over/time?interval=h",
-        "/power_hub/electric/power/production/mean/per/hour_of_day",
-        "/power_hub/electric/power/consumption/mean/per/hour_of_day",
-        "/power_hub/appliance_sensors/electrical/soc_battery_system/mean/per/hour_of_day",
-        "/power_hub/appliance_sensors/electrical/soc_battery_system/last_values",
-        "/power_hub/appliance_sensors/electrical/soc_battery_system/over/time?interval=h",
-    ]
-    single_value_endpoints = [
-        "/power_hub/appliance_sensors/pv_panel/power/mean",
+@pytest.mark.parametrize(
+    "url",
+    [
+        "/power_hub/electric/power/production/mean",
         "/power_hub/electric/power/consumption/mean",
         "/power_hub/appliance_sensors/heat_pipes/power/mean",
         "/power_hub/appliance_sensors/chiller/chill_power/mean",
@@ -89,12 +79,28 @@ async def test_app_endpoints(headers):
         "/power_hub/appliance_sensors/office_1_fancoil/ambient_temperature/mean",
         "/power_hub/appliance_sensors/weather/global_irradiance/mean",
         # "/power_hub/appliance_sensors/yazaki/used_power/mean", yazaki is not activated in test period
-    ]
+    ],
+)
+@pytest.mark.integration
+async def test_app_endpoints_single_value(headers, url):
+    response = await assert_get_url(f"{BASE_URL}{url}", headers)
+    assert type(response) == float or int
 
-    for endpoint in multiple_value_endpoints:
-        response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
-        assert len(response) > 0
 
-    for endpoint in single_value_endpoints:
-        response = await assert_get_url(f"{BASE_URL}{endpoint}", headers)
-        assert type(response) == float or int
+@pytest.mark.parametrize(
+    "url",
+    [
+        "/power_hub/appliance_sensors/fresh_water_tank/fill/last_values",
+        "/power_hub/electric/power/production/over/time?interval=h",
+        "/power_hub/electric/power/consumption/over/time?interval=h",
+        "/power_hub/electric/power/production/mean/per/hour_of_day",
+        "/power_hub/electric/power/consumption/mean/per/hour_of_day",
+        "/power_hub/appliance_sensors/electrical/battery_system_soc/mean/per/hour_of_day",
+        "/power_hub/appliance_sensors/electrical/battery_system_soc/last_values",
+        "/power_hub/appliance_sensors/electrical/battery_system_soc/over/time?interval=h",
+    ],
+)
+@pytest.mark.integration
+async def test_app_endpoints_multiple_values(headers, url):
+    response = await assert_get_url(f"{BASE_URL}{url}", headers)
+    assert len(response) > 0

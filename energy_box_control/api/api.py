@@ -1,5 +1,5 @@
 from pydantic import ValidationError
-from quart import Quart, request, make_response, Response
+from quart import Quart, request, Response
 from quart.typing import ResponseTypes
 from quart_schema import QuartSchema, validate_response, validate_querystring, RequestSchemaValidationError  # type: ignore
 from typing import Literal
@@ -42,6 +42,7 @@ from energy_box_control.api.decorators import token_required, limit_query, seria
 
 logger = get_logger(__name__)
 
+NUM_PV_PANEL = 4
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
@@ -367,6 +368,12 @@ async def get_electrical_power_consumption_mean(
     )
 
 
+def get_pv_panel_power_fields():
+    return [
+        {"_field": f"electrical_solar_{n}_PV_power"} for n in range(1, NUM_PV_PANEL + 1)
+    ]
+
+
 @app.route("/power_hub/electric/power/production/over/time")
 @token_required
 @validate_querystring(ComputedPowerQuery)  # type: ignore
@@ -375,23 +382,13 @@ async def get_electrical_power_consumption_mean(
 async def get_electrical_power_production(
     query_args: ComputedPowerQuery,
 ) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
-    appliance_names = request.args.getlist("appliances") or ["pv_panel"]
-
-    if any("pv_panel" not in item for item in appliance_names):
-        return await make_response(
-            "Please only provide pv_panel(s)", HTTPStatus.UNPROCESSABLE_ENTITY
-        )
-
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             mean_values_query(
                 fluxy.any(
                     fluxy.conform,
-                    [
-                        {"_field": f"{appliance_name}_power"}
-                        for appliance_name in appliance_names
-                    ],
+                    get_pv_panel_power_fields(),
                 ),
                 timedelta_from_string(query_args.interval),
                 build_query_range(query_args),
@@ -407,29 +404,41 @@ async def get_electrical_power_production(
 async def get_electrical_power_production_interval(
     query_args: AppliancesQuery,
 ) -> list[list[ApplianceSensorFieldValue]] | ResponseTypes:
-    appliance_names = request.args.getlist("appliances") or ["pv_panel"]
-
-    if any("pv_panel" not in item for item in appliance_names):
-        return await make_response(
-            "Query param 'appliances' must contain only pv_panel(s)",
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-        )
-
     return (
         await execute_influx_query(
             app.influx,  # type: ignore
             mean_per_hour_query(
                 fluxy.any(
                     fluxy.conform,
-                    [
-                        {"_field": f"{appliance_name}_power"}
-                        for appliance_name in appliance_names
-                    ],
+                    get_pv_panel_power_fields(),
                 ),
                 build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
         )
     ).rename(columns={"field": "value"})
+
+
+@app.route("/power_hub/electric/power/production/mean")
+@token_required
+@validate_querystring(AppliancesQuery)  # type: ignore
+@serialize_single_cell("field")
+async def get_electrical_power_production_mean(
+    query_args: AppliancesQuery,
+) -> list[list[ApplianceSensorFieldValue]]:
+    return await execute_influx_query(
+        app.influx,  # type: ignore
+        fluxy.pipe(
+            mean_values_query(
+                fluxy.any(
+                    fluxy.conform,
+                    get_pv_panel_power_fields(),
+                ),
+                timedelta(seconds=1),
+                build_query_range(query_args),
+            ),
+            fluxy.mean(column="field"),
+        ),
+    )
 
 
 WeatherProperty = str
