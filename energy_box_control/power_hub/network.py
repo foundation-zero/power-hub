@@ -31,13 +31,8 @@ from energy_box_control.appliances.base import (
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
-from energy_box_control.appliances.electrical import (
-    Electrical,
-    ElectricalState,
-)
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
-from energy_box_control.appliances.pv_panel import PVPanel, PVPanelState
 from energy_box_control.appliances.source import SourceState
 from energy_box_control.appliances.switch_pump import (
     SwitchPump,
@@ -125,8 +120,6 @@ class PowerHub(Network[PowerHubSensors]):
     outboard_source: Source
     cooling_demand_pump: SwitchPump  # P-1007
     cooling_demand: CoolingSink
-    pv_panel: PVPanel
-    electrical: Electrical
     sea_water_source: Source
     water_maker: WaterMaker
     fresh_water_tank: WaterTank
@@ -180,8 +173,6 @@ class PowerHub(Network[PowerHubSensors]):
             phc.outboard_source(schedules.sea_water_temperature),
             phc.cooling_demand_pump,
             phc.cooling_demand(schedules.cooling_demand),
-            phc.pv_panel(schedules.global_irradiance),
-            phc.electrical(schedules.global_irradiance),
             phc.sea_water_source(schedules.sea_water_temperature),
             phc.water_maker,
             phc.fresh_water_tank,
@@ -394,10 +385,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(ThermalState(0, phc.AMBIENT_TEMPERATURE))
             .define_state(self.cooling_demand_pump)
             .value(SwitchPumpState())
-            .define_state(self.pv_panel)
-            .value(PVPanelState(0))
-            .define_state(self.electrical)
-            .value(ElectricalState())
             .define_state(self.sea_water_source)
             .value(SourceState())
             .define_state(self.water_maker)
@@ -442,8 +429,6 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(waste_side)
             .combine(hot_water)
             .combine(outboard)
-            .unconnected(self.pv_panel)
-            .unconnected(self.electrical)
             .unconnected(self.black_water_tank)
             .unconnected(self.technical_water_tank)
             .combine(fresh_water)
