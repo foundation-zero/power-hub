@@ -541,6 +541,8 @@ def chill_control(
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
 
+    cooling_demand = any(fancoil.mode == 1 for fancoil in sensors.compound_fancoils)
+
     return ChillControlState(
         context,
         chill_control_mode,
@@ -556,6 +558,8 @@ def chill_control(
         .value(ValveControl(yazaki_feedback_valve_control))
         .control(power_hub.waste_bypass_valve)
         .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
+        .control(power_hub.cooling_demand_pump)
+        .value(SwitchPumpControl(cooling_demand))
         .combine(running)
     )
 

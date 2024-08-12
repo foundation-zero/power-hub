@@ -1974,6 +1974,16 @@ class PowerHubSensors(NetworkSensors):
         "EM-K",
     )
 
+    @property
+    def compound_fancoils(self) -> list[FancoilSensors]:
+        return [
+            self.kitchen_fancoil,
+            self.office_1_fancoil,
+            self.office_2_fancoil,
+            self.simulator_fancoil,
+            self.sanitary_fancoil,
+        ]
+
 
 SensorName = str
 SensorValue = float | Celsius | LiterPerSecond | WattPerMeterSquared
