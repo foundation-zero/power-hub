@@ -11,6 +11,7 @@ class PidConfig:
     ki: float
     kd: float
     output_limits: tuple[float, float] | None = None
+    reversed: bool = False
 
 
 class Pid:
@@ -24,7 +25,11 @@ class Pid:
         self._e_prev = 0
 
     def run(self, setpoint: float, measurement: float) -> "tuple[Pid, float]":
-        e = setpoint - measurement
+        e = (
+            setpoint - measurement
+            if not self.config.reversed
+            else measurement - setpoint
+        )
 
         p = self.config.kp * e
         i = self._integral + self.config.ki * e
