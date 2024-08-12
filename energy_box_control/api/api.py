@@ -368,6 +368,12 @@ async def get_electrical_power_consumption_mean(
     )
 
 
+def get_pv_panel_power_fields():
+    return [
+        {"_field": f"electrical_solar_{n}_PV_power"} for n in range(1, NUM_PV_PANEL + 1)
+    ]
+
+
 @app.route("/power_hub/electric/power/production/over/time")
 @token_required
 @validate_querystring(ComputedPowerQuery)  # type: ignore
@@ -382,10 +388,7 @@ async def get_electrical_power_production(
             mean_values_query(
                 fluxy.any(
                     fluxy.conform,
-                    [
-                        {"_field": f"electrical_solar_{n}_PV_power"}
-                        for n in range(1, NUM_PV_PANEL + 1)
-                    ],
+                    get_pv_panel_power_fields(),
                 ),
                 timedelta_from_string(query_args.interval),
                 build_query_range(query_args),
@@ -407,10 +410,7 @@ async def get_electrical_power_production_interval(
             mean_per_hour_query(
                 fluxy.any(
                     fluxy.conform,
-                    [
-                        {"_field": f"electrical_solar_{n}_PV_power"}
-                        for n in range(1, NUM_PV_PANEL + 1)
-                    ],
+                    get_pv_panel_power_fields(),
                 ),
                 build_query_range(query_args, default_timedelta=timedelta(days=7)),
             ),
@@ -431,10 +431,7 @@ async def get_electrical_power_production_mean(
             mean_values_query(
                 fluxy.any(
                     fluxy.conform,
-                    [
-                        {"_field": f"electrical_solar_{n}_PV_power"}
-                        for n in range(1, NUM_PV_PANEL + 1)
-                    ],
+                    get_pv_panel_power_fields(),
                 ),
                 timedelta(seconds=1),
                 build_query_range(query_args),
