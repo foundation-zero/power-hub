@@ -17,7 +17,7 @@ from energy_box_control.power_hub import PowerHub
 from dataclasses import replace
 
 from energy_box_control.power_hub.control import (
-    WaterControlMode,
+    FreshWaterControlMode,
     control_power_hub,
     initial_control_all_off,
     initial_control_state,
@@ -286,17 +286,24 @@ def test_water_filter_trigger(
 
         if i == 1:
             assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
-            assert control_state.water_control.control_mode == WaterControlMode.READY
+            assert (
+                control_state.fresh_water_control.control_mode
+                == FreshWaterControlMode.READY
+            )
 
         if i == 11:
             assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
             assert (
-                control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
+                control_state.fresh_water_control.control_mode
+                == FreshWaterControlMode.FILTER_TANK
             )
 
         if i == 12 + 30 * 60:
             assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
-            assert control_state.water_control.control_mode == WaterControlMode.READY
+            assert (
+                control_state.fresh_water_control.control_mode
+                == FreshWaterControlMode.READY
+            )
 
 
 def test_water_filter_stop(
@@ -329,7 +336,8 @@ def test_water_filter_stop(
                 == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
             )
             assert (
-                control_state.water_control.control_mode == WaterControlMode.FILTER_TANK
+                control_state.fresh_water_control.control_mode
+                == FreshWaterControlMode.FILTER_TANK
             )
 
         if i == 13:
@@ -339,7 +347,10 @@ def test_water_filter_stop(
                 .position
                 == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
             )
-            assert control_state.water_control.control_mode == WaterControlMode.READY
+            assert (
+                control_state.fresh_water_control.control_mode
+                == FreshWaterControlMode.READY
+            )
 
 
 @mark.parametrize(
@@ -409,6 +420,41 @@ def test_water_treatment(
 
     assert (
         control_values.appliance(scheduled_power_hub.water_treatment).get().on == True
+    )
+
+    sensors.grey_water_tank.fill_ratio = 0.09
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    assert (
+        control_values.appliance(scheduled_power_hub.water_treatment).get().on == False
+    )
+
+
+def test_technical_water_control(
+    scheduled_power_hub, state, control_state, control_values, sensors
+):
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    state = scheduled_power_hub.simulate(state, control_values)
+    sensors = scheduled_power_hub.sensors_from_state(state)
+
+    sensors.technical_water_tank.fill_ratio = 0
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
+    )
+
+    assert (
+        control_values.appliance(scheduled_power_hub.technical_water_regulator)
+        .get()
+        .position
+        == phc.TECHNICAL_WATER_REGULATOR_OPEN_POSITION
     )
 
     sensors.grey_water_tank.fill_ratio = 0.09
