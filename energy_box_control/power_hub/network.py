@@ -817,6 +817,8 @@ class PowerHub(Network[PowerHubSensors]):
                         **sensor_values,
                     )
             except KeyError as e:
-                raise KeyError(f"Got error on key {str(e)} for {sensor.name} with {sensor_json}")
+                raise KeyError(
+                    f"Got error on key {str(e)} for {sensor.name} with {sensor_json}"
+                )
 
         return context.result(ms_to_datetime(sensors["time"]))

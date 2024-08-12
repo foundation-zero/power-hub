@@ -49,7 +49,9 @@ def test_enriched_sensors_to_json_roundtrips(power_hub, sensors):
 
 def test_sensors_to_json_doesnt_include_is_sensor(sensors):
     returned = json.loads(sensors_to_json(sensors))
-    assert all("is_sensor" not in value for value in returned.values())
+    assert all(
+        "is_sensor" not in value for value in returned.values() if type(value) != float
+    )
 
 
 def test_sensor_values(sensors):

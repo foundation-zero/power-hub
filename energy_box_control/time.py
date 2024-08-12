@@ -27,5 +27,10 @@ class ProcessTime:
 def time_ms() -> int:
     return time_ns() // 1_000_000
 
+
 def ms_to_datetime(ms: int):
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
+
+
+def datetime_to_ms(dt: datetime) -> float:
+    return dt.timestamp() * 1000

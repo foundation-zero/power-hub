@@ -766,9 +766,6 @@ def survival_control(
             ),
             sensors.waste_switch_valve.in_position(WASTE_SWITCH_VALVE_CHILLER_POSITION),
             sensors.waste_bypass_valve.in_position(WASTE_BYPASS_VALVE_CLOSED_POSITION),
-            sensors.preheat_switch_valve.in_position(
-                PREHEAT_SWITCH_VALVE_PREHEAT_POSITION
-            ),
         ]
     )
 
