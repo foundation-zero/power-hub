@@ -28,6 +28,8 @@ from energy_box_control.power_hub.components import (
     WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION,
     WATER_FILTER_BYPASS_VALVE_FILTER_POSITION,
     YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION,
+    TECHNICAL_WATER_REGULATOR_OPEN_POSITION,
+    TECHNICAL_WATER_REGULATOR_CLOSED_POSITION,
 )
 from energy_box_control.appliances.boiler import BoilerControl
 from energy_box_control.appliances.chiller import ChillerControl
@@ -88,15 +90,26 @@ class WasteControlState:
     control_mode: WasteControlMode
 
 
-class WaterControlMode(State):
+class FreshWaterControlMode(State):
     READY = "ready"
     FILTER_TANK = "filter_tank"
 
 
+class TechnicalWaterControlMode(State):
+    FILL_FROM_FRESH = "fill_from_fresh"
+    NO_FILL_FROM_FRESH = "no_fill_from_fresh"
+
+
 @dataclass
-class WaterControlState:
+class FreshWaterControlState:
     context: Context
-    control_mode: WaterControlMode
+    control_mode: FreshWaterControlMode
+
+
+@dataclass
+class TechnicalWaterControlState:
+    context: Context
+    control_mode: TechnicalWaterControlMode
 
 
 class WaterTreatmentControlMode(State):
@@ -155,6 +168,12 @@ class Setpoints:
     )
     water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
     water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
+    technical_water_max_fill_ratio: float = setpoint(
+        "minimum level of grey water tank for freshwater fill"
+    )
+    technical_water_min_fill_ratio: float = setpoint(
+        "mmaximum level of grey water tank for freshwater fill"
+    )
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
@@ -165,7 +184,8 @@ class PowerHubControlState:
     hot_control: HotControlState
     chill_control: ChillControlState
     waste_control: WasteControlState
-    water_control: WaterControlState
+    fresh_water_control: FreshWaterControlState
+    technical_water_control: TechnicalWaterControlState
     water_treatment_control: WaterTreatmentControlState
     setpoints: Setpoints
 
@@ -189,6 +209,8 @@ def initial_control_state() -> PowerHubControlState:
             minimum_preheat_offset=1,
             cooling_in_min_temperature=25,
             cooling_in_max_temperature=33,
+            technical_water_min_fill_ratio=0.1,
+            technical_water_max_fill_ratio=0.3,
             water_treatment_max_fill_ratio=0.5,
             water_treatment_min_fill_ratio=0.1,
             trigger_filter_water_tank=datetime(
@@ -214,8 +236,11 @@ def initial_control_state() -> PowerHubControlState:
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
         ),
-        water_control=WaterControlState(
-            context=Context(), control_mode=WaterControlMode.READY
+        fresh_water_control=FreshWaterControlState(
+            context=Context(), control_mode=FreshWaterControlMode.READY
+        ),
+        technical_water_control=TechnicalWaterControlState(
+            context=Context(), control_mode=TechnicalWaterControlMode.NO_FILL_FROM_FRESH
         ),
         water_treatment_control=WaterTreatmentControlState(
             context=Context(), control_mode=WaterTreatmentControlMode.NO_RUN
@@ -614,14 +639,14 @@ def waste_control(
     )
 
 
-water_transitions: dict[
-    tuple[WaterControlMode, WaterControlMode],
+fresh_water_transitions: dict[
+    tuple[FreshWaterControlMode, FreshWaterControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
-    (WaterControlMode.READY, WaterControlMode.FILTER_TANK): Fn.state(
+    (FreshWaterControlMode.READY, FreshWaterControlMode.FILTER_TANK): Fn.state(
         lambda state: state.setpoints.trigger_filter_water_tank
     ).within(timedelta(seconds=5)),
-    (WaterControlMode.FILTER_TANK, WaterControlMode.READY): Fn.const_pred(
+    (FreshWaterControlMode.FILTER_TANK, FreshWaterControlMode.READY): Fn.const_pred(
         True
     ).holds_true(Marker("filter tank"), timedelta(minutes=30))
     | Fn.state(lambda state: state.setpoints.stop_filter_water_tank).within(
@@ -629,30 +654,89 @@ water_transitions: dict[
     ),  # 35 l/min pump
 }
 
-water_control_machine = StateMachine(WaterControlMode, water_transitions)
+fresh_water_control_machine = StateMachine(
+    FreshWaterControlMode, fresh_water_transitions
+)
 
 
-def water_control(
+def fresh_water_control(
     power_hub: PowerHub,
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
     time: datetime,
 ):
 
-    water_control_mode, context = water_control_machine.run(
-        control_state.water_control.control_mode,
-        control_state.water_control.context,
+    fresh_water_control_mode, context = fresh_water_control_machine.run(
+        control_state.fresh_water_control.control_mode,
+        control_state.fresh_water_control.context,
         control_state,
         sensors,
         time,
     )
 
     return (
-        WaterControlState(context, water_control_mode),
+        FreshWaterControlState(context, fresh_water_control_mode),
         power_hub.control(power_hub.water_filter_bypass_valve).value(
             ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION)
-            if water_control_mode == WaterControlMode.FILTER_TANK
+            if fresh_water_control_mode == FreshWaterControlMode.FILTER_TANK
             else ValveControl(WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION)
+        ),
+    )
+
+
+should_fill_technical = Fn.pred(
+    lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
+    < control_state.setpoints.technical_water_min_fill_ratio
+)
+
+stop_fill_technical = Fn.pred(
+    lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
+    > control_state.setpoints.technical_water_max_fill_ratio
+)
+
+technical_water_transitions: dict[
+    tuple[TechnicalWaterControlMode, TechnicalWaterControlMode],
+    Predicate[PowerHubControlState, PowerHubSensors],
+] = {
+    (
+        TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
+        TechnicalWaterControlMode.FILL_FROM_FRESH,
+    ): should_fill_technical,
+    (
+        TechnicalWaterControlMode.FILL_FROM_FRESH,
+        TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
+    ): stop_fill_technical,
+}
+
+technical_water_control_machine = StateMachine(
+    TechnicalWaterControlMode, technical_water_transitions
+)
+
+
+def technical_water_control(
+    power_hub: PowerHub,
+    control_state: PowerHubControlState,
+    sensors: PowerHubSensors,
+    time: datetime,
+):
+
+    technical_water_control_mode, context = technical_water_control_machine.run(
+        control_state.technical_water_control.control_mode,
+        control_state.technical_water_control.context,
+        control_state,
+        sensors,
+        time,
+    )
+
+    return (
+        TechnicalWaterControlState(context, technical_water_control_mode),
+        power_hub.control(power_hub.technical_water_regulator).value(
+            ValveControl(
+                TECHNICAL_WATER_REGULATOR_OPEN_POSITION
+                if technical_water_control_mode
+                == TechnicalWaterControlMode.FILL_FROM_FRESH
+                else TECHNICAL_WATER_REGULATOR_CLOSED_POSITION
+            )
         ),
     )
 
@@ -723,8 +807,12 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
         waste_control=WasteControlState(
             control_state.waste_control.context, WasteControlMode.RUN_OUTBOARD
         ),
-        water_control=WaterControlState(
-            control_state.water_control.context, WaterControlMode.READY
+        fresh_water_control=FreshWaterControlState(
+            control_state.fresh_water_control.context, FreshWaterControlMode.READY
+        ),
+        technical_water_control=TechnicalWaterControlState(
+            control_state.technical_water_control.context,
+            TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
         ),
         water_treatment_control=WaterTreatmentControlState(
             control_state.water_treatment_control.context,
@@ -801,7 +889,7 @@ def survival_control(
         .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))
     )
 
-    water_control = (
+    fresh_water_control = (
         power_hub.control(power_hub.water_filter_bypass_valve)
         .value(ValveControl(WATER_FILTER_BYPASS_VALVE_FILTER_POSITION))
         .control(power_hub.hot_water_pump)
@@ -816,7 +904,7 @@ def survival_control(
         control_state,
         hot_control.combine(chill_control)
         .combine(waste_control)
-        .combine(water_control)
+        .combine(fresh_water_control)
         .combine(water_treatment_control)
         .build(),
     )
@@ -840,7 +928,12 @@ def control_power_hub(
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)
     chill_control_state, chill = chill_control(power_hub, control_state, sensors, time)
     waste_control_state, waste = waste_control(power_hub, control_state, sensors, time)
-    water_control_state, water = water_control(power_hub, control_state, sensors, time)
+    fresh_water_control_state, fresh_water = fresh_water_control(
+        power_hub, control_state, sensors, time
+    )
+    technical_water_control_state, technical_water = technical_water_control(
+        power_hub, control_state, sensors, time
+    )
     water_treatment_control_state, water_treatment = water_treatment_control(
         power_hub, control_state, sensors, time
     )
@@ -851,7 +944,8 @@ def control_power_hub(
         .combine(hot)
         .combine(chill)
         .combine(waste)
-        .combine(water)
+        .combine(fresh_water)
+        .combine(technical_water)
         .combine(water_treatment)
         .build()
     )
@@ -861,7 +955,8 @@ def control_power_hub(
             hot_control=hot_control_state,
             chill_control=chill_control_state,
             waste_control=waste_control_state,
-            water_control=water_control_state,
+            fresh_water_control=fresh_water_control_state,
+            technical_water_control=technical_water_control_state,
             water_treatment_control=water_treatment_control_state,
             setpoints=control_state.setpoints,
         ),
