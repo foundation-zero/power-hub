@@ -30,7 +30,6 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
-from energy_box_control.appliances.containers import Containers, ContainersState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
 from energy_box_control.appliances.electrical import (
     Electrical,
@@ -139,7 +138,6 @@ class PowerHub(Network[PowerHubSensors]):
     water_treatment: WaterTreatment
     technical_water_regulator: Valve  # CV-4001
     water_filter_bypass_valve: Valve  # CV-5001
-    containers: Containers
     schedules: PowerHubSchedules
 
     def __post_init__(self):
@@ -199,7 +197,6 @@ class PowerHub(Network[PowerHubSensors]):
             phc.water_treatment(schedules.fresh_water_temperature),
             phc.technical_water_regulator,
             phc.water_filter_bypass_valve,
-            phc.containers(schedules.ambient_temperature),
             schedules,
         )
 
@@ -423,8 +420,6 @@ class PowerHub(Network[PowerHubSensors]):
             .value(WaterDemandState())
             .define_state(self.water_treatment)
             .value(WaterTreatmentState(True))
-            .define_state(self.containers)
-            .value(ContainersState())
             .define_state(self.technical_water_regulator)
             .value(ValveState(0))
             .define_state(self.water_filter_bypass_valve)
@@ -449,7 +444,6 @@ class PowerHub(Network[PowerHubSensors]):
             .combine(outboard)
             .unconnected(self.pv_panel)
             .unconnected(self.electrical)
-            .unconnected(self.containers)
             .unconnected(self.black_water_tank)
             .unconnected(self.technical_water_tank)
             .combine(fresh_water)

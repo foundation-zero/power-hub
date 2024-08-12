@@ -7,7 +7,6 @@ from energy_box_control.appliances.base import (
     Port,
     ThermalState,
 )
-from energy_box_control.appliances.containers import Containers, FanAlarm, FilterAlarm
 from energy_box_control.appliances.electrical import BatteryAlarm, Electrical
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
@@ -34,6 +33,7 @@ from energy_box_control.network import AnyAppliance, NetworkState
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
+    DEFAULT_TEMPERATURE,
     FRESHWATER_TEMPERATURE,
     HOT_SWITCH_VALVE_PCM_POSITION,
     HOT_SWITCH_VALVE_RESERVOIR_POSITION,
@@ -41,6 +41,7 @@ from energy_box_control.power_hub.components import (
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
     PCM_ZERO_TEMPERATURE,
     DEFAULT_PRESSURE,
+    DEFAULT_HUMIDITY,
 )
 
 if TYPE_CHECKING:
@@ -1167,35 +1168,14 @@ class WaterMakerSensors(FromState):
     current_production: Liter = sensor(resolver=const_resolver(0))
 
 
-@sensors()
-class ContainersSensors(FromState):
-    spec: Containers
-    simulator_storage_co2: float = sensor(type=SensorType.CO2)
-    simulator_storage_humidity: float = sensor(type=SensorType.HUMIDITY)
-    simulator_storage_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    simulator_storage_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
-    simulator_storage_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.REPLACE_FILTER_ALARM
+@sensors(from_appliance=False)
+class TemperatureHumiditySensors(WithoutAppliance):
+    humidity: float = sensor(
+        type=SensorType.HUMIDITY, resolver=const_resolver(DEFAULT_HUMIDITY)
     )
-    office_co2: float = sensor(type=SensorType.CO2)
-    office_humidity: float = sensor(type=SensorType.HUMIDITY)
-    office_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    office_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
-    office_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.REPLACE_FILTER_ALARM
+    temperature: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
     )
-    kitchen_co2: float = sensor(type=SensorType.CO2)
-    kitchen_humidity: float = sensor(type=SensorType.HUMIDITY)
-    kitchen_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    sanitary_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    kitchen_ventilation_error: FanAlarm = sensor(type=SensorType.ALARM)
-    kitchen_ventilation_filter_status: FilterAlarm = sensor(
-        type=SensorType.REPLACE_FILTER_ALARM
-    )
-    power_hub_humidity: float = sensor(type=SensorType.HUMIDITY)
-    power_hub_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
-    supply_box_humidity: float = sensor(type=SensorType.HUMIDITY)
-    supply_box_temperature: Celsius = sensor(type=SensorType.TEMPERATURE)
 
 
 def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") -> Any:
@@ -1204,6 +1184,11 @@ def schedule_sensor(schedule: "Callable[[PowerHubSchedules], Schedule[Any]]") ->
         None,
         lambda power_hub, state: schedule(power_hub.schedules).at(state.time),
     )
+
+
+@sensors(from_appliance=False)
+class ContainersSensors(WithoutAppliance):
+    pass
 
 
 @sensors(from_appliance=False)
@@ -1228,10 +1213,38 @@ def describe(technical_name: str, address: Optional[str] = None) -> Any:
     return field(metadata={"technical_name": technical_name, "address": address})
 
 
+@sensors(from_appliance=False)
+class FancoilSensors(WithoutAppliance):
+    ambient_temperature: Celsius = schedule_sensor(
+        lambda schedules: schedules.ambient_temperature
+    )
+    mode: int = sensor(resolver=const_resolver(0))
+    fan_speed_mode: int = sensor(resolver=const_resolver(0))
+    operating_mode_water_temperature: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    battery_water_temperature: Celsius = sensor(
+        type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
+    )
+    setpoint: int = sensor(resolver=const_resolver(0))
+
+
 @dataclass
 class PowerHubSensors(NetworkSensors):
     time: datetime
 
+    containers: ContainersSensors = describe("not-in-drawing")
+    simulator_fancoil: FancoilSensors = describe("FC-1006")
+    power_hub_fancoil: FancoilSensors = describe("FC-1001")
+    office_1_fancoil: FancoilSensors = describe("FC-1002")
+    office_2_fancoil: FancoilSensors = describe("FC-1003")
+    kitchen_fancoil: FancoilSensors = describe("FC-1004")
+    sanitary_fancoil: FancoilSensors = describe("FC-1005")
+
+    supply_box: TemperatureHumiditySensors = describe("TH-1001")
+    workshop: TemperatureHumiditySensors = describe("TH-1002")
+    pv_1_temperature_sensor: TemperatureHumiditySensors = describe("TH-1003")
+    pv_2_temperature_sensor: TemperatureHumiditySensors = describe("TH-1004")
     heat_pipes: HeatPipesSensors = describe("W-1001")
     heat_pipes_valve: ValveSensors = describe("CV-1006", "35k10/4")
     heat_pipes_power_hub_pump: SwitchPumpSensors = describe("P-1008", "35k17/1")
@@ -1263,9 +1276,12 @@ class PowerHubSensors(NetworkSensors):
     technical_water_tank: WaterTankSensors = describe("K-4001")
     water_treatment: WaterTreatmentSensors = describe("F-3001", "35k10/9")
     water_maker: WaterMakerSensors = describe("F-5001")
-    containers: ContainersSensors = describe("not-in-drawing")
     waste_pressure_sensor: PressureSensors = describe("PS-1002", "35k13/1")
     pipes_pressure_sensor: PressureSensors = describe("PS-1003", "35k13/2")
+    outboard_pressure_sensor: PressureSensors = describe("PS-1004", "35k13/2")
+    outboard_temperature_sensor = sensor(
+        type=SensorType.TEMPERATURE, technical_name="TS-1038"
+    )
     pcm_yazaki_pressure_sensor: PressureSensors = describe("PS-1001", "35k13/0")
     technical_water_regulator: ValveSensors = describe("CV-4001", "35k18/4")
     water_filter_bypass_valve: ValveSensors = describe("CV-5001", "35k18/5")
