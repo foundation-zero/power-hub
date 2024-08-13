@@ -8,6 +8,7 @@ from energy_box_control.appliances.base import (
     Port,
     ThermalState,
 )
+from energy_box_control.appliances.frequency_controlled_pump import FrequencyPump
 from energy_box_control.appliances.heat_exchanger import (
     HeatExchanger,
     HeatExchangerPort,
@@ -920,6 +921,11 @@ class ChillerSensors(FromState):
             for index, status in enumerate(CHILLER_STATUSES)
             if self.status & (1 << index)
         ]
+
+
+@sensors()
+class FrequencyPumpSensors(FromState):
+    spec: FrequencyPump
 
 
 @sensors()
@@ -1842,7 +1848,7 @@ class PowerHubSensors(NetworkSensors):
     chilled_loop_pump: PressuredPumpSensors = describe("P-1005", "35k10/13")
     waste_pump: SmartPumpSensors = describe("P-1004", "35k10/12")
     hot_water_pump: SwitchPumpSensors = describe("simulation-only")
-    outboard_pump: SwitchPumpSensors = describe("P-1002", "35k17/0, 35k16/0")
+    outboard_pump: FrequencyPumpSensors = describe("P-1002", "35k17/0, 35k16/0")
     cooling_demand_pump: PressuredPumpSensors = describe("P-1007", "192.168.1.46")
     electrical: ElectricalSensors = describe("electrical-plc", "192.168.1.15")
     fresh_water_tank: FreshWaterTankSensors = describe("K-5001")
