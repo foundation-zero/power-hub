@@ -1,4 +1,5 @@
 from energy_box_control.appliances.cooling_sink import CoolingSink
+from energy_box_control.appliances.frequency_controlled_pump import FrequencyPump
 from energy_box_control.appliances.water_demand import WaterDemand
 from energy_box_control.appliances.water_maker import WaterMaker
 from energy_box_control.appliances.water_tank import WaterTank
@@ -25,7 +26,7 @@ from energy_box_control.appliances.yazaki import Yazaki
 WATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4186 * 0.997
 GLYCOL_SPECIFIC_HEAT: JoulePerLiterKelvin = 3840 * 0.993  # Tyfocor LS @80C
 SEAWATER_SPECIFIC_HEAT: JoulePerLiterKelvin = 4007 * 1.025
-SEAWATER_TEMPERATURE: Celsius = 24
+SEAWATER_TEMPERATURE: Celsius = 28
 FRESHWATER_TEMPERATURE: Celsius = 24
 AMBIENT_TEMPERATURE: Celsius = 20
 GLOBAL_IRRADIANCE: WattPerMeterSquared = 800
@@ -186,7 +187,7 @@ def fresh_water_source(freshwater_temperature_schedule: Schedule[Celsius]):
     return Source(float("nan"), freshwater_temperature_schedule)
 
 
-outboard_pump = SwitchPump(300 / 60, SWITCH_PUMP_POWER)
+outboard_pump = FrequencyPump(300000 / 3600, SWITCH_PUMP_POWER)
 
 
 def outboard_source(seawater_temperature_schedule: Schedule[Celsius]):
