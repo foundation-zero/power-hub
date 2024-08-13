@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import Any, Callable, TYPE_CHECKING, Optional
 
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
@@ -1772,6 +1773,13 @@ def describe(technical_name: str, address: Optional[str] = None) -> Any:
     return field(metadata={"technical_name": technical_name, "address": address})
 
 
+class FancoilModes(Enum):
+    ONLY_FAN = 0
+    COOL = 1
+    HEAT = 2
+    COOL_AND_HEAT = 3
+
+
 @sensors(from_appliance=False)
 class FancoilSensors(WithoutAppliance):
     ambient_temperature: Celsius = schedule_sensor(
@@ -1973,6 +1981,16 @@ class PowerHubSensors(NetworkSensors):
         "TS-1027",
         "EM-K",
     )
+
+    @property
+    def compound_fancoils(self) -> list[FancoilSensors]:
+        return [
+            self.kitchen_fancoil,
+            self.office_1_fancoil,
+            self.office_2_fancoil,
+            self.simulator_fancoil,
+            self.sanitary_fancoil,
+        ]
 
 
 SensorName = str
