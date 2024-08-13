@@ -74,7 +74,7 @@ async def assert_get_url(url: str, headers: dict[str, str]):
         "/power_hub/appliance_sensors/pcm/charge_power/mean",
         "/power_hub/appliance_sensors/pcm/discharge_power/mean",
         "/power_hub/appliance_sensors/pcm/temperature/mean",
-        # "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean", yazaki is not activated in test period
+        # "/power_hub/appliance_sensors/yazaki/chilled_output_temperature/mean",
         "/power_hub/appliance_sensors/pcm/fill/current",
         "/power_hub/appliance_sensors/office_1_fancoil/ambient_temperature/mean",
         "/power_hub/appliance_sensors/weather/global_irradiance/mean",
