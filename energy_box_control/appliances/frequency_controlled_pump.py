@@ -16,11 +16,6 @@ from energy_box_control.units import LiterPerSecond, Watt
 Ratio = float
 
 
-@dataclass(frozen=True, eq=True)
-class FrequencyPumpState(ApplianceState):
-    pass
-
-
 class FrequencyPumpPort(Port):
     IN = "in"
     OUT = "out"
@@ -34,7 +29,7 @@ class FrequencyPumpControl(ApplianceControl):
 
 @dataclass(frozen=True, eq=True)
 class FrequencyPump(
-    ThermalAppliance[FrequencyPumpState, FrequencyPumpControl, FrequencyPumpPort]
+    ThermalAppliance[ApplianceState, FrequencyPumpControl, FrequencyPumpPort]
 ):
     max_flow: LiterPerSecond
     rated_power_consumption: Watt
@@ -42,12 +37,12 @@ class FrequencyPump(
     def simulate(
         self,
         inputs: dict[FrequencyPumpPort, ThermalState],
-        previous_state: FrequencyPumpState,
+        previous_state: ApplianceState,
         control: Optional[FrequencyPumpControl],
         simulation_time: ProcessTime,
-    ) -> tuple[FrequencyPumpState, dict[FrequencyPumpPort, ThermalState]]:
+    ) -> tuple[ApplianceState, dict[FrequencyPumpPort, ThermalState]]:
         input = inputs[FrequencyPumpPort.IN]
-        return FrequencyPumpState(), {
+        return ApplianceState(), {
             FrequencyPumpPort.OUT: ThermalState(
                 (
                     self.max_flow * control.frequency_ratio

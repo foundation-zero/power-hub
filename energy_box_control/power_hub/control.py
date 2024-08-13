@@ -243,7 +243,7 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0, 1), True)),
+            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.4, 1), reversed=True)),
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY
@@ -935,7 +935,7 @@ def survival_control(
 
     waste_control = (
         power_hub.control(power_hub.outboard_pump)
-        .value(FrequencyPumpControl(run_pumps, 0.3))
+        .value(FrequencyPumpControl(run_pumps, 0.5))
         .control(power_hub.preheat_switch_valve)
         .value(ValveControl(PREHEAT_SWITCH_VALVE_BYPASS_POSITION))
     )
@@ -1057,7 +1057,7 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)
-        .value(FrequencyPumpControl(on=True, frequency_ratio=0.3))
+        .value(FrequencyPumpControl(on=True, frequency_ratio=0.5))
         .control(power_hub.yazaki)
         .value(YazakiControl(on=True))
         .control(power_hub.chiller)

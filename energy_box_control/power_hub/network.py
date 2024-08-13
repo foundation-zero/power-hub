@@ -34,7 +34,6 @@ from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkP
 from energy_box_control.appliances.frequency_controlled_pump import (
     FrequencyPump,
     FrequencyPumpPort,
-    FrequencyPumpState,
 )
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
@@ -259,7 +258,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .value(ApplianceState())
             .define_state(power_hub.outboard_pump)
-            .value(FrequencyPumpState())
+            .value(ApplianceState())
             .define_state(power_hub.outboard_source)
             .value(SourceState())
             .define_state(power_hub.hot_water_pump)
@@ -366,7 +365,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.outboard_exchange)
             .value(ApplianceState())
             .define_state(self.outboard_pump)
-            .value(FrequencyPumpState())
+            .value(ApplianceState())
             .define_state(self.outboard_source)
             .value(SourceState())
             .define_state(self.hot_water_pump)
