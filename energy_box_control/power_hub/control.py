@@ -39,7 +39,7 @@ from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.simulation_json import encoder
 from energy_box_control.network import ControlBuilder, NetworkControl
 
-from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
 from energy_box_control.time import time_ms
 from energy_box_control.units import Celsius, WattPerMeterSquared
 
@@ -541,7 +541,10 @@ def chill_control(
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
 
-    cooling_demand = any(fancoil.mode == 1 for fancoil in sensors.compound_fancoils)
+    cooling_demand = any(
+        fancoil.mode == (FancoilModes.COOL.value or FancoilModes.COOL_AND_HEAT.value)
+        for fancoil in sensors.compound_fancoils
+    )
 
     return ChillControlState(
         context,
