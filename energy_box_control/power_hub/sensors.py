@@ -984,8 +984,6 @@ def pv_panel_power_sensor(
 @sensors(from_appliance=False)
 class ElectricalSensors(WithoutAppliance):
 
-    status: int = sensor(resolver=const_resolver(0))
-
     e1_voltage_L1: Volt = sensor(
         type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
     )
@@ -1753,11 +1751,6 @@ class TemperatureHumiditySensors(WithoutAppliance):
 
 
 @sensors(from_appliance=False)
-class ContainersSensors(WithoutAppliance):
-    pass
-
-
-@sensors(from_appliance=False)
 class WeatherSensors(WithoutAppliance):
     ambient_temperature: Celsius = schedule_sensor(
         lambda schedules: schedules.ambient_temperature
@@ -1795,11 +1788,19 @@ class FancoilSensors(WithoutAppliance):
     setpoint: int = sensor(resolver=const_resolver(0))
 
 
+@sensors(from_appliance=False)
+class OutboardTemperatureSensors(WithoutAppliance):
+    temperature: Celsius = sensor(
+        technical_name="TS-1038",
+        resolver=const_resolver(DEFAULT_TEMPERATURE),
+        type=SensorType.TEMPERATURE,
+    )
+
+
 @dataclass
 class PowerHubSensors(NetworkSensors):
     time: datetime
 
-    containers: ContainersSensors = describe("not-in-drawing")
     simulator_fancoil: FancoilSensors = describe("FC-1006")
     power_hub_fancoil: FancoilSensors = describe("FC-1001")
     office_1_fancoil: FancoilSensors = describe("FC-1002")
@@ -1807,8 +1808,8 @@ class PowerHubSensors(NetworkSensors):
     kitchen_fancoil: FancoilSensors = describe("FC-1004")
     sanitary_fancoil: FancoilSensors = describe("FC-1005")
 
-    supply_box: TemperatureHumiditySensors = describe("TH-1001")
-    workshop: TemperatureHumiditySensors = describe("TH-1002")
+    supply_box_temperature_sensor: TemperatureHumiditySensors = describe("TH-1001")
+    workshop_temperature_sensor: TemperatureHumiditySensors = describe("TH-1002")
     pv_1_temperature_sensor: TemperatureHumiditySensors = describe("TH-1003")
     pv_2_temperature_sensor: TemperatureHumiditySensors = describe("TH-1004")
     heat_pipes: HeatPipesSensors = describe("W-1001")
@@ -1844,9 +1845,7 @@ class PowerHubSensors(NetworkSensors):
     waste_pressure_sensor: PressureSensors = describe("PS-1002", "35k13/1")
     pipes_pressure_sensor: PressureSensors = describe("PS-1003", "35k13/2")
     outboard_pressure_sensor: PressureSensors = describe("PS-1004", "35k13/2")
-    outboard_temperature_sensor = sensor(
-        type=SensorType.TEMPERATURE, technical_name="TS-1038"
-    )
+    outboard_temperature_sensor: OutboardTemperatureSensors = describe("TS-1038")
     pcm_yazaki_pressure_sensor: PressureSensors = describe("PS-1001", "35k13/0")
     technical_water_regulator: ValveSensors = describe("CV-4001", "35k18/4")
     water_filter_bypass_valve: ValveSensors = describe("CV-5001", "35k18/5")
