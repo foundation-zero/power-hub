@@ -38,7 +38,7 @@ async def main():
     CONFIG.mqtt_host = "vernemq.prod.power-hub.foundationzero.org"
     CONFIG.mqtt_port = 8883
     CONFIG.mqtt_tls_enabled = True
-    CONFIG.mqtt_tls_path = "./plc/vernemq/bridge/certificate/ISRG_ROOT_X1.crt"
+    CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
     parse = ArgumentParser()
     parse.add_argument("appliance")
     args = parse.parse_args()

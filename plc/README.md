@@ -27,3 +27,11 @@ To test whether the script ran succesful you can docker exec into the control-ap
 `/app/env/bin/python -m energy_box_control.plc_tests.test_mqtt`
 
 Which should put a sensor_values json on MQTT (if the bridge is enabled it will propagate to Telegraf and InfluxDB) and trigger an alert to PagerDuty. Try to clean up after. 
+
+## Run configure_plc.py
+
+To automatically configure the docker on the PLC run:
+
+```bash
+poetry run python plc/configure_plc.py
+```
