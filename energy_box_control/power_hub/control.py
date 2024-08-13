@@ -13,8 +13,8 @@ from energy_box_control.control.state_machines import (
     State,
     StateMachine,
 )
-from energy_box_control.monitoring.checks import yazaki_bound_checks
-from energy_box_control.monitoring.monitoring import Monitor
+
+from energy_box_control.monitoring.health_bounds import YAZAKI_BOUNDS
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_CHILLER_POSITION,
@@ -63,9 +63,10 @@ class HotControlState:
 
 class ChillControlMode(State):
     NO_CHILL = "no_chill"
-    PREPARE_CHILL_YAZAKI = "prepare_chill_yazaki"
+    PREPARE_YAZAKI_VALVES = "prepare_chill_yazaki"
+    CHECK_YAZAKI_BOUNDS = "check_yazaki_bounds"
     CHILL_YAZAKI = "chill_yazaki"
-    PREPARE_CHILL_CHILLER = "prepare_chill_chiller"
+    PREPARE_CHILLER_VALVES = "prepare_chill_chiller"
     CHILL_CHILLER = "chill_chiller"
 
 
@@ -182,7 +183,7 @@ def initial_control_state() -> PowerHubControlState:
             target_charging_temperature_offset=5,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=78,
+            pcm_discharged=75,
             pcm_charged=78,
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
@@ -351,7 +352,7 @@ pcm_charged = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
 pcm_discharged = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state(
     lambda state: state.setpoints.pcm_discharged
 )
-ready_for_yazaki = Fn.pred(
+yazaki_valves_ready = Fn.pred(
     lambda _, sensors: sensors.waste_switch_valve.in_position(
         WASTE_SWITCH_VALVE_YAZAKI_POSITION
     )
@@ -359,6 +360,28 @@ ready_for_yazaki = Fn.pred(
     lambda _, sensors: sensors.chiller_switch_valve.in_position(
         CHILLER_SWITCH_VALVE_YAZAKI_POSITION
     )
+)
+within_yazaki_bounds = Fn.pred(
+    lambda _, sensors: all(
+        [
+            YAZAKI_BOUNDS["hot_input_temperature"].within(
+                sensors.yazaki.hot_input_temperature
+            ),
+            YAZAKI_BOUNDS["waste_input_temperature"].within(
+                sensors.yazaki.waste_input_temperature
+            ),
+            YAZAKI_BOUNDS["chilled_input_temperature"].within(
+                sensors.yazaki.chilled_input_temperature
+            ),
+            YAZAKI_BOUNDS["hot_flow"].within(sensors.yazaki.hot_flow),
+            YAZAKI_BOUNDS["waste_flow"].within(sensors.yazaki.waste_flow),
+            YAZAKI_BOUNDS["chilled_flow"].within(sensors.yazaki.chilled_flow),
+        ]
+    )
+)
+
+outside_yazaki_bounds = (~within_yazaki_bounds).holds_true(
+    Marker("Outside Yazaki conditions"), timedelta(minutes=10)
 )
 ready_for_chiller = Fn.pred(
     lambda _, sensors: sensors.waste_switch_valve.in_position(
@@ -374,28 +397,37 @@ chill_transitions: dict[
     tuple[ChillControlMode, ChillControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
-    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_YAZAKI): should_chill
-    & pcm_charged,  # start chill with Yazaki if PCM is fully charged
+    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_YAZAKI_VALVES): should_chill
+    & pcm_charged,  # try to chill with Yazaki if PCM is at temperature
     (
-        ChillControlMode.PREPARE_CHILL_YAZAKI,
+        ChillControlMode.PREPARE_YAZAKI_VALVES,
+        ChillControlMode.CHECK_YAZAKI_BOUNDS,
+    ): yazaki_valves_ready,
+    (
+        ChillControlMode.CHECK_YAZAKI_BOUNDS,
         ChillControlMode.CHILL_YAZAKI,
-    ): ready_for_yazaki,
-    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILL_CHILLER): should_chill
+    ): within_yazaki_bounds,
+    (
+        ChillControlMode.CHECK_YAZAKI_BOUNDS,
+        ChillControlMode.PREPARE_CHILLER_VALVES,
+    ): outside_yazaki_bounds,
+    (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILLER_VALVES): should_chill
     & ~pcm_charged,  # start chill with chiller if PCM is not fully charged
     (
-        ChillControlMode.PREPARE_CHILL_CHILLER,
+        ChillControlMode.PREPARE_CHILLER_VALVES,
         ChillControlMode.CHILL_CHILLER,
     ): ready_for_chiller,
     (
         ChillControlMode.CHILL_YAZAKI,
-        ChillControlMode.PREPARE_CHILL_CHILLER,
+        ChillControlMode.PREPARE_CHILLER_VALVES,
     ): should_chill
     & pcm_discharged,  # switch from Yazaki to chiller if PCM is fully discharged
     (
         ChillControlMode.CHILL_CHILLER,
-        ChillControlMode.PREPARE_CHILL_YAZAKI,
+        ChillControlMode.PREPARE_YAZAKI_VALVES,
     ): should_chill
-    & pcm_charged,  # switch from chiller to Yazaki if PCM is fully charged
+    & Fn.const_pred(True).holds_true(Marker("Chiller runs"), timedelta(minutes=10))
+    & pcm_charged,  # switch from chiller to Yazaki if PCM is fully charged and chiller has for 10 mins
     (ChillControlMode.CHILL_YAZAKI, ChillControlMode.NO_CHILL): stop_chill,
     (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill,
 }
@@ -482,7 +514,7 @@ def chill_control(
         .combine(run_waste_chill)
     )
 
-    if chill_control_mode == ChillControlMode.PREPARE_CHILL_YAZAKI:
+    if chill_control_mode == ChillControlMode.PREPARE_YAZAKI_VALVES:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
         yazaki_hot_feedback_valve_controller = (
@@ -490,6 +522,17 @@ def chill_control(
         )
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
+
+    elif chill_control_mode == ChillControlMode.CHECK_YAZAKI_BOUNDS:
+        chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
+        waste_switch_valve_position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
+        yazaki_hot_feedback_valve_controller, yazaki_feedback_valve_control = (
+            control_state.chill_control.yazaki_hot_feedback_valve_controller.run(
+                control_state.setpoints.yazaki_inlet_target_temperature,
+                sensors.yazaki.hot_input_temperature,
+            )
+        )
+        running = run_yazaki_pumps
 
     elif chill_control_mode == ChillControlMode.CHILL_YAZAKI:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_YAZAKI_POSITION
@@ -500,17 +543,9 @@ def chill_control(
                 sensors.yazaki.hot_input_temperature,
             )
         )
-        yazaki_monitor = Monitor(
-            sensor_value_checks=yazaki_bound_checks, url_health_checks=[]
-        )
-        if not yazaki_monitor.run_sensor_value_checks(
-            sensors, "control", run_yazaki.build(), power_hub
-        ):
-            running = run_yazaki
-        else:
-            running = run_yazaki_pumps
+        running = run_yazaki
 
-    elif chill_control_mode == ChillControlMode.PREPARE_CHILL_CHILLER:
+    elif chill_control_mode == ChillControlMode.PREPARE_CHILLER_VALVES:
         chiller_switch_valve_position = CHILLER_SWITCH_VALVE_CHILLER_POSITION
         waste_switch_valve_position = WASTE_SWITCH_VALVE_CHILLER_POSITION
         yazaki_hot_feedback_valve_controller = (
