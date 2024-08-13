@@ -8,9 +8,8 @@ services:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ./mosquitto:/etc/mosquitto
-      - ./mosquitto:/local-config
-      - ./mosquitto/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt:ro
+      - /home/admin/docker-files/plc-docker-compose/mosquitto:/local-config
+      - /home/admin/docker-files/plc-docker-compose/certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
 
     command: >
       sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf && 
@@ -47,7 +46,7 @@ services:
     networks:
       - power_hub_control
     env_file:
-      - ../.env
+      - ./.env
     restart: on-failure:5
 
 networks:

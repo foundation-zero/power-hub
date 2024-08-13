@@ -1,7 +1,9 @@
+from argparse import ArgumentParser
+import getpass
 import subprocess
 import tempfile
 import time
-from paramiko import AutoAddPolicy, SSHClient
+from paramiko import AutoAddPolicy, Ed25519Key, PKey, SSHClient
 from scp import SCPClient
 import os
 from energy_box_control.custom_logging import get_logger
@@ -21,36 +23,30 @@ PAGERDUTY_KEY_ENV_NAME = "PAGERDUTY_CONTROL_APP_KEY"
 CLOUD_VERNEMQ_ENV_NAME = "PROD_VERNEMQ_URL"
 MQTT_PASSWORD_ENV_NAME = "PROD_MQTT_PASSWORD"
 
-
-configs = {
-    "wireguard": {
-        "hostname": "wireguard.foundationzero.org",
-        "username": "<user>",
-        "key_path": "<path>/<to>/.ssh/id_rsa",
-        "next_host": "10.0.2.20",
-    },
-    "pi": {
-        "hostname": "10.0.2.20",
-        "username": "pi",
-        "password": os.getenv("POWER_HUB_PASSWORD"),
-        "next_host": "192.168.1.15",
-    },
-    "plc": {
-        "hostname": "192.168.1.15",
-        "username": "root",
-        "password": os.getenv("POWER_HUB_PLC_PASSWORD"),
-    },
+wireguard_config = {
+    "hostname": "wireguard.foundationzero.org",
+    "username": "<enter>",
+    "key_class": Ed25519Key,
+    "key_path": "<enter>",
+    "next_host": "10.0.2.20",
+}
+pi_config = {
+    "hostname": "10.0.2.20",
+    "username": "pi",
+    "password": os.getenv("POWER_HUB_PASSWORD"),
+    "next_host": "192.168.1.15",
+}
+plc_config = {
+    "hostname": "192.168.1.15",
+    "username": "root",
+    "password": os.getenv("POWER_HUB_PLC_PASSWORD"),
 }
 
-
-@contextmanager
-def cwd(path):
-    oldpwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldpwd)
+configs = {
+    "wireguard": wireguard_config,
+    "pi": pi_config,
+    "plc": plc_config,
+}
 
 
 @contextmanager
@@ -58,6 +54,13 @@ def ssh_client():
 
     clients = []
     prev_sock = None
+
+    if "passphrase" not in wireguard_config:
+        wireguard_config["passphrase"] = getpass.getpass(prompt="Private key passphrase: ")
+    if not pi_config["password"]:
+        pi_config["password"] = getpass.getpass("Rev pi password:")
+    if not plc_config["password"]:
+        plc_config["password"] = getpass.getpass("PLC password:")
 
     try:
         for _, config in configs.items():
@@ -67,8 +70,12 @@ def ssh_client():
                 "hostname": config["hostname"],
                 "username": config["username"],
                 **(
-                    {"key_filename": config["key_filename"]}
-                    if "key_filename" in config
+                    {
+                        "pkey": config["key_class"].from_private_key_file(
+                            config["key_path"], password=wireguard_config["passphrase"]
+                        )
+                    }
+                    if "key_path" in config
                     else {}
                 ),
                 **({"password": config["password"]} if "password" in config else {}),
@@ -182,7 +189,7 @@ def build_and_push_docker_compose():
 
     build_for_arch(
         DOCKER_COMPOSE_IMAGE_NAME,
-        os.path.join(os.getcwd(), "plc-docker-compose.Dockerfile"),
+        "plc/plc-docker-compose.Dockerfile",
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         docker_compose_local_image_path = save_docker_image(
@@ -205,39 +212,45 @@ def build_and_push_docker_compose():
 def build_and_push_control_app():
     control_app_image_name = "python-control-app:latest-armv7"
 
-    with cwd("../"):
-        build_for_arch(
-            control_app_image_name,
-            os.path.join(os.getcwd(), "python_control.Dockerfile"),
+    build_for_arch(
+        control_app_image_name,
+        "python_control.Dockerfile",
+    )
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        docker_local_image_path = save_docker_image(
+            tmpdirname, control_app_image_name, "python-control-app.tar"
         )
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            docker_local_image_path = save_docker_image(
-                tmpdirname, control_app_image_name, "python-control-app.tar"
-            )
 
-            with ssh_client() as ssh:
-                remote_image_path = copy_file_to_remote(ssh, docker_local_image_path)
-                add_docker_image_on_remote(ssh, remote_image_path)
-                remove_file_on_remote(  # could be disabled if enough space
-                    ssh, remote_image_path
-                )
+        with ssh_client() as ssh:
+            remote_image_path = copy_file_to_remote(ssh, docker_local_image_path)
+            add_docker_image_on_remote(ssh, remote_image_path)
+            remove_file_on_remote(  # could be disabled if enough space
+                ssh, remote_image_path
+            )
 
 
 def copy_docker_compose_files_to_plc():
     logger.debug("Starting with copying docker compose file to plc")
 
-    local_file_path = "plc.docker-compose.yml"
+    local_file_path = "plc/plc.docker-compose.yml"
     remote_file_path = os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "docker-compose.yml")
 
     with ssh_client() as ssh:
         logger.debug(f"Creating directory {os.path.dirname(remote_file_path)}")
         blocking_command(ssh, f"mkdir {REMOTE_DOCKER_COMPOSE_DIR}")
+        blocking_command(ssh, f"mkdir {os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "mosquitto")}")
         copy_file_to_remote(ssh, local_file_path, remote_file_path)
-        local_cert_path = "mosquitto/ISRG_ROOT_X1.crt"
+        local_cert_path = "plc/certs/ISRG_ROOT_X1.crt"
+        local_mosquitto_conf_path = "plc/mosquitto/mosquitto.conf"
         copy_file_to_remote(
             ssh,
-            os.path.join(os.getcwd(), local_cert_path),
-            REMOTE_DOCKER_COMPOSE_DIR,
+            local_cert_path,
+            os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "certs", "ISRG_ROOT_X1.crt"),
+        )
+        copy_file_to_remote(
+            ssh,
+            local_mosquitto_conf_path,
+            os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "mosquitto", "mosquitto.conf"),
         )
 
 
@@ -263,11 +276,11 @@ def create_env_file():
                 )
 
 
-def run_docker_compose():
+def run_docker_compose(mosquitto_only):
     with ssh_client() as ssh:
         docker_compose_alias = f"docker run --rm -t --privileged -v $(pwd):/compose -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker {DOCKER_COMPOSE_IMAGE_NAME}"
         compose_command = (
-            f"cd {REMOTE_DOCKER_COMPOSE_DIR} && {docker_compose_alias} up -d control"
+            f"cd {REMOTE_DOCKER_COMPOSE_DIR} && {docker_compose_alias} up -d {'control' if not mosquitto_only else 'mosquitto'}"
         )
         logger.debug(f"Running '{compose_command}'")
         blocking_command(ssh, compose_command)
@@ -276,10 +289,16 @@ def run_docker_compose():
 
 if __name__ == "__main__":
     start = time.time()
-    build_and_push_docker_compose()
-    build_and_push_control_app()
+
+    parser = ArgumentParser()
+    parser.add_argument("--mosquitto-only", action="store_true")
+    args = parser.parse_args()
+
+    if not args.mosquitto_only:
+        build_and_push_docker_compose()
+        build_and_push_control_app()
     copy_docker_compose_files_to_plc()
     create_env_file()
-    run_docker_compose()
+    run_docker_compose(mosquitto_only=args.mosquitto_only)
     stop = time.time()
     logger.debug(f"Script took {stop - start} seconds.")
