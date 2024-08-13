@@ -542,7 +542,7 @@ def chill_control(
         running = no_run
 
     cooling_demand = any(
-        fancoil.mode == (FancoilModes.COOL.value or FancoilModes.COOL_AND_HEAT.value)
+        fancoil.mode in [FancoilModes.COOL.value, FancoilModes.COOL_AND_HEAT.value]
         for fancoil in sensors.compound_fancoils
     )
 
