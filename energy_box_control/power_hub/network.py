@@ -31,6 +31,10 @@ from energy_box_control.appliances.base import (
 from energy_box_control.appliances.boiler import BoilerState
 from energy_box_control.appliances.chiller import ChillerState
 from energy_box_control.appliances.cooling_sink import CoolingSink, CoolingSinkPort
+from energy_box_control.appliances.frequency_controlled_pump import (
+    FrequencyPump,
+    FrequencyPumpPort,
+)
 from energy_box_control.appliances.heat_pipes import HeatPipesState
 from energy_box_control.appliances.pcm import PcmState
 from energy_box_control.appliances.source import SourceState
@@ -116,7 +120,7 @@ class PowerHub(Network[PowerHubSensors]):
     hot_water_pump: SwitchPump
     fresh_water_source: Source
     outboard_exchange: HeatExchanger  # W-1007
-    outboard_pump: SwitchPump  # P-1002
+    outboard_pump: FrequencyPump  # P-1002
     outboard_source: Source
     cooling_demand_pump: SwitchPump  # P-1007
     cooling_demand: CoolingSink
@@ -254,7 +258,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(power_hub.outboard_exchange)
             .value(ApplianceState())
             .define_state(power_hub.outboard_pump)
-            .value(SwitchPumpState())
+            .value(ApplianceState())
             .define_state(power_hub.outboard_source)
             .value(SourceState())
             .define_state(power_hub.hot_water_pump)
@@ -361,7 +365,7 @@ class PowerHub(Network[PowerHubSensors]):
             .define_state(self.outboard_exchange)
             .value(ApplianceState())
             .define_state(self.outboard_pump)
-            .value(SwitchPumpState())
+            .value(ApplianceState())
             .define_state(self.outboard_source)
             .value(SourceState())
             .define_state(self.hot_water_pump)
@@ -696,10 +700,10 @@ class PowerHub(Network[PowerHubSensors]):
             self.connect(self.outboard_source)
             .at(SourcePort.OUTPUT)
             .to(self.outboard_pump)
-            .at(SwitchPumpPort.IN)
+            .at(FrequencyPumpPort.IN)
 
             .connect(self.outboard_pump)
-            .at(SwitchPumpPort.OUT)
+            .at(FrequencyPumpPort.OUT)
             .to(self.outboard_exchange)
             .at(HeatExchangerPort.B_IN)
             )

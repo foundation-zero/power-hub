@@ -4,6 +4,7 @@ from functools import reduce
 import json
 from typing import Any, cast
 from energy_box_control.appliances.base import control_class
+from energy_box_control.appliances.frequency_controlled_pump import FrequencyPumpControl
 from energy_box_control.appliances.water_treatment import WaterTreatmentControl
 from energy_box_control.control.state_machines import (
     Context,
@@ -21,7 +22,7 @@ from energy_box_control.power_hub.components import (
     CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
     HEAT_PIPES_BYPASS_OPEN_POSITION,
     HOT_SWITCH_VALVE_PCM_POSITION,
-    PREHEAT_SWITCH_VALVE_PREHEAT_POSITION,
+    PREHEAT_SWITCH_VALVE_BYPASS_POSITION,
     WASTE_BYPASS_VALVE_CLOSED_POSITION,
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
@@ -90,6 +91,7 @@ class WasteControlMode(State):
 class WasteControlState:
     context: Context
     control_mode: WasteControlMode
+    frequency_controller: Pid
 
 
 class FreshWaterControlMode(State):
@@ -162,11 +164,14 @@ class Setpoints:
     minimum_preheat_offset: Celsius = setpoint(
         "minimal offset of waste heat to preheat reservoir temperature"
     )
+    cooling_target_temperature: Celsius = setpoint(
+        "target temperature of cooling water"
+    )
     cooling_in_min_temperature: Celsius = setpoint(
-        "minimum temperature of the cooling in temperature"
+        "minimum temperature of the cooling water temperature"
     )
     cooling_in_max_temperature: Celsius = setpoint(
-        "maximum temperature of the cooling in temperature"
+        "maximum temperature of the cooling water temperature"
     )
     water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
     water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
@@ -209,8 +214,9 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
             minimum_preheat_offset=1,
-            cooling_in_min_temperature=25,
-            cooling_in_max_temperature=33,
+            cooling_in_min_temperature=20,
+            cooling_in_max_temperature=35,
+            cooling_target_temperature=28,
             technical_water_min_fill_ratio=0.1,
             technical_water_max_fill_ratio=0.3,
             water_treatment_max_fill_ratio=0.5,
@@ -237,6 +243,7 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
+            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.4, 1), reversed=True)),
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY
@@ -674,10 +681,19 @@ def waste_control(
         time,
     )
 
+    frequency_controller, frequency_control = (
+        control_state.waste_control.frequency_controller.run(
+            control_state.setpoints.cooling_target_temperature,
+            sensors.rh33_heat_dump.cold_temperature,
+        )
+    )
+
     return (
-        WasteControlState(context, waste_control_mode),
+        WasteControlState(context, waste_control_mode, frequency_controller),
         power_hub.control(power_hub.outboard_pump).value(
-            SwitchPumpControl(waste_control_mode == WasteControlMode.RUN_OUTBOARD)
+            FrequencyPumpControl(
+                waste_control_mode == WasteControlMode.RUN_OUTBOARD, frequency_control
+            )
         ),
     )
 
@@ -848,7 +864,9 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
             WASTE_SWITCH_VALVE_CHILLER_POSITION,
         ),
         waste_control=WasteControlState(
-            control_state.waste_control.context, WasteControlMode.RUN_OUTBOARD
+            control_state.waste_control.context,
+            WasteControlMode.RUN_OUTBOARD,
+            control_state.waste_control.frequency_controller,
         ),
         fresh_water_control=FreshWaterControlState(
             control_state.fresh_water_control.context, FreshWaterControlMode.READY
@@ -924,9 +942,9 @@ def survival_control(
 
     waste_control = (
         power_hub.control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(run_pumps))
+        .value(FrequencyPumpControl(run_pumps, 0.5))
         .control(power_hub.preheat_switch_valve)
-        .value(ValveControl(PREHEAT_SWITCH_VALVE_PREHEAT_POSITION))
+        .value(ValveControl(PREHEAT_SWITCH_VALVE_BYPASS_POSITION))
     )
 
     fresh_water_control = (
@@ -1019,7 +1037,7 @@ def initial_control_all_off(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=False))
         .control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(on=False))
+        .value(FrequencyPumpControl(on=False, frequency_ratio=0))
         .control(power_hub.yazaki)
         .value(YazakiControl(on=False))
         .control(power_hub.chiller)
@@ -1046,7 +1064,7 @@ def no_control(power_hub: PowerHub) -> NetworkControl[PowerHub]:
         .control(power_hub.cooling_demand_pump)
         .value(SwitchPumpControl(on=True))
         .control(power_hub.outboard_pump)
-        .value(SwitchPumpControl(on=True))
+        .value(FrequencyPumpControl(on=True, frequency_ratio=0.5))
         .control(power_hub.yazaki)
         .value(YazakiControl(on=True))
         .control(power_hub.chiller)
