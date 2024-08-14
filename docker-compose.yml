@@ -81,7 +81,9 @@ services:
         condition: service_started
     build:
       context: .
-      dockerfile: python_control.Dockerfile
+      dockerfile: python_script.Dockerfile
+      args:
+        POETRY_DEPS: "control"
     container_name: control
     command: "energy_box_control.power_hub_control"
     networks:

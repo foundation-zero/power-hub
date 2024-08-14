@@ -3,6 +3,7 @@ import getpass
 import subprocess
 import tempfile
 import time
+from typing import Optional
 from paramiko import AutoAddPolicy, Ed25519Key, PKey, SSHClient
 from scp import SCPClient
 import os
@@ -114,6 +115,7 @@ def build_for_arch(
     dockerfile: str,
     platform: str = "linux/arm/v7",
     no_cache: bool = True,
+    poetry_deps: Optional[str] = None
 ):
     build_docker_compose_commands = [
         arg
@@ -121,6 +123,7 @@ def build_for_arch(
             "docker",
             "buildx",
             "build",
+            f"--build-arg POETRY_DEPS={poetry_deps}" if poetry_deps else None, 
             "--no-cache" if no_cache else None,
             "--platform",
             platform,
@@ -216,7 +219,9 @@ def build_and_push_control_app():
 
     build_for_arch(
         control_app_image_name,
-        "python_control.Dockerfile",
+        "python_script.Dockerfile",
+        poetry_deps="control"
+
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         docker_local_image_path = save_docker_image(
