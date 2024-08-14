@@ -13,7 +13,6 @@ from energy_box_control.network import NetworkState
 from energy_box_control.power_hub.control import (
     PowerHubControlState,
     control_from_json,
-    control_power_hub,
     initial_control_state,
     no_control,
 )
@@ -35,8 +34,6 @@ from energy_box_control.power_hub_control import (
     SENSOR_VALUES_TOPIC,
     SURVIVAL_MODE_TOPIC,
     combine_survival_setpoints,
-    publish_control_modes,
-    publish_control_values,
     publish_sensor_values,
     unqueue_setpoints,
     queue_on_message,
@@ -68,11 +65,6 @@ class SimulationResult:
         notifier: Notifier,
         power_hub: PowerHub,
     ) -> "SimulationResult":
-        power_hub_sensors = self.power_hub.sensors_from_json(
-            sensor_values_queue.get(block=True)
-        )
-
-        publish_sensor_values(power_hub_sensors, mqtt_client, notifier, enriched=True)
 
         control_state = combine_survival_setpoints(
             self.control_state,
@@ -81,28 +73,13 @@ class SimulationResult:
             or self.control_state.setpoints.survival_mode,
         )
 
-        control_state, control_values = control_power_hub(
-            self.power_hub,
-            control_state,
-            power_hub_sensors,
-            self.state.time.timestamp,
-        )
-
-        notifier.send_events(
-            monitor.run_sensor_value_checks(
-                power_hub_sensors, "power_hub_simulation", control_values, power_hub
+        try:
+            control_values = control_from_json(
+                self.power_hub, control_values_queue.get(block=True, timeout=10)
             )
-        )
-
-        publish_control_modes(mqtt_client, control_state, notifier)
-
-        publish_control_values(mqtt_client, power_hub, control_values, notifier)
-
-        control_values = control_from_json(
-            self.power_hub, control_values_queue.get(block=True)
-        )
-
-        state = self.power_hub.simulate(self.state, control_values)
+            state = self.power_hub.simulate(self.state, control_values)
+        except queue.Empty:
+            state = self.state
 
         publish_sensor_values(
             power_hub.sensors_from_state(state), mqtt_client, notifier
