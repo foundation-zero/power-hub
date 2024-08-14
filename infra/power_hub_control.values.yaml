@@ -1,0 +1,13 @@
+replicaCount: 1
+
+nameOverride: "power-hub-control"
+
+image:
+  pullPolicy: Always
+container:
+  commands: 
+  - "/app/env/bin/python"
+  - "-m"
+  - "energy_box_control.power_hub_control"
+  env:
+    MQTT_USERNAME: power-hub
