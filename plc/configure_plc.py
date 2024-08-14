@@ -56,7 +56,9 @@ def ssh_client():
     prev_sock = None
 
     if "passphrase" not in wireguard_config:
-        wireguard_config["passphrase"] = getpass.getpass(prompt="Private key passphrase: ")
+        wireguard_config["passphrase"] = getpass.getpass(
+            prompt="Private key passphrase: "
+        )
     if not pi_config["password"]:
         pi_config["password"] = getpass.getpass("Rev pi password:")
     if not plc_config["password"]:
@@ -238,7 +240,9 @@ def copy_docker_compose_files_to_plc():
     with ssh_client() as ssh:
         logger.debug(f"Creating directory {os.path.dirname(remote_file_path)}")
         blocking_command(ssh, f"mkdir {REMOTE_DOCKER_COMPOSE_DIR}")
-        blocking_command(ssh, f"mkdir {os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "mosquitto")}")
+        blocking_command(
+            ssh, f"mkdir {os.path.join(REMOTE_DOCKER_COMPOSE_DIR, "mosquitto")}"
+        )
         copy_file_to_remote(ssh, local_file_path, remote_file_path)
         local_cert_path = "plc/certs/ISRG_ROOT_X1.crt"
         local_mosquitto_conf_path = "plc/mosquitto/mosquitto.conf"
@@ -279,9 +283,7 @@ def create_env_file():
 def run_docker_compose(mosquitto_only):
     with ssh_client() as ssh:
         docker_compose_alias = f"docker run --rm -t --privileged -v $(pwd):/compose -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker {DOCKER_COMPOSE_IMAGE_NAME}"
-        compose_command = (
-            f"cd {REMOTE_DOCKER_COMPOSE_DIR} && {docker_compose_alias} up -d {'control' if not mosquitto_only else 'mosquitto'}"
-        )
+        compose_command = f"cd {REMOTE_DOCKER_COMPOSE_DIR} && {docker_compose_alias} up -d {'control' if not mosquitto_only else 'mosquitto'}"
         logger.debug(f"Running '{compose_command}'")
         blocking_command(ssh, compose_command)
         logger.debug("Done running compose command")
