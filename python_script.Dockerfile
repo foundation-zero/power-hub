@@ -9,7 +9,8 @@ WORKDIR /app
 
 COPY ./pyproject.toml ./poetry.lock /app/
 
-RUN ${POETRY_HOME}/bin/poetry export -f requirements.txt --output requirements.txt --only main --without-hashes
+ARG POETRY_DEPS=main
+RUN ${POETRY_HOME}/bin/poetry export -f requirements.txt --output requirements.txt --only ${POETRY_DEPS} --without-hashes
 
 FROM python:3.12-bookworm as builder
 
