@@ -31,7 +31,9 @@ jobs:
       - name: Test
         run: poetry run pytest
 
-      - run: docker compose up -d telegraf
+      - run: docker compose up -d control
+        env:
+          PAGERDUTY_CONTROL_APP_KEY: "-"
 
       - name: Integration tests
         run: poetry run pytest -s --runintegration tests/api/test_api_integration.py
@@ -48,6 +50,7 @@ jobs:
       - run: docker compose up -d
         env:
           PAGERDUTY_SIMULATION_KEY: "-"
+          PAGERDUTY_CONTROL_APP_KEY: "-"
   
       - name: Simulation integration tests
         run: poetry run pytest -s --runintegration tests/simulation/test_simulation_integration.py

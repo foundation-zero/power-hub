@@ -73,6 +73,25 @@ services:
       - PAGERDUTY_SIMULATION_KEY=$PAGERDUTY_SIMULATION_KEY
     restart: on-failure:5
 
+  control:
+    depends_on:
+      vernemq:
+        condition: service_healthy
+      telegraf:
+        condition: service_started
+    build:
+      context: .
+      dockerfile: python_control.Dockerfile
+    container_name: control
+    command: "energy_box_control.power_hub_control"
+    networks:
+      - power_hub_simulation
+    env_file:
+      - .env
+    environment:
+      - PAGERDUTY_CONTROL_APP_KEY=$PAGERDUTY_CONTROL_APP_KEY
+    restart: on-failure:5
+
   power_hub_api:
     depends_on:
       - influxdb
