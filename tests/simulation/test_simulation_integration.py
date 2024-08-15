@@ -79,6 +79,7 @@ async def assert_get_url(url: str, headers: dict[str, str]):
         "/power_hub/appliance_sensors/office_1_fancoil/ambient_temperature/mean",
         "/power_hub/appliance_sensors/weather/global_irradiance/mean",
         # "/power_hub/appliance_sensors/yazaki/used_power/mean", yazaki is not activated in test period
+        "/power_hub/appliance_sensors/rh33_heat_pipes/delta_temperature/mean",
     ],
 )
 @pytest.mark.integration
