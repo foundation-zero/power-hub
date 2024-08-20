@@ -95,7 +95,7 @@
           x="252.499"
           y="396.85"
         >
-          Power Hub
+          &nbsp;Power Hub
         </tspan>
         <tspan
           x="281.814"
