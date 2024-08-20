@@ -26,9 +26,9 @@ MQTT_PASSWORD_ENV_NAME = "PROD_MQTT_PASSWORD"
 
 wireguard_config = {
     "hostname": "wireguard.foundationzero.org",
-    "username": "<enter>",
+    "username": "boudewijn",
     "key_class": Ed25519Key,
-    "key_path": "<enter>",
+    "key_path": "/Users/boudewijnvangroos/.ssh/id_ed25519",
     "next_host": "10.0.2.20",
 }
 pi_config = {
@@ -123,7 +123,7 @@ def build_for_arch(
             "docker",
             "buildx",
             "build",
-            f"--build-arg POETRY_DEPS={poetry_deps}" if poetry_deps else None, 
+            *["--build-arg", f"POETRY_DEPS={poetry_deps}" if poetry_deps else []], 
             "--no-cache" if no_cache else None,
             "--platform",
             platform,
@@ -144,7 +144,7 @@ def build_for_arch(
     subprocess.run(build_docker_compose_commands)
 
 
-def save_docker_image(folder: str, image_name: str, tar_name: str = "image.tar"):
+def save_docker_image(folder: str, image_name: str, tar_name: str = "image.tar.gz"):
     docker_compose_local_image_path = os.path.join(folder, tar_name)
     commands = ["docker", "save", "-o", docker_compose_local_image_path, image_name]
     logger.debug(f"Saving docker image to with command '{" ".join(commands)}'")
@@ -214,18 +214,18 @@ def build_and_push_docker_compose():
             )
 
 
-def build_and_push_control_app():
+def build_and_push_control_app(no_cache = True):
     control_app_image_name = "python-control-app:latest-armv7"
 
     build_for_arch(
         control_app_image_name,
         "python_script.Dockerfile",
-        poetry_deps="control"
-
+        poetry_deps="control",
+        no_cache=no_cache
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         docker_local_image_path = save_docker_image(
-            tmpdirname, control_app_image_name, "python-control-app.tar"
+            tmpdirname, control_app_image_name, "python-control-app.tar.gz"
         )
 
         with ssh_client() as ssh:
@@ -298,12 +298,16 @@ if __name__ == "__main__":
     start = time.time()
 
     parser = ArgumentParser()
-    parser.add_argument("--mosquitto-only", action="store_true")
-    args = parser.parse_args()
+    parser.add_argument("--skip-control", action="store_true")
+    parser.add_argument("--skip-compose", action="store_true")
+    parser.add_argument("--cache", action="store_true")
 
-    if not args.mosquitto_only:
+    args = parser.parse_args()
+    if not args.skip_compose:
         build_and_push_docker_compose()
-        build_and_push_control_app()
+    
+    if not args.skip_control:
+        build_and_push_control_app(no_cache = not args.cache)
     copy_docker_compose_files_to_plc()
     create_env_file()
     run_docker_compose(mosquitto_only=args.mosquitto_only)

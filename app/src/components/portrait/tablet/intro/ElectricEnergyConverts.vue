@@ -24,25 +24,19 @@
           x="80"
           y="390.05"
         >
-          Electric energy &#10;
+          Solar energy &#10;
         </tspan>
         <tspan
           x="80"
           y="430.05"
         >
-          converts solar &#10;
+          is converted &#10;
         </tspan>
         <tspan
           x="80"
           y="470.05"
         >
-          energy into&#10;
-        </tspan>
-        <tspan
-          x="80"
-          y="510.05"
-        >
-          electricity.
+          into electricity.
         </tspan>
       </text>
     </svg>

@@ -134,7 +134,7 @@ import { map } from "rxjs";
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const { value, unit } = useAsWattHours(
-  useObservable(powerHub.sensors.useCurrent("pcm/fill").pipe(map(jouleToWattHour))),
+  useObservable(powerHub.sensors.useMean("pcm/heat").pipe(map(jouleToWattHour))),
 );
 </script>
 

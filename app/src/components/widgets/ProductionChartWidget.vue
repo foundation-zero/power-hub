@@ -4,7 +4,7 @@
     elevation="3"
     class="pt-4"
   >
-    <div class="text-h6 text-uppercase font-weight-medium px-6">Production</div>
+    <div class="text-h6 text-uppercase font-weight-medium px-6">Electrical</div>
     <div class="background mt-3">
       <ChartLegend class="px-6 py-3" />
       <ProductionChart />

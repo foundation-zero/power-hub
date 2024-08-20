@@ -17,7 +17,7 @@
       ><tspan
         x="1125"
         y="848.9"
-        >consumption...</tspan
+        >consumption.</tspan
       ></text
     >
   </AnimatedSlide>

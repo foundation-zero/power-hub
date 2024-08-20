@@ -10,10 +10,7 @@ from energy_box_control.appliances.base import (
 )
 from energy_box_control.time import ProcessTime
 
-from energy_box_control.units import LiterPerSecond, Watt
-
-
-Ratio = float
+from energy_box_control.units import LiterPerSecond, Ratio, Watt
 
 
 class FrequencyPumpPort(Port):

@@ -18,3 +18,4 @@ Volt = float
 Ampere = float
 Hours = float
 Ppm = float
+Ratio = float

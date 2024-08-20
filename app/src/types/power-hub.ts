@@ -24,7 +24,7 @@ export type PCM = Port<"charge"> &
     chargePower: number;
     dischargePower: number;
     netCharge: number;
-    fill: number;
+    heat: number;
   };
 
 export type Chiller = Port<"cooling"> &
@@ -56,12 +56,16 @@ export interface WaterTank {
   waterDemandFlow: number;
 }
 
-export interface WaterProcessor {
+export interface WaterMaker {
+  productionFlow: number;
+}
+
+export interface WaterTreatment {
   outFlow: number;
 }
 
 export interface Weather {
-  globalIrradience: number;
+  globalIrradiance: number;
 }
 
 export interface Compound {
@@ -69,7 +73,9 @@ export interface Compound {
 }
 
 export interface Electrical {
-  socBatterySystem: number;
+  batterySystemSoc: number;
+  pvPower: number;
+  powerConsumption: number;
 }
 
 export interface SensorsTree {
@@ -91,8 +97,8 @@ export interface SensorsTree {
   chillerWasteBypassValve: Valve;
   pvPanel: PVPanel;
   freshWaterTank: WaterTank;
-  waterTreatment: WaterProcessor;
-  waterMaker: WaterProcessor;
+  waterTreatment: WaterTreatment;
+  waterMaker: WaterMaker;
   weather: Weather;
   compound: Compound;
   electrical: Electrical;

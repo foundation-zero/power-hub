@@ -4,7 +4,10 @@ from functools import partial
 import json
 from energy_box_control.config import CONFIG
 from energy_box_control.mqtt import run_listener
-from energy_box_control.power_hub_control import SENSOR_VALUES_TOPIC
+from energy_box_control.power_hub_control import (
+    ENRICHED_SENSOR_VALUES_TOPIC,
+    SENSOR_VALUES_TOPIC,
+)
 import paho.mqtt.client as mqtt
 
 
@@ -41,9 +44,11 @@ async def main():
     CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
     parse = ArgumentParser()
     parse.add_argument("appliance")
+    parse.add_argument("-e", action="store_true")
     args = parse.parse_args()
     fut: asyncio.Future[None] = asyncio.Future()
-    await run_listener(SENSOR_VALUES_TOPIC, partial(message, args.appliance, fut))
+    topic = ENRICHED_SENSOR_VALUES_TOPIC if args.e else SENSOR_VALUES_TOPIC
+    await run_listener(topic, partial(message, args.appliance, fut))
     await fut
 
 
