@@ -360,7 +360,7 @@ const outputTemperature = useObservable(sensors.useMean("heat_pipes/output_tempe
 const { value: sunPower, unit: sunPowerUnit } = useAsWatts(
   useObservable(
     sensors
-      .useLastValues("weather/global_irradience")
+      .useLastValues("weather/global_irradiance")
       .pipe(map((values) => values[values.length - 1]?.value)),
   ),
 );

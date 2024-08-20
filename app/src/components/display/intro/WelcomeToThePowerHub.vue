@@ -16,156 +16,127 @@
       fill="#1D2519"
       xml:space="preserve"
       style="white-space: pre"
+      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="-0.04em"
-    >
-      <tspan
+      ><tspan
         x="422.006"
         y="530.3"
-      >
-        .&#10;
-      </tspan>
-      <tspan
+        >.&#10;</tspan
+      ><tspan
         x="742.547"
         y="806.3"
-      >
-        .
-      </tspan>
-    </text>
+        >.</tspan
+      ></text
+    >
     <text
       fill="white"
       xml:space="preserve"
       style="white-space: pre"
+      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="-0.04em"
-    >
-      <tspan
+      ><tspan
         x="558.307"
         y="254.3"
       >
-        Power Hub
-      </tspan>
-      <tspan
+        Power Hub</tspan
+      ><tspan
         x="863.606"
         y="254.3"
       >
-        &#10;
-      </tspan>
-      <tspan
+        &#10;</tspan
+      ><tspan
         x="343.073"
         y="737.3"
-      >
-        Power Hub
-      </tspan>
-    </text>
+        >Power Hub</tspan
+      ></text
+    >
     <text
       fill="#1D2519"
       xml:space="preserve"
       style="white-space: pre"
+      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="-0.04em"
-    >
-      <tspan
+      ><tspan
         x="151.924"
         y="254.3"
       >
-        Welcome to the
-      </tspan>
-      <tspan
+        Welcome to the</tspan
+      ><tspan
         x="132"
         y="323.3"
-      >
-        This freight container houses a
-      </tspan>
-      <tspan
+        >This freight container houses a </tspan
+      ><tspan
         x="132"
         y="392.3"
-      >
-        renewable energy system that &#10;
-      </tspan>
-      <tspan
+        >renewable energy system that &#10;</tspan
+      ><tspan
         x="132"
         y="461.3"
-      >
-        provides electricity, cooling, and
-      </tspan>
-      <tspan
+        >provides electricity, cooling, and </tspan
+      ><tspan
         x="132"
         y="530.3"
-      >
-        clean water
-      </tspan>
-      <tspan
+        >clean water</tspan
+      ><tspan
         x="132"
         y="599.3"
-      >
-        &#10;
-      </tspan>
-      <tspan
+        >&#10;</tspan
+      ><tspan
         x="132"
         y="668.3"
-      >
-        This display will take you through
-      </tspan>
-      <tspan
+        >This display will take you through </tspan
+      ><tspan
         x="132"
         y="737.3"
-      >
-        how the
-      </tspan>
-      <tspan
+        >how the </tspan
+      ><tspan
         x="627.391"
         y="737.3"
       >
-        works and &#10;
-      </tspan>
-      <tspan
+        works and &#10;</tspan
+      ><tspan
         x="132"
         y="806.3"
-      >
-        the technology behind it
-      </tspan>
-      <tspan
+        >the technology behind it </tspan
+      ><tspan
         x="132"
         y="875.3"
-      >
-        &#x2028;
-      </tspan>
-    </text>
+        >&#x2028;</tspan
+      ></text
+    >
     <text
       fill="white"
       xml:space="preserve"
       style="white-space: pre"
+      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="-0.04em"
-    >
-      <tspan
+      ><tspan
         x="132"
         y="254.3"
-      >
-        {
-      </tspan>
-      <tspan
+        >{</tspan
+      ><tspan
         x="754.737"
         y="806.3"
-      >
-        }&#10;
-      </tspan>
-    </text>
+        >}&#10;</tspan
+      ></text
+    >
     <text
       fill="black"
       xml:space="preserve"
       style="white-space: pre"
+      font-family="Five-Gothic"
       font-size="60"
       letter-spacing="-0.04em"
-    >
-      <tspan
+      ><tspan
         x="851.416"
         y="254.3"
-      >
-        .
-      </tspan>
-    </text>
+        >.</tspan
+      ></text
+    >
     <rect
       x="1099"
       y="40"
@@ -274,8 +245,7 @@
         width="1380"
         height="1364"
         xlink:href="/img/intro/sunrise.jpg"
-      />
-    </defs>
+    /></defs>
   </IntroSlide>
 </template>
 

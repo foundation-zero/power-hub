@@ -36,12 +36,12 @@ PERCENT_WATER_CAPTURED: float = 0.1
 PCM_ZERO_TEMPERATURE = 50
 DEFAULT_PRESSURE = 2
 DEFAULT_TEMPERATURE = 25
-DEFAULT_HUMIDITY = 70
+DEFAULT_HUMIDITY = 0.70
 DEFAULT_VOLTAGE = 0
 DEFAULT_CURRENT = 0
 DEFAULT_POWER = 0
 NO_ALARM = 0
-DEFAULT_BATTERY_SOC = 75
+DEFAULT_BATTERY_SOC = 1
 
 
 HOT_SWITCH_VALVE_RESERVOIR_POSITION = (
@@ -210,7 +210,7 @@ water_maker = WaterMaker(
 )  # set to make simulation run with sea water supply and grey water supply of 10 and 1 resp
 fresh_water_tank = WaterTank(1000)
 grey_water_tank = WaterTank(1000)
-black_water_tank = WaterTank(1000)
+black_water_tank = WaterTank(2000)  # black water = 2 tanks in parallel
 technical_water_tank = WaterTank(1000)
 
 

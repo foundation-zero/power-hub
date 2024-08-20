@@ -141,7 +141,7 @@
 
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
-import { formattedInt, negateAndClampAtZero } from "@/utils/numbers";
+import { clampAtZero, formattedInt } from "@/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
@@ -152,6 +152,6 @@ import { map } from "rxjs";
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMean("yazaki/chill_power").pipe(map(negateAndClampAtZero))),
+  useObservable(powerHub.sensors.useMean("yazaki/chill_power").pipe(map(clampAtZero))),
 );
 </script>

@@ -12,7 +12,7 @@
         x="-3"
         y="42.3"
       >
-        Saved...
+        Saved.
       </tspan>
     </text>
   </AnimatedSlide>

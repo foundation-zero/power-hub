@@ -7,6 +7,7 @@ import { ref } from "vue";
 export const JOULE_TO_WATT_HOUR = 3600;
 
 export const jouleToWattHour = (val: number) => val / JOULE_TO_WATT_HOUR;
+export const lToMl = (val: number) => val * 1000;
 
 export const formattedNumber =
   (digits: number = 1) =>
@@ -72,6 +73,7 @@ export const useRevolvingNumber = (
 };
 
 export const negateAndClampAtZero = (val: number) => Math.max(0, val * -1);
+export const clampAtZero = (val: number) => Math.max(0, val);
 
 export const between = (a: Date, b: Date) => [a.toISOString(), b.toISOString()].join(",");
 

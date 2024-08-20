@@ -46,7 +46,7 @@ export default {
   setup() {
     const { sensors } = usePowerHubStore();
     const { value, unit } = useAsWattHours(
-      useObservable(sensors.useCurrent("pcm/fill").pipe(map(jouleToWattHour))),
+      useObservable(sensors.useMean("pcm/heat").pipe(map(jouleToWattHour))),
     );
 
     return {

@@ -106,7 +106,7 @@
         x="58"
         y="84.8"
       >
-        l/min
+        ml/s
       </tspan>
     </text>
   </ComponentBase>
@@ -117,9 +117,10 @@ import AnimatedNumber from "vue-number-animation";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
 import { type PowerHubStore } from "@/stores/power-hub";
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt, lToMl } from "@/utils/numbers";
+import { map } from "rxjs/operators";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("water_treatment/out_flow"));
+const value = useObservable(powerHub.sensors.useMean("water_treatment/out_flow").pipe(map(lToMl)));
 </script>
