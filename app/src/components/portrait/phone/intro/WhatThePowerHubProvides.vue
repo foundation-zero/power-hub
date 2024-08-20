@@ -96,7 +96,7 @@
           x="185.359"
           y="186.22"
         >
-          Power Hub
+          &nbsp;Power Hub
         </tspan>
       </text>
     </svg>
