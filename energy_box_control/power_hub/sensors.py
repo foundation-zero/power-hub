@@ -1815,12 +1815,12 @@ class OutboardTemperatureSensors(WithoutAppliance):
 class PowerHubSensors(NetworkSensors):
     time: datetime
 
-    simulator_fancoil: FancoilSensors = describe("FC-1006")
-    power_hub_fancoil: FancoilSensors = describe("FC-1001")
-    office_1_fancoil: FancoilSensors = describe("FC-1002")
-    office_2_fancoil: FancoilSensors = describe("FC-1003")
-    kitchen_fancoil: FancoilSensors = describe("FC-1004")
-    sanitary_fancoil: FancoilSensors = describe("FC-1005")
+    power_hub_fancoil: FancoilSensors = describe("FC-1001", "35k9/12")
+    office_1_fancoil: FancoilSensors = describe("FC-1002", "35k11/4")
+    office_2_fancoil: FancoilSensors = describe("FC-1003", "35k11/5")
+    kitchen_fancoil: FancoilSensors = describe("FC-1004", "35k11/6")
+    sanitary_fancoil: FancoilSensors = describe("FC-1005", "35k11/7")
+    simulator_fancoil: FancoilSensors = describe("FC-1006", "35k11/8")
 
     supply_box_temperature_sensor: TemperatureHumiditySensors = describe("TH-1001")
     workshop_temperature_sensor: TemperatureHumiditySensors = describe("TH-1002")
