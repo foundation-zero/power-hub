@@ -27,13 +27,13 @@
           x="97"
           y="284.7"
         >
-          Electric energy &#10;
+          Solar energy &#10;
         </tspan>
         <tspan
           x="97"
           y="330.7"
         >
-          converts solar energy&#10;
+          is converted &#10;
         </tspan>
         <tspan
           x="97"

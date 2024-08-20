@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from statistics import mean
 from typing import Any, Callable, TYPE_CHECKING, Optional
 
 from energy_box_control.appliances import HeatPipes, HeatPipesPort, SwitchPump
@@ -65,6 +66,7 @@ from energy_box_control.units import (
     LiterPerSecond,
     Ppm,
     Percentage,
+    Ratio,
     Volt,
     Watt,
     WattPerMeterSquared,
@@ -1501,7 +1503,7 @@ class ElectricalSensors(WithoutAppliance):
     battery_system_power: Watt = sensor(
         type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER)
     )
-    battery_system_soc: int = sensor(resolver=const_resolver(DEFAULT_BATTERY_SOC))
+    battery_system_soc: Ratio = sensor(resolver=const_resolver(DEFAULT_BATTERY_SOC))
     general_estop_active: ElectricalAlarm = sensor(
         type=SensorType.ALARM, resolver=const_resolver(NO_ALARM)
     )
@@ -1661,6 +1663,60 @@ class ElectricalSensors(WithoutAppliance):
     )
     vebus_charge_state: int = sensor(resolver=const_resolver(0))
 
+    @property
+    def pv_power(self):
+        return sum(
+            [
+                self.solar_1_PV_power_for_tracker_0,
+                self.solar_1_PV_power_for_tracker_1,
+                self.solar_1_PV_power_for_tracker_2,
+                self.solar_1_PV_power_for_tracker_3,
+                self.solar_2_PV_power_for_tracker_0,
+                self.solar_2_PV_power_for_tracker_1,
+                self.solar_2_PV_power_for_tracker_2,
+                self.solar_2_PV_power_for_tracker_3,
+                self.solar_3_PV_power_for_tracker_0,
+                self.solar_3_PV_power_for_tracker_1,
+                self.solar_3_PV_power_for_tracker_2,
+                self.solar_3_PV_power_for_tracker_3,
+                self.solar_4_PV_power_for_tracker_0,
+                self.solar_4_PV_power_for_tracker_1,
+                self.solar_4_PV_power_for_tracker_2,
+                self.solar_4_PV_power_for_tracker_3,
+            ]
+        )
+
+    @property
+    def power_consumption(self):
+        return sum(
+            [
+                self.e1_power_L1,
+                self.e1_power_L2,
+                self.e1_power_L3,
+                self.e2_power_L1,
+                self.e2_power_L2,
+                self.e2_power_L3,
+                self.e3_power_L1,
+                self.e3_power_L2,
+                self.e3_power_L3,
+                self.e4_power_L1,
+                self.e4_power_L2,
+                self.e4_power_L3,
+                self.e5_power_L1,
+                self.e5_power_L2,
+                self.e5_power_L3,
+                self.e6_power_L1,
+                self.e6_power_L2,
+                self.e6_power_L3,
+                self.e7_power_L1,
+                self.e7_power_L2,
+                self.e7_power_L3,
+                self.e8_power_L1,
+                self.e8_power_L2,
+                self.e8_power_L3,
+            ]
+        )
+
 
 @sensors()
 class WaterTankSensors(FromState):
@@ -1749,7 +1805,7 @@ class WaterMakerSensors(FromState):
 
 @sensors(from_appliance=False)
 class TemperatureHumiditySensors(WithoutAppliance):
-    humidity: float = sensor(
+    humidity: Ratio = sensor(
         type=SensorType.HUMIDITY, resolver=const_resolver(DEFAULT_HUMIDITY)
     )
     temperature: Celsius = sensor(
@@ -1800,6 +1856,32 @@ class FancoilSensors(WithoutAppliance):
         type=SensorType.TEMPERATURE, resolver=const_resolver(DEFAULT_TEMPERATURE)
     )
     setpoint: int = sensor(resolver=const_resolver(0))
+
+
+@sensors(from_appliance=False)
+class CompoundSensors(WithoutAppliance):
+    simulator_fancoil: FancoilSensors
+    office_1_fancoil: FancoilSensors
+    office_2_fancoil: FancoilSensors
+    kitchen_fancoil: FancoilSensors
+    sanitary_fancoil: FancoilSensors
+
+    def compound_fancoils(self):
+        return [
+            self.kitchen_fancoil,
+            self.office_1_fancoil,
+            self.office_2_fancoil,
+            self.simulator_fancoil,
+            self.sanitary_fancoil,
+        ]
+
+    @property
+    def overall_temperature(self) -> Celsius:
+        return mean(
+            fancoil.ambient_temperature
+            for fancoil in self.compound_fancoils()
+            if fancoil.ambient_temperature != 0.0
+        )
 
 
 @sensors(from_appliance=False)
@@ -1864,6 +1946,7 @@ class PowerHubSensors(NetworkSensors):
     pcm_yazaki_pressure_sensor: PressureSensors = describe("PS-1001", "35k13/0")
     technical_water_regulator: ValveSensors = describe("CV-4001", "35k18/4")
     water_filter_bypass_valve: ValveSensors = describe("CV-5001", "35k18/5")
+    compound: CompoundSensors = describe("compound")
     heat_pipes_flow_sensor: FlowSensors = flow_sensor(
         (lambda power_hub: power_hub.heat_pipes, HeatPipesPort.IN), "FS-1001", "35k9/1"
     )
@@ -1990,13 +2073,7 @@ class PowerHubSensors(NetworkSensors):
 
     @property
     def compound_fancoils(self) -> list[FancoilSensors]:
-        return [
-            self.kitchen_fancoil,
-            self.office_1_fancoil,
-            self.office_2_fancoil,
-            self.simulator_fancoil,
-            self.sanitary_fancoil,
-        ]
+        return self.compound.compound_fancoils()
 
 
 SensorName = str

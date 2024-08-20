@@ -12,7 +12,7 @@
       ><tspan
         x="409"
         y="451.2"
-        >Wastewater without harsh </tspan
+        >Waste water free from harsh </tspan
       ><tspan
         x="409"
         y="497.2"

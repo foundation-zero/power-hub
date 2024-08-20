@@ -83,7 +83,7 @@
         x="58"
         y="84.8"
       >
-        l/min
+        l/s
       </tspan>
     </text>
     <g clip-path="url(#clip0_518_1814)">

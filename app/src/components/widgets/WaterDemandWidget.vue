@@ -31,5 +31,5 @@ const series: [BarSeries, BarSeries] = [
 ];
 
 const waterDemand = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand_flow"));
-const waterMakerOut = useObservable(powerHub.sensors.useMean("water_maker/out_flow"));
+const waterMakerOut = useObservable(powerHub.sensors.useMean("water_maker/production_flow"));
 </script>

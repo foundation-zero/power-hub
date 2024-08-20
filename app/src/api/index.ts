@@ -1,7 +1,7 @@
 import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/types";
 import type { TimeInterval } from "@/types/power-hub";
-import { Observable, defer, map, repeat, retry, timer } from "rxjs";
-import { ajax } from "rxjs/ajax";
+import { Observable, catchError, defer, map, of, repeat, retry, timer } from "rxjs";
+import { AjaxError, ajax } from "rxjs/ajax";
 
 export const DEFAULT_POLLING_INTERVAL = 5 * 60 * 1000;
 
@@ -17,6 +17,7 @@ export const usePollingApi = <T>(
   endpoint: string,
   pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   queryParams?: QueryParams,
+  notFoundValue?: T,
 ) =>
   ((<Observable<T>>cache[endpoint]) ??= defer(() =>
     ajax<T>({
@@ -26,6 +27,12 @@ export const usePollingApi = <T>(
     }),
   ).pipe(
     repeat({ delay: pollingInterval }),
+    catchError((err: AjaxError) => {
+      if (err.status == 404 && notFoundValue !== undefined) {
+        return of({ response: notFoundValue });
+      }
+      throw err;
+    }),
     retry({
       delay: (error, count) => timer(Math.min(60000, 2 ^ (count * 1000))),
     }),
@@ -41,7 +48,7 @@ export const useMean =
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    usePollingApi<number>(`/${endpointFn(topic)}/mean`, pollingInterval, params);
+    usePollingApi<number>(`/${endpointFn(topic)}/mean`, pollingInterval, params, 0);
 
 export const useCurrent =
   <T>(endpointFn: PathFn) =>

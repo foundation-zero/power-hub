@@ -62,7 +62,7 @@
         x="58"
         y="80"
       >
-        l/min
+        l/s
       </tspan>
     </text>
     <path
@@ -93,5 +93,5 @@ import { type PowerHubStore } from "@/stores/power-hub";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("water_maker/out_flow"));
+const value = useObservable(powerHub.sensors.useMean("water_maker/production_flow"));
 </script>
