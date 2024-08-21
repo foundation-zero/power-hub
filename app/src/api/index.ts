@@ -1,9 +1,11 @@
 import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/types";
 import type { TimeInterval } from "@/types/power-hub";
+import { between } from "@/utils/numbers";
+import { subMinutes } from "date-fns";
 import { Observable, catchError, defer, map, of, repeat, retry, timer } from "rxjs";
 import { AjaxError, ajax } from "rxjs/ajax";
 
-export const DEFAULT_POLLING_INTERVAL = 5 * 60 * 1000;
+export const DEFAULT_POLLING_INTERVAL = 1 * 60 * 1000; // every minute
 
 const DEFAULT_HEADERS = {
   Authorization: `Bearer ${import.meta.env.VITE_API_BEARER_TOKEN}`,
@@ -39,6 +41,8 @@ export const usePollingApi = <T>(
     map(({ response }) => response),
   ));
 
+const betweenMeanDefault = (): [Date, Date] => [subMinutes(new Date(), 5), new Date()];
+
 export const useMean =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
@@ -48,7 +52,15 @@ export const useMean =
     }>,
     pollingInterval: number = DEFAULT_POLLING_INTERVAL,
   ) =>
-    usePollingApi<number>(`/${endpointFn(topic)}/mean`, pollingInterval, params, 0);
+    usePollingApi<number>(
+      `/${endpointFn(topic)}/mean`,
+      pollingInterval,
+      params ??
+        (() => ({
+          between: between(...betweenMeanDefault()),
+        })),
+      0,
+    );
 
 export const useCurrent =
   <T>(endpointFn: PathFn) =>
