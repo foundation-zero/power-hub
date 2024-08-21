@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from functools import reduce
 import json
 from typing import Any, cast
+
 from energy_box_control.appliances.base import control_class
 from energy_box_control.appliances.frequency_controlled_pump import FrequencyPumpControl
 from energy_box_control.appliances.water_treatment import WaterTreatmentControl
@@ -205,7 +206,7 @@ def initial_control_state() -> PowerHubControlState:
         setpoints=Setpoints(
             pcm_min_temperature=90,
             pcm_max_temperature=95,
-            target_charging_temperature_offset=5,
+            target_charging_temperature_offset=2,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
             pcm_discharged=75,
@@ -215,7 +216,7 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             minimum_preheat_offset=1,
             cooling_in_min_temperature=20,
-            cooling_in_max_temperature=35,
+            cooling_in_max_temperature=32,  # max output temperature is 32 degrees
             cooling_target_temperature=28,
             technical_water_min_fill_ratio=0.1,
             technical_water_max_fill_ratio=0.3,
@@ -230,7 +231,9 @@ def initial_control_state() -> PowerHubControlState:
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
-            feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1), True)),
+            feedback_valve_controller=Pid(
+                PidConfig(0, 0.005, 0, (0, 0.52))
+            ),  # can't fully bypass, otherwise temperature difference doesn't reach temperature sensor
             hot_switch_valve_position=HOT_SWITCH_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
@@ -243,7 +246,7 @@ def initial_control_state() -> PowerHubControlState:
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.4, 1), reversed=True)),
+            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.7, 1), reversed=True)),
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY
@@ -263,9 +266,9 @@ should_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state
 stop_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
     lambda state: state.setpoints.pcm_max_temperature
 )
-cannot_heat_pcm = Fn.pred(
+can_heat_pcm = Fn.pred(
     lambda control_state, sensors: sensors.heat_pipes.output_temperature
-    < (
+    > (
         sensors.pcm.temperature
         + control_state.setpoints.minimum_charging_temperature_offset
     )
@@ -284,14 +287,14 @@ hot_transitions: dict[
 ] = {
     (HotControlMode.PREPARE_HEAT_PCM, HotControlMode.HEAT_PCM): ready_for_pcm,
     (HotControlMode.HEAT_PCM, HotControlMode.IDLE): stop_heat_pcm
-    | cannot_heat_pcm.holds_true(
+    | (~can_heat_pcm).holds_true(
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
     ),
     (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (
         ~sufficient_sunlight
     ).holds_true(Marker("Global irradiance below treshold"), timedelta(minutes=10)),
     (HotControlMode.IDLE, HotControlMode.PREPARE_HEAT_PCM): should_heat_pcm
-    & (~cannot_heat_pcm).holds_true(
+    & can_heat_pcm.holds_true(
         Marker("Heat pipes output temperature high enough for pcm"),
         timedelta(minutes=5),
     ),
@@ -681,12 +684,16 @@ def waste_control(
         time,
     )
 
-    frequency_controller, frequency_control = (
-        control_state.waste_control.frequency_controller.run(
-            control_state.setpoints.cooling_target_temperature,
-            sensors.rh33_heat_dump.cold_temperature,
+    if waste_control_mode == WasteControlMode.RUN_OUTBOARD:
+        frequency_controller, frequency_control = (
+            control_state.waste_control.frequency_controller.run(
+                control_state.setpoints.cooling_target_temperature,
+                sensors.rh33_heat_dump.cold_temperature,
+            )
         )
-    )
+    else:
+        frequency_controller = control_state.waste_control.frequency_controller
+        frequency_control = 0.5
 
     return (
         WasteControlState(context, waste_control_mode, frequency_controller),
@@ -743,12 +750,12 @@ def fresh_water_control(
     )
 
 
-should_fill_technical = Fn.pred(
+should_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
     < control_state.setpoints.technical_water_min_fill_ratio
 )
 
-stop_fill_technical = Fn.pred(
+stop_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
     > control_state.setpoints.technical_water_max_fill_ratio
 )
@@ -760,11 +767,11 @@ technical_water_transitions: dict[
     (
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
         TechnicalWaterControlMode.FILL_FROM_FRESH,
-    ): should_fill_technical,
+    ): should_fill_technical_from_fresh,
     (
         TechnicalWaterControlMode.FILL_FROM_FRESH,
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
-    ): stop_fill_technical,
+    ): stop_fill_technical_from_fresh,
 }
 
 technical_water_control_machine = StateMachine(
@@ -800,9 +807,16 @@ def technical_water_control(
     )
 
 
-should_treat = Fn.pred(
-    lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
-    > control_state.setpoints.water_treatment_max_fill_ratio
+technical_has_space = Fn.sensors(
+    lambda sensors: sensors.technical_water_tank.fill_ratio
+) < Fn.const(1.0)
+
+should_treat = (
+    Fn.pred(
+        lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
+        > control_state.setpoints.water_treatment_max_fill_ratio
+    )
+    & technical_has_space
 )
 
 stop_treat = Fn.pred(

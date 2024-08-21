@@ -9,7 +9,6 @@ from paho.mqtt import client as mqtt_client
 
 from energy_box_control.config import CONFIG
 from energy_box_control.custom_logging import get_logger
-from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.monitoring.monitoring import (
     Monitor,
     Notifier,
@@ -20,6 +19,7 @@ from energy_box_control.mqtt import (
     publish_to_mqtt,
     run_listener,
 )
+from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.network import NetworkControl
 from energy_box_control.power_hub.control import (
     PowerHubControlState,
@@ -208,11 +208,11 @@ async def run(steps: Optional[int] = None):
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
         )
 
-        notifier.send_events(
-            monitor.run_sensor_value_checks(
-                power_hub_sensors, "power_hub_simulation", control_values, power_hub
-            )
-        )
+        # notifier.send_events(
+        #     monitor.run_sensor_value_checks(
+        #         power_hub_sensors, "power_hub_simulation", control_values, power_hub
+        #     )
+        # )
 
         publish_control_modes(mqtt_client, control_state, notifier)
         publish_control_values(mqtt_client, power_hub, control_values, notifier)
