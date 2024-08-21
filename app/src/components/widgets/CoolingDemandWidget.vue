@@ -33,7 +33,7 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-fan", color: "#C16A6F" },
 ];
 
-const fillPower = useObservable(powerHub.sensors.useMean("cold_reservoir/fill_power"));
+const fillPower = useObservable(powerHub.sensors.useMean("cold_reservoir/cooling_supply"));
 const absorptionPower = useObservable(
   powerHub.sensors.useMean("yazaki/chill_power").pipe(map(negateAndClampAtZero)),
 );

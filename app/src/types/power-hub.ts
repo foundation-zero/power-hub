@@ -41,8 +41,7 @@ export type HeatPipes = Port & {
 export type Reservoir = Port<"heat"> &
   Port<"fill"> & {
     temperature: number;
-    usedPower: number;
-    fillPower: number;
+    coolingSupply: number;
   };
 
 export type PVPanel = {
