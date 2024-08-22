@@ -216,7 +216,7 @@ def initial_control_state() -> PowerHubControlState:
             cold_reservoir_max_temperature=11,
             minimum_preheat_offset=1,
             cooling_in_min_temperature=20,
-            cooling_in_max_temperature=32,  # max output temperature is 32 degrees
+            cooling_in_max_temperature=35,
             cooling_target_temperature=28,
             technical_water_min_fill_ratio=0.1,
             technical_water_max_fill_ratio=0.3,
@@ -660,10 +660,19 @@ waste_transitions: dict[
         PowerHubSensors,
     ],
 ] = {
-    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): should_cool
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): (
+        should_cool
+        & Fn.const_pred(True).holds_true(
+            Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=2)
+        )
+    )
     | water_maker_on,
-    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): stop_cool
-    & water_maker_off,
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): (
+        stop_cool & water_maker_off
+    )
+    & Fn.const_pred(True).holds_true(
+        Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=5)
+    ),
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
