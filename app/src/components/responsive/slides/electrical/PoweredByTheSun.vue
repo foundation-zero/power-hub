@@ -8,10 +8,6 @@
         throughout the day and seasons. In ideal conditions the sun is pointed straight at the solar
         panels, but as the sun transitions from east to west and from the horizon to higher in the
         sky the energy it supplies will change.
-        <span class="text-decoration-line-through"
-          >Efforts to convince the sun to stay at a fixed point in the sky have so far proved
-          unsuccessful.</span
-        >
       </p>
 
       <p>
