@@ -186,6 +186,9 @@ class Setpoints:
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
+    minimum_fresh_water_ratio: Ratio = setpoint(
+        "minimum level of fresh water"
+    )
 
 
 @dataclass
@@ -219,10 +222,11 @@ def initial_control_state() -> PowerHubControlState:
             cooling_in_min_temperature=20,
             cooling_in_max_temperature=35,
             cooling_target_temperature=28,
-            technical_water_min_fill_ratio=0.1,
-            technical_water_max_fill_ratio=0.3,
+            technical_water_min_fill_ratio=0.5,
+            technical_water_max_fill_ratio=0.6,
             water_treatment_max_fill_ratio=0.5,
             water_treatment_min_fill_ratio=0.1,
+            minimum_fresh_water_ratio=0.2,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
@@ -780,6 +784,11 @@ should_fill_technical_from_fresh = Fn.pred(
     < control_state.setpoints.technical_water_min_fill_ratio
 )
 
+has_sufficient_fresh = Fn.pred(
+    lambda control_state, sensors: sensors.fresh_water_tank.fill_ratio
+    > control_state.setpoints.minimum_fresh_water_fill_ratio
+)
+
 stop_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
     > control_state.setpoints.technical_water_max_fill_ratio
@@ -834,7 +843,7 @@ def technical_water_control(
 
 technical_has_space = Fn.sensors(
     lambda sensors: sensors.technical_water_tank.fill_ratio
-) < Fn.const(1.0)
+) < Fn.const(0.8)
 
 should_treat = (
     Fn.pred(
