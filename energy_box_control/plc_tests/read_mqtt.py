@@ -2,9 +2,11 @@ from argparse import ArgumentParser
 import asyncio
 from functools import partial
 import json
+from typing import Any
 from energy_box_control.config import CONFIG
 from energy_box_control.mqtt import run_listener
 from energy_box_control.power_hub_control import (
+    CONTROL_MODES_TOPIC,
     ENRICHED_SENSOR_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
 )
@@ -18,6 +20,7 @@ def int_to_bit_list(val: int):
 
 
 def message(
+    modes: bool,
     appliance: str,
     fut: asyncio.Future[None],
     client: mqtt.Client,
@@ -26,15 +29,31 @@ def message(
 ):
     content = str(message.payload, "utf-8")
     content = content.replace("-#Inf", '"-#Inf"').replace("#Inf", '"#Inf"')
-    dict = json.loads(content)
-    if appliance in dict:
-        if "status" in dict[appliance]:
-            status = dict[appliance]["status"]
-            dict[appliance]["status"] = {"raw": status, "bins": int_to_bit_list(status)}
-        print(dict[appliance])
+    if modes:
+        print(content)
     else:
-        print(f"didn't find {appliance} in {content}")
+        dict = json.loads(content)
+        if appliance in dict:
+            if "status" in dict[appliance]:
+                status = dict[appliance]["status"]
+                dict[appliance]["status"] = {
+                    "raw": status,
+                    "bins": int_to_bit_list(status),
+                }
+            print(dict[appliance])
+        else:
+            print(f"didn't find {appliance} in {content}")
     fut.get_loop().call_soon_threadsafe(fut.set_result, None)
+
+
+def topic(args: Any):
+    match (args.enriched, args.control_mode):
+        case (True, _):
+            return ENRICHED_SENSOR_VALUES_TOPIC
+        case (_, True):
+            return CONTROL_MODES_TOPIC
+        case _:
+            return SENSOR_VALUES_TOPIC
 
 
 async def main():
@@ -43,12 +62,15 @@ async def main():
     CONFIG.mqtt_tls_enabled = True
     CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
     parse = ArgumentParser()
-    parse.add_argument("appliance")
-    parse.add_argument("-e", action="store_true")
+    parse.add_argument("appliance", default=None, nargs="?")
+    parse.add_argument("-e", "--enriched", action="store_true")
+    parse.add_argument("-m", "--control-mode", action="store_true")
     args = parse.parse_args()
     fut: asyncio.Future[None] = asyncio.Future()
-    topic = ENRICHED_SENSOR_VALUES_TOPIC if args.e else SENSOR_VALUES_TOPIC
-    await run_listener(topic, partial(message, args.appliance, fut))
+
+    await run_listener(
+        topic(args), partial(message, args.control_mode, args.appliance, fut)
+    )
     await fut
 
 

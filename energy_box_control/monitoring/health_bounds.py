@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class HealthBound:
     lower_bound: int | float
@@ -13,14 +14,16 @@ class HealthBound:
 
 TANK_BOUNDS = {
     "grey_water_tank": HealthBound(0, 0.99),
-    "black_water_tank": HealthBound(0, 0.6), # 80 cm is max, 92 cm is 1000 L * 2, need some margin to actually get the black water service in there
+    "black_water_tank": HealthBound(
+        0, 0.6
+    ),  # 80 cm is max, 92 cm is 1000 L * 2, need some margin to actually get the black water service in there
     "technical_water_tank": HealthBound(0.4, 0.99),
     "fresh_water_tank": HealthBound(0.4, 0.99),
 }
 
 
 YAZAKI_BOUNDS = {
-    "hot_input_temperature": HealthBound(70, 95),
+    "hot_input_temperature": HealthBound(65, 95),
     "waste_input_temperature": HealthBound(21.2, 35),
     "chilled_input_temperature": HealthBound(0, 15),
     "hot_flow": HealthBound(0.36, 1.44),
@@ -64,4 +67,4 @@ HEAT_PIPES_BOUNDS = {
 }
 
 
-BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.5, 1)}
+BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.4, 1)}

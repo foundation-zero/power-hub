@@ -45,7 +45,7 @@ from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
 from energy_box_control.time import time_ms
-from energy_box_control.units import Celsius, WattPerMeterSquared
+from energy_box_control.units import Celsius, Ratio, WattPerMeterSquared
 
 
 class HotControlMode(State):
@@ -180,8 +180,9 @@ class Setpoints:
         "minimum level of grey water tank for freshwater fill"
     )
     technical_water_min_fill_ratio: float = setpoint(
-        "mmaximum level of grey water tank for freshwater fill"
+        "maximum level of grey water tank for freshwater fill"
     )
+    low_battery: Ratio = setpoint("soc below which the chiller isn't used")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
@@ -209,7 +210,7 @@ def initial_control_state() -> PowerHubControlState:
             target_charging_temperature_offset=2,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=75,
+            pcm_discharged=70,
             pcm_charged=78,
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
@@ -227,6 +228,7 @@ def initial_control_state() -> PowerHubControlState:
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
             survival_mode=False,
+            low_battery=0.5,
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -414,6 +416,10 @@ within_yazaki_bounds = Fn.pred(
         ]
     )
 )
+low_battery = Fn.pred(
+    lambda control_state, sensors: sensors.electrical.battery_system_soc
+    < control_state.setpoints.low_battery
+)
 
 outside_yazaki_bounds = (~within_yazaki_bounds).holds_true(
     Marker("Outside Yazaki conditions"), timedelta(minutes=10)
@@ -447,7 +453,8 @@ chill_transitions: dict[
         ChillControlMode.PREPARE_CHILLER_VALVES,
     ): outside_yazaki_bounds,
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILLER_VALVES): should_chill
-    & ~pcm_charged,  # start chill with chiller if PCM is not fully charged
+    & ~pcm_charged
+    & ~low_battery,  # start chill with chiller if PCM is not fully charged and battery is not low
     (
         ChillControlMode.PREPARE_CHILLER_VALVES,
         ChillControlMode.CHILL_CHILLER,
@@ -456,7 +463,8 @@ chill_transitions: dict[
         ChillControlMode.CHILL_YAZAKI,
         ChillControlMode.PREPARE_CHILLER_VALVES,
     ): should_chill
-    & pcm_discharged,  # switch from Yazaki to chiller if PCM is fully discharged
+    & pcm_discharged
+    & ~low_battery,  # switch from Yazaki to chiller if PCM is fully discharged
     (
         ChillControlMode.CHILL_CHILLER,
         ChillControlMode.PREPARE_YAZAKI_VALVES,
@@ -464,7 +472,8 @@ chill_transitions: dict[
     & Fn.const_pred(True).holds_true(Marker("Chiller runs"), timedelta(minutes=10))
     & pcm_charged,  # switch from chiller to Yazaki if PCM is fully charged and chiller has for 10 mins
     (ChillControlMode.CHILL_YAZAKI, ChillControlMode.NO_CHILL): stop_chill,
-    (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill,
+    (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill
+    | low_battery,
 }
 
 chill_control_state_machine = StateMachine(ChillControlMode, chill_transitions)
@@ -519,6 +528,12 @@ def chill_control(
         .control(power_hub.chilled_loop_pump)
         .value(SwitchPumpControl(True))
     )
+    run_waste_yazaki = (
+        power_hub.control(power_hub.waste_pump)
+        .value(SwitchPumpControl(True, 6000))
+        .control(power_hub.chilled_loop_pump)
+        .value(SwitchPumpControl(True))
+    )
 
     run_yazaki_pumps = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
@@ -527,7 +542,7 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(False))
-        .combine(run_waste_chill)
+        .combine(run_waste_yazaki)
     )
     run_yazaki = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
@@ -536,7 +551,7 @@ def chill_control(
         .value(YazakiControl(True))
         .control(power_hub.chiller)
         .value(ChillerControl(False))
-        .combine(run_waste_chill)
+        .combine(run_waste_yazaki)
     )
 
     run_chiller = (
@@ -613,6 +628,7 @@ def chill_control(
 
     cooling_demand = any(
         fancoil.mode in [FancoilModes.COOL.value, FancoilModes.COOL_AND_HEAT.value]
+        and fancoil.ambient_temperature > fancoil.setpoint
         for fancoil in sensors.compound_fancoils
     )
 
