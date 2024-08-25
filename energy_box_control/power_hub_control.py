@@ -208,11 +208,11 @@ async def run(steps: Optional[int] = None):
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
         )
 
-        # notifier.send_events(
-        #     monitor.run_sensor_value_checks(
-        #         power_hub_sensors, "power_hub_simulation", control_values, power_hub
-        #     )
-        # )
+        notifier.send_events(
+            monitor.run_sensor_value_checks(
+                power_hub_sensors, "power_hub_simulation", control_values, power_hub
+            )
+        )
 
         publish_control_modes(mqtt_client, control_state, notifier)
         publish_control_values(mqtt_client, power_hub, control_values, notifier)

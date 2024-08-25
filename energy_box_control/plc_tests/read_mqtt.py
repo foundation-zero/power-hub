@@ -72,10 +72,10 @@ async def main():
     args = parse.parse_args()
     fut: asyncio.Future[None] = asyncio.Future()
 
-    def _on_connect(_id, client: mqtt.Client):
-        print("connected")
+    # def _on_connect(_id, client: mqtt.Client):
+    #     print("connected")
 
-        client.subscribe(topic(args), qos=1)
+    #     client.subscribe(topic(args), qos=1)
 
 
     # client = create_and_connect_client(_on_connect)
@@ -87,7 +87,7 @@ async def main():
     #     print(f"message {args}")
     #     exit(0)
 
-    # def _on_disconnect(*args):
+    # def _on_disconnect(client, _, reason):
     #     print(f"disconn {args}")
 
     # client.on_subscribe = _on_subscribe
@@ -101,5 +101,5 @@ async def main():
     )
     await fut
 
-
+# main()
 asyncio.run(main())
