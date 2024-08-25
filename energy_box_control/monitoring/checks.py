@@ -370,6 +370,15 @@ battery_soc_checks = [
     )
 ]
 
+shore_power_available_checks = [
+    valid_value_check(
+        name=f"shore_power_available",
+        value_fn=lambda sensors: sensors.electrical.shore_power_available,
+        message_fn=lambda name, _: f"{name} low",
+        valid=True,
+    )
+]
+
 weather_station_alarm_checks = [
     bit_check(
         name=f"weather_station_{alarm.name.lower()}",

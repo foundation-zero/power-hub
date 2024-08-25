@@ -1651,6 +1651,10 @@ class ElectricalSensors(WithoutAppliance):
     )
     vebus_charge_state: int = sensor(resolver=const_resolver(0))
 
+    shore_power_available: bool = sensor(resolver=const_resolver(True))
+    shore_power_active: bool = sensor(resolver=const_resolver(False))
+    shore_power_needed: bool = sensor(resolver=const_resolver(False))
+
     @property
     def pv_power(self):
         return sum(
