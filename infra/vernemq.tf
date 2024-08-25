@@ -1,13 +1,17 @@
 variable "vernemq_power_hub_password" {
   description = "password for the power hub user in vernemq"
 }
+variable "vernemq_power_hub_2_password" {
+  description = "password for the power hub 2 user in vernemq"
+}
 
 locals {
-  vernemq_record_name      = "vernemq.${var.env}.${var.subdomain}"
-  vernemq_certificate_name = "vernemq-certicate-secret"
-  vernemq_certificate_path = "/etc/ssl/vernemq"
-  vernemq_host             = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
-  vernemq_auth_secret_name = "vernemq-auth"
+  vernemq_record_name        = "vernemq.${var.env}.${var.subdomain}"
+  vernemq_certificate_name   = "vernemq-certicate-secret"
+  vernemq_certificate_path   = "/etc/ssl/vernemq"
+  vernemq_host               = "vernemq.${var.env}.${var.subdomain}.${var.root_hostname}"
+  vernemq_auth_secret_name   = "vernemq-auth"
+  vernemq_auth_2_secret_name = "vernemq-auth-2"
 }
 
 resource "kubernetes_manifest" "vernemq_ssl" {
@@ -44,6 +48,15 @@ resource "kubernetes_secret" "vernemq_auth" {
 
   data = {
     password = var.vernemq_power_hub_password
+  }
+}
+resource "kubernetes_secret" "vernemq_auth2" {
+  metadata {
+    name = local.vernemq_auth_2_secret_name
+  }
+
+  data = {
+    password = var.vernemq_power_hub_2_password
   }
 }
 
@@ -160,16 +173,29 @@ resource "helm_release" "vernemq" {
     name  = "additionalEnv[8].valueFrom.secretKeyRef.key"
     value = "password"
   }
+  set {
+    name  = "additionalEnv[9].name"
+    value = "DOCKER_VERNEMQ_USER_power-hub-2"
+  }
+  set {
+    name  = "additionalEnv[9].valueFrom.secretKeyRef.name"
+    value = kubernetes_secret.vernemq_auth2.metadata.0.name
+    type  = "string"
+  }
+  set {
+    name  = "additionalEnv[9].valueFrom.secretKeyRef.key"
+    value = "password"
+  }
 
   set {
-    name = "additionalEnv[9].name"
+    name  = "additionalEnv[10].name"
     value = "DOCKER_VERNEMQ_LISTENER__MAX_CONNECTION_LIFETIME"
   }
 
   set {
-    name = "additionalEnv[9].value"
+    name  = "additionalEnv[10].value"
     value = "1209600" # 2 weeks in seconds
-    type = "string"
+    type  = "string"
   }
 
   set {

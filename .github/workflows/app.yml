@@ -83,7 +83,6 @@ jobs:
         working-directory: ./app
         run: pnpm build
         env:
-          VITE_MQTT_PASSWORD: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
           VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
 
       - name: Deploy preview
