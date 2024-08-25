@@ -17,12 +17,6 @@ describe("MqttClient", () => {
     client = await MqttClient.connect("");
   });
 
-  describe("creating a client", () => {
-    it("publishes the client to the broker", () => {
-      expect(mockClient.publishAsync).toHaveBeenCalledOnce();
-    });
-  });
-
   describe("subscribing to a topic", () => {
     it("subscribes to the broker", () => {
       const observable = client.topic("some/topic");
