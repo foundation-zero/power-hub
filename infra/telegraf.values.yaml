@@ -9,7 +9,10 @@ config:
   inputs:
     - mqtt_consumer:
         topics:
-          - "power_hub/#"
+          - "power_hub/sensor_values"
+          - "power_hub/enriched_sensor_values"
+          - "power_hub/control_modes"
+          - "power_hub/control_values"
         data_format: "json_v2"
         json_v2:
           - timestamp_path: "time"
