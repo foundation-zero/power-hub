@@ -52,3 +52,7 @@ acl:
     user power-hub
     topic read #
     topic write #
+
+    user power-hub-2
+    topic read #
+    topic write #
