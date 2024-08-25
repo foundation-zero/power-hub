@@ -169,6 +169,7 @@ resource "helm_release" "vernemq" {
   set {
     name = "additionalEnv[9].value"
     value = "1209600" # 2 weeks in seconds
+    type = "string"
   }
 
   set {
