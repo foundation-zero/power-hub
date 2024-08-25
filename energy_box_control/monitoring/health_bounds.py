@@ -13,7 +13,7 @@ class HealthBound:
 # TODO This file needs to be reviewed on whether all values make sense.
 
 TANK_BOUNDS = {
-    "grey_water_tank": HealthBound(0, 0.99),
+    "grey_water_tank": HealthBound(0, 0.6),
     "black_water_tank": HealthBound(
         0, 0.6
     ),  # 80 cm is max, 92 cm is 1000 L * 2, need some margin to actually get the black water service in there
