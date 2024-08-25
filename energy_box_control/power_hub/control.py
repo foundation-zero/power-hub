@@ -213,8 +213,8 @@ def initial_control_state() -> PowerHubControlState:
             target_charging_temperature_offset=2,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=70,
-            pcm_charged=78,
+            pcm_discharged=78,
+            pcm_charged=90,
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
@@ -534,7 +534,7 @@ def chill_control(
     )
     run_waste_yazaki = (
         power_hub.control(power_hub.waste_pump)
-        .value(SwitchPumpControl(True, 6000))
+        .value(SwitchPumpControl(True, 5500))
         .control(power_hub.chilled_loop_pump)
         .value(SwitchPumpControl(True))
     )

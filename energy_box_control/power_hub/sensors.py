@@ -890,18 +890,6 @@ class ChillerSensors(FromState):
         )
 
     @property
-    def chilled_pressure(
-        self,
-    ) -> LiterPerSecond:
-        return (
-            self.chilled_loop_pump.pressure
-            if self.chiller_switch_valve.in_position(
-                CHILLER_SWITCH_VALVE_CHILLER_POSITION
-            )
-            else 0
-        )
-
-    @property
     def chill_power(self) -> Watt:
         return (
             self.chilled_flow
