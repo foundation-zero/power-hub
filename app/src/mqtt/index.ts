@@ -26,15 +26,8 @@ export class MqttClient {
     const client = await mqtt.connectAsync(url, {
       ...auth,
       clientId,
-      will: {
-        topic: `health/${clientId}`,
-        payload: "disconnected" as unknown as Buffer, // cast because browsers don't Buffer
-        qos: 1,
-        retain: true,
-      },
     });
 
-    await client.publishAsync(`health/${clientId}`, "connected");
     return new MqttClient(client);
   }
 
