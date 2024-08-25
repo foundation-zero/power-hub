@@ -162,6 +162,16 @@ resource "helm_release" "vernemq" {
   }
 
   set {
+    name = "additionalEnv[9].name"
+    value = "DOCKER_VERNEMQ_LISTENER__MAX_CONNECTION_LIFETIME"
+  }
+
+  set {
+    name = "additionalEnv[9].value"
+    value = "1209600" # 2 weeks in seconds
+  }
+
+  set {
     name  = "persistentVolume.enabled"
     value = var.env == "staging" ? "false" : "true"
   }
