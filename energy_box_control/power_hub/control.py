@@ -186,7 +186,7 @@ class Setpoints:
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
-    minimum_fresh_water_ratio: Ratio = setpoint(
+    fresh_water_min_fill_ratio: Ratio = setpoint(
         "minimum level of fresh water"
     )
 
@@ -226,7 +226,7 @@ def initial_control_state() -> PowerHubControlState:
             technical_water_max_fill_ratio=0.6,
             water_treatment_max_fill_ratio=0.5,
             water_treatment_min_fill_ratio=0.1,
-            minimum_fresh_water_ratio=0.2,
+            fresh_water_min_fill_ratio=0.3,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
@@ -526,11 +526,11 @@ def chill_control(
         .value(ChillerControl(False))
     )
 
-    run_waste_chill = (
+    run_waste_chiller = (
         power_hub.control(power_hub.waste_pump)
         .value(SwitchPumpControl(True))
         .control(power_hub.chilled_loop_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(True, 6000))
     )
     run_waste_yazaki = (
         power_hub.control(power_hub.waste_pump)
@@ -565,7 +565,7 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(True))
-        .combine(run_waste_chill)
+        .combine(run_waste_chiller)
     )
 
     if chill_control_mode == ChillControlMode.PREPARE_YAZAKI_VALVES:
@@ -786,7 +786,7 @@ should_fill_technical_from_fresh = Fn.pred(
 
 has_sufficient_fresh = Fn.pred(
     lambda control_state, sensors: sensors.fresh_water_tank.fill_ratio
-    > control_state.setpoints.minimum_fresh_water_fill_ratio
+    > control_state.setpoints.fresh_water_min_fill_ratio
 )
 
 stop_fill_technical_from_fresh = Fn.pred(
