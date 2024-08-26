@@ -49,6 +49,9 @@ acl:
   content: |-
     topic read #
 
+    user readonly
+    topic read #
+
     user power-hub
     topic read #
     topic write #
