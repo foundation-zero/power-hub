@@ -186,6 +186,8 @@ async def run(steps: Optional[int] = None):
         [PagerDutyNotificationChannel(CONFIG.pagerduty_control_app_key)]
     )
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
+    last_events = []
+    cycles_since_events = 0
 
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     control_state = initial_control_state()
@@ -208,14 +210,20 @@ async def run(steps: Optional[int] = None):
             power_hub, control_state, power_hub_sensors, power_hub_sensors.time
         )
 
-        notifier.send_events(
-            monitor.run_sensor_value_checks(
-                power_hub_sensors, "power_hub_simulation", control_values, power_hub
-            )
+        events = monitor.run_sensor_value_checks(
+            power_hub_sensors, "power_hub_simulation", control_values, power_hub
         )
+        if (
+            events != last_events or cycles_since_events > 60
+        ):  # keep alive every minute and on change
+            notifier.send_events(events)
+            cycles_since_events = 0
+            last_events = events
 
         publish_control_modes(mqtt_client, control_state, notifier)
         publish_control_values(mqtt_client, power_hub, control_values, notifier)
+
+        cycles_since_events = cycles_since_events + 1
 
 
 def main():

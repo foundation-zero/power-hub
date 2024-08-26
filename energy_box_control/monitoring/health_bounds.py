@@ -35,7 +35,7 @@ YAZAKI_BOUNDS = {
 }
 
 CHILLER_BOUNDS = {
-    "waste_input_temperature": HealthBound(0, 35),
+    "waste_input_temperature": HealthBound(0, 40),
     "chilled_input_temperature": HealthBound(0, 100),
     "waste_flow": HealthBound(0, 10),
     "chilled_flow": HealthBound(0, 10),
@@ -49,7 +49,7 @@ HOT_CIRCUIT_BOUNDS = {
 }
 
 CHILLED_CIRCUIT_BOUNDS = {
-    "temperature": HealthBound(5, 90),
+    "temperature": HealthBound(2, 90),
     "flow": HealthBound(0, 5),
 }
 

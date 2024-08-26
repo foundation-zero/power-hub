@@ -116,7 +116,6 @@ class RH33AlarmUpperBits(AlarmBit):
 
 
 class FlowSensorAlarm(AlarmBit):
-    REVERSE_FLOW = 3
     FLOW_ACTUAL_EXCEEDS_FS = 6
     FLOW_MEASUREMENT_ERROR = 7
     FLOWBODY_TEMPERATURE_SENSOR = 9

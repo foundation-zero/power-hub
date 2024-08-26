@@ -17,7 +17,7 @@ from energy_box_control.config import CONFIG
 logger = get_logger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class NotificationEvent:
     message: str
     source: str

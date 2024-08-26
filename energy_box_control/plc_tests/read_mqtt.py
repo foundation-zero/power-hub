@@ -59,17 +59,25 @@ def topic(args: Any):
 
 
 async def main():
-    CONFIG.mqtt_host = "vernemq.prod.power-hub.foundationzero.org"
-    CONFIG.mqtt_port = 8883
-    CONFIG.mqtt_tls_enabled = True
-    CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
-    CONFIG.logging_level = 'DEBUG'
     parse = ArgumentParser()
     parse.add_argument("appliance", default=None, nargs="?")
     parse.add_argument("-e", "--enriched", action="store_true")
     parse.add_argument("-m", "--control-mode", action="store_true")
     parse.add_argument("-r", "--raw", action="store_true")
+    parse.add_argument("-l", "--local", action="store_true")
     args = parse.parse_args()
+
+    if args.local:
+      CONFIG.mqtt_host = "127.0.0.1"
+      CONFIG.mqtt_port = 1883
+      CONFIG.mqtt_tls_enabled = False
+      CONFIG.logging_level = 'DEBUG'
+    else:
+      CONFIG.mqtt_host = "vernemq.prod.power-hub.foundationzero.org"
+      CONFIG.mqtt_port = 8883
+      CONFIG.mqtt_tls_enabled = True
+      CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
+      CONFIG.logging_level = 'DEBUG'
     fut: asyncio.Future[None] = asyncio.Future()
 
     # def _on_connect(_id, client: mqtt.Client):
