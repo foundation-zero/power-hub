@@ -200,7 +200,7 @@ def valid_value(
                 if not isnan(value)
                 else True
             ),
-            message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value}",
+            message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value:.2f}",
             control_fn=control_fn,
         ),
         severity,
