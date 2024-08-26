@@ -58,7 +58,10 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   };
 
   const connect = async () => {
-    client ??= await MqttClient.connect(import.meta.env.VITE_MQTT.replace("%HOST%", location.host));
+    client ??= await MqttClient.connect(
+      import.meta.env.VITE_MQTT.replace("%HOST%", location.host),
+      { username: import.meta.env.VITE_MQTT_USER, password: import.meta.env.VITE_MQTT_PASSWORD },
+    );
 
     return {
       sensors,

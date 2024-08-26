@@ -157,29 +157,33 @@ resource "helm_release" "vernemq" {
   }
   set {
     name  = "additionalEnv[6].name"
-    value = "DOCKER_VERNEMQ_ALLOW_ANONYMOUS"
-  }
-  set {
-    name  = "additionalEnv[6].value"
-    value = "on"
-    type  = "string"
-  }
-  set {
-    name  = "additionalEnv[7].name"
     value = "DOCKER_VERNEMQ_ACCEPT_EULA"
   }
   set {
-    name  = "additionalEnv[7].value"
+    name  = "additionalEnv[6].value"
     value = "yes"
     type  = "string"
   }
   set {
-    name  = "additionalEnv[8].name"
+    name  = "additionalEnv[7].name"
     value = "DOCKER_VERNEMQ_USER_power-hub"
   }
   set {
-    name  = "additionalEnv[8].valueFrom.secretKeyRef.name"
+    name  = "additionalEnv[7].valueFrom.secretKeyRef.name"
     value = kubernetes_secret.vernemq_auth.metadata.0.name
+    type  = "string"
+  }
+  set {
+    name  = "additionalEnv[7].valueFrom.secretKeyRef.key"
+    value = "password"
+  }
+  set {
+    name  = "additionalEnv[8].name"
+    value = "DOCKER_VERNEMQ_USER_power-hub-2"
+  }
+  set {
+    name  = "additionalEnv[8].valueFrom.secretKeyRef.name"
+    value = kubernetes_secret.vernemq_auth2.metadata.0.name
     type  = "string"
   }
   set {
@@ -188,38 +192,25 @@ resource "helm_release" "vernemq" {
   }
   set {
     name  = "additionalEnv[9].name"
-    value = "DOCKER_VERNEMQ_USER_power-hub-2"
+    value = "DOCKER_VERNEMQ_USER_readonly"
   }
   set {
     name  = "additionalEnv[9].valueFrom.secretKeyRef.name"
-    value = kubernetes_secret.vernemq_auth2.metadata.0.name
+    value = kubernetes_secret.vernemq_auth_readonly.metadata.0.name
     type  = "string"
   }
   set {
     name  = "additionalEnv[9].valueFrom.secretKeyRef.key"
     value = "password"
   }
-  set {
-    name  = "additionalEnv[10].name"
-    value = "DOCKER_VERNEMQ_USER_readonly"
-  }
-  set {
-    name  = "additionalEnv[10].valueFrom.secretKeyRef.name"
-    value = kubernetes_secret.vernemq_auth_readonly.metadata.0.name
-    type  = "string"
-  }
-  set {
-    name  = "additionalEnv[10].valueFrom.secretKeyRef.key"
-    value = "password"
-  }
 
   set {
-    name  = "additionalEnv[11].name"
+    name  = "additionalEnv[10].name"
     value = "DOCKER_VERNEMQ_LISTENER__MAX_CONNECTION_LIFETIME"
   }
 
   set {
-    name  = "additionalEnv[11].value"
+    name  = "additionalEnv[10].value"
     value = "1209600" # 2 weeks in seconds
     type  = "string"
   }
