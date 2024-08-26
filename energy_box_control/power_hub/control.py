@@ -186,9 +186,7 @@ class Setpoints:
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
-    fresh_water_min_fill_ratio: Ratio = setpoint(
-        "minimum level of fresh water"
-    )
+    fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
 
 
 @dataclass
@@ -663,6 +661,10 @@ should_cool = Fn.sensors(
 stop_cool = Fn.sensors(
     lambda sensors: sensors.outboard_exchange.output_temperature
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
+chiller_on = Fn.pred(
+    lambda control, _: control.chill_control.control_mode
+    in set([ChillControlMode.CHILL_CHILLER, ChillControlMode.CHILL_YAZAKI])
+)
 
 water_maker_on = Fn.pred(
     lambda _, sensors: sensors.water_maker.status
@@ -683,16 +685,18 @@ waste_transitions: dict[
     (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): (
         should_cool
         & Fn.const_pred(True).holds_true(
-            Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=2)
+            Marker("Prevent outboard pump from flip-flopping"), timedelta(seconds=2)
         )
     )
-    | water_maker_on,
+    | water_maker_on
+    | chiller_on,
     (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): (
         stop_cool & water_maker_off
     )
     & Fn.const_pred(True).holds_true(
         Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=5)
-    ),
+    )
+    & ~chiller_on,
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
