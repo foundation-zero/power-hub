@@ -8,6 +8,9 @@ config:
         - "stdout"
   inputs:
     - mqtt_consumer:
+        username: "readonly"
+        password: "w*j4kyhLPxaGwsuPi%pgL"
+
         topics:
           - "power_hub/sensor_values"
           - "power_hub/enriched_sensor_values"
