@@ -78,6 +78,8 @@ async def main():
       CONFIG.mqtt_tls_enabled = True
       CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
       CONFIG.logging_level = 'DEBUG'
+      CONFIG.mqtt_username = 'readonly'
+    CONFIG.mqtt_password = "w*j4kyhLPxaGwsuPi%pgL"
     fut: asyncio.Future[None] = asyncio.Future()
 
     # def _on_connect(_id, client: mqtt.Client):
