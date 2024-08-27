@@ -151,7 +151,7 @@ def unqueue_setpoints() -> Optional[Setpoints]:
             logger.error(
                 f"Couldn't process received setpoints ({setpoints_json}) with error: {e}"
             )
-    except queue.Empty:
+    except (queue.Empty, json.JSONDecodeError):
         pass
 
     return None
@@ -159,8 +159,9 @@ def unqueue_setpoints() -> Optional[Setpoints]:
 
 def unqueue_survival_mode() -> bool | None:
     try:
-        return json.loads(survival_queue.get(block=False))["survival"]
-    except queue.Empty:
+        dict = json.loads(survival_queue.get(block=False))
+        return dict.get("survival", False)
+    except (queue.Empty, json.JSONDecodeError):
         return None
 
 
