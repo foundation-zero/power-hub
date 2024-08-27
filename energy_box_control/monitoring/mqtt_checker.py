@@ -17,7 +17,7 @@ from energy_box_control.simulation import control_values_queue, CONTROL_VALUES_T
 from energy_box_control.config import CONFIG
 
 
-async def run_listeners(timeout: int = 60):
+async def run_listeners(timeout: int = 180):
     notifier = Notifier(
         [PagerDutyNotificationChannel(CONFIG.pagerduty_mqtt_checker_key)]
     )
