@@ -1,7 +1,8 @@
 services:
   mosquitto:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:2.0.14
     container_name: mosquitto
+    platform: linux/arm/v8
     restart: always
     ports:
       - "1883:1883"
@@ -9,10 +10,17 @@ services:
     volumes:
       - ./mosquitto:/local-config
       - ./certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
+    networks:
+      - power_hub_control
+    logging: &logging
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "50m"
 
     command: >
-      sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf && 
-             echo 'remote_password ${PROD_MQTT_PASSWORD}' >> /mosquitto/config/mosquitto.conf && 
+      sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf &&
+             echo 'remote_password ${PROD_MQTT_PASSWORD}' >> /mosquitto/config/mosquitto.conf &&
              mosquitto -c /mosquitto/config/mosquitto.conf"
 
     healthcheck:
@@ -38,15 +46,16 @@ services:
     depends_on:
       mosquitto:
         condition: service_healthy
-    image: python-control-app:latest-armv7
-    platform: linux/arm/v7
+    image: python-control-app:latest-armv8
+    platform: linux/arm/v8
     container_name: control
     command: "energy_box_control.power_hub_control"
     networks:
       - power_hub_control
     env_file:
       - ./.env
-    restart: on-failure:5
+    restart: on-failure
+    logging: *logging
 
 networks:
   power_hub_control:
