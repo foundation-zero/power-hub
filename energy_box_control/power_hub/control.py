@@ -86,6 +86,7 @@ class ChillControlState:
 class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
+    TOGGLE_OUTBOARD = "toggle_outboard"  # used to toggle the signal to the pump, when the frequency controller starts (after a power outage) it turns on at a rising edge
 
 
 @dataclass
@@ -182,11 +183,17 @@ class Setpoints:
     technical_water_min_fill_ratio: float = setpoint(
         "maximum level of grey water tank for freshwater fill"
     )
-    low_battery: Ratio = setpoint("soc below which the chiller isn't used")
+    fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
-    fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
+    low_battery: Ratio = setpoint("soc below which the chiller isn't used")
+    high_heat_dump_temperature: Celsius = setpoint(
+        "Trigger temperature for the outboard pump toggle"
+    )
+    heat_dump_outboard_divergence_temperature: Celsius = setpoint(
+        "Trigger temperature difference for the outboard pump toggle"
+    )
 
 
 @dataclass
@@ -231,6 +238,8 @@ def initial_control_state() -> PowerHubControlState:
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
             survival_mode=False,
             low_battery=0.5,
+            high_heat_dump_temperature=38,
+            heat_dump_outboard_divergence_temperature=3,
         ),
         hot_control=HotControlState(
             context=Context(),
@@ -674,6 +683,17 @@ water_maker_off = Fn.pred(
     lambda _, sensors: not sensors.water_maker.status
     == WaterMakerStatus.WATER_PRODUCTION.value
 )
+high_temp_heat_dump = Fn.pred(
+    lambda control_state, sensors: sensors.rh33_heat_dump.average_temperature()
+    > control_state.setpoints.high_heat_dump_temperature
+)
+diverge_heat_dump_outboard = Fn.pred(
+    lambda control_state, sensors: (
+        sensors.rh33_heat_dump.average_temperature()
+        - sensors.outboard_temperature_sensor.temperature
+    )
+    > control_state.setpoints.heat_dump_outboard_divergence_temperature
+)
 
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
@@ -697,6 +717,14 @@ waste_transitions: dict[
         Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=5)
     )
     & ~chiller_on,
+    (
+        WasteControlMode.RUN_OUTBOARD,
+        WasteControlMode.TOGGLE_OUTBOARD,
+    ): high_temp_heat_dump
+    & diverge_heat_dump_outboard,
+    (WasteControlMode.TOGGLE_OUTBOARD, WasteControlMode.RUN_OUTBOARD): Fn.const_pred(
+        True
+    ).holds_true(Marker("Keep low"), timedelta(seconds=1)),
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
@@ -724,7 +752,7 @@ def waste_control(
                 sensors.rh33_heat_dump.cold_temperature,
             )
         )
-    else:
+    else:  # off or toggle
         frequency_controller = control_state.waste_control.frequency_controller
         frequency_control = 0.5
 
