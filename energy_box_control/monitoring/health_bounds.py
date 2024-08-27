@@ -55,7 +55,7 @@ CHILLED_CIRCUIT_BOUNDS = {
 WASTE_CIRCUIT_BOUNDS = {
     "temperature": HealthBound(5, 90),
     "flow": HealthBound(0, 5),
-    "pressure": HealthBound(0, 3)
+    "pressure": HealthBound(0, 3),
 }
 
 COOLING_DEMAND_CIRCUIT_BOUNDS = {

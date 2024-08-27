@@ -67,17 +67,17 @@ async def main():
     args = parse.parse_args()
 
     if args.local:
-      CONFIG.mqtt_host = "127.0.0.1"
-      CONFIG.mqtt_port = 1883
-      CONFIG.mqtt_tls_enabled = False
-      CONFIG.logging_level = 'DEBUG'
+        CONFIG.mqtt_host = "127.0.0.1"
+        CONFIG.mqtt_port = 1883
+        CONFIG.mqtt_tls_enabled = False
+        CONFIG.logging_level = "DEBUG"
     else:
-      CONFIG.mqtt_host = "vernemq.prod.power-hub.foundationzero.org"
-      CONFIG.mqtt_port = 8883
-      CONFIG.mqtt_tls_enabled = True
-      CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
-      CONFIG.logging_level = 'DEBUG'
-      CONFIG.mqtt_username = 'readonly'
+        CONFIG.mqtt_host = "vernemq.prod.power-hub.foundationzero.org"
+        CONFIG.mqtt_port = 8883
+        CONFIG.mqtt_tls_enabled = True
+        CONFIG.mqtt_tls_path = "./plc/certs/ISRG_ROOT_X1.crt"
+        CONFIG.logging_level = "DEBUG"
+        CONFIG.mqtt_username = "readonly"
     CONFIG.mqtt_password = "w*j4kyhLPxaGwsuPi%pgL"
     fut: asyncio.Future[None] = asyncio.Future()
 
@@ -85,7 +85,6 @@ async def main():
     #     print("connected")
 
     #     client.subscribe(topic(args), qos=1)
-
 
     # client = create_and_connect_client(_on_connect)
 
@@ -109,6 +108,7 @@ async def main():
         topic(args), partial(message, args.control_mode, args.raw, args.appliance, fut)
     )
     await fut
+
 
 # main()
 asyncio.run(main())

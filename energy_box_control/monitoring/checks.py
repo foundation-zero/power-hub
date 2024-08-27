@@ -306,9 +306,21 @@ chilled_circuit_checks = [
 ]
 
 waste_circuit_checks = [
-    valid_value("waste_circuit_temperature_check", lambda sensors: sensors.rh33_waste.cold_temperature, WASTE_CIRCUIT_BOUNDS["temperature"]),
-    valid_value("waste_circuit_flow_check", lambda sensors: sensors.waste_flow_sensor.flow, WASTE_CIRCUIT_BOUNDS["flow"]),
-    valid_value("waste_circuit_pressure_check", lambda sensors: sensors.waste_pressure_sensor.pressure, WASTE_CIRCUIT_BOUNDS["pressure"]),
+    valid_value(
+        "waste_circuit_temperature_check",
+        lambda sensors: sensors.rh33_waste.cold_temperature,
+        WASTE_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "waste_circuit_flow_check",
+        lambda sensors: sensors.waste_flow_sensor.flow,
+        WASTE_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "waste_circuit_pressure_check",
+        lambda sensors: sensors.waste_pressure_sensor.pressure,
+        WASTE_CIRCUIT_BOUNDS["pressure"],
+    ),
 ]
 
 cooling_demand_circuit_checks = [
