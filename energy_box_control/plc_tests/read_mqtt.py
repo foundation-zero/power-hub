@@ -28,7 +28,6 @@ def message(
     topic: str,
     message: mqtt.MQTTMessage,
 ):
-    print("test")
     content = str(message.payload, "utf-8")
     content = content.replace("-#Inf", '"-#Inf"').replace("#Inf", '"#Inf"')
     if modes or raw:

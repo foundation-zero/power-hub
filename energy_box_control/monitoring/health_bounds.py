@@ -29,7 +29,6 @@ YAZAKI_BOUNDS = {
     "hot_flow": HealthBound(0.36, 1.44),
     "waste_flow": HealthBound(1.00, 3.06),
     "chilled_flow": HealthBound(0.608, 0.912),
-    "chilled_pressure": HealthBound(0, 5.88),
     "waste_pressure": HealthBound(0, 5.88),
     "hot_pressure": HealthBound(0, 5.88),
 }
@@ -70,4 +69,4 @@ HEAT_PIPES_BOUNDS = {
 }
 
 
-BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.4, 1)}
+BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.35, 1)}
