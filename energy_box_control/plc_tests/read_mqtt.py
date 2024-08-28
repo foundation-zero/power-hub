@@ -4,7 +4,7 @@ from functools import partial
 import json
 from typing import Any
 from energy_box_control.config import CONFIG
-from energy_box_control.mqtt import create_and_connect_client, run_listener
+from energy_box_control.mqtt import run_listener
 from energy_box_control.power_hub_control import (
     CONTROL_MODES_TOPIC,
     ENRICHED_SENSOR_VALUES_TOPIC,
@@ -80,29 +80,6 @@ async def main():
         CONFIG.mqtt_username = "readonly"
     CONFIG.mqtt_password = "w*j4kyhLPxaGwsuPi%pgL"
     fut: asyncio.Future[None] = asyncio.Future()
-
-    # def _on_connect(_id, client: mqtt.Client):
-    #     print("connected")
-
-    #     client.subscribe(topic(args), qos=1)
-
-    # client = create_and_connect_client(_on_connect)
-
-    # def _on_subscribe(*args):
-    #     print("subscribed")
-
-    # def _on_message(*args):
-    #     print(f"message {args}")
-    #     exit(0)
-
-    # def _on_disconnect(client, _, reason):
-    #     print(f"disconn {args}")
-
-    # client.on_subscribe = _on_subscribe
-    # client.on_message = _on_message
-    # client.on_disconnect = _on_disconnect
-
-    # client.loop_forever()
 
     await run_listener(
         topic(args), partial(message, args.control_mode, args.raw, args.appliance, fut)

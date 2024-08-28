@@ -2,21 +2,15 @@ from argparse import ArgumentParser
 import asyncio
 from dataclasses import fields
 from functools import partial
-import json
 from time import sleep
-from typing import get_type_hints
-from energy_box_control import power_hub
 from energy_box_control.appliances.base import control_class
 from energy_box_control.config import CONFIG
 from energy_box_control.monitoring.monitoring import Notifier
 from energy_box_control.mqtt import create_and_connect_client, run_listener
-from energy_box_control.power_hub.control import control_to_json
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.schedules import PowerHubSchedules
 from energy_box_control.power_hub_control import (
     CONTROL_VALUES_TOPIC,
-    ENRICHED_SENSOR_VALUES_TOPIC,
-    SENSOR_VALUES_TOPIC,
     publish_control_values,
 )
 import paho.mqtt.client as mqtt
