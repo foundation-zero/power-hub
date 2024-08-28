@@ -1,30 +1,32 @@
 import { MqttClient, connectAsync } from "mqtt";
-import { MqttPublisher } from "./publisher.mjs";
 import { MqttBrokerOptions, MqttMessage, MqttTopicMessage } from "../types/index.js";
+import { Rx, Tx } from "./channel.mjs";
 
 const RETRY_TIMEOUT_IN_MS = 10000;
 
 export class MqttBroker {
-  public constructor(
-    private readonly publisher: MqttPublisher,
-    public readonly options: MqttBrokerOptions,
-  ) {}
+  public constructor(public readonly options: MqttBrokerOptions) {
+    this.subscribeTopics = options.subscribeTopics ?? [];
+  }
 
-  private client?: MqttClient;
-  private readonly queue: MqttTopicMessage[] = [];
+  public client?: MqttClient;
+  private readonly subscribeTopics: string[];
+  private readonly retryQueue: MqttTopicMessage[] = [];
 
   private get name(): string {
     return `MQTT broker [${this.options.name ?? this.options.url}]`;
   }
 
-  public async connectAndSubscribe(topics: string[]) {
+  public async connectAndSubscribe(tx: Tx<MqttTopicMessage>) {
     if (this.client) return;
 
     try {
       this.client = await connectAsync(this.options.url, {
         ...(this.options.authentication ?? {}),
-        clientId: this.publisher.id,
         reconnectPeriod: RETRY_TIMEOUT_IN_MS,
+        keepalive: this.options.keepalive,
+        protocol: this.options.protocol,
+        ca: this.options.ca,
       });
 
       console.info(`Connected to ${this.name}`);
@@ -41,46 +43,45 @@ export class MqttBroker {
         console.error(`Error occurred on ${this.name}: ${e}`),
       );
 
-      if (this.options.origin) {
-        this.client.on("message", this.onMessage.bind(this));
-        this.subscribeToTopics(topics);
-      }
-
-      if (this.options.target) {
-        this.flushQueue();
-      }
+      this.client.on("message", (topic: string, message: Buffer) => {
+        tx.queue([topic, message]);
+      });
+      await this.subscribeToTopics();
     } catch (e) {
       console.error(`Connection to ${this.name} failed: ${e}`);
-      setTimeout(() => this.connectAndSubscribe(topics), RETRY_TIMEOUT_IN_MS);
+      setTimeout(() => this.connectAndSubscribe(tx), RETRY_TIMEOUT_IN_MS);
     }
   }
 
-  private async flushQueue() {
-    if (!this.client || !this.queue.length) return;
+  public async flushQueue(rx: Rx<MqttTopicMessage>) {
+    if (!this.isConnected()) return;
 
     let message: MqttTopicMessage | undefined;
+    const retryQueue: MqttTopicMessage[] = [];
 
-    while ((message = this.queue.shift())) {
-      await this.publish(...message);
+    while ((message = rx.shift())) {
+      await this.publish(...message, retryQueue);
     }
+    while ((message = this.retryQueue.shift())) {
+      await this.publish(...message, retryQueue);
+    }
+    this.retryQueue.push(...retryQueue);
   }
 
-  private async subscribeToTopics(topics: string[]) {
-    if (!this.client) return;
+  private async subscribeToTopics() {
+    if (!this.client || !this.subscribeTopics.length) return;
 
     try {
-      await this.client.subscribeAsync(topics);
+      await this.client.subscribeAsync(this.subscribeTopics);
     } catch (e) {
       console.error(`Subscribing to ${this.name} failed: ${e}`);
-      setTimeout(() => this.subscribeToTopics(topics), RETRY_TIMEOUT_IN_MS);
+      setTimeout(() => this.subscribeToTopics(), RETRY_TIMEOUT_IN_MS);
     }
   }
 
-  public async publish(topic: string, message: MqttMessage) {
-    if (!this.options.target) return;
-
+  public async publish(topic: string, message: MqttMessage, retryQueue: MqttTopicMessage[]) {
     if (!this.client) {
-      this.queue.push([topic, message]);
+      retryQueue.push([topic, message]);
       return;
     }
 
@@ -93,7 +94,20 @@ export class MqttBroker {
     }
   }
 
-  private onMessage(topic: string, message: Buffer): void {
-    this.publisher.publish(this, topic, message);
+  public isConnected(): boolean {
+    return this.client?.connected ?? false;
+  }
+
+  public async publishHealth(): Promise<boolean> {
+    if (!this.client || !this.isConnected()) {
+      return false;
+    }
+
+    try {
+      await this.client.publishAsync("health/bridge", "connected", {});
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
