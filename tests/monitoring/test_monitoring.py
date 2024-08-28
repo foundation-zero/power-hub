@@ -161,7 +161,6 @@ def test_chilled_circuit_flow_check(
     ]
 
 
-
 def test_cooling_demand_circuit_temperature_check(
     sensors: PowerHubSensors, source, out_of_bounds_value
 ):
@@ -188,7 +187,6 @@ def test_cooling_demand_circuit_flow_check(
             severity=Severity.CRITICAL,
         )
     ]
-
 
 
 def test_heat_pipes_temperature_check(

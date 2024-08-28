@@ -87,7 +87,7 @@ class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
     TOGGLE_OUTBOARD = "toggle_outboard"  # used to toggle the signal to the pump, when the frequency controller starts (after a power outage) it turns on at a rising edge
-    RUN_OUTBOARD_AFTER_TOGGLE = "run_outboard_after_toggle" # keep running the outboard after toggle to return to normal state
+    RUN_OUTBOARD_AFTER_TOGGLE = "run_outboard_after_toggle"  # keep running the outboard after toggle to return to normal state
 
 
 @dataclass
@@ -723,10 +723,16 @@ waste_transitions: dict[
         WasteControlMode.TOGGLE_OUTBOARD,
     ): high_temp_heat_dump
     & diverge_heat_dump_outboard,
-    (WasteControlMode.TOGGLE_OUTBOARD, WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE): Fn.const_pred(
-        True
-    ).holds_true(Marker("Keep low"), timedelta(seconds=1)),
-    (WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE, WasteControlMode.RUN_OUTBOARD): Fn.const_pred(True).holds_true(Marker("run outboard until temperatures have stabilized"), timedelta(minutes=10))
+    (
+        WasteControlMode.TOGGLE_OUTBOARD,
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1)),
+    (
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+        WasteControlMode.RUN_OUTBOARD,
+    ): Fn.const_pred(True).holds_true(
+        Marker("run outboard until temperatures have stabilized"), timedelta(minutes=10)
+    ),
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
@@ -747,7 +753,10 @@ def waste_control(
         time,
     )
 
-    if waste_control_mode in [WasteControlMode.RUN_OUTBOARD, WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE]:
+    if waste_control_mode in [
+        WasteControlMode.RUN_OUTBOARD,
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+    ]:
         frequency_controller, frequency_control = (
             control_state.waste_control.frequency_controller.run(
                 control_state.setpoints.cooling_target_temperature,
@@ -762,7 +771,12 @@ def waste_control(
         WasteControlState(context, waste_control_mode, frequency_controller),
         power_hub.control(power_hub.outboard_pump).value(
             FrequencyPumpControl(
-                waste_control_mode == WasteControlMode.RUN_OUTBOARD, frequency_control
+                waste_control_mode
+                in [
+                    WasteControlMode.RUN_OUTBOARD,
+                    WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+                ],
+                frequency_control,
             )
         ),
     )
