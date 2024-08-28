@@ -2,14 +2,13 @@ services:
   mosquitto:
     image: eclipse-mosquitto
     container_name: mosquitto
-    platform: linux/arm/v7
     restart: always
     ports:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - /home/admin/docker-files/plc-docker-compose/mosquitto:/local-config
-      - /home/admin/docker-files/plc-docker-compose/certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
+      - ./mosquitto:/local-config
+      - ./certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
 
     command: >
       sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf && 
