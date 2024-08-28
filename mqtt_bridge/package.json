@@ -1,0 +1,42 @@
+{
+  "name": "fz-mqtt-bridge",
+  "version": "0.0.1",
+  "description": "A standalone mqtt bridge between two or more brokers",
+  "main": "index.js",
+  "scripts": {
+    "test:unit": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foundation-zero/energy-box-control.git"
+  },
+  "keywords": [
+    "mqtt",
+    "broker",
+    "bridge",
+    "standalone"
+  ],
+  "author": "Foundation Zero",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/foundation-zero/energy-box-control/issues"
+  },
+  "homepage": "https://github.com/foundation-zero/energy-box-control#readme",
+  "dependencies": {
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.10.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^22.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
+    "eslint": "^9.9.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}

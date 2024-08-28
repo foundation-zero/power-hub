@@ -1,0 +1,12 @@
+{
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "types": ["@types/node"]
+  },
+  "include": ["./src/**/*.*", "serve.mts", "*.d.ts"],
+  "exclude": ["**/*.spec.*"]
+}
