@@ -238,7 +238,7 @@ def initial_control_state() -> PowerHubControlState:
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
             survival_mode=False,
-            low_battery=0.5,
+            low_battery=0.55,
             high_heat_dump_temperature=38,
             heat_dump_outboard_divergence_temperature=3,
         ),
