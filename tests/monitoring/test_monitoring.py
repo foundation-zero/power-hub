@@ -22,7 +22,7 @@ from energy_box_control.power_hub.components import (
     WASTE_SWITCH_VALVE_CHILLER_POSITION,
     WASTE_SWITCH_VALVE_YAZAKI_POSITION,
 )
-from energy_box_control.power_hub.control import no_control
+from energy_box_control.power_hub.control.control import no_control
 from energy_box_control.power_hub.components import HOT_SWITCH_VALVE_PCM_POSITION
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import (

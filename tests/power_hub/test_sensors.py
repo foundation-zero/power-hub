@@ -8,7 +8,7 @@ from pytest import fixture
 import pytest
 from energy_box_control.config import CONFIG
 from energy_box_control.mqtt import run_listener
-from energy_box_control.power_hub.control import no_control
+from energy_box_control.power_hub.control.control import no_control
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import sensor_values
 from energy_box_control.power_hub_control import queue_on_message
