@@ -904,7 +904,7 @@ class ChillerSensors(FromState):
         return [
             fault
             for index, faults in enumerate(CHILLER_FAULTS)
-            if self.fault_code & (1 << index)
+            if int(self.fault_code) & (1 << index)
             for fault in faults
         ]
 
