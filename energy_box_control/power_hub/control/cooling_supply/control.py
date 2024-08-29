@@ -6,6 +6,7 @@ from energy_box_control.power_hub.control.cooling_supply.state import (
     CoolingSupplyControlState,
 )
 from energy_box_control.power_hub.control.state import Fn, PowerHubControlState
+from energy_box_control.power_hub.control.chill.control import low_battery
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
 
@@ -35,11 +36,12 @@ cooling_supply_transitions: dict[
         CoolingSupplyControlMode.SUPPLY,
     ): cooling_demand
     & chilled_water_cold_enough
+    & ~low_battery
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
     ),
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | chilled_water_too_warm
+        ~cooling_demand | chilled_water_too_warm | low_battery
     )
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
