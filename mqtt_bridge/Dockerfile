@@ -1,34 +1,20 @@
-ARG NODE_VERSION=20
-ARG PNPM_VERSION=8.15.5
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+COPY . /app
+WORKDIR /app
 
-FROM node:${NODE_VERSION}-alpine AS builder
+FROM base AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
-# Use development for installing dev dependencies
-ENV NODE_ENV development
+FROM base AS build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm run build
 
-WORKDIR /usr/src/app
+FROM node:20-slim AS release
+WORKDIR /app
 
-# Install pnpm.
-RUN --mount=type=cache,target=/root/.npm \
-    npm install -g pnpm@${PNPM_VERSION}
-
-COPY package.json .
-RUN pnpm install
-
-# Copy the rest of the source files into the image.
-COPY . .
-
-# Generate js files from typescript
-RUN pnpm tsc
-
-ENV NODE_ENV production
-
-FROM node:${NODE_VERSION}-alpine AS release
-
-WORKDIR /usr/src/app
-
-COPY --from=builder /usr/src/app/node_modules node_modules
-COPY --from=builder /usr/src/app/dist/ dist/
-
-# Run the application.
-CMD ["node", "dist/serve.mjs"]
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=build /app/dist /app/dist
+CMD [ "node", "dist/serve.mjs" ]
