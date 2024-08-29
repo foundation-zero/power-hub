@@ -12,7 +12,7 @@
 
       <p>
         The physical principle by which solar panels convert light to electricty is the same the
-        principle used by LEDs to convert electricity to light. Electricity is formed by electron
+        principle used by LEDs to convert electricity to light. Electricity is formed by electrons
         moving along a conductor. By mixing the materials that conductor is made from, we can create
         a gap for the electron to jump across. Then when a wave of light hits the electron just
         right, it can yeet it across the gap and send it on its way.
