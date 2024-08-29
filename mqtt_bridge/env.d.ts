@@ -18,6 +18,7 @@ declare global {
       SUBSCRIBE_TO: string;
       PUBLISH_INTERVAL_SECONDS: string;
       PUBLISH_TIMEOUT_SECONDS: string;
+      SUBSCRIBE_TIMEOUT_SECONDS: string;
     }
   }
 }

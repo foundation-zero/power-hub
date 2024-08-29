@@ -1,7 +1,8 @@
 services:
   mosquitto:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:2.0.14
     container_name: mosquitto
+    platform: linux/arm/v8
     restart: always
     ports:
       - "1883:1883"
@@ -9,10 +10,17 @@ services:
     volumes:
       - ./mosquitto:/local-config
       - ./certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
+    networks:
+      - power_hub_control
+    logging: &logging
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "50m"
 
     command: >
-      sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf && 
-             echo 'remote_password ${PROD_MQTT_PASSWORD}' >> /mosquitto/config/mosquitto.conf && 
+      sh -c "cp /local-config/mosquitto.conf /mosquitto/config/mosquitto.conf &&
+             echo 'remote_password ${PROD_MQTT_PASSWORD}' >> /mosquitto/config/mosquitto.conf &&
              mosquitto -c /mosquitto/config/mosquitto.conf"
 
     healthcheck:
@@ -27,7 +35,7 @@ services:
           "-i",
           "healthcheck",
           "-W",
-          "3"
+          "3",
         ]
       interval: 30s
       timeout: 10s
@@ -38,15 +46,46 @@ services:
     depends_on:
       mosquitto:
         condition: service_healthy
-    image: python-control-app:latest-armv7
-    platform: linux/arm/v7
+    image: python-control-app:latest-armv8
+    platform: linux/arm/v8
     container_name: control
     command: "energy_box_control.power_hub_control"
     networks:
       - power_hub_control
     env_file:
       - ./.env
-    restart: on-failure:5
+    restart: on-failure
+    logging: *logging
+
+  bridge:
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    image: mqtt_bridge:latest-armv8
+    platform: linux/arm/v8
+    container_name: bridge
+    volumes:
+      - ./certs/ISRG_ROOT_X1.crt:/usr/src/app/certs/ISRG_ROOT_X1.crt
+    networks:
+      - power_hub_control
+    restart: on-failure
+    logging: *logging
+    environment:
+      CONNECTION_TIMEOUT_SECONDS: 30
+      MAX_QUEUE_SIZE: 120
+      TARGET_URL: "mqtts://vernemq.prod.power-hub.foundationzero.org:8883"
+      TARGET_NAME: "cloud"
+      TARGET_KEEPALIVE: 30
+      TARGET_PROTOCOL: "mqtts"
+      TARGET_USERNAME: power-hub
+      TARGET_PASSWORD: "${PROD_MQTT_PASSWORD}"
+      TARGET_CA_FILE: /usr/src/app/certs/ISRG_ROOT_X1.crt
+      ORIGIN_URL: "mosquitto"
+      ORIGIN_NAME: "local"
+      ORIGIN_KEEPALIVE: 30
+      PUBLISH_INTERVAL_SECONDS: 1
+      PUBLISH_TIMEOUT_SECONDS: 30
+      SUBSCRIBE_TO: "power_hub/#"
 
 networks:
   power_hub_control:

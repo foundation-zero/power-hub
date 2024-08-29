@@ -2,6 +2,7 @@ import logging
 import logging.config
 from logging import Logger
 import sys
+import traceback
 from types import TracebackType
 from energy_box_control.config import CONFIG
 
@@ -9,7 +10,9 @@ from energy_box_control.config import CONFIG
 def uncaught_exception_hook(
     type: type[BaseException], value: BaseException, tb: TracebackType | None
 ):
-    logging.error(f"An unhandled error raised {type}\n{value}\n{tb}")
+    logging.error(
+        f"An unhandled error raised {type}\n{value}\n{traceback.format_exception(value)}"
+    )
 
 
 sys.excepthook = uncaught_exception_hook

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from functools import reduce
 import json
 from typing import Any, cast
+
 from energy_box_control.appliances.base import control_class
 from energy_box_control.appliances.frequency_controlled_pump import FrequencyPumpControl
 from energy_box_control.appliances.water_treatment import WaterTreatmentControl
@@ -44,7 +45,7 @@ from energy_box_control.network import ControlBuilder, NetworkControl
 
 from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
 from energy_box_control.time import time_ms
-from energy_box_control.units import Celsius, WattPerMeterSquared
+from energy_box_control.units import Celsius, Ratio, WattPerMeterSquared
 
 
 class HotControlMode(State):
@@ -85,6 +86,8 @@ class ChillControlState:
 class WasteControlMode(State):
     NO_OUTBOARD = "no_outboard"
     RUN_OUTBOARD = "run_outboard"
+    TOGGLE_OUTBOARD = "toggle_outboard"  # used to toggle the signal to the pump, when the frequency controller starts (after a power outage) it turns on at a rising edge
+    RUN_OUTBOARD_AFTER_TOGGLE = "run_outboard_after_toggle"  # keep running the outboard after toggle to return to normal state
 
 
 @dataclass
@@ -179,11 +182,19 @@ class Setpoints:
         "minimum level of grey water tank for freshwater fill"
     )
     technical_water_min_fill_ratio: float = setpoint(
-        "mmaximum level of grey water tank for freshwater fill"
+        "maximum level of grey water tank for freshwater fill"
     )
+    fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
     survival_mode: bool = setpoint("survival mode on/off")
+    low_battery: Ratio = setpoint("soc below which the chiller isn't used")
+    high_heat_dump_temperature: Celsius = setpoint(
+        "Trigger temperature for the outboard pump toggle"
+    )
+    heat_dump_outboard_divergence_temperature: Celsius = setpoint(
+        "Trigger temperature difference for the outboard pump toggle"
+    )
 
 
 @dataclass
@@ -205,11 +216,11 @@ def initial_control_state() -> PowerHubControlState:
         setpoints=Setpoints(
             pcm_min_temperature=90,
             pcm_max_temperature=95,
-            target_charging_temperature_offset=5,
+            target_charging_temperature_offset=2,
             minimum_charging_temperature_offset=1,
             minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
             pcm_discharged=75,
-            pcm_charged=78,
+            pcm_charged=80,
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
@@ -217,33 +228,39 @@ def initial_control_state() -> PowerHubControlState:
             cooling_in_min_temperature=20,
             cooling_in_max_temperature=35,
             cooling_target_temperature=28,
-            technical_water_min_fill_ratio=0.1,
-            technical_water_max_fill_ratio=0.3,
+            technical_water_min_fill_ratio=0.5,
+            technical_water_max_fill_ratio=0.6,
             water_treatment_max_fill_ratio=0.5,
             water_treatment_min_fill_ratio=0.1,
+            fresh_water_min_fill_ratio=0.3,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
             survival_mode=False,
+            low_battery=0.5,
+            high_heat_dump_temperature=38,
+            heat_dump_outboard_divergence_temperature=3,
         ),
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
-            feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1), True)),
+            feedback_valve_controller=Pid(
+                PidConfig(0, 0.005, 0, (0, 0.52))
+            ),  # can't fully bypass, otherwise temperature difference doesn't reach temperature sensor
             hot_switch_valve_position=HOT_SWITCH_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
             context=Context(),
             control_mode=ChillControlMode.NO_CHILL,
-            yazaki_hot_feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0, 1))),
+            yazaki_hot_feedback_valve_controller=Pid(PidConfig(0, 0.01, 0, (0.5, 1))),
             chiller_switch_valve_position=CHILLER_SWITCH_VALVE_YAZAKI_POSITION,
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
             context=Context(),
             control_mode=WasteControlMode.NO_OUTBOARD,
-            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.4, 1), reversed=True)),
+            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.7, 1), reversed=True)),
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY
@@ -263,9 +280,9 @@ should_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state
 stop_heat_pcm = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
     lambda state: state.setpoints.pcm_max_temperature
 )
-cannot_heat_pcm = Fn.pred(
+can_heat_pcm = Fn.pred(
     lambda control_state, sensors: sensors.heat_pipes.output_temperature
-    < (
+    > (
         sensors.pcm.temperature
         + control_state.setpoints.minimum_charging_temperature_offset
     )
@@ -284,14 +301,14 @@ hot_transitions: dict[
 ] = {
     (HotControlMode.PREPARE_HEAT_PCM, HotControlMode.HEAT_PCM): ready_for_pcm,
     (HotControlMode.HEAT_PCM, HotControlMode.IDLE): stop_heat_pcm
-    | cannot_heat_pcm.holds_true(
+    | (~can_heat_pcm).holds_true(
         Marker("Heat pipes output temperature not high enough"), timedelta(minutes=1)
     ),
     (HotControlMode.IDLE, HotControlMode.WAITING_FOR_SUN): (
         ~sufficient_sunlight
     ).holds_true(Marker("Global irradiance below treshold"), timedelta(minutes=10)),
     (HotControlMode.IDLE, HotControlMode.PREPARE_HEAT_PCM): should_heat_pcm
-    & (~cannot_heat_pcm).holds_true(
+    & can_heat_pcm.holds_true(
         Marker("Heat pipes output temperature high enough for pcm"),
         timedelta(minutes=5),
     ),
@@ -411,6 +428,10 @@ within_yazaki_bounds = Fn.pred(
         ]
     )
 )
+low_battery = Fn.pred(
+    lambda control_state, sensors: sensors.electrical.battery_system_soc
+    < control_state.setpoints.low_battery
+)
 
 outside_yazaki_bounds = (~within_yazaki_bounds).holds_true(
     Marker("Outside Yazaki conditions"), timedelta(minutes=10)
@@ -444,7 +465,8 @@ chill_transitions: dict[
         ChillControlMode.PREPARE_CHILLER_VALVES,
     ): outside_yazaki_bounds,
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_CHILLER_VALVES): should_chill
-    & ~pcm_charged,  # start chill with chiller if PCM is not fully charged
+    & ~pcm_charged
+    & ~low_battery,  # start chill with chiller if PCM is not fully charged and battery is not low
     (
         ChillControlMode.PREPARE_CHILLER_VALVES,
         ChillControlMode.CHILL_CHILLER,
@@ -453,7 +475,8 @@ chill_transitions: dict[
         ChillControlMode.CHILL_YAZAKI,
         ChillControlMode.PREPARE_CHILLER_VALVES,
     ): should_chill
-    & pcm_discharged,  # switch from Yazaki to chiller if PCM is fully discharged
+    & pcm_discharged
+    & ~low_battery,  # switch from Yazaki to chiller if PCM is fully discharged
     (
         ChillControlMode.CHILL_CHILLER,
         ChillControlMode.PREPARE_YAZAKI_VALVES,
@@ -461,7 +484,8 @@ chill_transitions: dict[
     & Fn.const_pred(True).holds_true(Marker("Chiller runs"), timedelta(minutes=10))
     & pcm_charged,  # switch from chiller to Yazaki if PCM is fully charged and chiller has for 10 mins
     (ChillControlMode.CHILL_YAZAKI, ChillControlMode.NO_CHILL): stop_chill,
-    (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill,
+    (ChillControlMode.CHILL_CHILLER, ChillControlMode.NO_CHILL): stop_chill
+    | low_battery,
 }
 
 chill_control_state_machine = StateMachine(ChillControlMode, chill_transitions)
@@ -510,9 +534,15 @@ def chill_control(
         .value(ChillerControl(False))
     )
 
-    run_waste_chill = (
+    run_waste_chiller = (
         power_hub.control(power_hub.waste_pump)
         .value(SwitchPumpControl(True))
+        .control(power_hub.chilled_loop_pump)
+        .value(SwitchPumpControl(True, 6000))
+    )
+    run_waste_yazaki = (
+        power_hub.control(power_hub.waste_pump)
+        .value(SwitchPumpControl(True, 5500))
         .control(power_hub.chilled_loop_pump)
         .value(SwitchPumpControl(True))
     )
@@ -524,7 +554,7 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(False))
-        .combine(run_waste_chill)
+        .combine(run_waste_yazaki)
     )
     run_yazaki = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
@@ -533,7 +563,7 @@ def chill_control(
         .value(YazakiControl(True))
         .control(power_hub.chiller)
         .value(ChillerControl(False))
-        .combine(run_waste_chill)
+        .combine(run_waste_yazaki)
     )
 
     run_chiller = (
@@ -543,7 +573,7 @@ def chill_control(
         .value(YazakiControl(False))
         .control(power_hub.chiller)
         .value(ChillerControl(True))
-        .combine(run_waste_chill)
+        .combine(run_waste_chiller)
     )
 
     if chill_control_mode == ChillControlMode.PREPARE_YAZAKI_VALVES:
@@ -610,6 +640,7 @@ def chill_control(
 
     cooling_demand = any(
         fancoil.mode in [FancoilModes.COOL.value, FancoilModes.COOL_AND_HEAT.value]
+        and fancoil.ambient_temperature > fancoil.setpoint
         for fancoil in sensors.compound_fancoils
     )
 
@@ -640,6 +671,10 @@ should_cool = Fn.sensors(
 stop_cool = Fn.sensors(
     lambda sensors: sensors.outboard_exchange.output_temperature
 ) < Fn.state(lambda state: state.setpoints.cooling_in_min_temperature)
+chiller_on = Fn.pred(
+    lambda control, _: control.chill_control.control_mode
+    in set([ChillControlMode.CHILL_CHILLER, ChillControlMode.CHILL_YAZAKI])
+)
 
 water_maker_on = Fn.pred(
     lambda _, sensors: sensors.water_maker.status
@@ -649,6 +684,17 @@ water_maker_off = Fn.pred(
     lambda _, sensors: not sensors.water_maker.status
     == WaterMakerStatus.WATER_PRODUCTION.value
 )
+high_temp_heat_dump = Fn.pred(
+    lambda control_state, sensors: sensors.rh33_heat_dump.average_temperature()
+    > control_state.setpoints.high_heat_dump_temperature
+)
+diverge_heat_dump_outboard = Fn.pred(
+    lambda control_state, sensors: (
+        sensors.rh33_heat_dump.average_temperature()
+        - sensors.outboard_temperature_sensor.temperature
+    )
+    > control_state.setpoints.heat_dump_outboard_divergence_temperature
+)
 
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
@@ -657,10 +703,36 @@ waste_transitions: dict[
         PowerHubSensors,
     ],
 ] = {
-    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): should_cool
-    | water_maker_on,
-    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): stop_cool
-    & water_maker_off,
+    (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): (
+        should_cool
+        & Fn.const_pred(True).holds_true(
+            Marker("Prevent outboard pump from flip-flopping"), timedelta(seconds=2)
+        )
+    )
+    | water_maker_on
+    | chiller_on,
+    (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): (
+        stop_cool & water_maker_off
+    )
+    & Fn.const_pred(True).holds_true(
+        Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=5)
+    )
+    & ~chiller_on,
+    (
+        WasteControlMode.RUN_OUTBOARD,
+        WasteControlMode.TOGGLE_OUTBOARD,
+    ): high_temp_heat_dump
+    & diverge_heat_dump_outboard,
+    (
+        WasteControlMode.TOGGLE_OUTBOARD,
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1)),
+    (
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+        WasteControlMode.RUN_OUTBOARD,
+    ): Fn.const_pred(True).holds_true(
+        Marker("run outboard until temperatures have stabilized"), timedelta(minutes=10)
+    ),
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
@@ -681,18 +753,30 @@ def waste_control(
         time,
     )
 
-    frequency_controller, frequency_control = (
-        control_state.waste_control.frequency_controller.run(
-            control_state.setpoints.cooling_target_temperature,
-            sensors.rh33_heat_dump.cold_temperature,
+    if waste_control_mode in [
+        WasteControlMode.RUN_OUTBOARD,
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+    ]:
+        frequency_controller, frequency_control = (
+            control_state.waste_control.frequency_controller.run(
+                control_state.setpoints.cooling_target_temperature,
+                sensors.rh33_heat_dump.cold_temperature,
+            )
         )
-    )
+    else:  # off or toggle
+        frequency_controller = control_state.waste_control.frequency_controller
+        frequency_control = 0.5
 
     return (
         WasteControlState(context, waste_control_mode, frequency_controller),
         power_hub.control(power_hub.outboard_pump).value(
             FrequencyPumpControl(
-                waste_control_mode == WasteControlMode.RUN_OUTBOARD, frequency_control
+                waste_control_mode
+                in [
+                    WasteControlMode.RUN_OUTBOARD,
+                    WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+                ],
+                frequency_control,
             )
         ),
     )
@@ -743,12 +827,17 @@ def fresh_water_control(
     )
 
 
-should_fill_technical = Fn.pred(
+should_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
     < control_state.setpoints.technical_water_min_fill_ratio
 )
 
-stop_fill_technical = Fn.pred(
+has_sufficient_fresh = Fn.pred(
+    lambda control_state, sensors: sensors.fresh_water_tank.fill_ratio
+    > control_state.setpoints.fresh_water_min_fill_ratio
+)
+
+stop_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
     > control_state.setpoints.technical_water_max_fill_ratio
 )
@@ -760,11 +849,11 @@ technical_water_transitions: dict[
     (
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
         TechnicalWaterControlMode.FILL_FROM_FRESH,
-    ): should_fill_technical,
+    ): should_fill_technical_from_fresh,
     (
         TechnicalWaterControlMode.FILL_FROM_FRESH,
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
-    ): stop_fill_technical,
+    ): stop_fill_technical_from_fresh,
 }
 
 technical_water_control_machine = StateMachine(
@@ -800,9 +889,16 @@ def technical_water_control(
     )
 
 
-should_treat = Fn.pred(
-    lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
-    > control_state.setpoints.water_treatment_max_fill_ratio
+technical_has_space = Fn.sensors(
+    lambda sensors: sensors.technical_water_tank.fill_ratio
+) < Fn.const(0.8)
+
+should_treat = (
+    Fn.pred(
+        lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
+        > control_state.setpoints.water_treatment_max_fill_ratio
+    )
+    & technical_has_space
 )
 
 stop_treat = Fn.pred(

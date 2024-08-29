@@ -187,6 +187,9 @@ class RH33Sensors(WithoutAppliance):
     delta_temperature: Celsius
     delta_temperature_status: int = sensor(type=SensorType.ALARM)
 
+    def average_temperature(self) -> float:
+        return (self.hot_temperature + self.cold_temperature) / 2
+
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, RH33Sensors):
             return False
@@ -887,18 +890,6 @@ class ChillerSensors(FromState):
                 CHILLER_SWITCH_VALVE_CHILLER_POSITION
             )
             else float("nan")
-        )
-
-    @property
-    def chilled_pressure(
-        self,
-    ) -> LiterPerSecond:
-        return (
-            self.chilled_loop_pump.pressure
-            if self.chiller_switch_valve.in_position(
-                CHILLER_SWITCH_VALVE_CHILLER_POSITION
-            )
-            else 0
         )
 
     @property
@@ -1662,6 +1653,10 @@ class ElectricalSensors(WithoutAppliance):
         type=SensorType.VOLTAGE, resolver=const_resolver(DEFAULT_VOLTAGE)
     )
     vebus_charge_state: int = sensor(resolver=const_resolver(0))
+
+    shore_power_available: bool = sensor(resolver=const_resolver(True))
+    shore_power_active: bool = sensor(resolver=const_resolver(False))
+    shore_power_needed: bool = sensor(resolver=const_resolver(False))
 
     @property
     def pv_power(self):

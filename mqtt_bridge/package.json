@@ -4,7 +4,9 @@
   "description": "A standalone mqtt bridge between two or more brokers",
   "main": "index.js",
   "scripts": {
-    "test:unit": "vitest"
+    "test:unit": "vitest",
+    "build": "tsc",
+    "start": "node dist/serve.mjs"
   },
   "repository": {
     "type": "git",

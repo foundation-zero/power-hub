@@ -21,6 +21,7 @@ export type MqttTopicMessage = [topic: string, message: MqttMessage];
 export interface MqttBridgeOptions {
   connectionTimeoutSeconds: number;
   maxQueueSize: number;
-  publishTimeoutSeconds: number;
   publishIntervalSeconds: number;
+  publishTimeoutSeconds: number;
+  subscribeTimeoutSeconds: number;
 }
