@@ -17,13 +17,13 @@ cooling_demand = Fn.pred(
     )
 )
 
-reservoir_cold_enough = Fn.pred(
-    lambda control_state, sensors: sensors.cold_reservoir.temperature
-    < control_state.setpoints.cold_reservoir_min_supply_temperature
+chilled_water_cold_enough = Fn.pred(
+    lambda control_state, sensors: sensors.rh33_chill.cold_temperature
+    < control_state.setpoints.chill_min_supply_temperature
 )
-reservoir_too_warm = Fn.pred(
-    lambda control_state, sensors: sensors.cold_reservoir.temperature
-    > control_state.setpoints.cold_reservoir_max_supply_temperature
+chilled_water_too_warm = Fn.pred(
+    lambda control_state, sensors: sensors.rh33_chill.cold_temperature
+    > control_state.setpoints.chill_max_supply_temperature
 )
 
 cooling_supply_transitions: dict[
@@ -34,12 +34,12 @@ cooling_supply_transitions: dict[
         CoolingSupplyControlMode.NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
     ): cooling_demand
-    & reservoir_cold_enough
+    & chilled_water_cold_enough
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
     ),
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | reservoir_too_warm
+        ~cooling_demand | chilled_water_too_warm
     )
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)

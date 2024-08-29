@@ -76,11 +76,11 @@ class Setpoints:
     cold_reservoir_min_temperature: Celsius = setpoint(
         "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    cold_reservoir_max_supply_temperature: Celsius = setpoint(
-        "temperature of cold reservoir exceedance stops cooling supply"
+    chill_max_supply_temperature: Celsius = setpoint(
+        "temperature of chilled water above which cooling supply stops"
     )
-    cold_reservoir_min_supply_temperature: Celsius = setpoint(
-        "temperature of cold reservoir below which cooling supply starts"
+    chill_min_supply_temperature: Celsius = setpoint(
+        "temperature of chilled water below which cooling supply starts"
     )
     minimum_preheat_offset: Celsius = setpoint(
         "minimal offset of waste heat to preheat reservoir temperature"
@@ -144,8 +144,8 @@ def initial_control_state() -> PowerHubControlState:
             yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
             cold_reservoir_min_temperature=8,
             cold_reservoir_max_temperature=11,
-            cold_reservoir_min_supply_temperature=18,
-            cold_reservoir_max_supply_temperature=20,
+            chill_min_supply_temperature=14,
+            chill_max_supply_temperature=16,
             minimum_preheat_offset=1,
             cooling_in_min_temperature=20,
             cooling_in_max_temperature=35,
