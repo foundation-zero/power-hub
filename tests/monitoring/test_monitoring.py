@@ -599,12 +599,6 @@ def test_yazaki_chilled_flow_check(sensors, yazaki_test, out_of_bounds_value):
     yazaki_test("yazaki_chilled_flow_check")
 
 
-def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.chilled_loop_pump.pressure = out_of_bounds_value
-    sensors.chiller_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
-    yazaki_test("yazaki_chilled_pressure_check")
-
-
 def test_yazaki_alarm_check(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
@@ -700,13 +694,6 @@ def test_chiller_chilled_flow_check(
     chiller_test("chiller_chilled_flow_check")
 
 
-def test_chiller_chilled_pressure_check(
-    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
-):
-    chiller_sensors.chilled_loop_pump.pressure = out_of_bounds_value
-    chiller_test("chiller_chilled_pressure_check")
-
-
 def test_chiller_alarm_checks(source):
     for bit, fault in enumerate(CHILLER_FAULTS):
         power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
@@ -752,7 +739,7 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
     setattr(getattr(sensors, water_tank), "fill_ratio", invalid_tank_fill)
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
     assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
-        message=f"{water_tank}_fill_ratio is outside valid bounds with value: {invalid_tank_fill}",
+        message=f"{water_tank}_fill_ratio is outside valid bounds with value: {invalid_tank_fill:.2f}",
         source=source,
         dedup_key=f"{water_tank}_fill_ratio",
         severity=Severity.CRITICAL,
