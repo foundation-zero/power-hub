@@ -26,7 +26,7 @@ from energy_box_control.appliances.switch_pump import SwitchPumpControl
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.appliances.yazaki import YazakiControl
 
-from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
+from energy_box_control.power_hub.sensors import PowerHubSensors
 
 should_chill = Fn.sensors(
     lambda sensors: sensors.cold_reservoir.temperature
@@ -286,12 +286,6 @@ def chill_control(
         yazaki_feedback_valve_control = YAZAKI_HOT_BYPASS_VALVE_CLOSED_POSITION
         running = no_run
 
-    cooling_demand = any(
-        fancoil.mode in [FancoilModes.COOL.value, FancoilModes.COOL_AND_HEAT.value]
-        and fancoil.ambient_temperature > fancoil.setpoint
-        for fancoil in sensors.compound_fancoils
-    )
-
     return ChillControlState(
         context,
         chill_control_mode,
@@ -307,7 +301,5 @@ def chill_control(
         .value(ValveControl(yazaki_feedback_valve_control))
         .control(power_hub.waste_bypass_valve)
         .value(ValveControl(WASTE_BYPASS_VALVE_CLOSED_POSITION))
-        .control(power_hub.cooling_demand_pump)
-        .value(SwitchPumpControl(cooling_demand))
         .combine(running)
     )
