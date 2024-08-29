@@ -5,6 +5,8 @@ import { differenceInSeconds } from "date-fns";
 
 const wait = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
+const waitFor = <T,>(value: T, milliseconds: number): Promise<T> =>
+  new Promise<T>((resolve) => setTimeout(() => resolve(value), milliseconds));
 
 export class MqttBridge {
   public readonly origins: MqttBroker[] = [];
@@ -39,12 +41,15 @@ export class MqttBridge {
 
     const [messagesTx, messagesRx] = new Channel<MqttTopicMessage>().split();
 
-    await Promise.all(this.brokers.map((broker) => broker.connectAndSubscribe(messagesTx)));
+    const waitResult = await Promise.race([
+      Promise.all(this.brokers.map((broker) => broker.connectAndSubscribe(messagesTx))),
+      wait(5000),
+    ]);
 
     const healths = await Promise.all(this.brokers.map((broker) => broker.publishHealth()));
     if (!healths.every((health) => health)) {
       console.error("failed to publish initial health");
-      process.exit();
+      process.exit(1);
     }
     this.lastPublish = new Date();
 
@@ -81,7 +86,7 @@ export class MqttBridge {
           this.options.connectionTimeoutSeconds
       ) {
         console.error(`client has disconnected for ${this.options.connectionTimeoutSeconds}`);
-        process.exit(); // depend on docker compose for restart
+        process.exit(1); // depend on docker compose for restart
       }
       this.notAllConnectedStamp ??= new Date();
     } else {
@@ -92,26 +97,50 @@ export class MqttBridge {
   private checkQueue(rx: Rx<MqttTopicMessage>) {
     if (rx.size() > this.options.maxQueueSize) {
       console.error(`queue size too large ${rx.size()} > ${this.options.maxQueueSize}`);
-      process.exit();
+      process.exit(1);
     }
   }
 
   private async publishHealth() {
     if (!this.lastPublish) {
       console.error("never published");
-      process.exit();
+      process.exit(1);
     }
     if (differenceInSeconds(new Date(), this.lastPublish) > this.options.publishIntervalSeconds) {
-      const healths = await Promise.all(
-        [...this.origins, ...this.targets].map((broker) => broker.publishHealth()),
-      );
+      const healths = await Promise.race([
+        Promise.all([...this.origins, ...this.targets].map((broker) => broker.publishHealth())),
+        waitFor([false], 500),
+      ]);
       if (healths.every((health) => health)) {
         this.lastPublish = new Date();
       }
     }
     if (differenceInSeconds(new Date(), this.lastPublish) > this.options.publishTimeoutSeconds) {
       console.error(`failed to publish health message for ${this.options.publishTimeoutSeconds}`);
-      process.exit();
+      process.exit(1);
+    }
+  }
+
+  private checkTimes() {
+    const originsExpired = this.origins.some(
+      (broker) =>
+        broker.lastMessageReceived &&
+        differenceInSeconds(new Date(), broker.lastMessageReceived) >
+          this.options.subscribeTimeoutSeconds,
+    );
+    const targetsExpired = this.targets.some(
+      (broker) =>
+        broker.lastMessageSent &&
+        differenceInSeconds(new Date(), broker.lastMessageSent) >
+          this.options.publishTimeoutSeconds,
+    );
+    if (originsExpired) {
+      console.error(`didn't receive a message for ${this.options.subscribeTimeoutSeconds} seconds`);
+      process.exit(1);
+    }
+    if (targetsExpired) {
+      console.error(`couldn't publish a message for ${this.options.publishTimeoutSeconds} seconds`);
+      process.exit(1);
     }
   }
 }

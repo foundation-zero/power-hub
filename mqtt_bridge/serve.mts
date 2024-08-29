@@ -8,6 +8,7 @@ const bridge = new MqttBridge({
   maxQueueSize: parseInt(process.env.MAX_QUEUE_SIZE ?? "120"),
   publishIntervalSeconds: parseInt(process.env.PUBLISH_INTERVAL_SECONDS ?? "5"),
   publishTimeoutSeconds: parseInt(process.env.PUBLISH_TIMEOUT_SECONDS ?? "60"),
+  subscribeTimeoutSeconds: parseInt(process.env.SUBSCRIBE_TIMEOUT_SECONDS ?? "60"),
 });
 
 const readCaFile = (file: string | undefined) => {

@@ -38,6 +38,9 @@ class SwitchPumpPort(Port):
 @dataclass(frozen=True, eq=True)
 class SwitchPumpControl(ApplianceControl):
     on: bool
+    setpoint: float = 3000  # 0 - 10_000
+    # chilled loop pump minimal setpoint ~ 2500
+    # waste pump minimal setpoint ~ 2500
 
 
 @dataclass(frozen=True, eq=True)

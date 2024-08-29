@@ -12,6 +12,8 @@ export class MqttBroker {
   public client?: MqttClient;
   private readonly subscribeTopics: string[];
   private readonly retryQueue: MqttTopicMessage[] = [];
+  public lastMessageReceived: Date | null = null;
+  public lastMessageSent: Date | null = null;
 
   private get name(): string {
     return `MQTT broker [${this.options.name ?? this.options.url}]`;
@@ -32,7 +34,10 @@ export class MqttBroker {
       console.info(`Connected to ${this.name}`);
 
       this.client.on("reconnect", () => console.info(`Reconnecting to ${this.name}`));
-      this.client.on("connect", () => console.info(`Reconnected to ${this.name}`));
+      this.client.on("connect", () => {
+        this.subscribeToTopics();
+        return console.info(`Reconnected to ${this.name}`);
+      });
       this.client.on("disconnect", () => console.warn(`Disconnected from ${this.name}`));
       this.client.on("offline", () =>
         // mqtt automatically reconnects after this event
@@ -45,6 +50,7 @@ export class MqttBroker {
 
       this.client.on("message", (topic: string, message: Buffer) => {
         tx.queue([topic, message]);
+        this.lastMessageReceived = new Date();
       });
       await this.subscribeToTopics();
     } catch (e) {
@@ -80,13 +86,14 @@ export class MqttBroker {
   }
 
   public async publish(topic: string, message: MqttMessage, retryQueue: MqttTopicMessage[]) {
-    if (!this.client) {
+    if (!this.client || !this.isConnected()) {
       retryQueue.push([topic, message]);
       return;
     }
 
     try {
       await this.client.publishAsync(topic, message);
+      this.lastMessageSent = new Date();
     } catch (e) {
       // If it fails because of a parse error we should not try and publish again, it will yield the same result.
       // All other reasons (sudden disconnect) are already handled internally by the mqtt client.
@@ -104,7 +111,7 @@ export class MqttBroker {
     }
 
     try {
-      await this.client.publishAsync("health/bridge", "connected", {});
+      await this.publish("health/bridge", "connected", []);
       return true;
     } catch (e) {
       return false;

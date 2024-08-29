@@ -129,6 +129,11 @@ services:
       - PAGERDUTY_MQTT_CHECKER_KEY=$PAGERDUTY_MQTT_CHECKER_KEY
     restart: on-failure:5
 
+  mqtt_bridge:
+    image: mqtt_bridge
+    build:
+      context: mqtt_bridge
+
 networks:
   power_hub_simulation:
 

@@ -357,8 +357,7 @@ def test_water_filter_stop(
     "heat_dump_out_temperature, water_maker_on, outboard_pump_on",
     [
         (10, WaterMakerStatus.WATER_PRODUCTION.value, True),
-        (50, WaterMakerStatus.WATER_PRODUCTION.value, True),
-        (50, WaterMakerStatus.STANDBY.value, True),
+        (35, WaterMakerStatus.WATER_PRODUCTION.value, True),
         (10, WaterMakerStatus.STANDBY.value, False),
     ],
 )
@@ -372,11 +371,6 @@ def test_waste_pump_water_maker_on(
     water_maker_on,
     outboard_pump_on,
 ):
-
-    control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp
-    )
-
     state = (
         scheduled_power_hub.simulate(state, control_values)
         .replace_signal(

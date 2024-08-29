@@ -9,6 +9,7 @@ from energy_box_control.monitoring.health_bounds import (
     COOLING_DEMAND_CIRCUIT_BOUNDS,
     HEAT_PIPES_BOUNDS,
     HOT_CIRCUIT_BOUNDS,
+    WASTE_CIRCUIT_BOUNDS,
     HealthBound,
     TANK_BOUNDS,
     YAZAKI_BOUNDS,
@@ -115,7 +116,6 @@ class RH33AlarmUpperBits(AlarmBit):
 
 
 class FlowSensorAlarm(AlarmBit):
-    REVERSE_FLOW = 3
     FLOW_ACTUAL_EXCEEDS_FS = 6
     FLOW_MEASUREMENT_ERROR = 7
     FLOWBODY_TEMPERATURE_SENSOR = 9
@@ -200,7 +200,7 @@ def valid_value(
                 if not isnan(value)
                 else True
             ),
-            message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value}",
+            message_fn=lambda name, value: f"{name} is outside valid bounds with value: {value:.2f}",
             control_fn=control_fn,
         ),
         severity,
@@ -303,10 +303,23 @@ chilled_circuit_checks = [
         lambda sensors: sensors.chilled_flow_sensor.flow,
         CHILLED_CIRCUIT_BOUNDS["flow"],
     ),
+]
+
+waste_circuit_checks = [
     valid_value(
-        "chilled_circuit_pressure_check",
-        lambda sensors: sensors.chilled_loop_pump.pressure,
-        CHILLED_CIRCUIT_BOUNDS["pressure"],
+        "waste_circuit_temperature_check",
+        lambda sensors: sensors.rh33_waste.cold_temperature,
+        WASTE_CIRCUIT_BOUNDS["temperature"],
+    ),
+    valid_value(
+        "waste_circuit_flow_check",
+        lambda sensors: sensors.waste_flow_sensor.flow,
+        WASTE_CIRCUIT_BOUNDS["flow"],
+    ),
+    valid_value(
+        "waste_circuit_pressure_check",
+        lambda sensors: sensors.waste_pressure_sensor.pressure,
+        WASTE_CIRCUIT_BOUNDS["pressure"],
     ),
 ]
 
@@ -320,11 +333,6 @@ cooling_demand_circuit_checks = [
         "cooling_demand_circuit_flow_check",
         lambda sensors: sensors.cooling_demand_flow_sensor.flow,
         COOLING_DEMAND_CIRCUIT_BOUNDS["flow"],
-    ),
-    valid_value(
-        "cooling_demand_circuit_pressure_check",
-        lambda sensors: sensors.cooling_demand_pump.pressure,
-        COOLING_DEMAND_CIRCUIT_BOUNDS["pressure"],
     ),
 ]
 
@@ -373,6 +381,15 @@ battery_soc_checks = [
     )
 ]
 
+shore_power_available_checks = [
+    valid_value_check(
+        name=f"shore_power_available",
+        value_fn=lambda sensors: sensors.electrical.shore_power_available,
+        message_fn=lambda name, _: f"{name} low",
+        valid=True,
+    )
+]
+
 weather_station_alarm_checks = [
     bit_check(
         name=f"weather_station_{alarm.name.lower()}",
@@ -415,6 +432,8 @@ pump_warning_checks = [
     for attr in attributes_for_type(SmartPumpSensors, SensorType.WARNING)
 ]
 
+IGNORED_FLOW_SENSORS = set(["domestic_hot_water_flow_sensor"])
+
 flow_sensor_alarm_checks = [
     bit_check(
         name=f"{field.name}_{flow_sensor_alarm.name.lower()}_alarm",
@@ -427,6 +446,7 @@ flow_sensor_alarm_checks = [
     )
     for field in fields(PowerHubSensors)
     if field.type == FlowSensors
+    if field.name not in IGNORED_FLOW_SENSORS
     for flow_sensor_alarm in FlowSensorAlarm
 ]
 
@@ -583,6 +603,7 @@ all_checks = (
     pcm_checks
     + hot_circuit_checks
     + chilled_circuit_checks
+    + waste_circuit_checks
     + cooling_demand_circuit_checks
     + heat_pipes_checks
     + battery_alarm_checks

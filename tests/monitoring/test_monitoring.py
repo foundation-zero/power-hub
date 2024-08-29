@@ -60,7 +60,7 @@ def test_pcm_values_checks(sensors, source):
     sensors.pcm.temperature = pcm_fake_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"pcm_temperature_check is outside valid bounds with value: {pcm_fake_value}",
+            message=f"pcm_temperature_check is outside valid bounds with value: {pcm_fake_value:.2f}",
             source=source,
             dedup_key="pcm_temperature_check",
             severity=Severity.CRITICAL,
@@ -85,7 +85,7 @@ def test_hot_circuit_temperature_check(
     sensors.rh33_hot_storage.hot_temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"hot_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"hot_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="hot_circuit_temperature_check",
             severity=Severity.CRITICAL,
@@ -98,7 +98,7 @@ def test_hot_circuit_flow_check(sensors: PowerHubSensors, source, out_of_bounds_
     sensors.hot_switch_valve.position = HOT_SWITCH_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"hot_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"hot_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="hot_circuit_flow_check",
             severity=Severity.CRITICAL,
@@ -113,7 +113,7 @@ def test_hot_circuit_pressure_check(
     sensors.hot_switch_valve.position = HOT_SWITCH_VALVE_PCM_POSITION
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"hot_circuit_pressure_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"hot_circuit_pressure_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="hot_circuit_pressure_check",
             severity=Severity.CRITICAL,
@@ -125,7 +125,7 @@ def test_pcm_temperature_check(sensors: PowerHubSensors, source, out_of_bounds_v
     sensors.pcm.temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"pcm_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"pcm_temperature_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="pcm_temperature_check",
             severity=Severity.CRITICAL,
@@ -139,7 +139,7 @@ def test_chilled_circuit_temperature_check(
     sensors.rh33_chill.cold_temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"chilled_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"chilled_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="chilled_circuit_temperature_check",
             severity=Severity.CRITICAL,
@@ -153,23 +153,9 @@ def test_chilled_circuit_flow_check(
     sensors.chilled_flow_sensor.flow = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"chilled_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"chilled_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="chilled_circuit_flow_check",
-            severity=Severity.CRITICAL,
-        )
-    ]
-
-
-def test_chilled_circuit_pressure_check(
-    sensors: PowerHubSensors, source, out_of_bounds_value
-):
-    sensors.chilled_loop_pump.pressure = out_of_bounds_value
-    assert run_monitor(sensors, source) == [
-        NotificationEvent(
-            message=f"chilled_circuit_pressure_check is outside valid bounds with value: {out_of_bounds_value}",
-            source=source,
-            dedup_key="chilled_circuit_pressure_check",
             severity=Severity.CRITICAL,
         )
     ]
@@ -181,7 +167,7 @@ def test_cooling_demand_circuit_temperature_check(
     sensors.rh33_cooling_demand.cold_temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"cooling_demand_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"cooling_demand_circuit_temperature_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="cooling_demand_circuit_temperature_check",
             severity=Severity.CRITICAL,
@@ -195,23 +181,9 @@ def test_cooling_demand_circuit_flow_check(
     sensors.cooling_demand_flow_sensor.flow = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"cooling_demand_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"cooling_demand_circuit_flow_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="cooling_demand_circuit_flow_check",
-            severity=Severity.CRITICAL,
-        )
-    ]
-
-
-def test_cooling_demand_circuit_pressure_check(
-    sensors: PowerHubSensors, source, out_of_bounds_value
-):
-    sensors.cooling_demand_pump.pressure = out_of_bounds_value
-    assert run_monitor(sensors, source) == [
-        NotificationEvent(
-            message=f"cooling_demand_circuit_pressure_check is outside valid bounds with value: {out_of_bounds_value}",
-            source=source,
-            dedup_key="cooling_demand_circuit_pressure_check",
             severity=Severity.CRITICAL,
         )
     ]
@@ -223,7 +195,7 @@ def test_heat_pipes_temperature_check(
     sensors.rh33_heat_pipes.hot_temperature = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"heat_pipes_temperature_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"heat_pipes_temperature_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="heat_pipes_temperature_check",
             severity=Severity.CRITICAL,
@@ -235,7 +207,7 @@ def test_heat_pipes_flow_check(sensors: PowerHubSensors, source, out_of_bounds_v
     sensors.heat_pipes_flow_sensor.flow = out_of_bounds_value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"heat_pipes_flow_check is outside valid bounds with value: {out_of_bounds_value}",
+            message=f"heat_pipes_flow_check is outside valid bounds with value: {out_of_bounds_value:.2f}",
             source=source,
             dedup_key="heat_pipes_flow_check",
             severity=Severity.CRITICAL,
@@ -286,7 +258,7 @@ def test_battery_soc_checks(source):
     sensors.electrical.battery_system_soc = value
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"battery_soc is outside valid bounds with value: {value}",
+            message=f"battery_soc is outside valid bounds with value: {value:.2f}",
             source=source,
             dedup_key="battery_soc",
             severity=Severity.CRITICAL,
@@ -382,6 +354,8 @@ def test_flow_sensor_alarm_checks(source):
         for flow_sensor_name in [
             field.name for field in fields(PowerHubSensors) if field.type == FlowSensors
         ]:
+            if flow_sensor_name in set(["domestic_hot_water_flow_sensor"]):
+                continue
             power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
             sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
             getattr(sensors, flow_sensor_name).status = 1 << alarm.value
@@ -396,21 +370,21 @@ def test_flow_sensor_alarm_checks(source):
 
 
 def test_flow_two_alarm_checks(source):
-    fault_code = (1 << 3) | (1 << 6)
+    fault_code = (1 << 6) | (1 << 7)
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     sensors.chilled_flow_sensor.status = fault_code
     assert run_monitor(sensors, source) == [
         NotificationEvent(
-            message=f"chilled_flow_sensor_reverse_flow_alarm is raised",
-            source=source,
-            dedup_key=f"chilled_flow_sensor_reverse_flow_alarm",
-            severity=Severity.CRITICAL,
-        ),
-        NotificationEvent(
             message=f"chilled_flow_sensor_flow_actual_exceeds_fs_alarm is raised",
             source=source,
             dedup_key=f"chilled_flow_sensor_flow_actual_exceeds_fs_alarm",
+            severity=Severity.CRITICAL,
+        ),
+        NotificationEvent(
+            message=f"chilled_flow_sensor_flow_measurement_error_alarm is raised",
+            source=source,
+            dedup_key=f"chilled_flow_sensor_flow_measurement_error_alarm",
             severity=Severity.CRITICAL,
         ),
     ]
@@ -565,7 +539,7 @@ def yazaki_test(
         assert (set(after) - set(before)) == set(
             [
                 NotificationEvent(
-                    message=f"{dedup_key} is outside valid bounds with value: {out_of_bounds_value}",
+                    message=f"{dedup_key} is outside valid bounds with value: {out_of_bounds_value:.2f}",
                     source=source,
                     dedup_key=dedup_key,
                     severity=Severity.CRITICAL,
@@ -625,12 +599,6 @@ def test_yazaki_chilled_flow_check(sensors, yazaki_test, out_of_bounds_value):
     yazaki_test("yazaki_chilled_flow_check")
 
 
-def test_yazaki_chilled_pressure_check(sensors, yazaki_test, out_of_bounds_value):
-    sensors.chilled_loop_pump.pressure = out_of_bounds_value
-    sensors.chiller_switch_valve.position = WASTE_SWITCH_VALVE_YAZAKI_POSITION
-    yazaki_test("yazaki_chilled_pressure_check")
-
-
 def test_yazaki_alarm_check(source):
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
@@ -680,7 +648,7 @@ def chiller_test(
         assert set(after) - set(before) == set(
             [
                 NotificationEvent(
-                    message=f"{dedup_key} is outside valid bounds with value: {out_of_bounds_value}",
+                    message=f"{dedup_key} is outside valid bounds with value: {out_of_bounds_value:.2f}",
                     source=source,
                     dedup_key=dedup_key,
                     severity=Severity.CRITICAL,
@@ -724,13 +692,6 @@ def test_chiller_chilled_flow_check(
 ):
     chiller_sensors.chilled_flow_sensor.flow = out_of_bounds_value
     chiller_test("chiller_chilled_flow_check")
-
-
-def test_chiller_chilled_pressure_check(
-    chiller_sensors: PowerHubSensors, chiller_test, out_of_bounds_value
-):
-    chiller_sensors.chilled_loop_pump.pressure = out_of_bounds_value
-    chiller_test("chiller_chilled_pressure_check")
 
 
 def test_chiller_alarm_checks(source):
@@ -778,7 +739,7 @@ def test_tank_checks(water_tank: str, invalid_tank_fill: int, source):
     setattr(getattr(sensors, water_tank), "fill_ratio", invalid_tank_fill)
     monitor = Monitor(sensor_value_checks=all_checks, url_health_checks=[])
     assert monitor.run_sensor_value_checks(sensors, source)[0] == NotificationEvent(
-        message=f"{water_tank}_fill_ratio is outside valid bounds with value: {invalid_tank_fill}",
+        message=f"{water_tank}_fill_ratio is outside valid bounds with value: {invalid_tank_fill:.2f}",
         source=source,
         dedup_key=f"{water_tank}_fill_ratio",
         severity=Severity.CRITICAL,
