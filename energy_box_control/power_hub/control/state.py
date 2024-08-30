@@ -154,7 +154,7 @@ def initial_control_state() -> PowerHubControlState:
             technical_water_max_fill_ratio=0.6,
             water_treatment_max_fill_ratio=0.5,
             water_treatment_min_fill_ratio=0.1,
-            fresh_water_min_fill_ratio=0.3,
+            fresh_water_min_fill_ratio=0.4,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
