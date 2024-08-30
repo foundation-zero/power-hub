@@ -20,18 +20,22 @@ technical_has_space = Fn.sensors(
     lambda sensors: sensors.technical_water_tank.fill_ratio
 ) < Fn.const(0.8)
 
-should_treat = (
-    Fn.pred(
+grey_water_filled = Fn.pred(
         lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
         > control_state.setpoints.water_treatment_max_fill_ratio
     )
+    
+should_treat = (
+    grey_water_filled
     & technical_has_space
 )
 
-stop_treat = Fn.pred(
+grey_water_empty = Fn.pred(
     lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
     < control_state.setpoints.water_treatment_min_fill_ratio
 )
+
+stop_treat = grey_water_empty | ~technical_has_space
 
 water_treatment_transitions: dict[
     tuple[WaterTreatmentControlMode, WaterTreatmentControlMode],
