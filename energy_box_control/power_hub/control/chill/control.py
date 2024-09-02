@@ -192,7 +192,7 @@ def chill_control(
         power_hub.control(power_hub.waste_pump)
         .value(SwitchPumpControl(True, 5500))
         .control(power_hub.chilled_loop_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(True, 2750))
     )
 
     run_yazaki_pumps = (
