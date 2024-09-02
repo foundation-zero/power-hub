@@ -42,11 +42,13 @@ technical_water_transitions: dict[
     (
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
         TechnicalWaterControlMode.FILL_FROM_FRESH,
-    ): should_fill_technical_from_fresh & has_sufficient_fresh,
+    ): should_fill_technical_from_fresh
+    & has_sufficient_fresh,
     (
         TechnicalWaterControlMode.FILL_FROM_FRESH,
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
-    ): stop_fill_technical_from_fresh | ~has_sufficient_fresh,
+    ): stop_fill_technical_from_fresh
+    | ~has_sufficient_fresh,
 }
 
 technical_water_control_machine = StateMachine(

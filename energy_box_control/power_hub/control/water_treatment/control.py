@@ -21,14 +21,11 @@ technical_has_space = Fn.sensors(
 ) < Fn.const(0.8)
 
 grey_water_filled = Fn.pred(
-        lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
-        > control_state.setpoints.water_treatment_max_fill_ratio
-    )
-    
-should_treat = (
-    grey_water_filled
-    & technical_has_space
+    lambda control_state, sensors: sensors.grey_water_tank.fill_ratio
+    > control_state.setpoints.water_treatment_max_fill_ratio
 )
+
+should_treat = grey_water_filled & technical_has_space
 
 grey_water_empty = Fn.pred(
     lambda control_state, sensors: sensors.grey_water_tank.fill_ratio

@@ -88,12 +88,6 @@ class Setpoints:
     cooling_target_temperature: Celsius = setpoint(
         "target temperature of cooling water"
     )
-    cooling_in_min_temperature: Celsius = setpoint(
-        "minimum temperature of the cooling water temperature"
-    )
-    cooling_in_max_temperature: Celsius = setpoint(
-        "maximum temperature of the cooling water temperature"
-    )
     water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
     water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
     technical_water_max_fill_ratio: float = setpoint(
@@ -147,8 +141,6 @@ def initial_control_state() -> PowerHubControlState:
             chill_min_supply_temperature=14,
             chill_max_supply_temperature=16,
             minimum_preheat_offset=1,
-            cooling_in_min_temperature=20,
-            cooling_in_max_temperature=35,
             cooling_target_temperature=28,
             technical_water_min_fill_ratio=0.4,
             technical_water_max_fill_ratio=0.5,
