@@ -150,10 +150,10 @@ def initial_control_state() -> PowerHubControlState:
             cooling_in_min_temperature=20,
             cooling_in_max_temperature=35,
             cooling_target_temperature=28,
-            technical_water_min_fill_ratio=0.5,
-            technical_water_max_fill_ratio=0.6,
-            water_treatment_max_fill_ratio=0.3,
-            water_treatment_min_fill_ratio=0.1,
+            technical_water_min_fill_ratio=0.4,
+            technical_water_max_fill_ratio=0.5,
+            water_treatment_max_fill_ratio=0.175,
+            water_treatment_min_fill_ratio=0.15,
             fresh_water_min_fill_ratio=0.35,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
