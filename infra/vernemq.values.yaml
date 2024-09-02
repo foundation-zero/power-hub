@@ -6,10 +6,10 @@ image:
 
 resources:
   requests:
-    memory: 1Gi
+    memory: 750Mi
     cpu: 250m
   limits:
-    memory: 1Gi
+    memory: 750Mi
     cpu: 750m
 
 service:
