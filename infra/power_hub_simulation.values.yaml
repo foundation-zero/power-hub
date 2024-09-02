@@ -2,6 +2,14 @@ replicaCount: 1
 
 nameOverride: "power-hub-simulation"
 
+resources:
+   limits:
+     cpu: 1
+     memory: 1Gi
+   requests:
+     cpu: 100m
+     memory: 1Gi
+
 image:
   pullPolicy: Always
 container:

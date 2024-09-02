@@ -12,6 +12,14 @@ container:
 
 initialDelaySeconds: 10
 
+resources:
+   limits:
+     cpu: 200m
+     memory: 256Mi
+   requests:
+     cpu: 100m
+     memory: 256Mi
+
 ingress:
   enabled: true
   tls: false
