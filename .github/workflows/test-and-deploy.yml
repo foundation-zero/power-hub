@@ -62,7 +62,7 @@ jobs:
         run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
 
   test-tofu-staging:
-    #if: github.ref != 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref != 'refs/heads/main' && github.event_name == 'push'
     timeout-minutes: 10
     needs: test
     concurrency:
