@@ -1,13 +1,11 @@
 from asyncio import CancelledError
-from unittest import mock
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
 
 from energy_box_control.monitoring.checks import Severity
 from energy_box_control.monitoring.monitoring import NotificationEvent
-from energy_box_control.monitoring.mqtt_checker import MQTTChecker, MQTTCheckConfig
-from energy_box_control.power_hub_control import SENSOR_VALUES_TOPIC
+from energy_box_control.monitoring.mqtt_checker import MQTTChecker
 
 
 @pytest.mark.integration
@@ -24,12 +22,10 @@ async def test_timeout_on_silent_topic():
     notifier_mock = MagicMock()
     # Async event loop is shut down after single call
     notifier_mock.send_events.side_effect = [CancelledError()]
-    config = [
-        MQTTCheckConfig(topic="non_existent_topic", topic_short_name="nonexistent")
-    ]
-    mqtt_checker = MQTTChecker(notifier_mock, config, timeout=2)
+
+    mqtt_checker = MQTTChecker(notifier_mock, "nonexistent", timeout=2)
     try:
-        await mqtt_checker.run_listeners()
+        await mqtt_checker.run()
         assert False  # Unreachable
     except CancelledError:
         pass
