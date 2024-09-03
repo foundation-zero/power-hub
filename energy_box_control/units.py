@@ -6,6 +6,7 @@ LiterPerSecond = float
 LiterPerMinute = float
 Celsius = float
 MeterSquared = float
+MeterCubed = float
 WattPerMeterSquared = float
 Joule = float
 JoulePerKelvin = float

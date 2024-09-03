@@ -65,6 +65,7 @@ from energy_box_control.units import (
     Liter,
     LiterPerMinute,
     LiterPerSecond,
+    MeterCubed,
     Ppm,
     Percentage,
     Ratio,
@@ -111,7 +112,7 @@ class FlowSensors(WithoutAppliance):
     flow: LiterPerSecond
     temperature: Celsius
     glycol_concentration: Percentage
-    total_volume: Liter
+    total_volume: MeterCubed
     status: FlowStatus
 
     def __eq__(self, value: object) -> bool:
