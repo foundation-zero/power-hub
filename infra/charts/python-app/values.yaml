@@ -58,6 +58,8 @@ ingress:
 
 nodeSelector: {}
 
+resources: {}
+
 tolerations: []
 
 affinity: {}
