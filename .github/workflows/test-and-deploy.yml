@@ -120,7 +120,7 @@ jobs:
 
   deploy-staging:
     timeout-minutes: 10
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
@@ -177,7 +177,7 @@ jobs:
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-staging-infra:
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
 

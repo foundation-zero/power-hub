@@ -56,9 +56,9 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-nodeSelector: {}
-
 resources: {}
+
+nodeSelector: {}
 
 tolerations: []
 
