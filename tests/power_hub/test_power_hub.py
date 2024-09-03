@@ -16,14 +16,14 @@ from energy_box_control.appliances.yazaki import YazakiPort
 from energy_box_control.power_hub import PowerHub
 from dataclasses import replace
 
-from energy_box_control.power_hub.control import (
+from energy_box_control.power_hub.control.control import (
     FreshWaterControlMode,
     control_power_hub,
     initial_control_all_off,
-    initial_control_state,
     no_control,
 )
 import energy_box_control.power_hub.components as phc
+from energy_box_control.power_hub.control.state import initial_control_state
 from energy_box_control.time import ProcessTime
 from tests.simulation.test_simulation import (
     SimulationFailure,

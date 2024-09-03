@@ -6,7 +6,7 @@ from energy_box_control.custom_logging import get_logger
 from energy_box_control.monitoring.monitoring import Notifier
 from energy_box_control.mqtt import create_and_connect_client
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.control import control_from_json
+from energy_box_control.power_hub.control.control import control_from_json
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub_control import publish_control_values
 

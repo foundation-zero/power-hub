@@ -15,12 +15,12 @@ from energy_box_control.mqtt import (
     run_listener,
 )
 from energy_box_control.network import NetworkControl, NetworkState
-from energy_box_control.power_hub.control import (
+from energy_box_control.power_hub.control.control import (
     PowerHubControlState,
     control_power_hub,
-    initial_control_state,
     no_control,
 )
+from energy_box_control.power_hub.control.state import initial_control_state
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.power_hub_control import queue_on_message

@@ -10,13 +10,13 @@ from energy_box_control.monitoring.monitoring import (
 from energy_box_control.custom_logging import get_logger
 import queue
 from energy_box_control.network import NetworkState
-from energy_box_control.power_hub.control import (
+from energy_box_control.power_hub.control.control import (
     PowerHubControlState,
     control_from_json,
-    initial_control_state,
     no_control,
 )
 
+from energy_box_control.power_hub.control.state import initial_control_state
 from energy_box_control.power_hub.network import PowerHubSchedules
 from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.power_hub import PowerHub

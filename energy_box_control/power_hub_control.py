@@ -21,11 +21,14 @@ from energy_box_control.mqtt import (
 )
 from energy_box_control.monitoring.checks import all_checks
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.control import (
-    PowerHubControlState,
-    Setpoints,
+
+from energy_box_control.power_hub.control.control import (
     control_power_hub,
     control_to_json,
+)
+from energy_box_control.power_hub.control.state import (
+    PowerHubControlState,
+    Setpoints,
     initial_control_state,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
