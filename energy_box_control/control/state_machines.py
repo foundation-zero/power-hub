@@ -40,6 +40,10 @@ def _op[
     return lambda self, other: BooleanOpPredicate(self, op, other)
 
 
+AND: Callable[[bool, bool], bool] = lambda a, b: a and b
+OR: Callable[[bool, bool], bool] = lambda a, b: a or b
+
+
 class Predicate[ControlState, Sensors](ABC):
     def resolve(
         self,
@@ -49,8 +53,8 @@ class Predicate[ControlState, Sensors](ABC):
         time: datetime,
     ) -> bool: ...
 
-    __or__ = _op(lambda a, b: a or b)
-    __and__ = _op(lambda a, b: a and b)
+    __or__ = _op(OR)
+    __and__ = _op(AND)
 
     def __invert__(self) -> "Predicate[ControlState, Sensors]":
         return NegatePredicate(self)
@@ -255,7 +259,7 @@ class StateMachine[States: State, ControlState, Sensors]:
     ):
         self._states = states
         self._state_transitions: dict[
-            State, list[tuple[States, Predicate[ControlState, Sensors]]]
+            States, list[tuple[States, Predicate[ControlState, Sensors]]]
         ] = {}
         for (a, b), pred in transitions.items():
             a_transitions = self._state_transitions.get(a, [])
@@ -275,3 +279,17 @@ class StateMachine[States: State, ControlState, Sensors]:
                 return next_state, Context({})
 
         return current_state, context.flip()
+
+    @property
+    def transitions(
+        self,
+    ) -> dict[tuple[States, States], Predicate[ControlState, Sensors]]:
+        result: dict[tuple[States, States], Predicate[ControlState, Sensors]] = {}
+        for a, transitions in self._state_transitions.items():
+            for b, pred in transitions:
+                result[(a, b)] = pred
+        return result
+
+    @property
+    def state_names(self) -> list[str]:
+        return [state.name for state in self._states]
