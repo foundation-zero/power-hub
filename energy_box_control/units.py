@@ -3,6 +3,7 @@ Watt = float
 JoulePerLiterKelvin = float
 Second = float
 LiterPerSecond = float
+LiterPerMinute = float
 Celsius = float
 MeterSquared = float
 WattPerMeterSquared = float
