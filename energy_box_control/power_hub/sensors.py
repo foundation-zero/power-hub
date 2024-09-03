@@ -1849,9 +1849,11 @@ class TechnicalWaterSensors(WithoutAppliance):
     technical_to_wash_off: FlowSensors
     technical_to_sanitary: FlowSensors
 
+    @property
     def flow_to_sanitary(self) -> LiterPerSecond:
         return self.technical_to_sanitary.flow
 
+    @property
     def flow_to_wash_off(self) -> LiterPerSecond:
         return self.technical_to_wash_off.flow
 
