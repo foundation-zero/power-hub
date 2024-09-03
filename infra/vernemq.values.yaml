@@ -4,6 +4,14 @@ image:
   repository: vernemq/vernemq
   tag: 2.0.0-alpine
 
+resources:
+  requests:
+    memory: 750Mi
+    cpu: 250m
+  limits:
+    memory: 750Mi
+    cpu: 750m
+
 service:
   enabled: true
   type: LoadBalancer
