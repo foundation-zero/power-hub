@@ -32,11 +32,11 @@ class MQTTChecker:
     async def run(self):
         async with get_mqtt_client(logger) as client:
             await client.subscribe(self.topic)
-            msg_iter = client.messages.__aiter__()
+            msg_iter = aiter(client.messages)
             while True:
                 try:
                     message = await asyncio.wait_for(
-                        msg_iter.__anext__(), timeout=self.timeout
+                        anext(msg_iter), timeout=self.timeout
                     )
                     logger.info(f"recieved message: {message}")
                 except TimeoutError:

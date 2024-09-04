@@ -32,3 +32,6 @@ config:
             - path: "@this"
 service:
   enabled: false
+
+pdb:
+  create: false
