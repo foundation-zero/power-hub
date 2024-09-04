@@ -98,7 +98,7 @@ jobs:
       - run: tofu init -backend-config=staging-backend.conf
         working-directory: ./infra
       
-      - run: tofu plan 
+      - run: tofu plan -lock=false
         working-directory: ./infra
         env:
           TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}

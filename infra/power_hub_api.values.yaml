@@ -15,10 +15,10 @@ initialDelaySeconds: 10
 resources:
    limits:
      cpu: 200m
-     memory: 128Mi
+     memory: 256Mi
    requests:
      cpu: 50m
-     memory: 128Mi
+     memory: 256Mi
 
 ingress:
   enabled: true
