@@ -41,7 +41,7 @@ export const usePollingApi = <T>(
     map(({ response }) => response),
   ));
 
-const betweenMeanDefault = (): [Date, Date] => [subMinutes(new Date(), 5), new Date()];
+const betweenMeanDefault = (): [Date, Date] => [subMinutes(new Date(), 60), new Date()];
 
 export const useMean =
   <T>(endpointFn: PathFn) =>
