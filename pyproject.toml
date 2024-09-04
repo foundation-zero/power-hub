@@ -23,6 +23,7 @@ graphviz = "^0.20.3"
 pydantic-settings = "^2.2.1"
 quart-cors = "^0.7.0"
 pdpyras = "^5.2.0"
+aiomqtt = "^2.3.0"
 
 [tool.poetry.group.control.dependencies]
 python = "^3.12"
