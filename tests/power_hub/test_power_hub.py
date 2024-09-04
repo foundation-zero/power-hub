@@ -389,6 +389,14 @@ def test_waste_pump_water_maker_on(
         scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
+    # 5 minutes pass
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub,
+        control_state,
+        sensors,
+        state.time.timestamp + timedelta(minutes=5),
+    )
+
     assert (
         control_values.appliance(scheduled_power_hub.outboard_pump).get().on
         == outboard_pump_on
