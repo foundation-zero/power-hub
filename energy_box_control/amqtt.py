@@ -18,6 +18,5 @@ def get_mqtt_client(logger: Logger):
         username=CONFIG.mqtt_username,
         password=CONFIG.mqtt_password,
         logger=logger,
-        # tls_insecure=(not CONFIG.mqtt_tls_enabled),
         tls_params=tls_parameters,
     )

@@ -57,7 +57,6 @@ class MQTTChecker:
 async def main():
     pagerduty_notifier = Notifier(
         [PagerDutyNotificationChannel(CONFIG.pagerduty_mqtt_checker_key)]
-        # [LoggerNotificationChannel(logger)]
     )
     sensor_mqtt_task = MQTTChecker(pagerduty_notifier, SENSOR_VALUES_TOPIC).run()
     control_mqtt_task = MQTTChecker(pagerduty_notifier, CONTROL_VALUES_TOPIC).run()

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from logging import Logger
 
 from energy_box_control.monitoring.checks import (
     SensorValueCheck,
@@ -41,15 +40,6 @@ class PagerDutyNotificationChannel(NotificationChannel):
         if CONFIG.send_notifications:
             logger.info(f"Sending alert to PagerDuty: {event.message}")
             self._events_session.trigger(event.message, event.source, event.dedup_key)  # type: ignore
-
-
-class LoggerNotificationChannel(NotificationChannel):
-
-    def __init__(self, loggr: Logger):
-        self.logger = loggr
-
-    def send_event(self, event: NotificationEvent):
-        logger.info(f"Received notification: {event}")
 
 
 class Notifier:
