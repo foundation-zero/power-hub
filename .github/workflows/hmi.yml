@@ -17,6 +17,9 @@ jobs:
 
       - run: poetry install
 
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+
       - name: Run simulation notebook
         run: poetry run jupyter nbconvert --execute --to html control_graph.ipynb
         working-directory: analysis
