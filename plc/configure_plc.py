@@ -115,7 +115,7 @@ def build_for_arch(
     dockerfile: str,
     platform: str = "linux/arm/v7",
     no_cache: bool = True,
-    poetry_deps: Optional[str] = None
+    poetry_deps: Optional[str] = None,
 ):
     build_docker_compose_commands = [
         arg
@@ -123,7 +123,7 @@ def build_for_arch(
             "docker",
             "buildx",
             "build",
-            *["--build-arg", f"POETRY_DEPS={poetry_deps}" if poetry_deps else []], 
+            *["--build-arg", f"POETRY_DEPS={poetry_deps}" if poetry_deps else []],
             "--no-cache" if no_cache else None,
             "--platform",
             platform,
@@ -214,14 +214,14 @@ def build_and_push_docker_compose():
             )
 
 
-def build_and_push_control_app(no_cache = True):
+def build_and_push_control_app(no_cache=True):
     control_app_image_name = "python-control-app:latest-armv7"
 
     build_for_arch(
         control_app_image_name,
         "python_script.Dockerfile",
         poetry_deps="control",
-        no_cache=no_cache
+        no_cache=no_cache,
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         docker_local_image_path = save_docker_image(
@@ -305,9 +305,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not args.skip_compose:
         build_and_push_docker_compose()
-    
+
     if not args.skip_control:
-        build_and_push_control_app(no_cache = not args.cache)
+        build_and_push_control_app(no_cache=not args.cache)
     copy_docker_compose_files_to_plc()
     create_env_file()
     run_docker_compose(mosquitto_only=args.mosquitto_only)
