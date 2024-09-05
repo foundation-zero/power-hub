@@ -1684,7 +1684,90 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def power_consumption(self):
+    def shore_power(self):
+        return sum(
+            [
+                self.vebus_e1_input_power,
+                self.vebus_e2_input_power,
+                self.vebus_e3_input_power,
+            ]
+        )
+
+    @property
+    def compound_power_consumption(self):
+        return sum(
+            [
+                self.e1_power_L1,
+                self.e1_power_L2,
+                self.e1_power_L3,
+                self.e2_power_L1,
+                self.e2_power_L2,
+                self.e2_power_L3,
+                self.e3_power_L1,
+                self.e3_power_L2,
+                self.e3_power_L3,
+                self.e4_power_L1,
+                self.e4_power_L2,
+                self.e4_power_L3,
+                self.e5_power_L1,
+                self.e5_power_L2,
+                self.e5_power_L3,
+                # self.e6_power_L1, #supply box
+                # self.e6_power_L2,
+                # self.e6_power_L3,
+                self.e7_power_L1,
+                self.e7_power_L2,
+                self.e7_power_L3,
+                self.e8_power_L1,
+                self.e8_power_L2,
+                self.e8_power_L3,
+            ]
+        )
+
+    @property
+    def office_power(self):
+        return sum([self.e1_power_L1, self.e1_power_L2, self.e1_power_L3])
+
+    @property
+    def workshop_power(self):
+        return sum([self.e2_power_L1, self.e2_power_L2, self.e2_power_L3])
+
+    @property
+    def simulator_power(self):
+        return sum([self.e3_power_L1, self.e3_power_L2, self.e3_power_L3])
+
+    @property
+    def kitchen_sanitary_1_power(self):
+        return sum([self.e4_power_L1, self.e4_power_L2, self.e4_power_L3])
+
+    @property
+    def kitchen_sanitary_2_power(self):
+        return sum([self.e5_power_L1, self.e5_power_L2, self.e5_power_L3])
+
+    @property
+    def supply_box_power(self):
+        return sum([self.e6_power_L1, self.e6_power_L2, self.e6_power_L3])
+
+    @property
+    def center_1_power(self):
+        return sum([self.e7_power_L1, self.e7_power_L2, self.e7_power_L3])
+
+    @property
+    def center_2_power(self):
+        return sum([self.e8_power_L1, self.e8_power_L2, self.e8_power_L3])
+
+    @property
+    def power_hub_power(self):
+        return sum(
+            [
+                self.thermo_cabinet_power_L1,
+                self.thermo_cabinet_power_L2,
+                self.thermo_cabinet_power_L3,
+            ]
+        )
+
+    @property
+    def total_power_consumption(self):
         return sum(
             [
                 self.e1_power_L1,
@@ -1711,6 +1794,9 @@ class ElectricalSensors(WithoutAppliance):
                 self.e8_power_L1,
                 self.e8_power_L2,
                 self.e8_power_L3,
+                self.thermo_cabinet_power_L1,
+                self.thermo_cabinet_power_L2,
+                self.thermo_cabinet_power_L3,
             ]
         )
 
