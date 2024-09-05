@@ -831,7 +831,7 @@ class ChillerSensors(FromState):
         )
 
     @property
-    def waste_power(self) -> Watt:
+    def waste_heat(self) -> Watt:
         return (
             self.waste_flow
             * self.waste_delta_temperature
