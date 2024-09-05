@@ -63,7 +63,9 @@ from energy_box_control.units import (
     Hours,
     Joule,
     Liter,
+    LiterPerMinute,
     LiterPerSecond,
+    MeterCubed,
     Ppm,
     Percentage,
     Ratio,
@@ -110,7 +112,7 @@ class FlowSensors(WithoutAppliance):
     flow: LiterPerSecond
     temperature: Celsius
     glycol_concentration: Percentage
-    total_volume: Liter
+    total_volume: MeterCubed
     status: FlowStatus
 
     def __eq__(self, value: object) -> bool:
@@ -1731,7 +1733,7 @@ class FreshWaterTankSensors(WaterTankSensors):
     fresh_to_technical_flow_sensor: FlowSensors
 
     @property
-    def fill_flow(self) -> LiterPerSecond:
+    def fill_flow(self) -> LiterPerMinute:
         return self.water_maker.production_flow
 
     @property
@@ -1780,7 +1782,7 @@ class WaterTreatmentSensors(FromState):
 @sensors()
 class WaterMakerSensors(FromState):
     spec: WaterMaker
-    production_flow: LiterPerSecond = sensor(
+    production_flow: LiterPerMinute = sensor(
         type=SensorType.FLOW, from_port=WaterMakerPort.DESALINATED_OUT
     )
     tank_empty: bool = sensor(type=SensorType.BOOL)
