@@ -69,8 +69,6 @@ class SimulationResult:
         control_state = combine_survival_setpoints(
             self.control_state,
             setpoints=unqueue_setpoints() or self.control_state.setpoints,
-            survival_mode=unqueue_survival_mode()
-            or self.control_state.setpoints.survival_mode,
         )
 
         try:

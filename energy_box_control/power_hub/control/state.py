@@ -99,7 +99,6 @@ class Setpoints:
     fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
-    survival_mode: bool = setpoint("survival mode on/off")
     low_battery: Ratio = setpoint("soc below which the chiller isn't used")
     high_heat_dump_temperature: Celsius = setpoint(
         "Trigger temperature for the outboard pump toggle"
@@ -151,7 +150,6 @@ def initial_control_state() -> PowerHubControlState:
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
             ),
             stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-            survival_mode=False,
             low_battery=0.55,
             high_heat_dump_temperature=38,
             heat_dump_outboard_divergence_temperature=3,

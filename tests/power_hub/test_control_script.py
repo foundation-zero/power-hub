@@ -70,11 +70,8 @@ def step(
     power_hub_sensors: PowerHubSensors,
 ) -> Tuple[PowerHubControlState, NetworkControl, NetworkState]:
     power_hub_sensors = power_hub.sensors_from_state(state)
-    control_state.setpoints.survival_mode = survival_mode(
-        control_state.setpoints.survival_mode
-    )
     control_state, control_values = control_power_hub(
-        power_hub, control_state, power_hub_sensors, state.time.timestamp
+        power_hub, control_state, power_hub_sensors, state.time.timestamp, False
     )
     return (control_state, control_values, power_hub.simulate(state, control_values))
 
