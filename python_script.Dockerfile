@@ -16,7 +16,7 @@ FROM python:3.12-bookworm AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y gcc=4:12.2.0-3 musl-dev=1.2.3-1 libc6-dev=2.36-9+deb12u7 cmake=3.25.1-1
+  && apt-get install --no-install-recommends -y gcc=4:12.2.0-3 musl-dev=1.2.3-1 libc6-dev=2.36-9+deb12u8 cmake=3.25.1-1
 
 WORKDIR /app
 
