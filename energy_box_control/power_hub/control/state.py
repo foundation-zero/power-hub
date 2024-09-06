@@ -107,6 +107,9 @@ class Setpoints:
     heat_dump_outboard_divergence_temperature: Celsius = setpoint(
         "Trigger temperature difference for the outboard pump toggle"
     )
+    fresh_water_tank_water_maker_trigger: Ratio = setpoint(
+        "level of the fresh water tank at which the water maker triggers"
+    )
 
 
 @dataclass
@@ -155,6 +158,7 @@ def initial_control_state() -> PowerHubControlState:
             low_battery=0.55,
             high_heat_dump_temperature=38,
             heat_dump_outboard_divergence_temperature=3,
+            fresh_water_tank_water_maker_trigger=0.35,  # level of the fresh water tank at which the water maker triggers
         ),
         hot_control=HotControlState(
             context=Context(),

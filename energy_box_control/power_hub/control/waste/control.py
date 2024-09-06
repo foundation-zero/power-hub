@@ -42,6 +42,14 @@ diverge_heat_dump_outboard = Fn.pred(
     )
     > control_state.setpoints.heat_dump_outboard_divergence_temperature
 )
+water_maker_should_trigger = (
+    Fn.sensors(lambda sensors: sensors.fresh_water_tank.fill_ratio)
+    < Fn.state(
+        lambda control_state: control_state.setpoints.fresh_water_tank_water_maker_trigger
+    )
+) & Fn.pred(
+    lambda _, sensors: sensors.water_maker.status == WaterMakerStatus.STANDBY.value
+)
 
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
@@ -75,6 +83,18 @@ waste_transitions: dict[
         WasteControlMode.RUN_OUTBOARD,
     ): Fn.const_pred(True).holds_true(
         Marker("run outboard until temperatures have stabilized"), timedelta(minutes=10)
+    ),
+    (
+        WasteControlMode.NO_OUTBOARD,
+        WasteControlMode.RUN_OUTBOARD_FOR_WATER_MAKER,
+    ): water_maker_should_trigger.holds_true(
+        Marker("water maker should trigger, but doesn't"), timedelta(minutes=10)
+    ),
+    (
+        WasteControlMode.RUN_OUTBOARD_FOR_WATER_MAKER,
+        WasteControlMode.RUN_OUTBOARD,
+    ): Fn.const_pred(True).holds_true(
+        Marker("Allow water maker time to update its status"), timedelta(minutes=15)
     ),
 }
 
