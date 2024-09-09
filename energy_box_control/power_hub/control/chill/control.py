@@ -184,7 +184,7 @@ def chill_control(
 
     run_waste_chiller = (
         power_hub.control(power_hub.waste_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(True, 3750))
         .control(power_hub.chilled_loop_pump)
         .value(SwitchPumpControl(True, 6000))
     )
