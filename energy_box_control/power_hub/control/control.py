@@ -201,7 +201,7 @@ def control_power_hub(
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
     time: datetime,
-    survival_mode: bool
+    survival_mode: bool,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     # Control modes
     # Hot: heat boiler / heat PCM / off

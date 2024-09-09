@@ -123,37 +123,43 @@ class PowerHubControlState:
 Fn = Functions(PowerHubControlState, PowerHubSensors)
 
 
+def initial_setpoints() -> Setpoints:
+    return Setpoints(
+        pcm_min_temperature=90,
+        pcm_max_temperature=95,
+        target_charging_temperature_offset=2,
+        minimum_charging_temperature_offset=1,
+        minimum_global_irradiance=20,
+        # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
+        pcm_discharged=75,
+        pcm_charged=83,
+        yazaki_minimum_chill_power=3000,  # we've seen the yazaki do 6000 Watt, so 3000 is a sane minimum
+        yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
+        cold_reservoir_min_temperature=8,
+        cold_reservoir_max_temperature=11,
+        chill_min_supply_temperature=14,
+        chill_max_supply_temperature=16,
+        minimum_preheat_offset=1,
+        cooling_target_temperature=28,
+        technical_water_min_fill_ratio=0.4,
+        # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
+        technical_water_max_fill_ratio=0.5,
+        # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
+        water_treatment_max_fill_ratio=0.225,
+        # be eager with the usage of the water treatment, but stay above any tank connections
+        water_treatment_min_fill_ratio=0.2,
+        fresh_water_min_fill_ratio=0.35,
+        trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        low_battery=0.55,
+        high_heat_dump_temperature=38,
+        heat_dump_outboard_divergence_temperature=3,
+    )
+
+
 def initial_control_state() -> PowerHubControlState:
     return PowerHubControlState(
-        setpoints=Setpoints(
-            pcm_min_temperature=90,
-            pcm_max_temperature=95,
-            target_charging_temperature_offset=2,
-            minimum_charging_temperature_offset=1,
-            minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=75,
-            pcm_charged=83,
-            yazaki_minimum_chill_power=3000,  # we've seen the yazaki do 6000 Watt, so 3000 is a sane minimum
-            yazaki_inlet_target_temperature=75,  # ideally lower than pcm charged temperature,
-            cold_reservoir_min_temperature=8,
-            cold_reservoir_max_temperature=11,
-            chill_min_supply_temperature=14,
-            chill_max_supply_temperature=16,
-            minimum_preheat_offset=1,
-            cooling_target_temperature=28,
-            technical_water_min_fill_ratio=0.4,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
-            technical_water_max_fill_ratio=0.5,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
-            water_treatment_max_fill_ratio=0.225,  # be eager with the usage of the water treatment, but stay above any tank connections
-            water_treatment_min_fill_ratio=0.2,
-            fresh_water_min_fill_ratio=0.35,
-            trigger_filter_water_tank=datetime(
-                2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
-            ),
-            stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-            low_battery=0.55,
-            high_heat_dump_temperature=38,
-            heat_dump_outboard_divergence_temperature=3,
-        ),
+        setpoints=initial_setpoints(),
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
