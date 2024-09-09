@@ -64,7 +64,7 @@ def control_modes_to_json(control_state: PowerHubControlState) -> str:
     )
 
 
-def parse_setpoints(message: str) -> Optional[Setpoints]:
+def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
     try:
         setpoints = Setpoints(**json.loads(message))
         return setpoints
@@ -114,11 +114,12 @@ class PowerHubControl:
             await mqtt_client.subscribe(SURVIVAL_MODE_TOPIC)
 
             async for message in mqtt_client.messages:
+                if not isinstance(message.payload, bytes):
+                    logger.warning(f"expected bytes in payload of message: {message.payload}")
+                    continue
                 if message.topic.matches(SENSOR_VALUES_TOPIC):
                     logger.info(f"Received sensor values {message.payload}")
-                    power_hub_sensors_new = self.power_hub.sensors_from_json(
-                        str(message.payload)
-                    )
+                    power_hub_sensors_new = self.power_hub.sensors_from_json(message.payload)
                     await mqtt_client.publish(
                         ENRICHED_SENSOR_VALUES_TOPIC,
                         payload=sensors_to_json(self.power_hub_sensors),
@@ -128,7 +129,7 @@ class PowerHubControl:
                         await self.control_powerhub(mqtt_client)
 
                 if message.topic.matches(SETPOINTS_TOPIC):
-                    new_setpoints = parse_setpoints(str(message.payload))
+                    new_setpoints = parse_setpoints(message.payload)
                     logger.info(f"Received setpoints")
                     if new_setpoints and self.setpoints != new_setpoints:
                         logger.info(
@@ -137,7 +138,7 @@ class PowerHubControl:
                         self.setpoints = new_setpoints
 
                 if message.topic.matches(SURVIVAL_MODE_TOPIC):
-                    survival_mode_new = json.loads(str(message.payload))
+                    survival_mode_new = json.loads(message.payload)
                     logger.info(f"Received survivalmode: {survival_mode_new}")
                     if survival_mode_new != self.survival_mode:
                         self.survival_mode = survival_mode_new

@@ -33,7 +33,7 @@ async def read_single_message_from_topic(
     try:
         result = await asyncio.wait_for(anext(mqtt_client.messages), 1)
 
-        logger.info(f"Found initial value for topic {topic}. Value: {result}")
+        logger.info(f"Found initial value for topic {topic}. Value: {result.payload}")
         return result
     except StopAsyncIteration:
         pass
