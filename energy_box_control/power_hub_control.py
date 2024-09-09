@@ -109,20 +109,27 @@ class PowerHubControl:
             )
             await asyncio.gather(setpoints_task, survival_task)
 
-            await mqtt_client.subscribe(SENSOR_VALUES_TOPIC)
-            await mqtt_client.subscribe(SETPOINTS_TOPIC)
-            await mqtt_client.subscribe(SURVIVAL_MODE_TOPIC)
+            await mqtt_client.subscribe(SENSOR_VALUES_TOPIC, qos=1)
+            await mqtt_client.subscribe(SETPOINTS_TOPIC, qos=1)
+            await mqtt_client.subscribe(SURVIVAL_MODE_TOPIC, qos=1)
 
             async for message in mqtt_client.messages:
                 if not isinstance(message.payload, bytes):
-                    logger.warning(f"expected bytes in payload of message: {message.payload}")
+                    logger.warning(
+                        f"expected bytes in payload of message: {message.payload}"
+                    )
                     continue
                 if message.topic.matches(SENSOR_VALUES_TOPIC):
                     logger.info(f"Received sensor values {message.payload}")
-                    power_hub_sensors_new = self.power_hub.sensors_from_json(message.payload)
+                    power_hub_sensors_new = self.power_hub.sensors_from_json(
+                        message.payload
+                    )
                     await mqtt_client.publish(
                         ENRICHED_SENSOR_VALUES_TOPIC,
-                        payload=sensors_to_json(self.power_hub_sensors),
+                        payload=sensors_to_json(
+                            self.power_hub_sensors, include_properties=True
+                        ),
+                        qos=1,
                     )
                     if power_hub_sensors_new != self.power_hub_sensors:
                         self.power_hub_sensors = power_hub_sensors_new
@@ -178,11 +185,13 @@ class PowerHubControl:
         cm_task = mqtt_client.publish(
             CONTROL_MODES_TOPIC,
             control_modes_to_json(control_state),
+            qos=1,
         )
 
         cv_task = mqtt_client.publish(
             CONTROL_VALUES_TOPIC,
             control_to_json(self.power_hub, control_values),
+            qos=1,
         )
         await asyncio.gather(cm_task, cv_task)
         self.cycles_since_events += 1

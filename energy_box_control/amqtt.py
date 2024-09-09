@@ -50,4 +50,4 @@ async def publish_initial_value(
 ):
     value = await read_single_message_from_topic(logger, mqtt_client, topic)
     if not value:
-        await mqtt_client.publish(topic, initial_value, retain=True)
+        await mqtt_client.publish(topic, initial_value, qos=1, retain=True)
