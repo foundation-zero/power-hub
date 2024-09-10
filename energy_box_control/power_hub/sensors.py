@@ -1682,12 +1682,22 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def shore_power(self):
+    def grid_power(self):
         return sum(
             [
                 self.vebus_e1_input_power,
                 self.vebus_e2_input_power,
                 self.vebus_e3_input_power,
+            ]
+        )
+
+    @property
+    def total_AC_power(self):
+        return sum(
+            [
+                self.vebus_e1_output_power,
+                self.vebus_e2_output_power,
+                self.vebus_e3_output_power,
             ]
         )
 
@@ -1765,7 +1775,7 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def total_power_consumption(self):
+    def total_consumers_power(self):
         return sum(
             [
                 self.e1_power_L1,
