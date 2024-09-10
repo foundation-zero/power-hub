@@ -1261,8 +1261,6 @@ class ElectricalSensors(WithoutAppliance):
     solar_1_PV_power: Watt = pv_panel_power_sensor(
         lambda schedules: schedules.global_irradiance
     )
-
-    sensor(type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER))
     solar_1_User_yield: int = sensor(resolver=const_resolver(0))
     solar_1_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
     solar_1_low_battery_voltage_alarm: ElectricalAlarm = sensor(
