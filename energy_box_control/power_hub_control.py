@@ -124,11 +124,13 @@ class PowerHubControl:
                     power_hub_sensors_new = self.power_hub.sensors_from_json(
                         message.payload
                     )
+                    enriched_power_hub_sensors = sensors_to_json(
+                        self.power_hub_sensors, include_properties=True
+                    )
+
                     await mqtt_client.publish(
                         ENRICHED_SENSOR_VALUES_TOPIC,
-                        payload=sensors_to_json(
-                            self.power_hub_sensors, include_properties=True
-                        ),
+                        payload=enriched_power_hub_sensors,
                         qos=1,
                     )
                     if power_hub_sensors_new != self.power_hub_sensors:
