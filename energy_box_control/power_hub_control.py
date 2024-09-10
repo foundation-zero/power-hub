@@ -66,7 +66,13 @@ def control_modes_to_json(control_state: PowerHubControlState) -> str:
 
 def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
     try:
-        setpoints = Setpoints(**json.loads(message))
+        setpoints_dict = json.loads(message)
+        for date_field in ["trigger_filter_water_tank", "stop_filter_water_tank"]:
+            setpoints_dict[date_field] = datetime.fromisoformat(
+                setpoints_dict[date_field]
+            )
+
+        setpoints = Setpoints(**setpoints_dict)
         return setpoints
     except TypeError as e:
         logger.error(f"Couldn't process received setpoints ({message}) with error: {e}")
