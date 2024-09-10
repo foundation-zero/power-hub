@@ -89,7 +89,6 @@ class PowerHubControl:
         self.control_state = initial_control_state()
         self.power_hub_sensors: PowerHubSensors | None = None
         self.power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
-        self.setpoints: Setpoints | None = None
         self.survival_mode: bool = False
 
     async def run(self):
@@ -140,11 +139,11 @@ class PowerHubControl:
                 if message.topic.matches(SETPOINTS_TOPIC):
                     new_setpoints = parse_setpoints(message.payload)
                     logger.info(f"Received setpoints")
-                    if new_setpoints and self.setpoints != new_setpoints:
+                    if new_setpoints and self.control_state.setpoints != new_setpoints:
                         logger.info(
                             f"Processed changed setpoints successfully: {message.payload}"
                         )
-                        self.setpoints = new_setpoints
+                        self.control_state.setpoints = new_setpoints
 
                 if message.topic.matches(SURVIVAL_MODE_TOPIC):
                     survival_mode_new = json.loads(message.payload)
