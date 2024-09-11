@@ -1,8 +1,8 @@
 import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/types";
 import type { TimeInterval } from "@/types/power-hub";
+import { customSnakeCase } from "@/utils";
 import { between } from "@/utils/numbers";
 import { subMinutes } from "date-fns";
-import { snakeCase } from "lodash";
 import { Observable, catchError, defer, map, of, repeat, retry, timer } from "rxjs";
 import { AjaxError, ajax } from "rxjs/ajax";
 
@@ -17,8 +17,7 @@ export type PathFn = (path: string) => string;
 const cache: Record<string, Observable<unknown>> = {};
 
 // Dirty hack because of small inconsistency in property naming
-const toSnakeCase = (url: string) =>
-  url.split("/").map(snakeCase).join("/").replace("rh_33", "rh33");
+const toSnakeCase = (url: string) => url.split("/").map(customSnakeCase).join("/");
 
 export const usePollingApi = <T>(
   endpoint: string,

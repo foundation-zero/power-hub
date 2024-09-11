@@ -69,6 +69,8 @@ export interface WaterTank {
 
 export interface WaterMaker {
   productionFlow: number;
+  currentProduction: number;
+  status: 0 | 1 | 2 | 3;
 }
 
 export interface WaterTreatment {
@@ -77,6 +79,7 @@ export interface WaterTreatment {
 
 export interface Weather {
   globalIrradiance: number;
+  ambientTemperature: number;
 }
 
 export interface Compound {
@@ -87,9 +90,11 @@ export interface Electrical {
   batterySystemSoc: number;
   pvPower: number;
   powerConsumption: number;
+  compoundPowerConsumption: number;
   vebusChargeState: 0 | 1 | 2;
-  shorePower: number;
-  totalPowerConsumption: number;
+  gridPower: number;
+  totalAcPower: number;
+  batterySystemPower: number;
 }
 
 export interface Fancoil {

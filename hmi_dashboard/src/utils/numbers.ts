@@ -17,7 +17,7 @@ export const formattedNumber =
       maximumFractionDigits: +digits,
     });
 
-export const formattedInt = formattedNumber(0);
+export const formattedInt = parseInt;
 
 export const formattedTemperature = formattedNumber;
 
@@ -27,7 +27,7 @@ export const useRandomNumber = (min: number, max: number, timeout?: number) => {
 
   const random = () => {
     val.value = Math.round(min + Math.random() * dx);
-    useTimeout(timeout ?? 5000 + Math.random() * 5000, { callback: random });
+    useTimeout(timeout ?? 5000 + Math.random() * 5_000, { callback: random });
   };
 
   random();

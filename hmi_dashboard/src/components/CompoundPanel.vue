@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PowerHubStore } from "@/stores/power-hub";
-import TemperatureBlock from "./TemperatureBlock.vue";
+import RoomTemperatureBlock from "./RoomTemperatureBlock.vue";
 import { useSensorValue, useLast24Hours } from "@/utils";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
@@ -26,7 +26,7 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Powerhub"
           :value="useValue('powerHubFancoil/ambientTemperature')"
           :set-point="useValue('powerHubFancoil/setpoint')"
@@ -40,7 +40,7 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Sanitary"
           :value="useValue('sanitaryFancoil/ambientTemperature')"
           :set-point="useValue('sanitaryFancoil/setpoint')"
@@ -54,7 +54,7 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Kitchen"
           :value="useValue('kitchenFancoil/ambientTemperature')"
           :set-point="useValue('kitchenFancoil/setpoint')"
@@ -68,7 +68,7 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Office #1"
           :value="useValue('office1Fancoil/ambientTemperature')"
           :set-point="useValue('office1Fancoil/setpoint')"
@@ -82,7 +82,7 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Office #2"
           :value="useValue('office2Fancoil/ambientTemperature')"
           :set-point="useValue('office2Fancoil/setpoint')"
@@ -96,11 +96,25 @@ const useValue = useSensorValue(powerHub);
         lg="3"
         xl="2"
       >
-        <TemperatureBlock
+        <RoomTemperatureBlock
           name="Simulator"
           :value="useValue('simulatorFancoil/ambientTemperature')"
           :set-point="useValue('simulatorFancoil/setpoint')"
           :history="useLast24Hours('simulatorFancoil/ambientTemperature')"
+        />
+      </v-col>
+
+      <v-col
+        cols="12"
+        sm="6"
+        md="4"
+        lg="3"
+        xl="2"
+      >
+        <RoomTemperatureBlock
+          name="Outside"
+          :value="useValue('weather/ambientTemperature')"
+          :history="useLast24Hours('weather/ambientTemperature')"
         />
       </v-col>
     </v-row>

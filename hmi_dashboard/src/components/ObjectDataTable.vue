@@ -8,12 +8,17 @@ const props = defineProps<{
   data: Observable<Record<string, any>>;
 }>();
 
+const getValue = (key: string, value: any) => {
+  if (typeof value === "string") return replaceAll(snakeCase(value), "_", " ");
+  if (key === "time") return new Date(value).toLocaleString();
+};
+
 const rows = useObservable(
   props.data.pipe(
     map((val) =>
       Object.entries(val).map(([key, value]) => ({
         key: replaceAll(snakeCase(key), "_", " "),
-        value: typeof value === "string" ? replaceAll(snakeCase(value), "_", " ") : value,
+        value: getValue(key, value),
       })),
     ),
   ),

@@ -2,6 +2,9 @@
   <v-app>
     <Suspense>
       <router-view />
+      <template #fallback>
+        <h1>Connecting to MQTT broker...</h1>
+      </template>
     </Suspense>
   </v-app>
 </template>

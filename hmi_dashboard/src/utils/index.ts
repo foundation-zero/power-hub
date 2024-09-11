@@ -1,20 +1,20 @@
 import { usePowerHubStore, type PowerHubStore } from "@/stores/power-hub";
 import type { HistoricalData, HourlyData, NestedPath, PathValue, Unit } from "@/types";
 import { add, setHours, startOfHour } from "date-fns";
-import { camelCase, merge, range } from "lodash";
+import { camelCase, merge, range, snakeCase } from "lodash";
 import { combineLatest, map, type Observable } from "rxjs";
 import { computed, watch, type Ref } from "vue";
 import { between } from "./numbers";
 
 export const camelize = <T extends Object>(obj: T): T => {
-  const copy = {} as Partial<T>;
-
-  Object.entries(obj).forEach(([key, val]) => {
-    copy[camelCase(key) as keyof T] =
-      typeof val === "object" && !Array.isArray(val) ? camelize(val) : val;
-  });
-
-  return copy as T;
+  return <T>(
+    Object.fromEntries(
+      Object.entries(obj).map(([key, val]) => [
+        camelCase(key),
+        typeof val === "object" && !Array.isArray(val) ? camelize(val) : val,
+      ]),
+    )
+  );
 };
 
 export const findValue =
@@ -126,13 +126,24 @@ export const useSensorValue =
   <T extends Parameters<PowerHubStore["sensors"]["useMqtt"]>[0]>(topic: T) =>
     powerHub.sensors.useMqtt(topic);
 
-export const useActiveState = (val: boolean) => (val ? "Active" : "Idle");
-export const useChargeState = (value: number) => {
+export const toActiveState = (val: boolean) => (val ? "Active" : "Idle");
+export const toChargeState = (value: number) => {
   if (value > 0) return "Charging";
   if (value < 0) return "Discharging";
 
   return "Idle";
 };
 
-export const replaceAll = (str: string, find: string, replace: string) =>
-  str.replace(new RegExp(find, "g"), replace);
+export const replaceAll = (str: string, searchFor: string | RegExp, replaceWith: string) =>
+  str.replace(new RegExp(searchFor, "g"), replaceWith);
+
+const snakeCaseExceptions: [searchFor: string, replaceWith: string][] = [
+  ["rh_33", "rh33"],
+  ["_ac_", "_AC_"],
+];
+
+export const customSnakeCase = (s: string) =>
+  snakeCaseExceptions.reduce(
+    (s, [searchFor, replaceWith]) => replaceAll(s, searchFor, replaceWith),
+    snakeCase(s),
+  );

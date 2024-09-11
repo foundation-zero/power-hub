@@ -1,26 +1,31 @@
 <template>
   <DataBlock
+    color="blue-lighten-1"
     :name="name"
-    color="yellow"
-    :unit="unit"
     :value="value"
     :history="history"
+    unit="L/min"
   >
+    <template #bottom>
+      <div class="text-subtitle-2">
+        {{ status ?? "&nbsp;" }}
+      </div>
+    </template>
   </DataBlock>
 </template>
 
 <script setup lang="ts">
-import { useAsWatts } from "@/utils";
 import DataBlock from "./DataBlock.vue";
-import type { Observable } from "rxjs";
 import type { ValueObject } from "@/types";
+import { type Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
 
 const props = defineProps<{
   name: string;
   value: Observable<number>;
+  status?: string;
   history?: Observable<ValueObject[]>;
 }>();
 
-const { value, unit } = useAsWatts(useObservable(props.value), 100_000);
+const value = useObservable(props.value);
 </script>

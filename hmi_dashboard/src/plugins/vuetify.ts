@@ -4,6 +4,7 @@ import "@/styles/main.scss";
 // Vuetify
 import { createVuetify } from "vuetify";
 import { aliases, fa } from "vuetify/iconsets/fa-svg";
+import "@mdi/font/css/materialdesignicons.css";
 import { mdi } from "vuetify/iconsets/mdi";
 
 export default createVuetify({

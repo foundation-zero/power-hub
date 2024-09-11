@@ -3,10 +3,18 @@ import { type PowerHubStore } from "@/stores/power-hub";
 import PowerBlock from "./PowerBlock.vue";
 import { useSensorValue, useLast24Hours } from "@/utils";
 import BatteryBlock from "./BatteryBlock.vue";
+import { map } from "rxjs";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const useValue = useSensorValue(powerHub);
+const batterySystemPower = useValue("electrical/batterySystemPower").pipe(
+  map((val) => {
+    if (val > 0) return 2;
+    if (val < 0) return 1;
+    return 0;
+  }),
+);
 </script>
 
 <template>
@@ -32,7 +40,7 @@ const useValue = useSensorValue(powerHub);
           name="Battery"
           :value="useValue('electrical/batterySystemSoc')"
           :history="useLast24Hours('electrical/batterySystemSoc')"
-          :charge-state="useValue('electrical/vebusChargeState')"
+          :charge-state="batterySystemPower"
         />
       </v-col>
       <v-col
@@ -57,8 +65,8 @@ const useValue = useSensorValue(powerHub);
       >
         <PowerBlock
           name="Grid power"
-          :value="useValue('electrical/shorePower')"
-          :history="useLast24Hours('electrical/shorePower')"
+          :value="useValue('electrical/gridPower')"
+          :history="useLast24Hours('electrical/gridPower')"
         />
       </v-col>
       <v-col
@@ -70,8 +78,8 @@ const useValue = useSensorValue(powerHub);
       >
         <PowerBlock
           name="Power consumption"
-          :value="useValue('electrical/totalPowerConsumption')"
-          :history="useLast24Hours('electrical/totalPowerConsumption')"
+          :value="useValue('electrical/totalAcPower')"
+          :history="useLast24Hours('electrical/totalAcPower')"
         />
       </v-col>
     </v-row>
