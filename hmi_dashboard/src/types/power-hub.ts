@@ -1,11 +1,19 @@
 import type { CamelCase } from "type-fest";
 
 type Port<PortName extends string = ""> = {
-  [key in CamelCase<`${PortName}${"InputTemperature" | "OutputTemperature" | "Flow"}`>]: number;
+  [key in CamelCase<`${PortName}${"DeltaTemperature" | "InputTemperature" | "OutputTemperature" | "Flow" | "Power"}`>]: number;
 };
 
 export interface Valve {
   position: number;
+}
+
+export interface Pump extends Appliance {
+  setpoint: number;
+}
+
+export interface Appliance {
+  on: boolean;
 }
 
 export type Yazaki = Port<"hot"> &
@@ -15,6 +23,7 @@ export type Yazaki = Port<"hot"> &
     wastePower: number;
     chillPower: number;
     usedPower: number;
+    operationOutput: boolean;
   };
 
 export type PCM = Port<"charge"> &
@@ -30,6 +39,8 @@ export type PCM = Port<"charge"> &
 export type Chiller = Port<"cooling"> &
   Port<"chilled"> & {
     chillPower: number;
+    status: boolean;
+    wasteHeat: number;
   };
 
 export type HeatPipes = Port & {
@@ -50,6 +61,7 @@ export type PVPanel = {
 
 export interface WaterTank {
   fill: number;
+  fillRatio: number;
   waterTreatmentFlowIn: number;
   waterMakerFlowIn: number;
   waterDemandFlow: number;
@@ -75,6 +87,35 @@ export interface Electrical {
   batterySystemSoc: number;
   pvPower: number;
   powerConsumption: number;
+  vebusChargeState: 0 | 1 | 2;
+  shorePower: number;
+  totalPowerConsumption: number;
+}
+
+export interface Fancoil {
+  ambientTemperature: number;
+  mode: number;
+  fanSpeedMode: number;
+  operatingModeWaterTemperature: number;
+  batteryWaterTemperature: number;
+  setpoint: number;
+}
+
+export interface FlowPort {
+  hotTemperature: number;
+  hotTemperatureStatus: 0 | 1;
+  coldTemperature: number;
+  coldTemperatureStatus: 0 | 1;
+  deltaTemperature: number;
+  deltaTemperatureStatus: 0 | 1;
+}
+
+export interface FlowSensor {
+  flow: number;
+  glycol_concentration: number;
+  total_volume: number;
+  temperature: number;
+  status: number;
 }
 
 export interface SensorsTree {
@@ -87,7 +128,7 @@ export interface SensorsTree {
   yazaki: Yazaki;
   chiller: Chiller;
   chillerSwitchValve: Valve;
-  coldReservoir: Reservoir;
+  coldReservoir: Reservoir & { coolingDemand: number };
   yazakiWasteBypassValve: Valve;
   preheatBypassValve: Valve;
   preheatReservoir: Reservoir;
@@ -95,12 +136,42 @@ export interface SensorsTree {
   hotReservoirPcmValve: Valve;
   chillerWasteBypassValve: Valve;
   pvPanel: PVPanel;
-  freshWaterTank: WaterTank;
   waterTreatment: WaterTreatment;
   waterMaker: WaterMaker;
   weather: Weather;
   compound: Compound;
   electrical: Electrical;
+
+  powerHubFancoil: Fancoil;
+  office1Fancoil: Fancoil;
+  office2Fancoil: Fancoil;
+  sanitaryFancoil: Fancoil;
+  kitchenFancoil: Fancoil;
+  simulatorFancoil: Fancoil;
+  rh33PcmDischarge: FlowPort;
+  rh33Preheat: FlowPort;
+  rh33DomesticHotWater: FlowPort;
+  rh33HeatPipes: FlowPort;
+  rh33HotStorage: FlowPort;
+  rh33YazakiHot: FlowPort;
+  rh33Waste: FlowPort;
+  rh33Chill: FlowPort;
+  rh33HeatDdump: FlowPort;
+  rh33CoolingDemand: FlowPort;
+  outboardExchange: Port;
+
+  freshWaterTank: WaterTank & { flowToTechnical: number; flowToKitchen: number };
+  greyWaterTank: WaterTank;
+  blackWaterTank: WaterTank;
+  technicalWaterTank: WaterTank;
+  outboardTemperatureSensor: {
+    temperature: number;
+  };
+
+  yazakiHotFlowSensor: FlowSensor;
+  wasteFlowSensor: FlowSensor;
+  chilledFlowSensor: FlowSensor;
+  coolingDemandFlowSensor: FlowSensor;
 }
 
 export type Watt = number;
@@ -120,8 +191,9 @@ export interface SumTree {
 }
 
 export interface Tree {
-  applianceSensors: SensorsTree;
+  sensorValues: SensorsTree;
   powerHub: SumTree;
+  controlValues: ControlValues;
 }
 
 export type PowerHubComponent =
@@ -143,3 +215,27 @@ export type PowerHubComponent =
 export type DateRange = [from: string, to: string];
 
 export type TimeInterval = "d" | "h" | "min" | "s";
+
+export interface ControlValues {
+  coolingDemandPump: Pump;
+  hotSwitchValve: Valve;
+  heatPipesValve: Valve;
+  heatPipesSupplyBoxPump: Pump;
+  heatPipesPowerHubPump: Pump;
+  wasteBypass: Valve;
+  yazakiHotBypass: Valve;
+  wasteSwitch: Valve;
+  chillerSwitch: Valve;
+  chiller: Appliance;
+  yazaki: Appliance;
+  chilledLoopPump: Pump;
+  pcmToYazakiPump: Pump;
+  wastePump: Pump;
+  outboardPump: Appliance & {
+    frequencyRatio: number;
+  };
+  waterFilterBypassValve: Valve;
+  technicalWaterRegulator: Valve;
+  waterTreatment: Appliance;
+  time: number;
+}

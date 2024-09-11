@@ -2,6 +2,7 @@ import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/type
 import type { TimeInterval } from "@/types/power-hub";
 import { between } from "@/utils/numbers";
 import { subMinutes } from "date-fns";
+import { snakeCase } from "lodash";
 import { Observable, catchError, defer, map, of, repeat, retry, timer } from "rxjs";
 import { AjaxError, ajax } from "rxjs/ajax";
 
@@ -15,6 +16,10 @@ export type PathFn = (path: string) => string;
 
 const cache: Record<string, Observable<unknown>> = {};
 
+// Dirty hack because of small inconsistency in property naming
+const toSnakeCase = (url: string) =>
+  url.split("/").map(snakeCase).join("/").replace("rh_33", "rh33");
+
 export const usePollingApi = <T>(
   endpoint: string,
   pollingInterval: number = DEFAULT_POLLING_INTERVAL,
@@ -23,7 +28,7 @@ export const usePollingApi = <T>(
 ) =>
   ((<Observable<T>>cache[endpoint]) ??= defer(() =>
     ajax<T>({
-      url: `${import.meta.env.VITE_API}${endpoint}`,
+      url: `${import.meta.env.VITE_API}${toSnakeCase(endpoint)}`,
       headers: DEFAULT_HEADERS,
       queryParams: typeof queryParams === "function" ? queryParams() : queryParams,
     }),
@@ -94,7 +99,7 @@ export const toHourlyData = ({
   value,
 }: HistoricalData<string | Date, number>): HourlyData => ({
   hour: new Date(time).getHours(),
-  value: Math.min(value, 100),
+  value,
 });
 
 export const useLastValues =

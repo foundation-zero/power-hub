@@ -3,10 +3,20 @@ import "@/styles/main.scss";
 
 // Vuetify
 import { createVuetify } from "vuetify";
+import { aliases, fa } from "vuetify/iconsets/fa-svg";
+import { mdi } from "vuetify/iconsets/mdi";
 
 export default createVuetify({
+  icons: {
+    defaultSet: "fa",
+    aliases,
+    sets: {
+      fa,
+      mdi,
+    },
+  },
   theme: {
-    defaultTheme: "light",
+    defaultTheme: "dark",
     themes: {
       light: {
         colors: {},

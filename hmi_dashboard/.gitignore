@@ -20,6 +20,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+.vite/*
 
 *.tsbuildinfo
 

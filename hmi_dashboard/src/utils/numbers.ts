@@ -12,9 +12,9 @@ export const lToMl = (val: number) => val * 1000;
 export const formattedNumber =
   (digits: number = 1) =>
   (val: number = 0) =>
-    +val.toLocaleString("nl-NL", {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
+    val.toLocaleString("nl-NL", {
+      minimumFractionDigits: +digits,
+      maximumFractionDigits: +digits,
     });
 
 export const formattedInt = formattedNumber(0);
