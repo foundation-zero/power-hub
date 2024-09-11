@@ -100,7 +100,7 @@ def hot_control(
         feedback_valve_controller, feedback_valve_control = (
             control_state.hot_control.feedback_valve_controller.run(
                 heat_setpoint, sensors.pcm.charge_input_temperature
-            )
+            )  # position 1 reduces flow to the pcm, so a positive error (setpt > pcm input temp) should lead to 1, and a negative error (setpt < pcm input temp) should lead to 0
         )
         hot_switch_valve_position = HOT_SWITCH_VALVE_PCM_POSITION
         run_heat_pipes_pump = True
