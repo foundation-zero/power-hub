@@ -1261,8 +1261,6 @@ class ElectricalSensors(WithoutAppliance):
     solar_1_PV_power: Watt = pv_panel_power_sensor(
         lambda schedules: schedules.global_irradiance
     )
-
-    sensor(type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER))
     solar_1_User_yield: int = sensor(resolver=const_resolver(0))
     solar_1_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
     solar_1_low_battery_voltage_alarm: ElectricalAlarm = sensor(
@@ -1684,12 +1682,22 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def shore_power(self):
+    def grid_power(self):
         return sum(
             [
                 self.vebus_e1_input_power,
                 self.vebus_e2_input_power,
                 self.vebus_e3_input_power,
+            ]
+        )
+
+    @property
+    def total_AC_power(self):
+        return sum(
+            [
+                self.vebus_e1_output_power,
+                self.vebus_e2_output_power,
+                self.vebus_e3_output_power,
             ]
         )
 
@@ -1767,7 +1775,7 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def total_power_consumption(self):
+    def total_consumers_power(self):
         return sum(
             [
                 self.e1_power_L1,
