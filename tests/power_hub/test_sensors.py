@@ -36,7 +36,6 @@ def queue_on_message(
     message: MQTTMessage,
 ):
     decoded_message = str(message.payload.decode("utf-8"))
-    print(f"Received message: {decoded_message}")
     queue.put(decoded_message)
 
 

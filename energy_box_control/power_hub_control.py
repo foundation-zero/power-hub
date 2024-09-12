@@ -2,7 +2,7 @@ import asyncio
 import dataclasses
 from datetime import datetime
 import json
-from typing import Any, Optional
+from typing import Any
 
 import aiomqtt
 
@@ -22,10 +22,10 @@ from energy_box_control.power_hub.control.control import (
     control_to_json,
 )
 from energy_box_control.power_hub.control.state import (
-    Setpoints,
     initial_control_state,
     initial_setpoints,
     PowerHubControlState,
+    parse_setpoints,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.sensors import sensors_to_json
@@ -64,26 +64,6 @@ def control_modes_to_json(control_state: PowerHubControlState) -> str:
     )
 
 
-def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
-    try:
-        setpoints_dict = json.loads(message)
-        for date_field in ["trigger_filter_water_tank", "stop_filter_water_tank"]:
-            setpoints_dict[date_field] = datetime.fromisoformat(
-                setpoints_dict[date_field]
-            )
-
-        setpoints = Setpoints(**setpoints_dict)
-        return setpoints
-    except TypeError as e:
-        logger.error(f"Couldn't process received setpoints ({message}) with error: {e}")
-    except json.JSONDecodeError as e:
-        logger.error(
-            f"Couldn't parse received setpoints json ({message}) with error: {e}"
-        )
-
-    return None
-
-
 class PowerHubControl:
     def __init__(self):
         self.notifier = Notifier(
@@ -101,18 +81,21 @@ class PowerHubControl:
 
         async with get_mqtt_client(logger) as mqtt_client:
             logger.info("Starting power hub control loop")
-            setpoints_task = publish_initial_value(
-                logger,
-                mqtt_client,
-                SETPOINTS_TOPIC,
-                json.dumps(
-                    dataclasses.asdict(initial_setpoints()), cls=ControlModesEncoder
-                ),
-            )
-            survival_task = publish_initial_value(
-                logger, mqtt_client, SURVIVAL_MODE_TOPIC, "false"
-            )
-            await asyncio.gather(setpoints_task, survival_task)
+
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(
+                    publish_initial_value(
+                        logger,
+                        SETPOINTS_TOPIC,
+                        json.dumps(
+                            dataclasses.asdict(initial_setpoints()),
+                            cls=ControlModesEncoder,
+                        ),
+                    )
+                )
+                tg.create_task(
+                    publish_initial_value(logger, SURVIVAL_MODE_TOPIC, "false")
+                )
 
             await mqtt_client.subscribe(SENSOR_VALUES_TOPIC, qos=1)
             await mqtt_client.subscribe(SETPOINTS_TOPIC, qos=1)
@@ -145,7 +128,10 @@ class PowerHubControl:
                 if message.topic.matches(SETPOINTS_TOPIC):
                     new_setpoints = parse_setpoints(message.payload)
                     logger.info(f"Received setpoints")
-                    if new_setpoints and self.control_state.setpoints != new_setpoints:
+                    if new_setpoints is None:
+                        logger.error(f"Couldn't process received setpoints ({message})")
+
+                    elif self.control_state.setpoints != new_setpoints:
                         logger.info(
                             f"Processed changed setpoints successfully: {message.payload}"
                         )

@@ -45,9 +45,8 @@ async def read_single_message_from_topic(
     return result
 
 
-async def publish_initial_value(
-    logger: Logger, mqtt_client: Client, topic: str, initial_value: PayloadType
-):
-    value = await read_single_message_from_topic(logger, mqtt_client, topic)
-    if not value:
-        await mqtt_client.publish(topic, initial_value, qos=1, retain=True)
+async def publish_initial_value(logger: Logger, topic: str, initial_value: PayloadType):
+    async with get_mqtt_client(logger) as mqtt_client:
+        value = await read_single_message_from_topic(logger, mqtt_client, topic)
+        if value is None:
+            await mqtt_client.publish(topic, initial_value, qos=1, retain=True)

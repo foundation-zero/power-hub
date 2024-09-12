@@ -1,5 +1,8 @@
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Optional
+
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.state_machines import Context, Functions
 from energy_box_control.power_hub.components import (
@@ -106,6 +109,23 @@ class Setpoints:
     heat_dump_outboard_divergence_temperature: Celsius = setpoint(
         "Trigger temperature difference for the outboard pump toggle"
     )
+
+
+def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
+    try:
+        setpoints_dict = json.loads(message)
+        for date_field in ["trigger_filter_water_tank", "stop_filter_water_tank"]:
+            setpoints_dict[date_field] = datetime.fromisoformat(
+                setpoints_dict[date_field]
+            )
+
+        return Setpoints(**setpoints_dict)
+    except TypeError:
+        pass
+    except json.JSONDecodeError:
+        pass
+
+    return None
 
 
 @dataclass
