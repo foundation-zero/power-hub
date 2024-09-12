@@ -72,9 +72,9 @@ PREHEAT_SWITCH_VALVE_PREHEAT_POSITION = (
 )  # CV-1003, 0 position: waste return -> preheat
 PREHEAT_SWITCH_VALVE_BYPASS_POSITION = ValveControl.b_position()
 HEAT_PIPES_BYPASS_OPEN_POSITION = (
-    ValveControl.a_position()
-)  # CV-1006, 0 position: bypass open
-HEAT_PIPES_BYPASS_CLOSED_POSITION = ValveControl.b_position()
+    ValveControl.b_position()
+)  # CV-1006, 1 position: bypass open
+HEAT_PIPES_BYPASS_CLOSED_POSITION = ValveControl.a_position()
 TECHNICAL_WATER_REGULATOR_CLOSED_POSITION = (
     ValveControl.a_position()
 )  # CV-4001, 0 position: closed

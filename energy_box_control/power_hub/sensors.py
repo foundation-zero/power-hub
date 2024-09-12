@@ -1261,8 +1261,6 @@ class ElectricalSensors(WithoutAppliance):
     solar_1_PV_power: Watt = pv_panel_power_sensor(
         lambda schedules: schedules.global_irradiance
     )
-
-    sensor(type=SensorType.POWER, resolver=const_resolver(DEFAULT_POWER))
     solar_1_User_yield: int = sensor(resolver=const_resolver(0))
     solar_1_MPP_operation_mode: int = sensor(resolver=const_resolver(0))
     solar_1_low_battery_voltage_alarm: ElectricalAlarm = sensor(
@@ -1684,12 +1682,22 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def shore_power(self):
+    def grid_power(self):
         return sum(
             [
                 self.vebus_e1_input_power,
                 self.vebus_e2_input_power,
                 self.vebus_e3_input_power,
+            ]
+        )
+
+    @property
+    def total_AC_power(self):
+        return sum(
+            [
+                self.vebus_e1_output_power,
+                self.vebus_e2_output_power,
+                self.vebus_e3_output_power,
             ]
         )
 
@@ -1758,6 +1766,14 @@ class ElectricalSensors(WithoutAppliance):
 
     @property
     def power_hub_power(self):
+        return (
+            self.total_AC_power
+            - self.compound_power_consumption
+            - self.supply_box_power
+        )
+
+    @property
+    def thermal_cabinet_power(self):
         return sum(
             [
                 self.thermo_cabinet_power_L1,
@@ -1767,38 +1783,8 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def total_power_consumption(self):
-        return sum(
-            [
-                self.e1_power_L1,
-                self.e1_power_L2,
-                self.e1_power_L3,
-                self.e2_power_L1,
-                self.e2_power_L2,
-                self.e2_power_L3,
-                self.e3_power_L1,
-                self.e3_power_L2,
-                self.e3_power_L3,
-                self.e4_power_L1,
-                self.e4_power_L2,
-                self.e4_power_L3,
-                self.e5_power_L1,
-                self.e5_power_L2,
-                self.e5_power_L3,
-                self.e6_power_L1,
-                self.e6_power_L2,
-                self.e6_power_L3,
-                self.e7_power_L1,
-                self.e7_power_L2,
-                self.e7_power_L3,
-                self.e8_power_L1,
-                self.e8_power_L2,
-                self.e8_power_L3,
-                self.thermo_cabinet_power_L1,
-                self.thermo_cabinet_power_L2,
-                self.thermo_cabinet_power_L3,
-            ]
-        )
+    def power_hub_ex_thermal_cabinet_power(self):
+        return self.power_hub_power - self.thermal_cabinet_power
 
 
 @sensors()
@@ -1841,9 +1827,11 @@ class TechnicalWaterSensors(WithoutAppliance):
     technical_to_wash_off: FlowSensors
     technical_to_sanitary: FlowSensors
 
+    @property
     def flow_to_sanitary(self) -> LiterPerSecond:
         return self.technical_to_sanitary.flow
 
+    @property
     def flow_to_wash_off(self) -> LiterPerSecond:
         return self.technical_to_wash_off.flow
 

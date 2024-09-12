@@ -461,12 +461,12 @@ class PowerHub(Network[PowerHubSensors]):
             .at(ValvePort.AB)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.A)
+            .at(ValvePort.B)
             .to(self.heat_pipes_mix)
             .at(MixPort.B)
 
             .connect(self.heat_pipes_valve)
-            .at(ValvePort.B)
+            .at(ValvePort.A)
             .to(self.hot_switch_valve)
             .at(ValvePort.AB)
 

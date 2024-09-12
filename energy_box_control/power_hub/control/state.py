@@ -149,8 +149,7 @@ def initial_setpoints() -> Setpoints:
         pcm_max_temperature=95,
         target_charging_temperature_offset=2,
         minimum_charging_temperature_offset=1,
-        minimum_global_irradiance=20,
-        # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
+        minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
         pcm_discharged=75,
         pcm_charged=83,
         yazaki_minimum_chill_power=3000,  # we've seen the yazaki do 6000 Watt, so 3000 is a sane minimum
@@ -161,13 +160,10 @@ def initial_setpoints() -> Setpoints:
         chill_max_supply_temperature=16,
         minimum_preheat_offset=1,
         cooling_target_temperature=28,
-        technical_water_min_fill_ratio=0.4,
-        # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
-        technical_water_max_fill_ratio=0.5,
-        # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
-        water_treatment_max_fill_ratio=0.225,
-        # be eager with the usage of the water treatment, but stay above any tank connections
-        water_treatment_min_fill_ratio=0.2,
+        technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
+        technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
+        water_treatment_max_fill_ratio=0.725,  # avoid using water treatment
+        water_treatment_min_fill_ratio=0.7,
         fresh_water_min_fill_ratio=0.35,
         trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
         stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
