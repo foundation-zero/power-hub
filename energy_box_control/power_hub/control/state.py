@@ -136,8 +136,8 @@ def initial_control_state() -> PowerHubControlState:
             pcm_charged=79,
             yazaki_minimum_chill_power=1000,  # Give the Yazaki a chance to do something
             yazaki_inlet_target_temperature=100,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
-            cold_reservoir_min_temperature=8,
-            cold_reservoir_max_temperature=11,
+            cold_reservoir_min_temperature=15,
+            cold_reservoir_max_temperature=16.5,
             chill_min_supply_temperature=14,
             chill_max_supply_temperature=16,
             minimum_preheat_offset=1,
