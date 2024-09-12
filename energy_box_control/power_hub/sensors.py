@@ -1766,6 +1766,14 @@ class ElectricalSensors(WithoutAppliance):
 
     @property
     def power_hub_power(self):
+        return (
+            self.total_AC_power
+            - self.compound_power_consumption
+            - self.supply_box_power
+        )
+
+    @property
+    def thermal_cabinet_power(self):
         return sum(
             [
                 self.thermo_cabinet_power_L1,
@@ -1775,38 +1783,8 @@ class ElectricalSensors(WithoutAppliance):
         )
 
     @property
-    def total_consumers_power(self):
-        return sum(
-            [
-                self.e1_power_L1,
-                self.e1_power_L2,
-                self.e1_power_L3,
-                self.e2_power_L1,
-                self.e2_power_L2,
-                self.e2_power_L3,
-                self.e3_power_L1,
-                self.e3_power_L2,
-                self.e3_power_L3,
-                self.e4_power_L1,
-                self.e4_power_L2,
-                self.e4_power_L3,
-                self.e5_power_L1,
-                self.e5_power_L2,
-                self.e5_power_L3,
-                self.e6_power_L1,
-                self.e6_power_L2,
-                self.e6_power_L3,
-                self.e7_power_L1,
-                self.e7_power_L2,
-                self.e7_power_L3,
-                self.e8_power_L1,
-                self.e8_power_L2,
-                self.e8_power_L3,
-                self.thermo_cabinet_power_L1,
-                self.thermo_cabinet_power_L2,
-                self.thermo_cabinet_power_L3,
-            ]
-        )
+    def power_hub_ex_thermal_cabinet_power(self):
+        return self.power_hub_power - self.thermal_cabinet_power
 
 
 @sensors()
