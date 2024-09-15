@@ -10,8 +10,6 @@ class HealthBound:
         return self.lower_bound < value < self.upper_bound
 
 
-# TODO This file needs to be reviewed on whether all values make sense.
-
 TANK_BOUNDS = {
     "grey_water_tank": HealthBound(0, 0.6),
     "black_water_tank": HealthBound(
@@ -19,7 +17,7 @@ TANK_BOUNDS = {
     ),  # 80 cm is max, 92 cm is 1000 L * 2, need some margin to actually get the black water service in there
     "technical_water_tank": HealthBound(0.4, 0.8),
     "fresh_water_tank": HealthBound(
-        0.325, 0.8
+        0.325, 0.85
     ),  # water maker kicks in around 375 liters
 }
 
