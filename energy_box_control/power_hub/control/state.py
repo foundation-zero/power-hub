@@ -79,18 +79,16 @@ class Setpoints:
     cold_reservoir_min_temperature: Celsius = setpoint(
         "minimum temperature of cold reservoir to be maintained by chillers"
     )
-    chill_max_supply_temperature: Celsius = setpoint(
-        "temperature of chilled water above which cooling supply stops"
+    cold_supply_max_temperature: Celsius = setpoint(
+        "temperature of water coming out of cold reservoir above which cooling supply stops"
     )
     chill_min_supply_temperature: Celsius = setpoint(
-        "temperature of chilled water below which cooling supply starts"
+        "temperature of chilled water below which cooling supply can start"
     )
     minimum_preheat_offset: Celsius = setpoint(
         "minimal offset of waste heat to preheat reservoir temperature"
     )
-    cooling_target_temperature: Celsius = setpoint(
-        "target temperature of cooling water"
-    )
+    waste_target_temperature: Celsius = setpoint("target temperature of waste water")
     water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
     water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
     technical_water_max_fill_ratio: float = setpoint(
@@ -157,9 +155,9 @@ def initial_setpoints() -> Setpoints:
         cold_reservoir_min_temperature=15,
         cold_reservoir_max_temperature=16.5,
         chill_min_supply_temperature=14,
-        chill_max_supply_temperature=16,
+        cold_supply_max_temperature=16,
         minimum_preheat_offset=1,
-        cooling_target_temperature=28,
+        waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
         technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
         water_treatment_max_fill_ratio=0.925,  # avoid using water treatment
