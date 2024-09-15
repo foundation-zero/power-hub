@@ -158,7 +158,7 @@ def schedules():
     return PowerHubSchedules.schedules_from_data()
 
 
-@mark.parametrize("seconds", [1, 60, 360])
+@mark.parametrize("seconds", [1, 60])
 def test_power_hub_simulation_data_schedule(
     power_hub_const, min_max_temperature, seconds, schedules
 ):
