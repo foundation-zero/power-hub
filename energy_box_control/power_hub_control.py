@@ -26,6 +26,7 @@ from energy_box_control.power_hub.control.state import (
     initial_setpoints,
     PowerHubControlState,
     parse_setpoints,
+    ManualControl,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.sensors import sensors_to_json
@@ -37,6 +38,7 @@ MQTT_TOPIC_BASE = "power_hub"
 CONTROL_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/control_values"
 SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/sensor_values"
 CONTROL_MODES_TOPIC = f"{MQTT_TOPIC_BASE}/control_modes"
+MANUAL_CONTROL_TOPIC = f"{MQTT_TOPIC_BASE}/manual_control"
 ENRICHED_SENSOR_VALUES_TOPIC = f"{MQTT_TOPIC_BASE}/enriched_sensor_values"
 SETPOINTS_TOPIC = f"{MQTT_TOPIC_BASE}/setpoints"
 SURVIVAL_MODE_TOPIC = f"{MQTT_TOPIC_BASE}/survival"
@@ -102,6 +104,7 @@ class PowerHubControl:
             await mqtt_client.subscribe(SENSOR_VALUES_TOPIC, qos=1)
             await mqtt_client.subscribe(SETPOINTS_TOPIC, qos=1)
             await mqtt_client.subscribe(SURVIVAL_MODE_TOPIC, qos=1)
+            await mqtt_client.subscribe(MANUAL_CONTROL_TOPIC, qos=1)
 
             async for message in mqtt_client.messages:
                 if not isinstance(message.payload, bytes):
@@ -129,7 +132,6 @@ class PowerHubControl:
 
                 if message.topic.matches(SETPOINTS_TOPIC):
                     new_setpoints = parse_setpoints(message.payload)
-                    logger.info(f"Received setpoints")
                     if new_setpoints is None:
                         logger.error(f"Couldn't process received setpoints ({message})")
 
@@ -150,6 +152,18 @@ class PowerHubControl:
                         logger.info(
                             f"Processed changed survival mode {self.survival_mode}"
                         )
+
+                if message.topic.matches(MANUAL_CONTROL_TOPIC):
+                    new_manual_control: ManualControl | None = ManualControl.from_json(
+                        message.payload
+                    )
+                    if new_manual_control is None:
+                        logger.error(
+                            f"Couldn't process received manual_control ({message})"
+                        )
+                    else:
+                        logger.info(f"Received manual_control: {new_manual_control}")
+                        self.control_state.manual_control = new_manual_control
 
     async def control_powerhub(self, mqtt_client: aiomqtt.Client):
         if not self.power_hub_sensors:

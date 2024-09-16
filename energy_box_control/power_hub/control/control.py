@@ -29,7 +29,10 @@ from energy_box_control.power_hub.control.hot.state import (
     HotControlMode,
     HotControlState,
 )
-from energy_box_control.power_hub.control.state import PowerHubControlState
+from energy_box_control.power_hub.control.state import (
+    PowerHubControlState,
+    ManualControl,
+)
 from energy_box_control.power_hub.control.technical_water.control import (
     technical_water_control,
 )
@@ -108,6 +111,7 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
             CoolingSupplyControlMode.NO_SUPPLY,
         ),
         setpoints=control_state.setpoints,
+        manual_control=ManualControl(),
     )
 
 
@@ -251,6 +255,7 @@ def control_power_hub(
             water_treatment_control=water_treatment_control_state,
             cooling_supply_control=cooling_supply_control_state,
             setpoints=control_state.setpoints,
+            manual_control=control_state.manual_control,
         ),
         control,
     )

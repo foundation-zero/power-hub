@@ -138,6 +138,38 @@ def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
 
 
 @dataclass
+class ManualControl:
+    run_outboard_for_10_min_starting_from: datetime | None = field(
+        metadata={
+            "description": "Manually run the outboard for 10 minutes starting from a certain time"
+        },
+        default=None,
+    )
+    cooling_pump_enabled: bool | None = field(
+        metadata={"description": "Enable the cooling pump"}, default=None
+    )
+    filter_water_tank: bool | None = field(
+        metadata={"description": "Enable the water tank filtering"}, default=None
+    )
+
+    @staticmethod
+    def from_json(manual_control_input: str | bytes) -> Optional["ManualControl"]:
+
+        try:
+            json_dict = json.loads(manual_control_input)
+            for date_field in ["run_outboard_for_10_min_starting_from"]:
+                json_dict[date_field] = datetime.fromisoformat(json_dict[date_field])
+
+            return ManualControl(**json_dict)
+        except TypeError:
+            pass
+        except json.JSONDecodeError:
+            pass
+
+        return None
+
+
+@dataclass
 class PowerHubControlState:
     hot_control: HotControlState
     chill_control: ChillControlState
@@ -147,6 +179,7 @@ class PowerHubControlState:
     water_treatment_control: WaterTreatmentControlState
     cooling_supply_control: CoolingSupplyControlState
     setpoints: Setpoints
+    manual_control: ManualControl
 
 
 Fn = Functions(PowerHubControlState, PowerHubSensors)
@@ -187,6 +220,7 @@ def initial_setpoints() -> Setpoints:
 def initial_control_state() -> PowerHubControlState:
     return PowerHubControlState(
         setpoints=initial_setpoints(),
+        manual_control=ManualControl(),
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
