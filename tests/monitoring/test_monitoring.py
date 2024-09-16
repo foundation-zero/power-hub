@@ -370,7 +370,7 @@ def test_flow_sensor_alarm_checks(source):
 
 
 def test_flow_two_alarm_checks(source):
-    fault_code = (1 << 6) | (1 << 7)
+    fault_code = (1 << 6) | (1 << 9)
     power_hub = PowerHub.power_hub(PowerHubSchedules.const_schedules())
     sensors = power_hub.sensors_from_state(power_hub.simple_initial_state())
     sensors.chilled_flow_sensor.status = fault_code
@@ -382,9 +382,9 @@ def test_flow_two_alarm_checks(source):
             severity=Severity.CRITICAL,
         ),
         NotificationEvent(
-            message=f"chilled_flow_sensor_flow_measurement_error_alarm is raised",
+            message=f"chilled_flow_sensor_flowbody_temperature_sensor_alarm is raised",
             source=source,
-            dedup_key=f"chilled_flow_sensor_flow_measurement_error_alarm",
+            dedup_key=f"chilled_flow_sensor_flowbody_temperature_sensor_alarm",
             severity=Severity.CRITICAL,
         ),
     ]
