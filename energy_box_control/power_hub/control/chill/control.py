@@ -123,6 +123,10 @@ chill_transitions: dict[
         | low_yazaki_chill_power.holds_true(
             Marker("Yazaki not supplying chill"), timedelta(minutes=5)
         )
+        | Fn.const_pred(True).holds_true(
+            Marker("Switch off Yazaki after two hours to engage Electric chiller"),
+            timedelta(hours=2),
+        )
     )
     & ~low_battery,  # switch from Yazaki to chiller if PCM is fully discharged
     (
@@ -197,7 +201,7 @@ def chill_control(
 
     run_yazaki_pumps = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(True, 5500))
         .control(power_hub.yazaki)
         .value(YazakiControl(False))
         .control(power_hub.chiller)
@@ -206,7 +210,7 @@ def chill_control(
     )
     run_yazaki = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
-        .value(SwitchPumpControl(True))
+        .value(SwitchPumpControl(True, 5500))
         .control(power_hub.yazaki)
         .value(YazakiControl(True))
         .control(power_hub.chiller)
