@@ -21,24 +21,29 @@ cooling_demand = Fn.pred(
 chilled_water_cold_enough = Fn.pred(
     lambda control_state, sensors: sensors.rh33_chill.cold_temperature
     < control_state.setpoints.chill_min_supply_temperature
-)
-chilled_water_too_warm = Fn.pred(
-    lambda control_state, sensors: sensors.rh33_chill.cold_temperature
-    > control_state.setpoints.chill_max_supply_temperature
-)
+) & Fn.pred(lambda _, sensors: sensors.chilled_flow_sensor.flow > 0)
 
 cold_reservoir_cold_enough = Fn.pred(
     lambda control_state, sensors: sensors.cold_reservoir.temperature
     < control_state.setpoints.cold_reservoir_min_temperature
 )
-cold_reservoir_too_warm = Fn.pred(
-    lambda control_state, sensors: sensors.cold_reservoir.temperature
-    > control_state.setpoints.cold_reservoir_max_temperature
-)
+
+water_too_warm = Fn.pred(
+    lambda control_state, sensors: sensors.rh33_cooling_demand.cold_temperature
+    > control_state.setpoints.cold_supply_max_temperature
+) & Fn.pred(lambda _, sensors: sensors.cooling_demand_flow_sensor.flow > 0)
 
 water_cold_enough = chilled_water_cold_enough | cold_reservoir_cold_enough
 
-water_too_warm = chilled_water_too_warm & cold_reservoir_too_warm
+scheduled_disabled = Fn.pred(
+    lambda control_state, _: control_state.setpoints.cooling_supply_disabled_time
+    < datetime.now().time()
+) & Fn.pred(
+    lambda control_state, _: control_state.setpoints.cooling_supply_enabled_time
+    > datetime.now().time()
+)
+
+scheduled_enabled = ~scheduled_disabled
 
 cooling_supply_transitions: dict[
     tuple[CoolingSupplyControlMode, CoolingSupplyControlMode],
@@ -47,14 +52,15 @@ cooling_supply_transitions: dict[
     (
         CoolingSupplyControlMode.NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
-    ): cooling_demand
+    ): scheduled_enabled
+    & cooling_demand
     & water_cold_enough
     & ~low_battery
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
     ),
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | water_too_warm | low_battery
+        ~cooling_demand | water_too_warm | low_battery | scheduled_disabled
     )
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)

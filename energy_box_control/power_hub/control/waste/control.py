@@ -102,7 +102,7 @@ def waste_control(
     ]:
         frequency_controller, frequency_control = (
             control_state.waste_control.frequency_controller.run(
-                control_state.setpoints.cooling_target_temperature,
+                control_state.setpoints.waste_target_temperature,
                 sensors.rh33_heat_dump.cold_temperature,
             )
         )
