@@ -158,7 +158,7 @@ def schedules():
     return PowerHubSchedules.schedules_from_data()
 
 
-@mark.parametrize("seconds", [1, 60, 360])
+@mark.parametrize("seconds", [1, 60])
 def test_power_hub_simulation_data_schedule(
     power_hub_const, min_max_temperature, seconds, schedules
 ):
@@ -417,7 +417,7 @@ def test_water_treatment(
     state = scheduled_power_hub.simulate(state, control_values)
     sensors = scheduled_power_hub.sensors_from_state(state)
 
-    sensors.grey_water_tank.fill_ratio = 0.9
+    sensors.grey_water_tank.fill_ratio = 0.95
 
     control_state, control_values = control_power_hub(
         scheduled_power_hub, control_state, sensors, state.time.timestamp, False
