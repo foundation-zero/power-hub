@@ -35,7 +35,7 @@ water_too_warm = Fn.pred(
 
 water_cold_enough = chilled_water_cold_enough | cold_reservoir_cold_enough
 
-nighttime = Fn.pred(
+scheduled_disabled = Fn.pred(
     lambda control_state, _: control_state.setpoints.cooling_supply_disabled_time
     < datetime.now().time()
 ) & Fn.pred(
@@ -43,7 +43,7 @@ nighttime = Fn.pred(
     > datetime.now().time()
 )
 
-daytime = ~nighttime
+scheduled_enabled = ~scheduled_disabled
 
 cooling_supply_transitions: dict[
     tuple[CoolingSupplyControlMode, CoolingSupplyControlMode],
@@ -52,7 +52,7 @@ cooling_supply_transitions: dict[
     (
         CoolingSupplyControlMode.NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
-    ): daytime
+    ): scheduled_enabled
     & cooling_demand
     & water_cold_enough
     & ~low_battery
@@ -60,7 +60,7 @@ cooling_supply_transitions: dict[
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
     ),
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | water_too_warm | low_battery | nighttime
+        ~cooling_demand | water_too_warm | low_battery | scheduled_disabled
     )
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
