@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from typing import Optional
 
 from energy_box_control.control.pid import Pid, PidConfig
@@ -82,6 +82,12 @@ class Setpoints:
     cold_supply_max_temperature: Celsius = setpoint(
         "temperature of water coming out of cold reservoir above which cooling supply stops"
     )
+    cooling_supply_disabled_time: time = setpoint(
+        "Time from which cooling supply is disabled"
+    )
+    cooling_supply_enabled_time: time = setpoint(
+        "Time from which cooling supply is enabled"
+    )
     chill_min_supply_temperature: Celsius = setpoint(
         "temperature of chilled water below which cooling supply can start"
     )
@@ -156,6 +162,8 @@ def initial_setpoints() -> Setpoints:
         cold_reservoir_max_temperature=16.5,
         chill_min_supply_temperature=14,
         cold_supply_max_temperature=16,
+            cooling_supply_disabled_time=time(22),
+            cooling_supply_enabled_time=time(8),
         minimum_preheat_offset=1,
         waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
