@@ -1,5 +1,8 @@
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Optional
+
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.state_machines import Context, Functions
 from energy_box_control.power_hub.components import (
@@ -99,7 +102,6 @@ class Setpoints:
     fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
     trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
     stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
-    survival_mode: bool = setpoint("survival mode on/off")
     low_battery: Ratio = setpoint("soc below which the chiller isn't used")
     high_heat_dump_temperature: Celsius = setpoint(
         "Trigger temperature for the outboard pump toggle"
@@ -107,6 +109,23 @@ class Setpoints:
     heat_dump_outboard_divergence_temperature: Celsius = setpoint(
         "Trigger temperature difference for the outboard pump toggle"
     )
+
+
+def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
+    try:
+        setpoints_dict = json.loads(message)
+        for date_field in ["trigger_filter_water_tank", "stop_filter_water_tank"]:
+            setpoints_dict[date_field] = datetime.fromisoformat(
+                setpoints_dict[date_field]
+            )
+
+        return Setpoints(**setpoints_dict)
+    except TypeError:
+        pass
+    except json.JSONDecodeError:
+        pass
+
+    return None
 
 
 @dataclass
@@ -124,38 +143,39 @@ class PowerHubControlState:
 Fn = Functions(PowerHubControlState, PowerHubSensors)
 
 
+def initial_setpoints() -> Setpoints:
+    return Setpoints(
+        pcm_min_temperature=90,
+        pcm_max_temperature=95,
+        target_charging_temperature_offset=2,
+        minimum_charging_temperature_offset=1,
+        minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
+        pcm_discharged=72,
+        pcm_charged=79,
+        yazaki_minimum_chill_power=1000,  # Give the Yazaki a chance to do something
+        yazaki_inlet_target_temperature=100,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
+        cold_reservoir_min_temperature=15,
+        cold_reservoir_max_temperature=16.5,
+        chill_min_supply_temperature=14,
+        chill_max_supply_temperature=16,
+        minimum_preheat_offset=1,
+        cooling_target_temperature=28,
+        technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
+        technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
+        water_treatment_max_fill_ratio=0.725,  # avoid using water treatment
+        water_treatment_min_fill_ratio=0.7,
+        fresh_water_min_fill_ratio=0.35,
+        trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        low_battery=0.55,
+        high_heat_dump_temperature=38,
+        heat_dump_outboard_divergence_temperature=3,
+    )
+
+
 def initial_control_state() -> PowerHubControlState:
     return PowerHubControlState(
-        setpoints=Setpoints(
-            pcm_min_temperature=90,
-            pcm_max_temperature=95,
-            target_charging_temperature_offset=2,
-            minimum_charging_temperature_offset=1,
-            minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-            pcm_discharged=72,
-            pcm_charged=79,
-            yazaki_minimum_chill_power=1000,  # Give the Yazaki a chance to do something
-            yazaki_inlet_target_temperature=100,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
-            cold_reservoir_min_temperature=15,
-            cold_reservoir_max_temperature=16.5,
-            chill_min_supply_temperature=14,
-            chill_max_supply_temperature=16,
-            minimum_preheat_offset=1,
-            cooling_target_temperature=28,
-            technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
-            technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
-            water_treatment_max_fill_ratio=0.725,  # avoid using water treatment
-            water_treatment_min_fill_ratio=0.7,
-            fresh_water_min_fill_ratio=0.35,
-            trigger_filter_water_tank=datetime(
-                2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
-            ),
-            stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-            survival_mode=False,
-            low_battery=0.55,
-            high_heat_dump_temperature=38,
-            heat_dump_outboard_divergence_temperature=3,
-        ),
+        setpoints=initial_setpoints(),
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,

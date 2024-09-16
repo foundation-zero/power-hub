@@ -4,11 +4,13 @@ import time
 import json
 from energy_box_control.custom_logging import get_logger
 from energy_box_control.monitoring.monitoring import Notifier
-from energy_box_control.mqtt import create_and_connect_client
+from energy_box_control.mqtt import create_and_connect_client, publish_to_mqtt
 from energy_box_control.network import NetworkControl
-from energy_box_control.power_hub.control.control import control_from_json
+from energy_box_control.power_hub.control.control import (
+    control_from_json,
+    control_to_json,
+)
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
-from energy_box_control.power_hub_control import publish_control_values
 
 logger = get_logger(__name__)
 
@@ -29,7 +31,12 @@ class ControlTester:
         self._seconds = seconds
 
     def publish(self, control: NetworkControl[PowerHub]):
-        publish_control_values(self._mqtt_client, self._power_hub, control, Notifier())
+        publish_to_mqtt(
+            self._mqtt_client,
+            CONTROL_VALUES_TOPIC,
+            control_to_json(self._power_hub, control),
+            Notifier(),
+        )
 
     def everything_off(self):
         logger.info("Turning all controls off")

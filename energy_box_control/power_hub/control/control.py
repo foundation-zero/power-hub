@@ -201,6 +201,7 @@ def control_power_hub(
     control_state: PowerHubControlState,
     sensors: PowerHubSensors,
     time: datetime,
+    survival_mode: bool,
 ) -> tuple[(PowerHubControlState, NetworkControl[PowerHub])]:
     # Control modes
     # Hot: heat boiler / heat PCM / off
@@ -208,7 +209,7 @@ def control_power_hub(
     # Waste: run outboard / no run outboard
     # Survival: # everything off except for chiller
 
-    if control_state.setpoints.survival_mode:
+    if survival_mode:
         return survival_control(power_hub, sensors, control_state)
 
     hot_control_state, hot = hot_control(power_hub, control_state, sensors, time)

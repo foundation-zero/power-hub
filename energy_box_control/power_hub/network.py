@@ -777,7 +777,7 @@ class PowerHub(Network[PowerHubSensors]):
             self,
         )
 
-    def sensors_from_json(self, sensor_json: str):
+    def sensors_from_json(self, sensor_json: str | bytes):
         sensors = json.loads(sensor_json)
         init_order = PowerHubSensors.sensor_initialization_order()
 
