@@ -144,8 +144,8 @@ def initial_control_state() -> PowerHubControlState:
             cooling_target_temperature=28,
             technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
             technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
-            water_treatment_max_fill_ratio=0.725,  # avoid using water treatment
-            water_treatment_min_fill_ratio=0.7,
+            water_treatment_max_fill_ratio=0.975,  # avoid using water treatment
+            water_treatment_min_fill_ratio=0.95,
             fresh_water_min_fill_ratio=0.35,
             trigger_filter_water_tank=datetime(
                 2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc
