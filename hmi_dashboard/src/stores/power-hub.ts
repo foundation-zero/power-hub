@@ -9,12 +9,11 @@ import {
   useMeanPerHourOfDay,
 } from "@/api";
 import { MqttClient } from "@/mqtt";
-import type { HistoricalData, NestedPath, WeatherInfo } from "@/types";
-import { type SumTree, type SensorsTree, type Tree } from "@/types/power-hub";
-import { pick } from "@/utils";
+import type { NestedPath, PathValue, WeatherInfo } from "@/types";
+import type { SumTree, SensorsTree, ControlValues } from "@/types/power-hub";
+import { camelize, findValue, pick } from "@/utils";
 import { defineStore } from "pinia";
-import { map } from "rxjs";
-import type { SnakeCase } from "type-fest";
+import { map, Observable } from "rxjs";
 
 let client: MqttClient;
 
@@ -23,12 +22,16 @@ const defaultLocation = {
   lon: 2.1686,
 };
 
+const cache: Record<string, Observable<any>> = {};
+const useTopic = <T>(topic: string): Observable<T> =>
+  (cache[topic] ??= client
+    .topic(`power_hub/${topic}`)
+    .pipe(map((val) => camelize(JSON.parse(val)) as T)));
+
 const useMqtt =
-  <K extends keyof Tree, T = Tree[K]>(topicPath: SnakeCase<K>) =>
-  <K extends NestedPath<T>>(topic: K) =>
-    client
-      .topic(`power_hub/${topicPath}/${topic}`)
-      .pipe(map((val) => <HistoricalData<string, number>>JSON.parse(val)));
+  <T>(topicPath: string) =>
+  <K extends NestedPath<T>, V = PathValue<T, K>>(key: K): Observable<V> =>
+    useTopic<T>(topicPath).pipe(map((val) => findValue<T>(val)(key)));
 
 export const usePowerHubStore = defineStore("powerHub", () => {
   const sensorsPathFn: PathFn = (path, [applianceName, fieldName] = path.split("/")) =>
@@ -38,17 +41,25 @@ export const usePowerHubStore = defineStore("powerHub", () => {
 
   const sensors = {
     useLastValues: useLastValues<SensorsTree>(sensorsPathFn),
-    useMqtt: useMqtt("appliance_sensors"),
+    useMqtt: useMqtt<SensorsTree>("enriched_sensor_values"),
     useOverTime: useOverTime<SensorsTree>(sensorsPathFn),
     useTotal: useTotal<SensorsTree>(sensorsPathFn),
     useMean: useMean<SensorsTree>(sensorsPathFn),
     useCurrent: useCurrent<SensorsTree>(sensorsPathFn),
   };
 
+  const controlValues = {
+    useMqtt: useMqtt<ControlValues>("control_values"),
+  };
+
+  const controlModes = {
+    useTopic: () => useTopic<ControlValues>("control_modes"),
+  };
+
   const sum = {
     useMean: useMean<SumTree>(sumPathFn),
     useOverTime: useOverTime<SumTree>(sumPathFn),
-    useMqtt: useMqtt("power_hub"),
+    useMqtt: useMqtt<SumTree>("power_hub"),
     useMeanPerHourOfDay: useMeanPerHourOfDay<SumTree>(sumPathFn),
   };
 
@@ -67,6 +78,8 @@ export const usePowerHubStore = defineStore("powerHub", () => {
       sensors,
       sum,
       weather,
+      controlValues,
+      controlModes,
     };
   };
 

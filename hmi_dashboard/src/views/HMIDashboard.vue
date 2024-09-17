@@ -1,8 +1,15 @@
+<script setup lang="ts">
+import DashboardItems from "@/components/DashboardItems.vue";
+</script>
+
 <template>
   <v-layout>
     <v-main>
       <v-container>
-        <h1 class="text-h1">Welcome to the HMI Dashboard!</h1>
+        <h2 class="text-h2 font-weight-bold">HMI Dashboard</h2>
+        <Suspense>
+          <DashboardItems />
+        </Suspense>
       </v-container>
     </v-main>
   </v-layout>
