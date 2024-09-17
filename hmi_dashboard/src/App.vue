@@ -1,42 +1,15 @@
 <template>
   <v-app>
-    <router-view />
+    <Suspense>
+      <router-view />
+      <template #fallback>
+        <h1>Connecting to MQTT broker...</h1>
+      </template>
+    </Suspense>
   </v-app>
 </template>
 
 <style lang="scss">
-@font-face {
-  font-family: "DMMono";
-  src: url("/DMMono-Regular.ttf");
-}
-
-@font-face {
-  font-family: "Five-Gothic";
-  src: url("/five-gothic.ttf");
-}
-
-@font-face {
-  font-family: "Five-Gothic-Bold";
-  src: url("/five-gothic-bold.ttf");
-}
-
-@font-face {
-  font-family: "Five-Gothic-DemiBold";
-  src: url("/five-gothic-demibold.ttf");
-}
-
-.font-mono {
-  font-family: "DMMono" !important;
-}
-
-.font-weight-bold {
-  font-family: "Five-Gothic-Bold" !important;
-}
-
-.font-weight-medium {
-  font-family: "Five-Gothic-DemiBold" !important;
-}
-
 .v-card.scrollable {
   display: flex;
   flex: 1 1 100%;
@@ -48,5 +21,13 @@
     backface-visibility: hidden;
     overflow-y: auto;
   }
+}
+
+.font-mono {
+  font-family: monospace !important;
+}
+
+.text-overflow-ellipsis {
+  text-overflow: ellipsis;
 }
 </style>

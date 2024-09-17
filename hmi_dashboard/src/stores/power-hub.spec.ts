@@ -7,6 +7,7 @@ import { useObservable } from "@vueuse/rxjs";
 import * as Ajax from "rxjs/ajax";
 import { AjaxResponse } from "rxjs/ajax";
 import type { HistoricalData } from "@/types";
+import { snakeCase } from "lodash";
 
 const HEADERS = {
   Authorization: `Bearer ${import.meta.env.VITE_API_BEARER_TOKEN}`,
@@ -27,21 +28,29 @@ describe("PowerHubStore", async () => {
 
   describe("sensors", () => {
     describe("MQTT", () => {
-      const mockAndCall = (path: Parameters<typeof store.sensors.useMqtt>[0], value = "5") => {
-        client.topic.mockReturnValue(of(value));
+      const mockAndCall = (path: Parameters<typeof store.sensors.useMqtt>[0], value = 5) => {
+        const rootObj: Record<string, any> = {};
+        path.split("/").reduce((obj, chunk, index, array) => {
+          if (index + 1 < array.length) {
+            return (obj[snakeCase(chunk)] = {});
+          }
+
+          obj[snakeCase(chunk)] = value;
+          return obj;
+        }, rootObj);
+
+        client.topic.mockReturnValue(of(JSON.stringify(rootObj)));
         return useObservable(store.sensors.useMqtt(path));
       };
 
       it("creates an observable for each appliance", () => {
-        mockAndCall("chiller_switch_valve/position");
+        mockAndCall("chillerSwitchValve/position");
         expect(vi.mocked(client).topic).toHaveBeenCalledOnce();
-        expect(vi.mocked(client).topic).toHaveBeenCalledWith(
-          "power_hub/appliance_sensors/chiller_switch_valve/position",
-        );
+        expect(vi.mocked(client).topic).toHaveBeenCalledWith("power_hub/enriched_sensor_values");
       });
 
       it("returns the value untouched", () => {
-        const appliance = mockAndCall("chiller_switch_valve/position");
+        const appliance = mockAndCall("chillerSwitchValve/position");
         expect(appliance.value).toBe(5);
       });
     });
@@ -59,12 +68,12 @@ describe("PowerHubStore", async () => {
       };
 
       it("parses the time value to Date object", () => {
-        const observable = mockAndCall("chiller_switch_valve/position");
+        const observable = mockAndCall("chillerSwitchValve/position");
         expect(observable.value?.[0].time).toBeInstanceOf(Date);
       });
 
       it("calls the correct endpoint", () => {
-        mockAndCall("chiller_switch_valve/position");
+        mockAndCall("chillerSwitchValve/position");
         expect(Ajax.ajax).toBeCalledTimes(1);
         expect(Ajax.ajax).toBeCalledWith({
           url: `${import.meta.env.VITE_API}/power_hub/appliance_sensors/chiller_switch_valve/position/last_values`,
@@ -81,12 +90,12 @@ describe("PowerHubStore", async () => {
       };
 
       it("returns the value untouched", () => {
-        const observable = mockAndCall("heat_pipes/power");
+        const observable = mockAndCall("heatPipes/power");
         expect(observable.value).toBe(5);
       });
 
       it("calls the correct endpoint", () => {
-        mockAndCall("heat_pipes/power");
+        mockAndCall("heatPipes/power");
         expect(Ajax.ajax).toBeCalledTimes(1);
         expect(Ajax.ajax).toBeCalledWith({
           url: `${import.meta.env.VITE_API}/power_hub/appliance_sensors/heat_pipes/power/total`,
