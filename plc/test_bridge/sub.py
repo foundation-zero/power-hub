@@ -1,26 +1,13 @@
 import asyncio
 from functools import partial
 import queue
-
-from paho.mqtt.client import MQTTMessage, Client
-
 from energy_box_control.config import CONFIG
 from energy_box_control.mqtt import run_listener
+from energy_box_control.power_hub_control import queue_on_message
 
 
 bridge_queue: queue.Queue[str] = queue.Queue()
 BRIDGE_TOPIC = "test_bridge"
-
-
-def queue_on_message(
-    queue: queue.Queue[str],
-    client: Client,
-    userdata: str,
-    message: MQTTMessage,
-):
-    decoded_message = str(message.payload.decode("utf-8"))
-    print(f"Received message: {decoded_message}")
-    queue.put(decoded_message)
 
 
 async def main():

@@ -31,7 +31,6 @@ paho-mqtt = "^2.0.0"
 python-dotenv = "^1.0.1"
 pydantic-settings = "^2.2.1"
 pdpyras = "^5.2.0"
-aiomqtt = "^2.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"

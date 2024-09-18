@@ -9,8 +9,11 @@ import pytest
 from energy_box_control.appliances.valve import ValveControl
 from energy_box_control.config import CONFIG
 from energy_box_control.monitoring.monitoring import Notifier
-from energy_box_control.mqtt import run_listener
-
+from energy_box_control.mqtt import (
+    create_and_connect_client,
+    publish_to_mqtt,
+    run_listener,
+)
 from energy_box_control.network import NetworkControl, NetworkState
 from energy_box_control.power_hub.control.control import (
     PowerHubControlState,
@@ -20,6 +23,7 @@ from energy_box_control.power_hub.control.control import (
 from energy_box_control.power_hub.control.state import initial_control_state
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub_control import queue_on_message
 from paho.mqtt import client as mqtt_client
 
 from energy_box_control.api.api import execute_influx_query, get_influx_client
@@ -30,16 +34,6 @@ from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 
 survival_queue: queue.Queue[str] = queue.Queue()
 SURVIVAL_MODE_TEST_TOPIC = "power_hub/test_survival"
-
-
-def queue_on_message(
-    queue: queue.Queue[str],
-    client: mqtt_client.Client,
-    userdata: str,
-    message: mqtt_client.MQTTMessage,
-):
-    decoded_message = str(message.payload.decode("utf-8"))
-    queue.put(decoded_message)
 
 
 def survival_mode(survival_mode_on: bool) -> bool:
@@ -76,8 +70,11 @@ def step(
     power_hub_sensors: PowerHubSensors,
 ) -> Tuple[PowerHubControlState, NetworkControl, NetworkState]:
     power_hub_sensors = power_hub.sensors_from_state(state)
+    control_state.setpoints.survival_mode = survival_mode(
+        control_state.setpoints.survival_mode
+    )
     control_state, control_values = control_power_hub(
-        power_hub, control_state, power_hub_sensors, state.time.timestamp, False
+        power_hub, control_state, power_hub_sensors, state.time.timestamp
     )
     return (control_state, control_values, power_hub.simulate(state, control_values))
 

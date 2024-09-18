@@ -28,7 +28,6 @@ def test_control_from_json_roundtrips():
         initial_control_state(),
         power_hub.sensors_from_state(PowerHub.simple_initial_state(power_hub)),
         datetime.now(tz=timezone.utc),
-        False,
     )
     json = control_to_json(power_hub, control)
     from_json = control_from_json(power_hub, json)

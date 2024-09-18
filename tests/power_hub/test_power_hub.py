@@ -145,7 +145,7 @@ def test_power_hub_simulation_control(power_hub_const, min_max_temperature, seco
         power_hub_const.simple_initial_state(step_size=timedelta(seconds=seconds)),
         initial_control_all_off(power_hub_const),
         initial_control_state(),
-        partial(control_power_hub, power_hub_const, survival_mode=False),
+        partial(control_power_hub, power_hub_const),
         min_max_temperature,
         500,
     )
@@ -170,7 +170,7 @@ def test_power_hub_simulation_data_schedule(
         ),
         initial_control_all_off(power_hub_const),
         initial_control_state(),
-        partial(control_power_hub, power_hub_const, survival_mode=False),
+        partial(control_power_hub, power_hub_const),
         min_max_temperature,
         100,
     )
@@ -269,7 +269,7 @@ def test_water_filter_trigger(
 ):
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -282,7 +282,6 @@ def test_water_filter_trigger(
             control_state,
             sensors,
             replace(state.time, step=i).timestamp,
-            False,
         )
 
         if i == 1:
@@ -311,7 +310,7 @@ def test_water_filter_stop(
     scheduled_power_hub, state, control_state, control_values, sensors
 ):
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     control_state.setpoints.trigger_filter_water_tank = replace(
@@ -327,7 +326,6 @@ def test_water_filter_stop(
             control_state,
             sensors,
             replace(state.time, step=i).timestamp,
-            False,
         )
 
         if i == 11:
@@ -388,7 +386,7 @@ def test_waste_pump_water_maker_on(
     sensors = scheduled_power_hub.sensors_from_state(state)
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     # 5 minutes pass
@@ -397,7 +395,6 @@ def test_waste_pump_water_maker_on(
         control_state,
         sensors,
         state.time.timestamp + timedelta(minutes=5),
-        False,
     )
 
     assert (
@@ -411,7 +408,7 @@ def test_water_treatment(
 ):
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     state = scheduled_power_hub.simulate(state, control_values)
@@ -420,7 +417,7 @@ def test_water_treatment(
     sensors.grey_water_tank.fill_ratio = 0.95
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     assert (
@@ -430,7 +427,7 @@ def test_water_treatment(
     sensors.grey_water_tank.fill_ratio = 0.09
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     assert (
@@ -443,7 +440,7 @@ def test_technical_water_control(
 ):
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     state = scheduled_power_hub.simulate(state, control_values)
@@ -452,7 +449,7 @@ def test_technical_water_control(
     sensors.technical_water_tank.fill_ratio = 0
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     assert (
@@ -465,7 +462,7 @@ def test_technical_water_control(
     sensors.grey_water_tank.fill_ratio = 0.09
 
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub, control_state, sensors, state.time.timestamp
     )
 
     assert (

@@ -1,10 +1,7 @@
-import asyncio
 from logging import Logger
-from typing import Optional
 
 import aiomqtt
-from aiomqtt import TLSParameters, Message, Client
-from aiomqtt.types import PayloadType
+from aiomqtt import TLSParameters
 
 from energy_box_control.config import CONFIG
 
@@ -16,37 +13,10 @@ def get_mqtt_client(logger: Logger):
         tls_parameters = None
 
     return aiomqtt.Client(
-        CONFIG.mqtt_host,
+        "localhost",
         port=CONFIG.mqtt_port,
         username=CONFIG.mqtt_username,
         password=CONFIG.mqtt_password,
         logger=logger,
         tls_params=tls_parameters,
     )
-
-
-async def read_single_message_from_topic(
-    logger: Logger, mqtt_client: Client, topic: str
-) -> Optional[Message]:
-    await mqtt_client.subscribe(topic)
-    result = None
-    try:
-        result = await asyncio.wait_for(anext(mqtt_client.messages), 1)
-
-        logger.info(f"Found initial value for topic {topic}. Value: {result.payload}")
-        return result
-    except StopAsyncIteration:
-        pass
-    except asyncio.TimeoutError:
-        pass
-    if result is None:
-        logger.info(f"Did not find initial value for topic {topic}")
-    await mqtt_client.unsubscribe(topic)
-    return result
-
-
-async def publish_initial_value(logger: Logger, topic: str, initial_value: PayloadType):
-    async with get_mqtt_client(logger) as mqtt_client:
-        value = await read_single_message_from_topic(logger, mqtt_client, topic)
-        if value is None:
-            await mqtt_client.publish(topic, initial_value, qos=1, retain=True)

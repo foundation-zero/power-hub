@@ -6,16 +6,13 @@ from time import sleep
 from energy_box_control.appliances.base import control_class
 from energy_box_control.config import CONFIG
 from energy_box_control.monitoring.monitoring import Notifier
-from energy_box_control.mqtt import (
-    create_and_connect_client,
-    run_listener,
-    publish_to_mqtt,
-)
-from energy_box_control.power_hub.control.control import control_to_json
+from energy_box_control.mqtt import create_and_connect_client, run_listener
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.schedules import PowerHubSchedules
-from energy_box_control.power_hub_control import CONTROL_VALUES_TOPIC
-
+from energy_box_control.power_hub_control import (
+    CONTROL_VALUES_TOPIC,
+    publish_control_values,
+)
 import paho.mqtt.client as mqtt
 
 
@@ -74,12 +71,7 @@ async def main():
         .build()
     )
 
-    publish_to_mqtt(
-        mqtt_client,
-        CONTROL_VALUES_TOPIC,
-        control_to_json(power_hub, control),
-        Notifier(),
-    )
+    publish_control_values(mqtt_client, power_hub, control, Notifier())
 
     await fut
     mqtt_client.loop_stop()

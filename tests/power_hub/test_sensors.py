@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from functools import partial
 import json
 import queue
-
-from paho.mqtt.client import Client, MQTTMessage
 from pytest import fixture
 import pytest
 from energy_box_control.config import CONFIG
@@ -13,6 +11,7 @@ from energy_box_control.mqtt import run_listener
 from energy_box_control.power_hub.control.control import no_control
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.power_hub.sensors import sensor_values
+from energy_box_control.power_hub_control import queue_on_message
 from energy_box_control.sensors import sensors_to_json
 
 
@@ -27,16 +26,6 @@ def sensors(power_hub):
     state = power_hub.simulate(initial, no_control(power_hub))
 
     return power_hub.sensors_from_state(state)
-
-
-def queue_on_message(
-    queue: queue.Queue[str],
-    client: Client,
-    userdata: str,
-    message: MQTTMessage,
-):
-    decoded_message = str(message.payload.decode("utf-8"))
-    queue.put(decoded_message)
 
 
 def test_sensors_to_json_roundtrips(power_hub, sensors):
