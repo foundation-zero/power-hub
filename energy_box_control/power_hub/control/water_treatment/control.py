@@ -66,7 +66,7 @@ def water_treatment_control(
         WaterTreatmentControlState(context, water_treatment_control_mode),
         power_hub.control(power_hub.water_treatment).value(
             WaterTreatmentControl(
-                water_treatment_control_mode == WaterTreatmentControlMode.RUN
+                False
             )
         ),
     )
