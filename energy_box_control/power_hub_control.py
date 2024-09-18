@@ -44,7 +44,7 @@ SURVIVAL_MODE_TOPIC = f"{MQTT_TOPIC_BASE}/survival"
 
 class ControlModesEncoder(json.JSONEncoder):
     def default(self, o: Any):
-        if type(o) == datetime or type(o) == time:
+        if isinstance(o, datetime | time):
             return o.isoformat()
         else:
             return json.JSONEncoder.default(self, o)
