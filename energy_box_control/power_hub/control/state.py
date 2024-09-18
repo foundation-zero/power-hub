@@ -122,6 +122,11 @@ def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
             setpoints_dict[date_field] = datetime.fromisoformat(
                 setpoints_dict[date_field]
             )
+        for time_field in [
+            "cooling_supply_disabled_time",
+            "cooling_supply_enabled_time",
+        ]:
+            setpoints_dict[time_field] = time.fromisoformat(setpoints_dict[time_field])
 
         return Setpoints(**setpoints_dict)
     except TypeError:
