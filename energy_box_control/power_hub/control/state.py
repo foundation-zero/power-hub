@@ -178,7 +178,7 @@ def initial_setpoints() -> Setpoints:
         fresh_water_min_fill_ratio=0.35,
         trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
         stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-        low_battery=0.55,
+        low_battery=0.4,  # allow chiller to turn with current soc at shore power
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
     )
