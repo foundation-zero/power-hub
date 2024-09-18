@@ -94,7 +94,9 @@ class PowerHubControl:
                     )
                 )
                 tg.create_task(
-                    publish_initial_value(logger, SURVIVAL_MODE_TOPIC, "false")
+                    publish_initial_value(
+                        logger, SURVIVAL_MODE_TOPIC, json.dumps({"survival": False})
+                    )
                 )
 
             await mqtt_client.subscribe(SENSOR_VALUES_TOPIC, qos=1)
@@ -108,7 +110,7 @@ class PowerHubControl:
                     )
                     continue
                 if message.topic.matches(SENSOR_VALUES_TOPIC):
-                    logger.info(f"Received sensor values {message.payload}")
+                    logger.info(f"Received sensor values")
                     power_hub_sensors_new = self.power_hub.sensors_from_json(
                         message.payload
                     )
@@ -140,8 +142,11 @@ class PowerHubControl:
                 if message.topic.matches(SURVIVAL_MODE_TOPIC):
                     survival_mode_new = json.loads(message.payload)
                     logger.info(f"Received survivalmode: {survival_mode_new}")
-                    if survival_mode_new != self.survival_mode:
-                        self.survival_mode = survival_mode_new
+                    if (
+                        "survival" in survival_mode_new
+                        and survival_mode_new["survival"] != self.survival_mode
+                    ):
+                        self.survival_mode = survival_mode_new["survival"]
                         logger.info(
                             f"Processed changed survival mode {self.survival_mode}"
                         )
@@ -175,18 +180,17 @@ class PowerHubControl:
             self.cycles_since_events = 0
             self.last_events = events
 
-        cm_task = mqtt_client.publish(
+        await mqtt_client.publish(
             CONTROL_MODES_TOPIC,
-            control_modes_to_json(control_state),
+            control_modes_to_json(self.control_state),
             qos=1,
         )
 
-        cv_task = mqtt_client.publish(
+        await mqtt_client.publish(
             CONTROL_VALUES_TOPIC,
             control_to_json(self.power_hub, control_values),
             qos=1,
         )
-        await asyncio.gather(cm_task, cv_task)
         self.cycles_since_events += 1
 
 
