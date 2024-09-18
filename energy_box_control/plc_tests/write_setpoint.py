@@ -29,9 +29,13 @@ async def main():
         setpoints_dict[args.setpoint] = args.value
         new_setpoints_str = json.dumps(setpoints_dict)
         
-        print("sent new setpoints")
-        print(setpoints_dict)
-        await mqtt_client.publish(SETPOINTS_TOPIC,new_setpoints_str)
+        if not parse_setpoints(new_setpoints_str):
+            print("couldn't parse new setpoints")
+            pass 
+        else:
+            print("sent new setpoints")
+            print(setpoints_dict)
+            await mqtt_client.publish(SETPOINTS_TOPIC,new_setpoints_str)
 
 
 
