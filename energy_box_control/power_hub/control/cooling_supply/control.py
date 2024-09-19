@@ -35,13 +35,11 @@ water_too_warm = Fn.pred(
 
 water_cold_enough = chilled_water_cold_enough | cold_reservoir_cold_enough
 
-scheduled_disabled = Fn.pred(
-    lambda control_state, _: control_state.setpoints.cooling_supply_disabled_time
-    < datetime.now().time()
-) & Fn.pred(
-    lambda control_state, _: control_state.setpoints.cooling_supply_enabled_time
-    > datetime.now().time()
+scheduled_enabled = (
+    Fn.state(lambda state: state.setpoints.cooling_supply_disabled_time).before()
+    & Fn.state(lambda state: state.setpoints.cooling_supply_enabled_time).after()
 )
+scheduled_disabled = ~scheduled_enabled
 
 cooling_supply_transitions: dict[
     tuple[CoolingSupplyControlMode, CoolingSupplyControlMode],
@@ -51,6 +49,7 @@ cooling_supply_transitions: dict[
         CoolingSupplyControlMode.NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
     ): cooling_demand
+    & scheduled_enabled
     & water_cold_enough
     & ~low_battery
     & Fn.const_pred(True).holds_true(
