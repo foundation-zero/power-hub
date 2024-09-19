@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 import aiomqtt
+from pydantic import ValidationError
 
 from energy_box_control.amqtt import get_mqtt_client, publish_initial_value
 from energy_box_control.config import CONFIG
@@ -25,7 +26,7 @@ from energy_box_control.power_hub.control.state import (
     initial_control_state,
     initial_setpoints,
     PowerHubControlState,
-    parse_setpoints,
+    Setpoints,
 )
 from energy_box_control.power_hub.network import PowerHub, PowerHubSchedules
 from energy_box_control.sensors import sensors_to_json
@@ -85,12 +86,7 @@ class PowerHubControl:
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(
                     publish_initial_value(
-                        logger,
-                        SETPOINTS_TOPIC,
-                        json.dumps(
-                            dataclasses.asdict(initial_setpoints()),
-                            cls=ControlModesEncoder,
-                        ),
+                        logger, SETPOINTS_TOPIC, initial_setpoints().model_dump_json()
                     )
                 )
                 tg.create_task(
@@ -128,16 +124,14 @@ class PowerHubControl:
                         await self.control_powerhub(mqtt_client)
 
                 if message.topic.matches(SETPOINTS_TOPIC):
-                    new_setpoints = parse_setpoints(message.payload)
-                    logger.info(f"Received setpoints")
-                    if new_setpoints is None:
-                        logger.error(f"Couldn't process received setpoints ({message})")
-
-                    elif self.control_state.setpoints != new_setpoints:
+                    try:
+                        new_setpoints = Setpoints.model_validate_json(message.payload)
+                        self.control_state.setpoints = new_setpoints
                         logger.info(
                             f"Processed changed setpoints successfully: {message.payload}"
                         )
-                        self.control_state.setpoints = new_setpoints
+                    except ValidationError:
+                        logger.error(f"Couldn't process received setpoints ({message})")
 
                 if message.topic.matches(SURVIVAL_MODE_TOPIC):
                     survival_mode_new = json.loads(message.payload)
