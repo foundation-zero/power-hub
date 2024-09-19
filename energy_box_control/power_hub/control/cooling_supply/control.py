@@ -43,8 +43,6 @@ scheduled_disabled = Fn.pred(
     > datetime.now().time()
 )
 
-scheduled_enabled = ~scheduled_disabled
-
 cooling_supply_transitions: dict[
     tuple[CoolingSupplyControlMode, CoolingSupplyControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
@@ -52,15 +50,14 @@ cooling_supply_transitions: dict[
     (
         CoolingSupplyControlMode.NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
-    ): scheduled_enabled
-    & cooling_demand
+    ): cooling_demand
     & water_cold_enough
     & ~low_battery
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
     ),
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | water_too_warm | low_battery | scheduled_disabled
+        ~cooling_demand | water_too_warm | low_battery
     )
     & Fn.const_pred(True).holds_true(
         Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
