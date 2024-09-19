@@ -9,15 +9,17 @@ from energy_box_control.power_hub_control import SETPOINTS_TOPIC
 
 
 async def main():
-    CONFIG.mqtt_host = "localhost"
+
     CONFIG.mqtt_port = 1883
     CONFIG.mqtt_tls_enabled = False
     parse = ArgumentParser()
     parse.add_argument("setpoint")
     parse.add_argument("value")
+    parse.add_argument("--host")
 
     args = parse.parse_args()
 
+    CONFIG.mqtt_host = args.host
     logger = get_logger(__name__)
     async with get_mqtt_client(logger) as mqtt_client:
         message = await read_single_message_from_topic(
@@ -33,7 +35,7 @@ async def main():
 
             new_setpoints_str = setpoints.model_dump_json()
             print(f"sent new setpoints:\n{new_setpoints_str}")
-            await mqtt_client.publish(SETPOINTS_TOPIC, new_setpoints_str, retain = True)
+            await mqtt_client.publish(SETPOINTS_TOPIC, new_setpoints_str, retain=True)
 
 
 asyncio.run(main())

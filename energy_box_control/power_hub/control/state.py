@@ -121,6 +121,7 @@ class Setpoints(BaseModel):
     heat_dump_outboard_divergence_temperature: Celsius = Field(
         description="Trigger temperature difference for the outboard pump toggle"
     )
+    manual_outboard_on: bool = Field(description="Run the outboard pump")
 
 
 @dataclass
@@ -167,6 +168,7 @@ def initial_setpoints() -> Setpoints:
         low_battery=0.4,  # allow chiller to turn with current soc at shore power
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
+        manual_outboard_on=False,
     )
 
 
