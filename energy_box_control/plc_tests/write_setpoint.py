@@ -33,7 +33,7 @@ async def main():
 
             new_setpoints_str = setpoints.model_dump_json()
             print(f"sent new setpoints:\n{new_setpoints_str}")
-            await mqtt_client.publish(SETPOINTS_TOPIC, new_setpoints_str)
+            await mqtt_client.publish(SETPOINTS_TOPIC, new_setpoints_str, retain = True)
 
 
 asyncio.run(main())
