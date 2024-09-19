@@ -36,7 +36,25 @@ To automatically configure the docker on the PLC run:
 poetry run python plc/configure_plc.py
 ```
 
+## Setting up the Google Artifact Repository
 
+Following [this](https://cloud.google.com/artifact-registry/docs/docker/authentication#standalone-helper) guide:
+On your laptop retrieve the service account key:
+```bash
+gcloud secrets versions access latest --secret="powerhub-gar-secret"
+```
+- Install standalone credential helper on target machine(Check the correct OS arch)
+- Set correct GCR registries:
 ```bash
 docker-credential-gcr configure-docker --registries=europe-west1
+```
+- Set the credentials in ~/.bashrc:
+```bash
+ vi /root/.bashrc
+ # add/edit the following:
+ export GOOGLE_APPLICATION_CREDENTIALS="[The secret copied from your laptop]"
+ # save & exit
+ source /root/.bashrc
+ #verify the credentials work:
+ echo "https://gcr.io" | docker-credential-gcr get
 ```
