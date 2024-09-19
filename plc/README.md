@@ -35,3 +35,8 @@ To automatically configure the docker on the PLC run:
 ```bash
 poetry run python plc/configure_plc.py
 ```
+
+
+```bash
+docker-credential-gcr configure-docker --registries=europe-west1
+```
