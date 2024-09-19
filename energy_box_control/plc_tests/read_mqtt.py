@@ -7,8 +7,10 @@ from energy_box_control.config import CONFIG
 from energy_box_control.mqtt import run_listener
 from energy_box_control.power_hub_control import (
     CONTROL_MODES_TOPIC,
+    CONTROL_VALUES_TOPIC,
     ENRICHED_SENSOR_VALUES_TOPIC,
     SENSOR_VALUES_TOPIC,
+    SETPOINTS_TOPIC,
 )
 import paho.mqtt.client as mqtt
 
@@ -48,11 +50,15 @@ def message(
 
 
 def topic(args: Any):
-    match (args.enriched, args.control_mode):
-        case (True, _):
+    match (args.enriched, args.control_mode, args.control_values, args.setpoints):
+        case (True, _, _, _):
             return ENRICHED_SENSOR_VALUES_TOPIC
-        case (_, True):
+        case (_, True, _, _):
             return CONTROL_MODES_TOPIC
+        case (_, _, True, _):
+            return CONTROL_VALUES_TOPIC
+        case (_, _, _, True):
+            return SETPOINTS_TOPIC
         case _:
             return SENSOR_VALUES_TOPIC
 
@@ -62,6 +68,8 @@ async def main():
     parse.add_argument("appliance", default=None, nargs="?")
     parse.add_argument("-e", "--enriched", action="store_true")
     parse.add_argument("-m", "--control-mode", action="store_true")
+    parse.add_argument("-v", "--control-values", action="store_true")
+    parse.add_argument("-s", "--setpoints", action="store_true")
     parse.add_argument("-r", "--raw", action="store_true")
     parse.add_argument("-l", "--local", action="store_true")
     args = parse.parse_args()

@@ -77,8 +77,6 @@ services:
     depends_on:
       vernemq:
         condition: service_healthy
-      telegraf:
-        condition: service_started
     build:
       context: .
       dockerfile: python_script.Dockerfile

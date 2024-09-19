@@ -43,6 +43,11 @@ diverge_heat_dump_outboard = Fn.pred(
     > control_state.setpoints.heat_dump_outboard_divergence_temperature
 )
 
+run_outboard_manually = Fn.pred(
+    lambda control_state, _: (control_state.setpoints.manual_outboard_on == True)
+)
+
+
 waste_transitions: dict[
     tuple[WasteControlMode, WasteControlMode],
     Predicate[
@@ -55,12 +60,13 @@ waste_transitions: dict[
             Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=2)
         )
     )
-    & (water_maker_on | chiller_on),
+    & (water_maker_on | chiller_on | run_outboard_manually),
     (WasteControlMode.RUN_OUTBOARD, WasteControlMode.NO_OUTBOARD): water_maker_off
     & Fn.const_pred(True).holds_true(
         Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=5)
     )
-    & ~chiller_on,
+    & ~chiller_on
+    & ~run_outboard_manually,
     (
         WasteControlMode.RUN_OUTBOARD,
         WasteControlMode.TOGGLE_OUTBOARD,
