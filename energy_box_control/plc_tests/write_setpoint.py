@@ -31,9 +31,12 @@ async def main():
             print(f"message payload not str | bytes | bytearray: {message.payload}")
         else:
             setpoints = Setpoints.model_validate_json(message.payload)
-            setattr(setpoints, args.setpoint, args.value)
+            setpoints_dict = setpoints.model_dump()
+            setpoints_dict[args.setpoint] = args.value
 
-            new_setpoints_str = setpoints.model_dump_json()
+            new_setpoints_str = Setpoints.model_validate(
+                setpoints_dict
+            ).model_dump_json()
             print(f"sent new setpoints:\n{new_setpoints_str}")
             await mqtt_client.publish(SETPOINTS_TOPIC, new_setpoints_str, retain=True)
 
