@@ -1,7 +1,8 @@
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 from datetime import datetime, time, timezone
-from typing import Optional
+
+from pydantic import BaseModel, Field
 
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.state_machines import Context, Functions
@@ -42,99 +43,84 @@ from energy_box_control.power_hub.sensors import PowerHubSensors
 from energy_box_control.units import Celsius, Ratio, Watt, WattPerMeterSquared
 
 
-def setpoint(description: str):
-    return field(metadata={"description": description})
-
-
-@dataclass
-class Setpoints:
-    pcm_min_temperature: Celsius = setpoint(
-        "minimum temperature of pcm to be maintained"
+class Setpoints(BaseModel):
+    pcm_min_temperature: Celsius = Field(
+        description="minimum temperature of pcm to be maintained"
     )
-    pcm_max_temperature: Celsius = setpoint(
-        "maximum temperature of pcm to be maintained"
+    pcm_max_temperature: Celsius = Field(
+        description="maximum temperature of pcm to be maintained"
     )
-    target_charging_temperature_offset: Celsius = setpoint(
-        "target offset to target temperature of temperature of charging medium"
+    target_charging_temperature_offset: Celsius = Field(
+        description="target offset to target temperature of temperature of charging medium"
     )
-    minimum_charging_temperature_offset: Celsius = setpoint(
-        "minimal offset to target temperature of temperature of charging medium"
+    minimum_charging_temperature_offset: Celsius = Field(
+        description="minimal offset to target temperature of temperature of charging medium"
     )
-    minimum_global_irradiance: WattPerMeterSquared = setpoint(
-        "minimum global irradiance for heat pipes to function"
+    minimum_global_irradiance: WattPerMeterSquared = Field(
+        description="minimum global irradiance for heat pipes to function"
     )
-    pcm_discharged: Celsius = setpoint(
-        "maximum temperature at which pcm is fully discharged"
+    pcm_discharged: Celsius = Field(
+        description="maximum temperature at which pcm is fully discharged"
     )
-    pcm_charged: Celsius = setpoint("minimum temperature at which pcm is fully charged")
-    yazaki_minimum_chill_power: Watt = setpoint(
-        "minimum chill power to be supplied by yazaki"
+    pcm_charged: Celsius = Field(
+        description="minimum temperature at which pcm is fully charged"
     )
-    yazaki_inlet_target_temperature: Celsius = setpoint(
-        "target temperature for Yazaki hot water inlet"
+    yazaki_minimum_chill_power: Watt = Field(
+        description="minimum chill power to be supplied by yazaki"
     )
-    cold_reservoir_max_temperature: Celsius = setpoint(
-        "maximum temperature of cold reservoir to be maintained by chillers"
+    yazaki_inlet_target_temperature: Celsius = Field(
+        description="target temperature for Yazaki hot water inlet"
     )
-    cold_reservoir_min_temperature: Celsius = setpoint(
-        "minimum temperature of cold reservoir to be maintained by chillers"
+    cold_reservoir_max_temperature: Celsius = Field(
+        description="maximum temperature of cold reservoir to be maintained by chillers"
     )
-    cold_supply_max_temperature: Celsius = setpoint(
-        "temperature of water coming out of cold reservoir above which cooling supply stops"
+    cold_reservoir_min_temperature: Celsius = Field(
+        description="minimum temperature of cold reservoir to be maintained by chillers"
     )
-    cooling_supply_disabled_time: time = setpoint(
-        "Time from which cooling supply is disabled"
+    cold_supply_max_temperature: Celsius = Field(
+        description="temperature of water coming out of cold reservoir above which cooling supply stops"
     )
-    cooling_supply_enabled_time: time = setpoint(
-        "Time from which cooling supply is enabled"
+    cooling_supply_disabled_time: time = Field(
+        description="Time from which cooling supply is disabled"
     )
-    chill_min_supply_temperature: Celsius = setpoint(
-        "temperature of chilled water below which cooling supply can start"
+    cooling_supply_enabled_time: time = Field(
+        description="Time from which cooling supply is enabled"
     )
-    minimum_preheat_offset: Celsius = setpoint(
-        "minimal offset of waste heat to preheat reservoir temperature"
+    chill_min_supply_temperature: Celsius = Field(
+        description="temperature of chilled water below which cooling supply can start"
     )
-    waste_target_temperature: Celsius = setpoint("target temperature of waste water")
-    water_treatment_max_fill_ratio: float = setpoint("maximum level of grey water tank")
-    water_treatment_min_fill_ratio: float = setpoint("minimum level of grey water tank")
-    technical_water_max_fill_ratio: float = setpoint(
-        "minimum level of grey water tank for freshwater fill"
+    minimum_preheat_offset: Celsius = Field(
+        description="minimal offset of waste heat to preheat reservoir temperature"
     )
-    technical_water_min_fill_ratio: float = setpoint(
-        "maximum level of grey water tank for freshwater fill"
+    waste_target_temperature: Celsius = Field(
+        description="target temperature of waste water"
     )
-    fresh_water_min_fill_ratio: Ratio = setpoint("minimum level of fresh water")
-    trigger_filter_water_tank: datetime = setpoint("trigger filtering of water tank")
-    stop_filter_water_tank: datetime = setpoint("stop filtering of water tank")
-    low_battery: Ratio = setpoint("soc below which the chiller isn't used")
-    high_heat_dump_temperature: Celsius = setpoint(
-        "Trigger temperature for the outboard pump toggle"
+    water_treatment_max_fill_ratio: float = Field(
+        description="maximum level of grey water tank"
     )
-    heat_dump_outboard_divergence_temperature: Celsius = setpoint(
-        "Trigger temperature difference for the outboard pump toggle"
+    water_treatment_min_fill_ratio: float = Field(
+        description="minimum level of grey water tank"
     )
-
-
-def parse_setpoints(message: str | bytes) -> Optional[Setpoints]:
-    try:
-        setpoints_dict = json.loads(message)
-        for date_field in ["trigger_filter_water_tank", "stop_filter_water_tank"]:
-            setpoints_dict[date_field] = datetime.fromisoformat(
-                setpoints_dict[date_field]
-            )
-        for time_field in [
-            "cooling_supply_disabled_time",
-            "cooling_supply_enabled_time",
-        ]:
-            setpoints_dict[time_field] = time.fromisoformat(setpoints_dict[time_field])
-
-        return Setpoints(**setpoints_dict)
-    except TypeError:
-        pass
-    except json.JSONDecodeError:
-        pass
-
-    return None
+    technical_water_max_fill_ratio: float = Field(
+        description="minimum level of grey water tank for freshwater fill"
+    )
+    technical_water_min_fill_ratio: float = Field(
+        description="maximum level of grey water tank for freshwater fill"
+    )
+    fresh_water_min_fill_ratio: Ratio = Field(
+        description="minimum level of fresh water"
+    )
+    trigger_filter_water_tank: datetime = Field(
+        description="trigger filtering of water tank"
+    )
+    stop_filter_water_tank: datetime = Field(description="stop filtering of water tank")
+    low_battery: Ratio = Field(description="soc below which the chiller isn't used")
+    high_heat_dump_temperature: Celsius = Field(
+        description="Trigger temperature for the outboard pump toggle"
+    )
+    heat_dump_outboard_divergence_temperature: Celsius = Field(
+        description="Trigger temperature difference for the outboard pump toggle"
+    )
 
 
 @dataclass
