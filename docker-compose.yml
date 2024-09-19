@@ -14,7 +14,7 @@ services:
       DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
       DOCKER_VERNEMQ_LISTENER__WS__DEFAULT: "0.0.0.0:9001"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8888/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -131,12 +131,20 @@ services:
 
   mqtt_bridge:
     image: mqtt_bridge
+    container_name: mqtt_bridge
     build:
       context: mqtt_bridge
 
+  hmi_dashboard:
+    image: hmi_dashboard
+    container_name: power_hub_dashboard
+    build:
+      context: hmi_dashboard
+    ports:
+      - 8180:80
+
 networks:
   power_hub_simulation:
-
 
 volumes:
   influxdb-data:
