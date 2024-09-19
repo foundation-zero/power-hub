@@ -31,7 +31,7 @@ jobs:
       - name: Test
         run: poetry run pytest
 
-      - run: docker compose up -d control
+      - run: docker compose up -d control telegraf
         env:
           PAGERDUTY_CONTROL_APP_KEY: "-"
 
