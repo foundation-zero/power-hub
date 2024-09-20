@@ -75,6 +75,7 @@ export interface Electrical {
   batterySystemSoc: number;
   pvPower: number;
   powerConsumption: number;
+  totalACPower: number;
 }
 
 export interface SensorsTree {

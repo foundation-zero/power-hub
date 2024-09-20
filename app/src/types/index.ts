@@ -125,3 +125,4 @@ export type WeatherInfo = SnakeCasedProperties<{
 
 export type AppMode = "display" | "portrait" | "landscape";
 export type Direction = "up" | "down" | "left" | "right";
+export type MaybeCustomPath<T extends string> = T | `custom:${string}`;

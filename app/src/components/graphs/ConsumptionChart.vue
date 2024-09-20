@@ -9,37 +9,21 @@
 
 <script setup lang="ts">
 import { use } from "echarts/core";
-import { usePowerHubStore } from "@/stores/power-hub";
 import { SVGRenderer } from "echarts/renderers";
 import { useColorMode } from "@vueuse/core";
 import { BarChart, LineChart } from "echarts/charts";
 import VChart from "vue-echarts";
 import { ref } from "vue";
-import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
-import { range } from "lodash";
 import { useStripes } from "@/utils/charts";
-import { useCombinedHourlyData } from "@/utils";
-import { map } from "rxjs";
-import { toHourlyData } from "@/api";
-import { todayRangeFn } from "@/utils/numbers";
+import type { HourlyData } from "@/types";
 
 use([SVGRenderer, BarChart, LineChart]);
 
-const { sum } = usePowerHubStore();
-
-const hours = range(0, 24, 1);
-
-const consumptionPerTwoHours = useObservable(
-  useCombinedHourlyData(
-    sum
-      .useOverTime("electric/power/consumption", todayRangeFn)
-      .pipe(map((values) => values.map(toHourlyData))),
-    sum.useMeanPerHourOfDay("electric/power/consumption"),
-    1,
-    hours,
-  ),
-);
+const props = defineProps<{
+  max?: number;
+  data?: HourlyData[];
+}>();
 
 const colorMode = useColorMode();
 
@@ -57,12 +41,13 @@ const option = ref({
   xAxis: {
     type: "category",
     show: false,
-    data: hours,
   },
   yAxis: [
     {
       type: "value",
       name: "",
+      min: computed(() => -(props.max ?? 0)),
+      max: 0,
       splitLine: {
         show: false,
       },
@@ -84,7 +69,7 @@ const option = ref({
       },
       barWidth: "40%",
       data: computed(() =>
-        consumptionPerTwoHours.value?.map(({ value, hour }) => ({
+        props.data?.map(({ value, hour }) => ({
           value: -Math.abs(value),
           itemStyle: {
             decal: hour > new Date().getHours() ? useStripes() : undefined,

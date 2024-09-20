@@ -105,6 +105,6 @@ import { useAsWatts } from "@/utils";
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMean("electrical/power_consumption")),
+  useObservable(powerHub.sensors.useMean("custom:electrical/total_AC_power")),
 );
 </script>
