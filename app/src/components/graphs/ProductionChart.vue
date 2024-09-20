@@ -19,32 +19,20 @@ import { computed } from "vue";
 import { toKiloWattHours } from "@/utils/formatters";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
-import { range } from "lodash";
 import { useStripes } from "@/utils/charts";
 import { map } from "rxjs";
 import { toHourlyData } from "@/api";
-import { useCombinedHourlyData } from "@/utils";
-import { between, todayRangeFn } from "@/utils/numbers";
+import { between } from "@/utils/numbers";
 import { add, startOfTomorrow, startOfYesterday } from "date-fns";
+import type { HourlyData } from "@/types";
+
+const props = defineProps<{ max?: number; data?: HourlyData[] }>();
 
 use([SVGRenderer, BarChart, LineChart]);
 
 const colorMode = useColorMode();
 
-const { sum, sensors } = usePowerHubStore();
-
-const hours = range(0, 24, 1);
-
-const productionPerTwoHours = useObservable(
-  useCombinedHourlyData(
-    sum
-      .useOverTime("electric/power/production", todayRangeFn)
-      .pipe(map((values) => values.map(toHourlyData))),
-    sum.useMeanPerHourOfDay("electric/power/production"),
-    1,
-    hours,
-  ),
-);
+const { sensors } = usePowerHubStore();
 
 const batteryValues = useObservable(
   sensors
@@ -58,11 +46,13 @@ const batteryValues = useObservable(
         const yesterday = values.slice(0, 24);
         const today = values.slice(24);
 
+        if (!today.length) return yesterday;
+
         // Use the current value as starting point and add delta to yesterdays values
         const delta = today[today.length - 1].value - yesterday[today.length - 1].value;
         const forecastToday = yesterday
           .slice(today.length)
-          .map(({ value, hour }) => ({ hour, value: Math.min(100, Math.max(0, value + delta)) }));
+          .map(({ value, hour }) => ({ hour, value: Math.min(1, Math.max(0, value + delta)) }));
 
         return today.concat(forecastToday);
       }),
@@ -110,7 +100,6 @@ const option = ref({
   xAxis: {
     type: "category",
     show: false,
-    data: hours,
   },
   yAxis: [
     {
@@ -125,16 +114,17 @@ const option = ref({
       axisLabel: {
         show: false,
       },
+      max: computed(() => props.max),
     },
     {
       type: "value",
       name: "%",
       min: 0,
-      max: 100,
+      max: 1,
       splitLine: {
         show: false,
       },
-      interval: 25,
+      interval: 0.25,
       nameTextStyle: {
         show: false,
       },
@@ -149,7 +139,7 @@ const option = ref({
       type: "bar",
       barWidth: "50%",
       data: computed(() =>
-        productionPerTwoHours.value?.map(({ value, hour }) => ({
+        props.data?.map(({ value, hour }) => ({
           value,
           itemStyle: {
             decal: hour > new Date().getHours() ? useStripes() : undefined,
