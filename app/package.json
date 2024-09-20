@@ -28,7 +28,7 @@
     "sass": "^1.74.1",
     "type-fest": "^4.14.0",
     "vue": "^3.4.21",
-    "vue-echarts": "^6.7.2",
+    "vue-echarts": "^7.0.3",
     "vue-number-animation": "^2.0.2",
     "vue-router": "^4.3.0",
     "vue3-carousel": "^0.3.3",
