@@ -15,6 +15,9 @@ def get_mqtt_client(logger: Logger):
     else:
         tls_parameters = None
 
+    logger.info(
+        f"Connecting to MQTT broker: {CONFIG.mqtt_username}@{CONFIG.mqtt_host}:{CONFIG.mqtt_port}"
+    )
     return aiomqtt.Client(
         CONFIG.mqtt_host,
         port=CONFIG.mqtt_port,
