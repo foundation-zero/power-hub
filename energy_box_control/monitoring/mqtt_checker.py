@@ -53,6 +53,8 @@ class MQTTChecker:
                     ]
                 )
             except CancelledError:
+                logger.info(f"Shutting down MQTTChecker for {self.topic}")
+                await client.unsubscribe(self.topic)
                 break
 
 
@@ -76,6 +78,9 @@ async def main():
                 f"Connection lost; Reconnecting in {MQTT_RECONNECT_INTERVAL_SECONDS} seconds ..."
             )
             await asyncio.sleep(MQTT_RECONNECT_INTERVAL_SECONDS)
+        except CancelledError:
+            logger.info("Shutting down")
+            break
 
 
 if __name__ == "__main__":
