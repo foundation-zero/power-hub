@@ -1,4 +1,4 @@
-import type { NestedPath, HistoricalData, QueryParams, HourlyData } from "@/types";
+import type { NestedPath, HistoricalData, QueryParams, HourlyData, MaybeCustomPath } from "@/types";
 import type { TimeInterval } from "@/types/power-hub";
 import { between } from "@/utils/numbers";
 import { subMinutes } from "date-fns";
@@ -23,7 +23,7 @@ export const usePollingApi = <T>(
 ) =>
   ((<Observable<T>>cache[endpoint]) ??= defer(() =>
     ajax<T>({
-      url: `${import.meta.env.VITE_API}${endpoint}`,
+      url: `${import.meta.env.VITE_API}${endpoint.replace("custom:", "")}`,
       headers: DEFAULT_HEADERS,
       queryParams: typeof queryParams === "function" ? queryParams() : queryParams,
     }),
@@ -46,7 +46,7 @@ const betweenMeanDefault = (): [Date, Date] => [subMinutes(new Date(), 60), new 
 export const useMean =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
-    topic: K,
+    topic: MaybeCustomPath<K>,
     params?: QueryParams<{
       between?: string;
     }>,
@@ -65,7 +65,7 @@ export const useMean =
 export const useCurrent =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
-    topic: K,
+    topic: MaybeCustomPath<K>,
     params?: QueryParams<{
       between?: string;
     }>,
@@ -76,7 +76,7 @@ export const useCurrent =
 export const useTotal =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
-    topic: K,
+    topic: MaybeCustomPath<K>,
     params?: QueryParams<{
       between?: string;
     }>,
@@ -100,7 +100,7 @@ export const toHourlyData = ({
 export const useLastValues =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
-    topic: K,
+    topic: MaybeCustomPath<K>,
     params?: QueryParams<{
       between?: string;
     }>,
@@ -115,7 +115,7 @@ export const useLastValues =
 export const useOverTime =
   <T>(endpointFn: PathFn) =>
   <K extends NestedPath<T>>(
-    topic: K,
+    topic: MaybeCustomPath<K>,
     params?: QueryParams<{
       between?: string;
       interval: TimeInterval;
@@ -130,7 +130,10 @@ export const useOverTime =
 
 export const useMeanPerHourOfDay =
   <T>(endpointFn: PathFn) =>
-  <K extends NestedPath<T>>(topic: K, pollingInterval: number = DEFAULT_POLLING_INTERVAL) =>
+  <K extends NestedPath<T>>(
+    topic: MaybeCustomPath<K>,
+    pollingInterval: number = DEFAULT_POLLING_INTERVAL,
+  ) =>
     usePollingApi<HourlyData<number>[]>(
       `/${endpointFn(topic)}/mean/per/hour_of_day`,
       pollingInterval,

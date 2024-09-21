@@ -57,9 +57,14 @@ jobs:
         env:
           INFLUXDB_URL: "http://0.0.0.0:8086"
           API_TOKEN: "s4fczYTbDrf6ZFlvGHjOg5zFtJqbglZaJ5SOK7FCCdaoGhd6LVA87hHJjBoz2lC4"
-      
-#      - name: Run simulation notebook
-#        run: poetry run jupyter nbconvert --execute --to html analysis/simulate_powerhub.ipynb
+
+      - name: MQTT Checker integration tests
+        run: poetry run pytest -s --runintegration tests/monitoring/test_mqtt_checker_integration.py
+        env:
+          MQTT_HOST: "0.0.0.0"
+          MQTT_PASSWORD: 'power-hub'
+          MQTT_USERNAME: 'power-hub'
+          PAGERDUTY_MQTT_CHECKER_KEY: "-"
 
   test-tofu-staging:
     if: github.ref != 'refs/heads/main' && github.event_name == 'push'
@@ -120,7 +125,7 @@ jobs:
 
   deploy-staging:
     timeout-minutes: 10
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
@@ -177,7 +182,7 @@ jobs:
           "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
 
   deploy-staging-infra:
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
 
