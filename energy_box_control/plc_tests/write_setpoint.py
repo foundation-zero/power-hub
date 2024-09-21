@@ -9,17 +9,16 @@ from energy_box_control.power_hub_control import SETPOINTS_TOPIC
 
 
 async def main():
-
+    CONFIG.mqtt_host = "127.0.0.1"
     CONFIG.mqtt_port = 1883
     CONFIG.mqtt_tls_enabled = False
+    CONFIG.mqtt_password = "w*j4kyhLPxaGwsuPi%pgL"
     parse = ArgumentParser()
     parse.add_argument("setpoint")
     parse.add_argument("value")
-    parse.add_argument("--host")
 
     args = parse.parse_args()
 
-    CONFIG.mqtt_host = args.host
     logger = get_logger(__name__)
     async with get_mqtt_client(logger) as mqtt_client:
         message = await read_single_message_from_topic(
