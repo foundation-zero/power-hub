@@ -46,15 +46,12 @@ gcloud secrets versions access latest --secret="powerhub-gar-secret"
 - Install standalone credential helper on target machine(Check the correct OS arch)
 - Set correct GCR registries:
 ```bash
-docker-credential-gcr configure-docker --registries=europe-west1
+docker-credential-gcr configure-docker --registries=europe-west1-docker.pkg.dev
 ```
-- Set the credentials in ~/.bashrc:
+- Copy credentials to `/home/pi/power-hub-staging-docker-credentials.json`
+- To pull images:
 ```bash
- vi /root/.bashrc
- # add/edit the following:
- export GOOGLE_APPLICATION_CREDENTIALS="[The secret copied from your laptop]"
- # save & exit
- source /root/.bashrc
- #verify the credentials work:
- echo "https://gcr.io" | docker-credential-gcr get
+export GOOGLE_APPLICATION_CREDENTIALS="/home/pi/power-hub-staging-docker-credentials.json"
+docker pull europe-west1-docker.pkg.dev/power-hub-423312/power-hub/python-app:[tag]
 ```
+Edit docker-compose.yaml, replace the image with the correct url+tag, and restart the container.
