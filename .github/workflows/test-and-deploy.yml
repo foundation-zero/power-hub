@@ -127,8 +127,8 @@ jobs:
     timeout-minutes: 60
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
-    concurrency:
-      group: ${{ github.workflow }}-deploy-staging
+#    concurrency:
+#      group: ${{ github.workflow }}-deploy-staging
     
     env:
       PROJECT_ID: power-hub-423312
@@ -186,8 +186,8 @@ jobs:
     timeout-minutes: 60
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
-    concurrency:
-      group: ${{ github.workflow }}-deploy-staging
+#    concurrency:
+#      group: ${{ github.workflow }}-deploy-staging
 
     env:
       PROJECT_ID: power-hub-423312
