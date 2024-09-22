@@ -165,12 +165,18 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app
+          tags: type=sha
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
+          file: python_script.Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}
 
   deploy-staging-infra:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
