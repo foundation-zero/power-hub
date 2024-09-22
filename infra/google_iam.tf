@@ -77,6 +77,12 @@ resource "google_project_iam_member" "tofu_state_key_access" {
   member  = google_service_account.service_account.member
 }
 
+resource "google_project_iam_member" "tofu_secret_manager_access" {
+  project = var.project_id
+  role    = "roles/secretmanager.admin"
+  member  = google_service_account.service_account.member
+}
+
 resource "google_project_iam_binding" "power_hub_gak_binding" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
