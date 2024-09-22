@@ -125,7 +125,7 @@ jobs:
 
   deploy-staging:
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
@@ -166,7 +166,7 @@ jobs:
       - name: 'Docker build Python app'
         run: >
           docker build
-          --platform linux/amd64
+          --platform linux/amd64,linux/arm64
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:${GITHUB_SHA}"
           --tag "${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app:latest"
           . -f python_script.Dockerfile
