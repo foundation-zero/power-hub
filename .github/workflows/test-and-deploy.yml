@@ -170,12 +170,14 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app
-          tags: type=sha
+          tags: |
+            type=sha
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           file: python_script.Dockerfile
           platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
           push: true
 
   deploy-staging-infra:
