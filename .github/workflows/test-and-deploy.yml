@@ -176,9 +176,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           file: python_script.Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v8
           tags: ${{ steps.meta.outputs.tags }}
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-staging-infra:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
