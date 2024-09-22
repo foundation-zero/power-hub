@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 15
+    timeout-minutes: 30
     runs-on: ubuntu-latest
 
     steps:
@@ -179,8 +179,8 @@ jobs:
           platforms: linux/amd64,linux/arm/v8
           tags: ${{ steps.meta.outputs.tags }}
           push: true
-#          cache-from: type=gha
-#          cache-to: type=gha,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-staging-infra:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
