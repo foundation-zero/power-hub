@@ -124,7 +124,7 @@ jobs:
           TF_VAR_send_notifications: false
 
   deploy-staging:
-    timeout-minutes: 20
+    timeout-minutes: 60
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     concurrency:
