@@ -176,7 +176,66 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           file: python_script.Dockerfile
-          platforms: linux/amd64,linux/arm/v8
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging-arm:
+    timeout-minutes: 60
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    concurrency:
+      group: ${{ github.workflow }}-deploy-staging
+
+    env:
+      PROJECT_ID: power-hub-423312
+      ENV: staging
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: macos-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+      - id: 'login-art-registry'
+        name: 'Login to Artifact Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{env.GAR}}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/python-app
+          tags: |
+            type=sha
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          file: python_script.Dockerfile
+          platforms: linux/arm/v8
           tags: ${{ steps.meta.outputs.tags }}
           push: true
           cache-from: type=gha
