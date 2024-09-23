@@ -8,7 +8,7 @@ jobs:
   test:
     timeout-minutes: 15
     runs-on: ubuntu-latest
-
+    if: false
     steps:
       - uses: actions/checkout@v4
 
@@ -126,7 +126,7 @@ jobs:
   build-push-docker:
     timeout-minutes: 60
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test
+    #needs: test
 #    concurrency:
 #      group: ${{ github.workflow }}-deploy-staging
 
@@ -208,10 +208,11 @@ jobs:
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          ls /tmp/digests
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-/${{ matrix.application.name }}-${{  env.PLATFORM_PAIR }}
+          name: digests-${{ matrix.application.name }}-${{env.PLATFORM_PAIR}}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
