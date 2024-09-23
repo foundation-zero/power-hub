@@ -193,6 +193,7 @@ jobs:
         with:
           images: ${{env.REGISTRY_IMAGE}}
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.application.docker_file || 'python_script.Dockerfile'}}
