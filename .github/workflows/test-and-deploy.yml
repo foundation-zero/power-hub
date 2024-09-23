@@ -70,8 +70,8 @@ jobs:
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     with:
-      env: staging
-      gcp_project_id:  power-hub-423312
+      env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
+      gcp_project_id:  ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
