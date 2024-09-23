@@ -37,7 +37,7 @@ jobs:
         platform:
         - runner_os: ubuntu-latest
           name: linux/amd64
-        - runner_os: ubuntu2-arm64
+        - runner_os: ubuntu-arm64
           platform: linux/arm64/v8
 
     env:

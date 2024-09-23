@@ -81,6 +81,7 @@ jobs:
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
+    secrets: inherit
     with:
       deploy: false
       env: staging
@@ -96,6 +97,7 @@ jobs:
     needs: docker-build-push
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
+    secrets: inherit
     with:
       deploy: true
       env: staging
