@@ -197,7 +197,7 @@ jobs:
         with:
           file: ${{ matrix.application.docker_file || 'python_script.Dockerfile'}}
           platforms: ${{ matrix.platform.name }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{env.REGISTRY_IMAGE}}
           build-args: ${{ matrix.application.build_args || ''}}
           context: ${{ matrix.application.context || '.'}}
           labels: ${{ steps.meta.outputs.labels }}
