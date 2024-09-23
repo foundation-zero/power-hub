@@ -15,21 +15,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: "./hmi_dashboard/.nvmrc"
+          node-version-file: "./apps/dashboard/.nvmrc"
           cache: "pnpm"
-          cache-dependency-path: hmi_dashboard/pnpm-lock.yaml
+          cache-dependency-path: apps/dashboard/pnpm-lock.yaml
 
       - run: pnpm install
-        working-directory: hmi_dashboard
+        working-directory: apps/dashboard
 
       - run: pnpm lint
-        working-directory: hmi_dashboard
+        working-directory: apps/dashboard
 
       - run: pnpm type-check
-        working-directory: hmi_dashboard
+        working-directory: apps/dashboard
 
       - run: pnpm test:unit
-        working-directory: hmi_dashboard
+        working-directory: apps/dashboard
 
   deploy:
     needs: test
@@ -62,7 +62,7 @@ jobs:
       - name: Setup node env
         uses: actions/setup-node@v3
         with:
-          node-version-file: "./hmi_dashboard/.nvmrc"
+          node-version-file: "./apps/dashboard/.nvmrc"
 
       - uses: pnpm/action-setup@v3
         name: Install pnpm
@@ -72,15 +72,15 @@ jobs:
           run_install: false
 
       - name: Install dependencies
-        working-directory: ./hmi_dashboard
+        working-directory: ./apps/dashboard
         run: pnpm install
 
       - name: Lint check
-        working-directory: ./hmi_dashboard
+        working-directory: ./apps/dashboard
         run: pnpm lint --max-warnings 0
 
       - name: Generate website
-        working-directory: ./hmi_dashboard
+        working-directory: ./apps/dashboard
         run: pnpm build
         env:
           VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
@@ -92,5 +92,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: power-hub-dashboard
-          directory: "./hmi_dashboard/dist"
+          directory: "./apps/dashboard/dist"
           wranglerVersion: 3
