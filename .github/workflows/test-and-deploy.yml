@@ -142,8 +142,8 @@ jobs:
         platform:
         - runner_os: ubuntu-latest
           name: linux/amd64
-#        - runner_os: our_arm_runner
-#          platform: linux/arm64/v7
+        - runner_os: ubuntu-arm64
+          platform: linux/arm64/v8
     
     env:
       PROJECT_ID: power-hub-423312
