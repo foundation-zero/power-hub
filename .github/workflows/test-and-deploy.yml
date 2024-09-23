@@ -135,11 +135,10 @@ jobs:
         application:
           - name: control
             build_args: POETRY_DEPS=control
-            docker_file: python_script.Dockerfile
           - name: api
-            docker_file: python_script.Dockerfile
           - name: mqtt_checker
             docker_file: mqtt_bridge/Dockerfile
+            context: mqtt_bridge
         platform:
         - runner_os: ubuntu-latest
           name: linux/amd64
@@ -191,10 +190,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          file: ${{ matrix.application.docker_file }}
+          file: ${{ matrix.application.docker_file || 'python_script.Dockerfile'}}
           platforms: ${{ matrix.platform.name }}
           tags: ${{ steps.meta.outputs.tags }}
-          build-args: ${{ matrix.application.build_args }}
+          build-args: ${{ matrix.application.build_args || ''}}
+          context: ${{ matrix.application.context || '.'}}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
