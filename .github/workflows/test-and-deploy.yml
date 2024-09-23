@@ -217,6 +217,9 @@ jobs:
           retention-days: 1
 
   merge-docker-images:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: ubuntu-latest
     env:
       PROJECT_ID: power-hub-423312
