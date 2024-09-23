@@ -76,61 +76,19 @@ jobs:
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
   test-tofu-staging:
+    uses: ./.github/workflows/terraform.yml
     if: github.ref != 'refs/heads/main' && github.event_name == 'push'
-    timeout-minutes: 10
     needs: test
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
-
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
-    env:
-      PROJECT_ID: power-hub-423312
-      ENV: staging
-      INFLUXDB_BUCKET: simulation_data
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - uses: actions/checkout@v4
-      
-      - uses: opentofu/setup-opentofu@v1
-        with:
-          tofu_version: 1.7.1
-          
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: "access_token"
-          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
-
-      - run: tofu init -backend-config=staging-backend.conf
-        working-directory: ./infra
-      
-      - run: tofu plan -lock=false
-        working-directory: ./infra
-        env:
-          TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
-          TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
-          TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
-          TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
-          TF_VAR_vernemq_power_hub_2_password: ${{secrets.VERNEMQ_POWER_HUB_2_PASSWORD}}
-          TF_VAR_vernemq_readonly_password: ${{secrets.VERNEMQ_READONLY_PASSWORD}}
-          TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
-          TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
-          TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
-          TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
-          TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
-          TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
-          TF_VAR_env: ${{env.ENV}}
-          TF_VAR_project_id: ${{env.PROJECT_ID}}
-          TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
-          TF_VAR_send_notifications: false
+    with:
+      deploy: false
+      env: 'staging'
+      backend_config: staging-backend.conf
+      gcp_project_id:  'power-hub-423312'
+      gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+      gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+      influxdb_bucket: simulation_data
 
   deploy-staging-infra:
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'

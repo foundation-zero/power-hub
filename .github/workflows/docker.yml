@@ -164,6 +164,7 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
+            type=sha
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
