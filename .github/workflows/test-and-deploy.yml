@@ -143,7 +143,7 @@ jobs:
         platform:
         - runner_os: ubuntu-latest
           name: linux/amd64
-        - runner_os: ubuntu-arm64
+        - runner_os: ubuntu2-arm64
           platform: linux/arm64/v8
     
     env:
@@ -218,6 +218,12 @@ jobs:
 
   merge-docker-images:
     runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: power-hub-423312
+      ENV: staging
+      ZONE: europe-west1
+      GAR: europe-west1-docker.pkg.dev
+      REPO: power-hub
     needs:
       - build-push-docker
     strategy:
