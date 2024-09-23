@@ -1,4 +1,4 @@
-name: App
+name: PowerHub Demo
 on:
   push:
 
@@ -15,21 +15,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: "./app/.nvmrc"
+          node-version-file: "./apps/demo/.nvmrc"
           cache: "pnpm"
-          cache-dependency-path: app/pnpm-lock.yaml
+          cache-dependency-path: apps/demo/pnpm-lock.yaml
 
       - run: pnpm install
-        working-directory: app
+        working-directory: apps/demo
 
       - run: pnpm lint
-        working-directory: app
+        working-directory: apps/demo
 
       - run: pnpm type-check
-        working-directory: app
+        working-directory: apps/demo
 
       - run: pnpm test:unit
-        working-directory: app
+        working-directory: apps/demo
 
   deploy:
     needs: test
@@ -62,7 +62,7 @@ jobs:
       - name: Setup node env
         uses: actions/setup-node@v3
         with:
-          node-version-file: "./app/.nvmrc"
+          node-version-file: "./apps/demo/.nvmrc"
 
       - uses: pnpm/action-setup@v3
         name: Install pnpm
@@ -72,15 +72,15 @@ jobs:
           run_install: false
 
       - name: Install dependencies
-        working-directory: ./app
+        working-directory: ./apps/demo
         run: pnpm install
 
       - name: Lint check
-        working-directory: ./app
+        working-directory: ./apps/demo
         run: pnpm lint --max-warnings 0
 
       - name: Generate website
-        working-directory: ./app
+        working-directory: ./apps/demo
         run: pnpm build
         env:
           VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
@@ -92,5 +92,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: power-hub
-          directory: "./app/dist"
+          directory: "./apps/demo/dist"
           wranglerVersion: 3
