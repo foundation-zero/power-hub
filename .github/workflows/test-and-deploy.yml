@@ -65,6 +65,16 @@ jobs:
           MQTT_USERNAME: 'power-hub'
           PAGERDUTY_MQTT_CHECKER_KEY: "-"
 
+  docker-build-push:
+    uses: ./.github/workflows/docker.yml
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    with:
+      env: staging
+      gcp_project_id:  power-hub-423312
+      gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+      gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+
   test-tofu-staging:
     if: github.ref != 'refs/heads/main' && github.event_name == 'push'
     timeout-minutes: 10
@@ -116,23 +126,14 @@ jobs:
           TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
-          TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
           TF_VAR_env: ${{env.ENV}}
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
           TF_VAR_send_notifications: false
 
-  docker-build-push:
-    uses: ./.github/workflows/docker.yml
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    with:
-      env: staging
-      gcp_project_id:  power-hub-423312
-      gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-      gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
-
   deploy-staging-infra:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
 
@@ -181,7 +182,7 @@ jobs:
           TF_VAR_pagerduty_control_app_key: ${{secrets.STAGING_PAGERDUTY_CONTROL_APP_KEY}}
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
-          TF_VAR_python_app_image_tag: ${{github.sha}}
+          TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
           TF_VAR_env: ${{env.ENV}}
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}
@@ -290,7 +291,7 @@ jobs:
           TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
           TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.PROD_PAGERDUTY_MQTT_CHECKER_PROD_KEY}}
           TF_VAR_pagerduty_gke_key: ${{secrets.PROD_PAGERDUTY_GKE_PROD_KEY}}
-          TF_VAR_python_app_image_tag: "RELEASE-${{ github.event.release.tag_name }}"
+          TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
           TF_VAR_env: ${{env.ENV}}
           TF_VAR_project_id: ${{env.PROJECT_ID}}
           TF_VAR_influxdb_bucket: ${{env.INFLUXDB_BUCKET}}

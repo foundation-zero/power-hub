@@ -15,7 +15,10 @@ on:
       gcp_service_account:
         required: true
         type: string
-
+    outputs:
+      docker_image_tag:
+        description: "Tag of the docker image built"
+        value: ${{ jobs.merge-docker-images.outputs.docker_image_tag }}
 
 jobs:
   build-push-docker:
@@ -113,6 +116,8 @@ jobs:
       contents: 'read'
       id-token: 'write'
     runs-on: ubuntu-latest
+    outputs:
+      docker_image_tag:  ${{ steps.meta.outputs.version }}
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
       ENV: ${{inputs.env}}

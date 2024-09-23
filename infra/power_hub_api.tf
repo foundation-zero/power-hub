@@ -55,7 +55,7 @@ resource "helm_release" "power_hub_api" {
 
   set {
     name  = "image.repository"
-    value = "${local.power_hub_repo}/python-app"
+    value = "${local.power_hub_repo}/api"
   }
 
   set {

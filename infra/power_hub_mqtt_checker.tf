@@ -13,7 +13,7 @@ resource "helm_release" "power_hub_mqtt_checker" {
 
   set {
     name  = "image.repository"
-    value = "${local.power_hub_repo}/python-app"
+    value = "${local.power_hub_repo}/mqtt_checker"
   }
 
   set {
