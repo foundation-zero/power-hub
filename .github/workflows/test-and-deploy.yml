@@ -166,7 +166,7 @@ jobs:
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-          image = ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application.name}}
+          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application.name}}
           echo "REGISTRY_IMAGE=$image" >> $GITHUB_ENV
 
       - id: 'auth'
@@ -221,12 +221,13 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-push-docker
-    matrix:
-      application: [ control, api, mqtt_checker]
+    strategy:
+      matrix:
+        application: [ control, api, mqtt_checker]
     steps:
       - name: Prepare
         run: |
-          image = ${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application}}
+          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application}}
           echo "REGISTRY_IMAGE=$image" >> $GITHUB_ENV
       - name: Download digests
         uses: actions/download-artifact@v4
