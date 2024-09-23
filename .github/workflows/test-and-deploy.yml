@@ -8,7 +8,6 @@ jobs:
   test:
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    if: false
     steps:
       - uses: actions/checkout@v4
 
@@ -124,14 +123,12 @@ jobs:
           TF_VAR_send_notifications: false
 
   build-push-docker:
-    timeout-minutes: 60
+    timeout-minutes: 15
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    #needs: test
-#    concurrency:
-#      group: ${{ github.workflow }}-deploy-staging
+    needs: test
 
     strategy:
-      #fail-fast: false
+      fail-fast: false
       matrix:
         application:
           - name: control
@@ -217,6 +214,7 @@ jobs:
           retention-days: 1
 
   merge-docker-images:
+    timeout-minutes: 15
     permissions:
       contents: 'read'
       id-token: 'write'
