@@ -75,31 +75,15 @@ jobs:
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
-  test-tofu:
+  tofu:
     uses: ./.github/workflows/terraform.yml
     if: github.ref != 'refs/heads/main' && github.event_name == 'push'
-    needs: test
-    concurrency:
-      group: ${{ github.workflow }}-deploy-staging
-    secrets: inherit
-    with:
-      deploy: false
-      env: staging
-      backend_config: staging-backend.conf
-      gcp_project_id:  power-hub-423312
-      gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-      gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
-      influxdb_bucket: simulation_data
-
-  deploy-tofu:
-    uses: ./.github/workflows/terraform.yml
-    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: docker-build-push
     concurrency:
       group: ${{ github.workflow }}-deploy-staging
     secrets: inherit
     with:
-      deploy: true
+      deploy: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && 'true' || false }}
       env: staging
       backend_config: staging-backend.conf
       gcp_project_id:  power-hub-423312

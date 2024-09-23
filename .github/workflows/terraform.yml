@@ -25,6 +25,7 @@ on:
         required: true
         type: string
 
+
 env:
   TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
   TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
@@ -45,7 +46,7 @@ env:
   TF_VAR_send_notifications: ${{inputs.env == 'prod' && 'true' || 'false' }}
 
 jobs:
-  tofu:
+  tofu-test-or-deploy:
     permissions:
       contents: 'read'
       id-token: 'write'
