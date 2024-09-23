@@ -27,8 +27,6 @@ on:
 jobs:
   deploy-staging-infra:
     #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    concurrency:
-      group: ${{ github.workflow }}-deploy-staging
 
     permissions:
       contents: 'read'

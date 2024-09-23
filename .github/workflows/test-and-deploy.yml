@@ -83,9 +83,9 @@ jobs:
       group: ${{ github.workflow }}-deploy-staging
     with:
       deploy: false
-      env: 'staging'
+      env: staging
       backend_config: staging-backend.conf
-      gcp_project_id:  'power-hub-423312'
+      gcp_project_id:  power-hub-423312
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
       influxdb_bucket: simulation_data
