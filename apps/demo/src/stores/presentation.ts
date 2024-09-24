@@ -8,9 +8,9 @@ import {
   type PipeState,
   type PresentationComponent,
   type StreamState,
-} from "@/types";
-import type { PowerHubComponent } from "@/types/power-hub";
-import { mapFn, useSleep } from "@/utils";
+} from "@demo/types";
+import type { PowerHubComponent } from "@shared/types/power-hub";
+import { mapFn, useSleep } from "@shared/utils";
 import { type Position } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";

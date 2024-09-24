@@ -124,11 +124,11 @@
 <script setup lang="ts">
 import ComponentBase from "./ComponentBase.vue";
 import AnimatedNumber from "vue-number-animation";
-import { type PowerHubStore } from "@/stores/power-hub";
+import { type PowerHubStore } from "@shared/stores/power-hub";
 
-import { useAsWattHours } from "@/utils";
+import { useAsWattHours } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
-import { formattedInt, jouleToWattHour } from "@/utils/numbers";
+import { formattedInt, jouleToWattHour } from "@shared/utils/numbers";
 import { map } from "rxjs";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();

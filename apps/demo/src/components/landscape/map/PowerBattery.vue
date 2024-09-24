@@ -98,11 +98,11 @@
 import ComponentBase from "./ComponentBase.vue";
 
 import AnimatedNumber from "vue-number-animation";
-import { type PowerHubStore } from "@/stores/power-hub";
+import { type PowerHubStore } from "@shared/stores/power-hub";
 
-import { useAsWattHours } from "@/utils";
+import { useAsWattHours } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
-import { between, formattedInt } from "@/utils/numbers";
+import { between, formattedInt } from "@shared/utils/numbers";
 import { map } from "rxjs";
 import { add } from "date-fns";
 
@@ -113,7 +113,7 @@ const BATTERY_CAPACITY = 218000;
 const { value, unit } = useAsWattHours(
   useObservable(
     powerHub.sensors
-      .useLastValues("electrical/battery_system_soc", () => ({
+      .useLastValues("electrical/batterySystemSoc", () => ({
         between: between(add(new Date(), { seconds: -100 }), new Date()),
       }))
       .pipe(map((val) => val.slice(-1)[0].value * BATTERY_CAPACITY)),

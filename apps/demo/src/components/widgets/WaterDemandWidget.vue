@@ -16,8 +16,8 @@
 
 <script setup lang="ts">
 import WidgetBase from "./WidgetBase.vue";
-import type { PowerHubStore } from "@/stores/power-hub";
-import { formattedInt } from "@/utils/numbers";
+import type { PowerHubStore } from "@shared/stores/power-hub";
+import { formattedInt } from "@shared/utils/numbers";
 import StackedBarChart, { type BarSeries } from "../graphs/FillBarChart.vue";
 import { useObservable } from "@vueuse/rxjs";
 
@@ -30,6 +30,6 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-water", color: "#00bcd4" },
 ];
 
-const waterDemand = useObservable(powerHub.sensors.useMean("fresh_water_tank/water_demand_flow"));
-const waterMakerOut = useObservable(powerHub.sensors.useMean("water_maker/production_flow"));
+const waterDemand = useObservable(powerHub.sensors.useMean("freshWaterTank/waterDemandFlow"));
+const waterMakerOut = useObservable(powerHub.sensors.useMean("waterMaker/productionFlow"));
 </script>

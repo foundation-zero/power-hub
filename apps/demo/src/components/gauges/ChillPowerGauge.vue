@@ -239,21 +239,21 @@
 </template>
 
 <script setup lang="ts">
-import { usePowerHubStore } from "@/stores/power-hub";
-import { useAsWatts } from "@/utils";
-import { clampAtZero } from "@/utils/numbers";
+import { usePowerHubStore } from "@shared/stores/power-hub";
+import { useAsWatts } from "@shared/utils";
+import { clampAtZero } from "@shared/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
-import AnimatedNumber from "@/components/AnimatedInt.vue";
+import AnimatedNumber from "@demo/components/AnimatedInt.vue";
 import { map } from "rxjs";
 
 const { sensors } = usePowerHubStore();
 
 const { value: chillingPower, unit: chillingPowerUnit } = useAsWatts(
-  useObservable(sensors.useMean("yazaki/chill_power").pipe(map(clampAtZero))),
+  useObservable(sensors.useMean("yazaki/chillPower").pipe(map(clampAtZero))),
   100,
 );
 const { value: heatPower, unit: heatPowerUnit } = useAsWatts(
-  useObservable(sensors.useMean("yazaki/used_power")),
+  useObservable(sensors.useMean("yazaki/usedPower")),
 );
-const outputTemperature = useObservable(sensors.useMean("yazaki/chilled_output_temperature"));
+const outputTemperature = useObservable(sensors.useMean("yazaki/chilledOutputTemperature"));
 </script>

@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import DataBlock from "./DataBlock.vue";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import type { Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
 

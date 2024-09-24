@@ -55,19 +55,19 @@
 </template>
 
 <script setup lang="ts">
-import { usePresentationStore } from "@/stores/presentation";
+import { usePresentationStore } from "@demo/stores/presentation";
 import { toRefs, computed, ref, onMounted } from "vue";
 
-import ContentPanel from "@/components/landscape/ContentPanel.vue";
-import JourneyContent from "@/components/responsive/JourneyContent.vue";
-import ToggleWidgetsButton from "@/components/responsive/ToggleWidgetsButton.vue";
+import ContentPanel from "@demo/components/landscape/ContentPanel.vue";
+import JourneyContent from "@demo/components/responsive/JourneyContent.vue";
+import ToggleWidgetsButton from "@demo/components/responsive/ToggleWidgetsButton.vue";
 import { RouterLink, useRouter } from "vue-router";
-import WidgetsCarousel from "@/components/responsive/WidgetsCarousel.vue";
-import LandscapeMap from "@/components/landscape/LandscapeMap.vue";
-import IntroModal from "@/components/landscape/IntroModal.vue";
-import IntroContent from "@/components/landscape/intro/IntroContent.vue";
-import FZLogo from "@/components/FZLogo.vue";
-import HomeIcon from "@/components/responsive/HomeIcon.vue";
+import WidgetsCarousel from "@demo/components/responsive/WidgetsCarousel.vue";
+import LandscapeMap from "@demo/components/landscape/LandscapeMap.vue";
+import IntroModal from "@demo/components/landscape/IntroModal.vue";
+import IntroContent from "@demo/components/landscape/intro/IntroContent.vue";
+import FZLogo from "@demo/components/FZLogo.vue";
+import HomeIcon from "@demo/components/responsive/HomeIcon.vue";
 
 const router = useRouter();
 let lastRouteChange: number;

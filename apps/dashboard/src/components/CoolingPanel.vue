@@ -214,9 +214,9 @@
 </template>
 
 <script setup lang="ts">
-import { type PowerHubStore } from "@/stores/power-hub";
+import { type PowerHubStore } from "@shared/stores/power-hub";
 import TemperatureBlock from "./TemperatureBlock.vue";
-import { toActiveState, toChargeState, useSensorValue, useLast24Hours } from "@/utils";
+import { toActiveState, toChargeState, useSensorValue, useLast24Hours } from "@shared/utils";
 import CircuitBlock from "./CircuitBlock.vue";
 import { useObservable } from "@vueuse/rxjs";
 import { map } from "rxjs";

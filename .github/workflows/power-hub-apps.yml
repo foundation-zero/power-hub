@@ -1,0 +1,121 @@
+name: PowerHub Apps
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "./apps/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: apps/pnpm-lock.yaml
+
+      - run: pnpm install
+        working-directory: apps
+
+      - run: pnpm lint
+        working-directory: apps
+
+      - run: pnpm type-check
+        working-directory: apps
+
+      - run: pnpm test:unit
+        working-directory: apps
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Extract alias
+        shell: bash
+        run: |
+          export BRANCH=${GITHUB_REF#refs/heads/}
+          echo alias=$(ruby -e "puts '$BRANCH'.tr('/_', '-').chomp('-')[0..27]") >> $GITHUB_OUTPUT
+        id: extract-alias
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create Dashboard GitHub deployment
+        id: dashboard_deployment
+        with:
+          token: "${{ github.token }}"
+          initial-status: success
+          environment-url: http://${{steps.extract-alias.outputs.alias}}.power-hub-dashboard.pages.dev
+          environment: ${{steps.deploy.outputs.environment}}
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create Demo GitHub deployment
+        id: demo_deployment
+        with:
+          token: "${{ github.token }}"
+          initial-status: success
+          environment-url: http://${{steps.extract-alias.outputs.alias}}.power-hub.pages.dev
+          environment: ${{steps.deploy.outputs.environment}}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node env
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: "./apps/.nvmrc"
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install dependencies
+        working-directory: ./apps
+        run: pnpm install
+
+      - name: Lint check
+        working-directory: ./apps
+        run: pnpm lint --max-warnings 0
+
+      - name: Generate Dashboard
+        working-directory: ./apps
+        run: pnpm build:dashboard
+        env:
+          VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
+
+      - name: Deploy Dashboard
+        id: deploy_dashboard
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: power-hub-dashboard
+          directory: "./apps/dashboard/dist"
+          wranglerVersion: 3
+
+      - name: Generate Demo
+        working-directory: ./apps
+        run: pnpm build:demo
+        env:
+          VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
+
+      - name: Deploy Demo
+        id: deploy_demo
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: power-hub
+          directory: "./apps/demo/dist"
+          wranglerVersion: 3

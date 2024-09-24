@@ -33,11 +33,11 @@
 
 <script lang="ts">
 import AnimatedSlide from "../AnimatedSlide.vue";
-import { usePowerHubStore } from "@/stores/power-hub";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 import { useObservable } from "@vueuse/rxjs";
-import { useAsWattHours } from "@/utils";
+import { useAsWattHours } from "@shared/utils";
 import AnimatedNumber from "vue-number-animation";
-import { formattedInt, jouleToWattHour } from "@/utils/numbers";
+import { formattedInt, jouleToWattHour } from "@shared/utils/numbers";
 import { map } from "rxjs";
 
 export default {

@@ -27,7 +27,7 @@
             class="ml-1 text-subtitle-2"
             :to="powerIn"
             :from="0"
-            :format="formattedInt"
+            :format="parseInt"
           />
           <span class="text-caption ml-1">{{ powerInUnit }}</span>
         </div>
@@ -41,7 +41,7 @@
             class="ml-1 text-subtitle-2"
             :to="powerOut"
             :from="0"
-            :format="formattedInt"
+            :format="parseInt"
           /><span class="text-caption ml-1">{{ powerOutUnit }}</span>
         </div>
       </div>
@@ -51,12 +51,11 @@
 
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
-import { useAsWatts } from "@/utils";
+import { useAsWatts } from "@shared/utils";
 import DataBlock from "./DataBlock.vue";
 import { type Observable } from "rxjs";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import { useObservable } from "@vueuse/rxjs";
-import { formattedInt } from "@/utils/numbers";
 import { ref } from "vue";
 
 const props = defineProps<{

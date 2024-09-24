@@ -50,7 +50,7 @@ import PipeLines from "../components/landscape/map/PipeLines.vue";
 import PipeStreams from "../components/landscape/map/PipeStreams.vue";
 import PowerHubComponents from "../components/landscape/map/PowerHubComponents.vue";
 
-import { usePresentationStore } from "@/stores/presentation";
+import { usePresentationStore } from "@demo/stores/presentation";
 import { onMounted, onDeactivated } from "vue";
 import { toRefs } from "vue";
 

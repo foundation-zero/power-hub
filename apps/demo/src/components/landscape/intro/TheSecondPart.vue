@@ -71,5 +71,5 @@
 </template>
 
 <script setup lang="ts">
-import IntroSlide from "@/components/responsive/IntroSlide.vue";
+import IntroSlide from "@demo/components/responsive/IntroSlide.vue";
 </script>

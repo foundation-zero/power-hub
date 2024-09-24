@@ -18,11 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import { usePowerHubStore } from "@/stores/power-hub";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 import ProductionChartWidget from "../widgets/ProductionChartWidget.vue";
 import CoolingDemandWidget from "../widgets/CoolingDemandWidget.vue";
 import WaterDemandWidget from "../widgets/WaterDemandWidget.vue";
-import { usePresentationStore } from "@/stores/presentation";
+import { usePresentationStore } from "@demo/stores/presentation";
 
 const presentation = usePresentationStore();
 

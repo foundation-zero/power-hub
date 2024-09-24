@@ -34,7 +34,7 @@ import ThresholdAlarm from "./ThresholdAlarm.vue";
 import DataBlock from "./DataBlock.vue";
 import { map, type Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 
 const props = defineProps<{
   name: string;

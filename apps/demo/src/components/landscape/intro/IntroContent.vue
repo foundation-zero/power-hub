@@ -67,7 +67,7 @@
 import { useDisplay } from "vuetify";
 import { VSheet } from "vuetify/components";
 import { Carousel, Slide } from "vue3-carousel";
-import IntroPagination from "@/components/responsive/IntroPagination.vue";
+import IntroPagination from "@demo/components/responsive/IntroPagination.vue";
 import WelcomeToThePowerHub from "./WelcomeToThePowerHub.vue";
 import WhatThePowerHubProvides from "./WhatThePowerHubProvides.vue";
 import ElectricEnergyConverts from "./ElectricEnergyConverts.vue";
@@ -78,10 +78,10 @@ import WaterManagementIsResponsible from "./WaterManagementIsResponsible.vue";
 import WeWillNowExplain from "./WeWillNowExplain.vue";
 import SunRise from "./SunRise.vue";
 import { ref, computed } from "vue";
-import SideBySide from "@/components/responsive/SideBySide.vue";
-import SwipeButtons from "@/components/responsive/SwipeButtons.vue";
-import FZLogo from "@/components/FZLogo.vue";
-import type { Direction } from "@/types";
+import SideBySide from "@demo/components/responsive/SideBySide.vue";
+import SwipeButtons from "@demo/components/responsive/SwipeButtons.vue";
+import FZLogo from "@demo/components/FZLogo.vue";
+import type { Direction } from "@demo/types";
 
 const currentSlide = ref(0);
 const container = ref<VSheet>();
