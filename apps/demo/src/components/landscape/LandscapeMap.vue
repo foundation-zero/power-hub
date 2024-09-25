@@ -20,7 +20,7 @@
 import { computed } from "vue";
 import { useDisplay } from "vuetify";
 
-import MapLegend from "@/components/MapLegend.vue";
+import MapLegend from "@demo/components/MapLegend.vue";
 
 import InnerWaves from "./map/InnerWaves.vue";
 import OuterWaves from "./map/OuterWaves.vue";

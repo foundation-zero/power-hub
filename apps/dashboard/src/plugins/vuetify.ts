@@ -1,5 +1,5 @@
 // Styles
-import "@/styles/main.scss";
+import "@dashboard/styles/main.scss";
 
 // Vuetify
 import { createVuetify } from "vuetify";

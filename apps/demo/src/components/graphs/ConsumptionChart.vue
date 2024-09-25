@@ -15,8 +15,8 @@ import { BarChart, LineChart } from "echarts/charts";
 import VChart from "vue-echarts";
 import { ref } from "vue";
 import { computed } from "vue";
-import { useStripes } from "@/utils/charts";
-import type { HourlyData } from "@/types";
+import { useStripes } from "@demo/utils/charts";
+import type { HourlyData } from "@shared/types";
 
 use([SVGRenderer, BarChart, LineChart]);
 

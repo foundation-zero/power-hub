@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { Carousel, Slide } from "vue3-carousel";
-import IntroPagination from "@/components/responsive/IntroPagination.vue";
+import IntroPagination from "@demo/components/responsive/IntroPagination.vue";
 import WelcomeToThePowerHub from "./WelcomeToThePowerHub.vue";
 import WhatThePowerHubProvides from "./WhatThePowerHubProvides.vue";
 import ElectricEnergyConverts from "./ElectricEnergyConverts.vue";

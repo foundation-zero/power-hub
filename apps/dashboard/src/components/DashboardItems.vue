@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import CompoundPanel from "@/components/CompoundPanel.vue";
-import CoolingPanel from "@/components/CoolingPanel.vue";
-import WaterPanel from "@/components/WaterPanel.vue";
-import { usePowerHubStore } from "@/stores/power-hub";
+import CompoundPanel from "./CompoundPanel.vue";
+import CoolingPanel from "./CoolingPanel.vue";
+import WaterPanel from "./WaterPanel.vue";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 import ElectricalPanel from "./ElectricalPanel.vue";
 import ControlModes from "./ControlModes.vue";
 

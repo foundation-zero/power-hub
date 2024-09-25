@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { replaceAll } from "@/utils";
+import { replaceAll } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
 import { snakeCase } from "lodash";
 import { map, Observable } from "rxjs";

@@ -96,17 +96,17 @@
 
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt } from "@shared/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
-import { type PowerHubStore } from "@/stores/power-hub";
-import { useAsWatts } from "@/utils";
+import { type PowerHubStore } from "@shared/stores/power-hub";
+import { useAsWatts } from "@shared/utils";
 import { map } from "rxjs";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
 const { value, unit } = useAsWatts(
-  useObservable(powerHub.sensors.useMean("heat_pipes/power").pipe(map((val) => Math.max(val, 0)))),
+  useObservable(powerHub.sensors.useMean("heatPipes/power").pipe(map((val) => Math.max(val, 0)))),
 );
 </script>
 

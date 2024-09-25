@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Direction } from "@/types";
+import type { Direction } from "@demo/types";
 import { computed } from "vue";
 import { ref } from "vue";
 import { useDisplay } from "vuetify";

@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { usePresentationStore } from "@/stores/presentation";
+import { usePresentationStore } from "@demo/stores/presentation";
 import { toRefs } from "vue";
 
 const { showWaves } = toRefs(usePresentationStore());

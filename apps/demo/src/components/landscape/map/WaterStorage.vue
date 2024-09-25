@@ -83,10 +83,10 @@
 import AnimatedNumber from "vue-number-animation";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
-import { type PowerHubStore } from "@/stores/power-hub";
-import { formattedInt } from "@/utils/numbers";
+import { type PowerHubStore } from "@shared/stores/power-hub";
+import { formattedInt } from "@shared/utils/numbers";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("fresh_water_tank/fill"));
+const value = useObservable(powerHub.sensors.useMean("freshWaterTank/fill"));
 </script>

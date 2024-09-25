@@ -33,10 +33,10 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { usePresentationStore } from "@/stores/presentation";
-import type { PowerHubComponent } from "@/types/power-hub";
-import type { Journey } from "@/types";
-import { activate, deactivate, dehighlight, hide, highlight, show } from "@/utils";
+import { usePresentationStore } from "@demo/stores/presentation";
+import type { PowerHubComponent } from "@shared/types/power-hub";
+import type { Journey } from "@demo/types";
+import { activate, deactivate, dehighlight, hide, highlight, show } from "@demo/utils";
 import { toRefs } from "vue";
 import { useRouter } from "vue-router";
 

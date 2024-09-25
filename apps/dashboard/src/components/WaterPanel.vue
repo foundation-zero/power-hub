@@ -97,10 +97,14 @@
 <script setup lang="ts">
 import WaterBlock from "./WaterBlock.vue";
 import { useObservable } from "@vueuse/rxjs";
-import type { PowerHubStore } from "@/stores/power-hub";
+import type { PowerHubStore } from "@shared/stores/power-hub";
 import { map } from "rxjs";
-import { WATER_MAKER_STATUS, WATER_TANK_CAPACITY, WATER_TANK_THRESHOLDS } from "@/utils/const";
-import { useLast24Hours, useSensorValue } from "@/utils";
+import {
+  WATER_MAKER_STATUS,
+  WATER_TANK_CAPACITY,
+  WATER_TANK_THRESHOLDS,
+} from "@dashboard/utils/const";
+import { useLast24Hours, useSensorValue } from "@shared/utils";
 import FlowBlock from "./FlowBlock.vue";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();

@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import PowerHubComponents from "@/components/portrait/map/PowerHubComponents.vue";
-import InnerWaves from "@/components/portrait/map/InnerWaves.vue";
-import PipeLines from "@/components/portrait/map/PipeLines.vue";
-import PipeStreams from "@/components/portrait/map/PipeStreams.vue";
+import PowerHubComponents from "@demo/components/portrait/map/PowerHubComponents.vue";
+import InnerWaves from "@demo/components/portrait/map/InnerWaves.vue";
+import PipeLines from "@demo/components/portrait/map/PipeLines.vue";
+import PipeStreams from "@demo/components/portrait/map/PipeStreams.vue";
 </script>

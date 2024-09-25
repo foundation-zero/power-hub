@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { Carousel, Slide } from "vue3-carousel";
-import IntroPagination from "@/components/responsive/IntroPagination.vue";
+import IntroPagination from "@demo/components/responsive/IntroPagination.vue";
 import WelcomeToThePowerHub from "./WelcomeToThePowerHub.vue";
 import WhatThePowerHubProvides from "./WhatThePowerHubProvides.vue";
 import ElectricEnergyConverts from "./ElectricEnergyConverts.vue";
@@ -63,7 +63,7 @@ import WeWillNowExplain from "./WeWillNowExplain.vue";
 import SunRise from "./SunRise.vue";
 import { ref } from "vue";
 import { computed } from "vue";
-import SideBySide from "@/components/responsive/SideBySide.vue";
+import SideBySide from "@demo/components/responsive/SideBySide.vue";
 
 const currentSlide = ref(0);
 

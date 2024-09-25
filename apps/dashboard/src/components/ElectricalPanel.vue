@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type PowerHubStore } from "@/stores/power-hub";
 import PowerBlock from "./PowerBlock.vue";
-import { useSensorValue, useLast24Hours } from "@/utils";
+import { useSensorValue, useLast24Hours } from "@shared/utils";
 import BatteryBlock from "./BatteryBlock.vue";
 import { map } from "rxjs";
+import type { PowerHubStore } from "@shared/stores/power-hub";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 

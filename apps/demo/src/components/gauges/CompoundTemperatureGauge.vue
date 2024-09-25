@@ -174,16 +174,16 @@
 </template>
 
 <script setup lang="ts">
-import { usePowerHubStore } from "@/stores/power-hub";
-import { useLastOrNone } from "@/utils";
+import { usePowerHubStore } from "@shared/stores/power-hub";
+import { useLastOrNone } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
 import { map } from "rxjs";
-import AnimatedNumber from "@/components/AnimatedInt.vue";
+import AnimatedNumber from "@demo/components/AnimatedInt.vue";
 
 const { sensors, weather } = usePowerHubStore();
 
 const compoundTemperature = useObservable(
-  sensors.useLastValues("compound/overall_temperature").pipe(map(useLastOrNone)),
+  sensors.useLastValues("compound/overallTemperature").pipe(map(useLastOrNone)),
 );
 const outdoorTemperature = useObservable(weather.current().pipe(map((val) => val.temp)));
 </script>

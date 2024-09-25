@@ -6,7 +6,7 @@ const router = createRouter({
     {
       path: "/",
       name: "HMI Dashboard",
-      component: async () => await import("../views/HMIDashboard.vue"),
+      component: async () => await import("@dashboard/views/HMIDashboard.vue"),
     },
   ],
 });

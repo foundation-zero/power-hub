@@ -18,7 +18,7 @@
           <AnimatedNumber
             :to="setPoint"
             :from="0"
-            :format="formattedInt"
+            :format="parseInt"
           />&deg;
         </span>
       </div>
@@ -31,11 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt } from "@/utils/numbers";
 import { computed } from "vue";
 import AnimatedNumber from "vue-number-animation";
 import DataBlock from "./DataBlock.vue";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import type { Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
 

@@ -1,18 +1,18 @@
-import Base from "@/components/display/slides/electrical/BaseElectrical.vue";
-import LightBulb from "@/components/display/slides/electrical/LightBulb.vue";
-import HowDoesItWork from "@/components/display/slides/electrical/HowDoesItWork.vue";
-import WeProduce from "@/components/display/slides/electrical/WeProduce.vue";
-import HundredPercent from "@/components/display/slides/electrical/HundredPercent.vue";
-import SolarPowered from "@/components/display/slides/electrical/SolarPowered.vue";
-import ThatsEquivalentTo from "@/components/display/slides/electrical/ThatsEquivalentTo.vue";
-import ElectricDemand from "@/components/display/slides/electrical/ElectricDemand.vue";
-import StepByStep from "@/components/display/slides/StepByStep.vue";
-import ThemeIcon from "@/components/display/slides/electrical/ThemeIcon.vue";
-import ThisIs from "@/components/display/slides/electrical/ThisIs.vue";
-import StoredInBattery from "@/components/display/slides/electrical/StoredInBattery.vue";
-import WeUseThisTo from "@/components/display/slides/WeUseThisTo.vue";
-import ThisProvides from "@/components/display/slides/electrical/ThisProvides.vue";
-import type { PresentationItem } from "@/types";
+import Base from "@demo/components/display/slides/electrical/BaseElectrical.vue";
+import LightBulb from "@demo/components/display/slides/electrical/LightBulb.vue";
+import HowDoesItWork from "@demo/components/display/slides/electrical/HowDoesItWork.vue";
+import WeProduce from "@demo/components/display/slides/electrical/WeProduce.vue";
+import HundredPercent from "@demo/components/display/slides/electrical/HundredPercent.vue";
+import SolarPowered from "@demo/components/display/slides/electrical/SolarPowered.vue";
+import ThatsEquivalentTo from "@demo/components/display/slides/electrical/ThatsEquivalentTo.vue";
+import ElectricDemand from "@demo/components/display/slides/electrical/ElectricDemand.vue";
+import StepByStep from "@demo/components/display/slides/StepByStep.vue";
+import ThemeIcon from "@demo/components/display/slides/electrical/ThemeIcon.vue";
+import ThisIs from "@demo/components/display/slides/electrical/ThisIs.vue";
+import StoredInBattery from "@demo/components/display/slides/electrical/StoredInBattery.vue";
+import WeUseThisTo from "@demo/components/display/slides/WeUseThisTo.vue";
+import ThisProvides from "@demo/components/display/slides/electrical/ThisProvides.vue";
+import type { PresentationItem } from "@demo/types";
 import { activateStream, deactivateAll, hideAll, toggleWaves, toggleWidgets } from "./actions";
 
 export default [

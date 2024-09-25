@@ -135,7 +135,8 @@ services:
   hmi_dashboard:
     container_name: power_hub_dashboard
     build:
-      context: apps/dashboard
+      context: apps
+      dockerfile: Dockerfile.dashboard
     ports:
       - 8180:80
 

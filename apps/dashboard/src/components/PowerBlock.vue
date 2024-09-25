@@ -10,10 +10,10 @@
 </template>
 
 <script setup lang="ts">
-import { useAsWatts } from "@/utils";
+import { useAsWatts } from "@shared/utils";
 import DataBlock from "./DataBlock.vue";
 import type { Observable } from "rxjs";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import { useObservable } from "@vueuse/rxjs";
 
 const props = defineProps<{

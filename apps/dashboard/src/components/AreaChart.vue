@@ -15,7 +15,7 @@ import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent } from "echarts/components";
 import VChart from "vue-echarts";
 import { ref, toRefs } from "vue";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 
 const props = defineProps<{
   max?: number;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type PowerHubStore } from "@/stores/power-hub";
+import { type PowerHubStore } from "@shared/stores/power-hub";
 import RoomTemperatureBlock from "./RoomTemperatureBlock.vue";
-import { useSensorValue, useLast24Hours } from "@/utils";
+import { useSensorValue, useLast24Hours } from "@shared/utils";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 

@@ -1,6 +1,6 @@
 <template>
   <v-navigation-drawer
-    v-model:modelValue="show"
+    v-model:model-value="show"
     temporary
     tile
     color="transparent"

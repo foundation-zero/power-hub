@@ -28,7 +28,7 @@
             v-if="value !== undefined"
             :to="value"
             :from="0"
-            :format="formattedInt"
+            :format="parseInt"
           />
           <span v-else>-</span>
         </span>
@@ -51,9 +51,7 @@
 
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
-
-import { formattedInt } from "@/utils/numbers";
-import type { Unit, ValueObject } from "@/types";
+import type { Unit, ValueObject } from "@shared/types";
 import { type Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
 import AreaChart from "./AreaChart.vue";

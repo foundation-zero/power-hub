@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PowerHubStore } from "@/stores/power-hub";
+import type { PowerHubStore } from "@shared/stores/power-hub";
 import ObjectDataTable from "./ObjectDataTable.vue";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();

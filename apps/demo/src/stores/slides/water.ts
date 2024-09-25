@@ -1,21 +1,21 @@
-import Base from "@/components/display/slides/water/BaseWater.vue";
-import RecycleTriangle from "@/components/display/slides/water/RecycleTriangle.vue";
-import ThreeTimes from "@/components/display/slides/water/ThreeTimes.vue";
-import SavedDots from "@/components/display/slides/water/SavedDots.vue";
-import WaterHowDoesItWork from "@/components/display/slides/water/HowDoesItWork.vue";
-import ReusingWater from "@/components/display/slides/water/ReusingWater.vue";
-import SavedEnergy from "@/components/display/slides/water/SavedEnergy.vue";
-import WeCanReuseIt from "@/components/display/slides/water/WeCanReuseIt.vue";
-import ByReusingIt from "@/components/display/slides/water/ByReusingIt.vue";
-import GreyWaterIsUsed from "@/components/display/slides/water/GreyWaterIsUsed.vue";
-import StepByStep from "@/components/display/slides/StepByStep.vue";
-import ThisIs from "@/components/display/slides/water/ThisIs.vue";
-import ThemeIcon from "@/components/display/slides/water/ThemeIcon.vue";
-import WeUseThisTo from "@/components/display/slides/WeUseThisTo.vue";
-import ThisProvides from "@/components/display/slides/water/ThisProvides.vue";
-import type { PresentationItem } from "@/types";
+import Base from "@demo/components/display/slides/water/BaseWater.vue";
+import RecycleTriangle from "@demo/components/display/slides/water/RecycleTriangle.vue";
+import ThreeTimes from "@demo/components/display/slides/water/ThreeTimes.vue";
+import SavedDots from "@demo/components/display/slides/water/SavedDots.vue";
+import WaterHowDoesItWork from "@demo/components/display/slides/water/HowDoesItWork.vue";
+import ReusingWater from "@demo/components/display/slides/water/ReusingWater.vue";
+import SavedEnergy from "@demo/components/display/slides/water/SavedEnergy.vue";
+import WeCanReuseIt from "@demo/components/display/slides/water/WeCanReuseIt.vue";
+import ByReusingIt from "@demo/components/display/slides/water/ByReusingIt.vue";
+import GreyWaterIsUsed from "@demo/components/display/slides/water/GreyWaterIsUsed.vue";
+import StepByStep from "@demo/components/display/slides/StepByStep.vue";
+import ThisIs from "@demo/components/display/slides/water/ThisIs.vue";
+import ThemeIcon from "@demo/components/display/slides/water/ThemeIcon.vue";
+import WeUseThisTo from "@demo/components/display/slides/WeUseThisTo.vue";
+import ThisProvides from "@demo/components/display/slides/water/ThisProvides.vue";
+import type { PresentationItem } from "@demo/types";
 import { activateStream, deactivateAll, hideAll, toggleWaves, toggleWidgets } from "./actions";
-import { startFlow } from "@/utils";
+import { startFlow } from "@demo/utils";
 
 export default [
   ({ setJourney }) => setJourney("water"),

@@ -1,13 +1,13 @@
-import type { PresentationItem } from "@/types";
+import type { PresentationItem } from "@demo/types";
 import electrical from "./electrical";
 import thermal from "./thermal";
 import water from "./water";
 import { activateAllComponents, resetAll, showAll, toggleWaves, toggleWidgets } from "./actions";
-import { hide } from "@/utils";
-import WelcomeToThePowerHub from "@/components/display/intro/WelcomeToThePowerHub.vue";
-import ElectricEnergy from "@/components/display/intro/ElectricEnergy.vue";
-import ThermalEnergy from "@/components/display/intro/ThermalEnergy.vue";
-import WaterManagement from "@/components/display/intro/WaterManagement.vue";
+import { hide } from "@demo/utils";
+import WelcomeToThePowerHub from "@demo/components/display/intro/WelcomeToThePowerHub.vue";
+import ElectricEnergy from "@demo/components/display/intro/ElectricEnergy.vue";
+import ThermalEnergy from "@demo/components/display/intro/ThermalEnergy.vue";
+import WaterManagement from "@demo/components/display/intro/WaterManagement.vue";
 
 const journeyFn = (items: PresentationItem[]): PresentationItem[] => [
   toggleWaves(true),
