@@ -9,22 +9,22 @@
 
 <script setup lang="ts">
 import { use } from "echarts/core";
-import { usePowerHubStore } from "@/stores/power-hub";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 import { SVGRenderer } from "echarts/renderers";
 import { useColorMode } from "@vueuse/core";
 import { BarChart, LineChart } from "echarts/charts";
 import VChart from "vue-echarts";
 import { ref } from "vue";
 import { computed } from "vue";
-import { toKiloWattHours } from "@/utils/formatters";
+import { toKiloWattHours } from "@shared/utils/formatters";
 import { graphic } from "echarts";
 import { useObservable } from "@vueuse/rxjs";
-import { useStripes } from "@/utils/charts";
+import { useStripes } from "@demo/utils/charts";
 import { map } from "rxjs";
-import { toHourlyData } from "@/api";
-import { between } from "@/utils/numbers";
+import { toHourlyData } from "@shared/api";
+import { between } from "@shared/utils/numbers";
 import { add, startOfTomorrow, startOfYesterday } from "date-fns";
-import type { HourlyData } from "@/types";
+import type { HourlyData } from "@shared/types";
 
 const props = defineProps<{ max?: number; data?: HourlyData[] }>();
 
@@ -36,7 +36,7 @@ const { sensors } = usePowerHubStore();
 
 const batteryValues = useObservable(
   sensors
-    .useOverTime("electrical/battery_system_soc", () => ({
+    .useOverTime("electrical/batterySystemSoc", () => ({
       interval: "h",
       between: between(add(startOfYesterday(), { seconds: -1 }), startOfTomorrow()),
     }))

@@ -338,29 +338,29 @@
 </template>
 
 <script setup lang="ts">
-import { usePowerHubStore } from "@/stores/power-hub";
-import { useAsWatts } from "@/utils";
+import { usePowerHubStore } from "@shared/stores/power-hub";
+import { useAsWatts } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
 import { map } from "rxjs";
 import { computed } from "vue";
-import AnimatedNumber from "@/components/AnimatedInt.vue";
+import AnimatedNumber from "@demo/components/AnimatedInt.vue";
 
 const { sensors } = usePowerHubStore();
 
 const { value: heatPipesPower, unit: heatPipesPowerUnit } = useAsWatts(
-  useObservable(sensors.useMean("heat_pipes/power").pipe(map((val) => Math.max(val, 0)))),
+  useObservable(sensors.useMean("heatPipes/power").pipe(map((val) => Math.max(val, 0)))),
   99,
 );
 
 const temperatureDifference = computed(() =>
   Math.abs((outputTemperature.value ?? 0) - (inputTemperature.value ?? 0)),
 );
-const inputTemperature = useObservable(sensors.useMean("heat_pipes/input_temperature"));
-const outputTemperature = useObservable(sensors.useMean("heat_pipes/output_temperature"));
+const inputTemperature = useObservable(sensors.useMean("heatPipes/inputTemperature"));
+const outputTemperature = useObservable(sensors.useMean("heatPipes/outputTemperature"));
 const { value: sunPower, unit: sunPowerUnit } = useAsWatts(
   useObservable(
     sensors
-      .useLastValues("weather/global_irradiance")
+      .useLastValues("weather/globalIrradiance")
       .pipe(map((values) => values[values.length - 1]?.value)),
   ),
 );

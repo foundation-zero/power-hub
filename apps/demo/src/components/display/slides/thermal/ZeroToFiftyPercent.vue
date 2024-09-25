@@ -27,7 +27,7 @@
 <script lang="ts">
 import AnimatedNumber from "vue-number-animation";
 import AnimatedSlide from "../AnimatedSlide.vue";
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt } from "@shared/utils/numbers";
 
 export default {
   name: "ZeroPercent",

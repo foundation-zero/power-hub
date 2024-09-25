@@ -24,6 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import HeatBatteryGauge from "@/components/gauges/BatteryGauge.vue";
+import HeatBatteryGauge from "@demo/components/gauges/BatteryGauge.vue";
 import TextSlide from "../../TextSlide.vue";
 </script>

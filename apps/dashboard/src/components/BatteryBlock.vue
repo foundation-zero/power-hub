@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import DataBlock from "./DataBlock.vue";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import { map, type Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
 

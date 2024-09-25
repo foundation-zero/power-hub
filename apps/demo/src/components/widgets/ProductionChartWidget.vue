@@ -28,11 +28,11 @@ import ConsumptionChart from "../graphs/ConsumptionChart.vue";
 import ChartLegend from "../ChartLegend.vue";
 import TimeScale from "../TimeScale.vue";
 import { useObservable } from "@vueuse/rxjs";
-import { useCombinedHourlyData } from "@/utils";
-import { usePowerHubStore } from "@/stores/power-hub";
-import { todayRangeFn } from "@/utils/numbers";
+import { useCombinedHourlyData } from "@shared/utils";
+import { usePowerHubStore } from "@shared/stores/power-hub";
+import { todayRangeFn } from "@shared/utils/numbers";
 import { map } from "rxjs";
-import { toHourlyData } from "@/api";
+import { toHourlyData } from "@shared/api";
 import { range } from "lodash";
 import { computed } from "vue";
 

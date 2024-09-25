@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt } from "@shared/utils/numbers";
 import { computed } from "vue";
 
 export type BarSeries = {

@@ -1,40 +1,8 @@
-import type { CamelCase, SnakeCase, SnakeCasedProperties } from "type-fest";
-import type { PowerHubComponent } from "./power-hub";
-import type BaseWater from "@/components/display/slides/water/BaseWater.vue";
-import type { PresentationStore } from "@/stores/presentation";
+import type { SnakeCasedProperties } from "type-fest";
+import type BaseWater from "@demo/components/display/intro/WelcomeToThePowerHub.vue";
+import type { PresentationStore } from "@demo/stores/presentation";
 import type { AjaxConfig } from "rxjs/ajax";
-export * as PowerHub from "./power-hub";
-
-//@see https://stackoverflow.com/questions/58434389/typescript-deep-keyof-of-a-nested-object/76131375#76131375
-export type NestedPath<T> = T extends object
-  ? {
-      [K in keyof T & (string | number)]: K extends string
-        ?
-            | (T[K] extends string | number | null | Array<unknown> ? SnakeCase<`${K}`> : never)
-            | `${SnakeCase<K>}/${NestedPath<T[K]>}`
-        : never;
-    }[keyof T & (string | number)]
-  : never;
-
-export type PathValue<T, P extends NestedPath<T>> = P extends `${infer Key}/${infer Rest}`
-  ? CamelCase<Key> extends keyof T
-    ? Rest extends NestedPath<T[CamelCase<Key>]>
-      ? PathValue<T[CamelCase<Key>], Rest>
-      : never
-    : never
-  : P extends keyof T
-    ? T[P]
-    : never;
-
-export type HistoricalData<T extends string | Date = string, V = string | number> = {
-  time: T;
-  value: V;
-};
-
-export type HourlyData<V extends string | number = number> = {
-  hour: number;
-  value: V;
-};
+import type { PowerHubComponent } from "@shared/types";
 
 export type Journey = "electrical" | "heat" | "water";
 

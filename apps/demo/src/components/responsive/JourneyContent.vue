@@ -54,7 +54,7 @@ import { Carousel, Slide } from "vue3-carousel";
 import ContentPagination from "./ContentPagination.vue";
 import { ref } from "vue";
 import { computed } from "vue";
-import type { Journey } from "@/types";
+import type { Journey } from "@demo/types";
 import electrical from "./slides/electrical";
 import { toRefs } from "vue";
 import thermal from "./slides/thermal";

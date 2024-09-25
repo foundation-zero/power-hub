@@ -44,11 +44,11 @@
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
 import DataBlock from "./DataBlock.vue";
-import type { ValueObject } from "@/types";
+import type { ValueObject } from "@shared/types";
 import { map, type Observable } from "rxjs";
 import { useObservable } from "@vueuse/rxjs";
-import type { FlowPort } from "@/types/power-hub";
-import { formattedNumber } from "@/utils/numbers";
+import type { FlowPort } from "@shared/types/power-hub";
+import { formattedNumber } from "@shared/utils/numbers";
 
 const props = defineProps<{
   name: string;

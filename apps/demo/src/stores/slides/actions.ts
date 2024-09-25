@@ -1,4 +1,4 @@
-import type { Journey, PresentationAction } from "@/types";
+import type { Journey, PresentationAction } from "@demo/types";
 import {
   activate,
   deactivate,
@@ -9,7 +9,7 @@ import {
   show,
   stopFlow,
   unmute,
-} from "@/utils";
+} from "@demo/utils";
 import { zip } from "lodash";
 import { toRefs } from "vue";
 

@@ -23,6 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import HeatPipesGauge from "@/components/gauges/HeatPipesGauge.vue";
+import HeatPipesGauge from "@demo/components/gauges/HeatPipesGauge.vue";
 import TextSlide from "../../TextSlide.vue";
 </script>

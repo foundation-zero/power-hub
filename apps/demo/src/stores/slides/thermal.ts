@@ -1,28 +1,28 @@
-import Base from "@/components/display/slides/thermal/BaseThermal.vue";
-import HowDoesItWork from "@/components/display/slides/thermal/HowDoesItWork.vue";
-import HarvestingThermalEnergy from "@/components/display/slides/thermal/HarvestingThermalEnergy.vue";
-import ZeroPercent from "@/components/display/slides/thermal/ZeroToFiftyPercent.vue";
-import HeatRadiation from "@/components/display/slides/thermal/HeatRadiation.vue";
-import HeatPipesGauge from "@/components/display/slides/thermal/HeatPipesGauge.vue";
-import ChillPowerGauge from "@/components/display/slides/thermal/ChillPower.vue";
-import CompoundTemperature from "@/components/display/slides/thermal/CompoundTemperature.vue";
-import BatteryGauge from "@/components/display/slides/thermal/BatteryGauge.vue";
-import EfficientAt from "@/components/display/slides/thermal/EfficientAt.vue";
-import StoringThermalEnergy from "@/components/display/slides/thermal/StoringThermalEnergy.vue";
-import KiloWattHoursStored from "@/components/display/slides/thermal/KiloWattHoursStored.vue";
-import HeatStored from "@/components/display/slides/thermal/HeatStored.vue";
-import FromTheBattery from "@/components/display/slides/thermal/FromTheBattery.vue";
-import BatteryGaugeOutline from "@/components/display/slides/thermal/BatteryGaugeOutline.vue";
-import UsingAbsorption from "@/components/display/slides/thermal/UsingAbsorption.vue";
-import SeventyPercent from "@/components/display/slides/thermal/SeventyPercent.vue";
-import EfficientAtTurningHeatIntoCold from "@/components/display/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
-import ThisIsUsed from "@/components/display/slides/thermal/ThisIsUsed.vue";
-import ThemeIcon from "@/components/display/slides/thermal/ThemeIcon.vue";
-import StepByStep from "@/components/display/slides/StepByStep.vue";
-import ThisIs from "@/components/display/slides/thermal/ThisIs.vue";
-import WeUseThisTo from "@/components/display/slides/WeUseThisTo.vue";
-import ThisProvides from "@/components/display/slides/thermal/ThisProvides.vue";
-import ProcessCalledAbsorption from "@/components/display/slides/thermal/ProcessCalledAbsorption.vue";
+import Base from "@demo/components/display/slides/thermal/BaseThermal.vue";
+import HowDoesItWork from "@demo/components/display/slides/thermal/HowDoesItWork.vue";
+import HarvestingThermalEnergy from "@demo/components/display/slides/thermal/HarvestingThermalEnergy.vue";
+import ZeroPercent from "@demo/components/display/slides/thermal/ZeroToFiftyPercent.vue";
+import HeatRadiation from "@demo/components/display/slides/thermal/HeatRadiation.vue";
+import HeatPipesGauge from "@demo/components/display/slides/thermal/HeatPipesGauge.vue";
+import ChillPowerGauge from "@demo/components/display/slides/thermal/ChillPower.vue";
+import CompoundTemperature from "@demo/components/display/slides/thermal/CompoundTemperature.vue";
+import BatteryGauge from "@demo/components/display/slides/thermal/BatteryGauge.vue";
+import EfficientAt from "@demo/components/display/slides/thermal/EfficientAt.vue";
+import StoringThermalEnergy from "@demo/components/display/slides/thermal/StoringThermalEnergy.vue";
+import KiloWattHoursStored from "@demo/components/display/slides/thermal/KiloWattHoursStored.vue";
+import HeatStored from "@demo/components/display/slides/thermal/HeatStored.vue";
+import FromTheBattery from "@demo/components/display/slides/thermal/FromTheBattery.vue";
+import BatteryGaugeOutline from "@demo/components/display/slides/thermal/BatteryGaugeOutline.vue";
+import UsingAbsorption from "@demo/components/display/slides/thermal/UsingAbsorption.vue";
+import SeventyPercent from "@demo/components/display/slides/thermal/SeventyPercent.vue";
+import EfficientAtTurningHeatIntoCold from "@demo/components/display/slides/thermal/EfficientAtTurningHeatIntoCold.vue";
+import ThisIsUsed from "@demo/components/display/slides/thermal/ThisIsUsed.vue";
+import ThemeIcon from "@demo/components/display/slides/thermal/ThemeIcon.vue";
+import StepByStep from "@demo/components/display/slides/StepByStep.vue";
+import ThisIs from "@demo/components/display/slides/thermal/ThisIs.vue";
+import WeUseThisTo from "@demo/components/display/slides/WeUseThisTo.vue";
+import ThisProvides from "@demo/components/display/slides/thermal/ThisProvides.vue";
+import ProcessCalledAbsorption from "@demo/components/display/slides/thermal/ProcessCalledAbsorption.vue";
 import {
   activate,
   deactivate,
@@ -35,8 +35,8 @@ import {
   startFlow,
   stopFlow,
   dehighlight,
-} from "@/utils";
-import type { PresentationItem } from "@/types";
+} from "@demo/utils";
+import type { PresentationItem } from "@demo/types";
 import {
   actionFn,
   activateStream,

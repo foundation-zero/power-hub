@@ -68,7 +68,7 @@ import { computed } from "vue";
 import ProductionChartWidget from "../widgets/ProductionChartWidget.vue";
 import CoolingDemandWidget from "../widgets/CoolingDemandWidget.vue";
 import WaterDemandWidget from "../widgets/WaterDemandWidget.vue";
-import { usePowerHubStore } from "@/stores/power-hub";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 
 const currentPage = ref(1);
 

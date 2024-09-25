@@ -55,17 +55,17 @@
 </template>
 
 <script setup lang="ts">
-import { usePresentationStore } from "@/stores/presentation";
+import { usePresentationStore } from "@demo/stores/presentation";
 import { toRefs } from "vue";
-import AppBar from "@/components/portrait/AppBar.vue";
-import JourneyContent from "@/components/responsive/JourneyContent.vue";
+import AppBar from "@demo/components/portrait/AppBar.vue";
+import JourneyContent from "@demo/components/responsive/JourneyContent.vue";
 import { computed } from "vue";
-import ToggleWidgetsButton from "@/components/responsive/ToggleWidgetsButton.vue";
+import ToggleWidgetsButton from "@demo/components/responsive/ToggleWidgetsButton.vue";
 import { useRouter } from "vue-router";
-import WidgetsCarousel from "@/components/responsive/WidgetsCarousel.vue";
-import { portraitContentWrapper, portraitIntro } from "@/utils/display";
-import PortraitMap from "@/components/portrait/PortraitMap.vue";
-import IntroPanel from "@/components/portrait/IntroPanel.vue";
+import WidgetsCarousel from "@demo/components/responsive/WidgetsCarousel.vue";
+import { portraitContentWrapper, portraitIntro } from "@demo/utils/display";
+import PortraitMap from "@demo/components/portrait/PortraitMap.vue";
+import IntroPanel from "@demo/components/portrait/IntroPanel.vue";
 
 const { currentJourney, showWidgets } = toRefs(usePresentationStore());
 const router = useRouter();

@@ -17,11 +17,11 @@
 
 <script setup lang="ts">
 import WidgetBase from "./WidgetBase.vue";
-import type { PowerHubStore } from "@/stores/power-hub";
-import { formattedInt, negateAndClampAtZero } from "@/utils/numbers";
+import type { PowerHubStore } from "@shared/stores/power-hub";
+import { formattedInt, negateAndClampAtZero } from "@shared/utils/numbers";
 import StackedBarChart, { type BarSeries } from "../graphs/FillBarChart.vue";
 import { useObservable } from "@vueuse/rxjs";
-import { useAsWatts } from "@/utils";
+import { useAsWatts } from "@shared/utils";
 import { map } from "rxjs";
 
 const { powerHub } = defineProps<{
@@ -33,13 +33,13 @@ const series: [BarSeries, BarSeries] = [
   { icon: "mdi-fan", color: "#C16A6F" },
 ];
 
-const fillPower = useObservable(powerHub.sensors.useMean("cold_reservoir/cooling_supply"));
+const fillPower = useObservable(powerHub.sensors.useMean("coldReservoir/coolingSupply"));
 const absorptionPower = useObservable(
-  powerHub.sensors.useMean("yazaki/chill_power").pipe(map(negateAndClampAtZero)),
+  powerHub.sensors.useMean("yazaki/chillPower").pipe(map(negateAndClampAtZero)),
 );
 
 const compressionPower = useObservable(
-  powerHub.sensors.useMean("chiller/chill_power").pipe(map(negateAndClampAtZero)),
+  powerHub.sensors.useMean("chiller/chillPower").pipe(map(negateAndClampAtZero)),
 );
 
 const { unit, value: coolingDemand } = useAsWatts(fillPower, 10000);

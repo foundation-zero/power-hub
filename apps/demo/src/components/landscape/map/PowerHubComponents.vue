@@ -122,7 +122,7 @@ import WaterStorage from "./WaterStorage.vue";
 import WaterTreatment from "./WaterTreatment.vue";
 import WaterDemand from "./WaterDemand.vue";
 
-import { usePowerHubStore } from "@/stores/power-hub";
+import { usePowerHubStore } from "@shared/stores/power-hub";
 
 const store = usePowerHubStore();
 const powerHub = await store.connect();

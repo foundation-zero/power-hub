@@ -13,10 +13,10 @@
 import { watch } from "vue";
 import { defineAsyncComponent } from "vue";
 import { toRefs } from "vue";
-import { usePresentationStore } from "@/stores/presentation";
-import { activate, show } from "@/utils";
+import { usePresentationStore } from "@demo/stores/presentation";
+import { activate, show } from "@demo/utils";
 import { useRoute } from "vue-router";
-import type { Journey } from "@/types";
+import type { Journey } from "@demo/types";
 import ResponsiveLayout from "./layouts/ResponsiveLayout.vue";
 
 const PortraitView = defineAsyncComponent(() => import("./portrait/MapView.vue"));

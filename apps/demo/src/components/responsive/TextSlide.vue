@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Journey } from "@/types";
+import type { Journey } from "@demo/types";
 
 defineProps<{ journey: Journey }>();
 </script>

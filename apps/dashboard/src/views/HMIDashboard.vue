@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DashboardItems from "@/components/DashboardItems.vue";
+import DashboardItems from "@dashboard/components/DashboardItems.vue";
 </script>
 
 <template>

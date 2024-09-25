@@ -60,7 +60,8 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@demo": fileURLToPath(new URL("./src", import.meta.url)),
+        "@shared": fileURLToPath(new URL("../shared/src", import.meta.url)),
       },
     },
     server: {

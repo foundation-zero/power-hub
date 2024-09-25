@@ -86,12 +86,12 @@
 
 <script setup lang="ts">
 import AnimatedNumber from "vue-number-animation";
-import { formattedInt } from "@/utils/numbers";
+import { formattedInt } from "@shared/utils/numbers";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
-import { type PowerHubStore } from "@/stores/power-hub";
+import { type PowerHubStore } from "@shared/stores/power-hub";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("water_maker/production_flow"));
+const value = useObservable(powerHub.sensors.useMean("waterMaker/productionFlow"));
 </script>

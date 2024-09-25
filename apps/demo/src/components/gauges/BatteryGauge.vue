@@ -336,22 +336,22 @@
 </template>
 
 <script setup lang="ts">
-import { usePowerHubStore } from "@/stores/power-hub";
-import { useAsWatts } from "@/utils";
+import { usePowerHubStore } from "@shared/stores/power-hub";
+import { useAsWatts } from "@shared/utils";
 import { useObservable } from "@vueuse/rxjs";
 import { computed } from "vue";
-import AnimatedNumber from "@/components/AnimatedInt.vue";
+import AnimatedNumber from "@demo/components/AnimatedInt.vue";
 
 const { sensors } = usePowerHubStore();
 
 const { value: charging, unit: chargingUnit } = useAsWatts(
-  useObservable(sensors.useMean("pcm/charge_power")),
+  useObservable(sensors.useMean("pcm/chargePower")),
 );
 const { value: discharging, unit: dischargingUnit } = useAsWatts(
-  useObservable(sensors.useMean("pcm/discharge_power")),
+  useObservable(sensors.useMean("pcm/dischargePower")),
 );
 const { value: netValue, unit: netValueUnit } = useAsWatts(
-  useObservable(sensors.useMean("pcm/net_charge")),
+  useObservable(sensors.useMean("pcm/netCharge")),
   100,
 );
 const internalTemperature = useObservable(sensors.useMean("pcm/temperature"));

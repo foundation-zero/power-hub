@@ -116,11 +116,11 @@
 import AnimatedNumber from "vue-number-animation";
 import { useObservable } from "@vueuse/rxjs";
 import ComponentBase from "./ComponentBase.vue";
-import { type PowerHubStore } from "@/stores/power-hub";
-import { formattedInt, lToMl } from "@/utils/numbers";
+import { type PowerHubStore } from "@shared/stores/power-hub";
+import { formattedInt, lToMl } from "@shared/utils/numbers";
 import { map } from "rxjs/operators";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 
-const value = useObservable(powerHub.sensors.useMean("water_treatment/out_flow").pipe(map(lToMl)));
+const value = useObservable(powerHub.sensors.useMean("waterTreatment/outFlow").pipe(map(lToMl)));
 </script>
