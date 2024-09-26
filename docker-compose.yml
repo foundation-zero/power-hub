@@ -128,16 +128,15 @@ services:
     restart: on-failure:5
 
   mqtt_bridge:
-    image: mqtt_bridge
     container_name: mqtt_bridge
     build:
       context: mqtt_bridge
 
   hmi_dashboard:
-    image: hmi_dashboard
     container_name: power_hub_dashboard
     build:
-      context: hmi_dashboard
+      context: apps
+      dockerfile: Dockerfile.dashboard
     ports:
       - 8180:80
 

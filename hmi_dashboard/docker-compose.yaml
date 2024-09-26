@@ -1,8 +1,0 @@
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: powerhub-dashboard
-    ports:
-      - 8180:80
