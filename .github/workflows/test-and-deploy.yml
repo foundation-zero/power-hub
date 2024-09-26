@@ -67,7 +67,7 @@ jobs:
 
   docker-build-push:
     uses: ./.github/workflows/docker.yml
-    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    #if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     needs: test
     with:
       env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
