@@ -89,6 +89,6 @@ def cooling_supply_control(
     return (
         CoolingSupplyControlState(context, cooling_supply_control_mode),
         power_hub.control(power_hub.cooling_demand_pump).value(
-            SwitchPumpControl(run_pump, 5000)
+            SwitchPumpControl(run_pump, 7500)
         ),
     )
