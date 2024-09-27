@@ -1,0 +1,102 @@
+name: Terraform CI job
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      deploy:
+        required: true
+        type: boolean
+      backend_config:
+        required: true
+        type: string
+      gcp_project_id:
+        required: true
+        type: string
+      gcp_workload_identity_provider:
+        required: true
+        type: string
+      gcp_service_account:
+        required: true
+        type: string
+      influxdb_bucket:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+
+
+env:
+  TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
+  TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+  TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
+  TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
+  TF_VAR_vernemq_power_hub_2_password: ${{secrets.VERNEMQ_POWER_HUB_2_PASSWORD}}
+  TF_VAR_vernemq_readonly_password: ${{secrets.VERNEMQ_READONLY_PASSWORD}}
+  TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
+  TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
+  TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
+  TF_VAR_pagerduty_control_app_key: ${{secrets.STAGING_PAGERDUTY_CONTROL_APP_KEY}}
+  TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
+  TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
+  TF_VAR_python_app_image_tag: ${{ inputs.image_tag }}
+  TF_VAR_env: ${{ inputs.env }}
+  TF_VAR_project_id: ${{ inputs.gcp_project_id }}
+  TF_VAR_influxdb_bucket: ${{inputs.influxdb_bucket}}
+  TF_VAR_send_notifications: ${{inputs.env == 'prod' && 'true' || 'false' }}
+
+jobs:
+  tofu-test-or-deploy:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    env:
+      TF_VAR_influxdb_admin_token: ${{secrets.INFLUXDB_ADMIN_TOKEN}}
+      TF_VAR_influxdb_admin_password: ${{secrets.INFLUXDB_ADMIN_PASSWORD}}
+      TF_VAR_cloudflare_api_token: ${{secrets.CLOUDFLARE_K8S_API_TOKEN}}
+      TF_VAR_vernemq_power_hub_password: ${{secrets.VERNEMQ_POWER_HUB_PASSWORD}}
+      TF_VAR_vernemq_power_hub_2_password: ${{secrets.VERNEMQ_POWER_HUB_2_PASSWORD}}
+      TF_VAR_vernemq_readonly_password: ${{secrets.VERNEMQ_READONLY_PASSWORD}}
+      TF_VAR_openweather_api_key: ${{secrets.OPEN_WEATHER_API_KEY}}
+      TF_VAR_power_hub_api_token: ${{secrets.POWER_HUB_API_TOKEN}}
+      TF_VAR_pagerduty_simulation_key: ${{secrets.STAGING_PAGERDUTY_SIMULATION_KEY}}
+      TF_VAR_pagerduty_control_app_key: ${{secrets.STAGING_PAGERDUTY_CONTROL_APP_KEY}}
+      TF_VAR_pagerduty_mqtt_checker_key: ${{secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
+      TF_VAR_pagerduty_gke_key: ${{secrets.STAGING_PAGERDUTY_GKE_KEY}}
+      TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
+      TF_VAR_env: ${{ inputs.env }}
+      TF_VAR_project_id: ${{ inputs.gcp_project_id }}
+      TF_VAR_influxdb_bucket: ${{inputs.influxdb_bucket}}
+      TF_VAR_send_notifications: ${{inputs.env == 'prod' && 'true' || 'false' }}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.7.1
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+
+      - run: tofu init -backend-config=${{inputs.backend_config}}
+        working-directory: ./infra
+
+      - name: Deploy Terraform
+        run: tofu apply --auto-approve
+        if: inputs.deploy == true
+        working-directory: ./infra
+
+      - name: Test Terraform
+        run: tofu plan -lock=false
+        if: inputs.deploy == false
+        working-directory: ./infra
