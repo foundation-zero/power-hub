@@ -82,7 +82,7 @@ jobs:
       group: ${{ github.workflow }}-tofu
     secrets: inherit
     with:
-      deploy: ${{ (github.event_name == 'release' || github.ref == 'refs/heads/main' && github.event_name == 'push' ) && 'true' || false }}
+      deploy: ${{ (github.event_name == 'release' || github.ref == 'refs/heads/main' && github.event_name == 'push' ) && true || false }}
       env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
       backend_config: ${{  github.event_name == 'release' && 'prod-backend.conf' || 'staging-backend.conf' }}
       gcp_project_id:   ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
