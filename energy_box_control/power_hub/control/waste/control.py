@@ -112,7 +112,6 @@ def waste_control(
     if waste_control_mode in [
         WasteControlMode.RUN_OUTBOARD,
         WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
-        WasteControlMode.MANUAL_RUN_OUTBOARD,
     ]:
         frequency_controller, frequency_control = (
             control_state.waste_control.frequency_controller.run(
@@ -132,6 +131,7 @@ def waste_control(
                 in [
                     WasteControlMode.RUN_OUTBOARD,
                     WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+                    WasteControlMode.MANUAL_RUN_OUTBOARD,
                 ],
                 frequency_control,
             )
