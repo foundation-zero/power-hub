@@ -117,7 +117,7 @@ jobs:
       id-token: 'write'
     runs-on: ubuntu-latest
     outputs:
-      docker_image_tag:  ${{ steps.meta.outputs.version }}
+      docker_image_tag:  ${{ steps.meta.outputs.tags }}
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
       ENV: ${{inputs.env}}

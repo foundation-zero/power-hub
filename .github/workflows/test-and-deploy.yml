@@ -67,7 +67,7 @@ jobs:
 
   docker-build-push:
     uses: ./.github/workflows/docker.yml
-    #if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     needs: test
     with:
       env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
@@ -75,20 +75,38 @@ jobs:
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
 
-  tofu-deploy:
+  tofu-deploy-staging:
     uses: ./.github/workflows/terraform.yml
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: docker-build-push
     concurrency:
       group: ${{ github.workflow }}-tofu
     secrets: inherit
     with:
-      deploy: ${{ (github.event_name == 'release' || github.ref == 'refs/heads/main' && github.event_name == 'push' ) && true || false }}
-      env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
-      backend_config: ${{  github.event_name == 'release' && 'prod-backend.conf' || 'staging-backend.conf' }}
-      gcp_project_id:   ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
+      deploy: true
+      env: 'staging'
+      backend_config: 'staging-backend.conf'
+      gcp_project_id: 'power-hub-423312'
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
-      influxdb_bucket: ${{  github.event_name == 'release' && 'power_hub' || 'simulation_data' }}
+      influxdb_bucket: 'simulation_data'
+      image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
+
+  tofu-deploy-prod:
+    uses: ./.github/workflows/terraform.yml
+    if: github.event_name == 'release'
+    needs: docker-build-push
+    concurrency:
+      group: ${{ github.workflow }}-tofu
+    secrets: inherit
+    with:
+      deploy:  true
+      env: 'prod'
+      backend_config: 'prod-backend.conf'
+      gcp_project_id:  'power-hub-prod'
+      gcp_workload_identity_provider: ${{vars.PROD_WORKLOAD_IDENTITY_PROVIDER}}
+      gcp_service_account: ${{vars.PROD_SERVICE_ACCOUNT}}
+      influxdb_bucket: 'power_hub'
       image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
 
   tofu-test:
