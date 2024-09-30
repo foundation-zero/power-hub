@@ -49,7 +49,7 @@ env:
   TF_VAR_send_notifications: ${{inputs.env == 'prod' && 'true' || 'false' }}
 
 jobs:
-  tofu-test-or-deploy:
+  run:
     permissions:
       contents: 'read'
       id-token: 'write'

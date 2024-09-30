@@ -111,6 +111,7 @@ jobs:
 
   tofu-test:
     uses: ./.github/workflows/terraform.yml
+    if: github.event_name != 'release' && !(github.ref == 'refs/heads/main' && github.event_name == 'push')
     needs: test
     concurrency:
       group: ${{ github.workflow }}-tofu
