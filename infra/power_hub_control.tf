@@ -47,4 +47,9 @@ resource "helm_release" "power_hub_control" {
     name  = "container.env.MQTT_HOST"
     value = kubernetes_service.vernemq_internal.metadata.0.name
   }
+  lifecycle {
+    ignore_changes = [
+      metadata
+    ]
+  }
 }

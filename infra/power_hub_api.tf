@@ -134,6 +134,11 @@ resource "helm_release" "power_hub_api" {
     name  = "container.env.INFLUXDB_TELEGRAF_BUCKET"
     value = var.influxdb_bucket
   }
+  lifecycle {
+    ignore_changes = [
+      metadata
+    ]
+  }
 }
 
 resource "cloudflare_record" "power_hub_api_record" {
