@@ -132,9 +132,6 @@ jobs:
       REPO: power-hub
     needs:
       - build-push-docker
-    strategy:
-      matrix:
-        application: [ control, api, mqtt_checker]
     steps:
       - name: Prepare
         run: |
