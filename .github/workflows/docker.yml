@@ -3,9 +3,6 @@ name: Docker build push workflow
 on:
   workflow_call:
     inputs:
-      env:
-        required: true
-        type: string
       gcp_project_id:
         required: true
         type: string
@@ -50,7 +47,6 @@ jobs:
 
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
-      ENV: ${{inputs.env}}
       ZONE: europe-west1
       GAR: europe-west1-docker.pkg.dev
       REPO: power-hub
@@ -126,7 +122,6 @@ jobs:
       docker_image_tag:  ${{ steps.meta.outputs.tags }}
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
-      ENV: ${{inputs.env}}
       ZONE: europe-west1
       GAR: europe-west1-docker.pkg.dev
       REPO: power-hub

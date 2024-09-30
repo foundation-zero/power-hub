@@ -81,10 +81,9 @@ jobs:
             docker_file: mqtt_bridge/Dockerfile
             context: mqtt_bridge
     with:
-      env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
       gcp_project_id:  ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
-      gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-      gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+      gcp_workload_identity_provider: ${{  github.event_name == 'release' &&  vars.PROD_WORKLOAD_IDENTITY_PROVIDER || vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+      gcp_service_account: ${{  github.event_name == 'release' &&  vars.PROD_SERVICE_ACCOUNT || vars.STAGING_SERVICE_ACCOUNT}}
       application_name: ${{ matrix.application.name }}
       docker_file: ${{ matrix.application.docker_file }}
       context: ${{ matrix.application.context }}
