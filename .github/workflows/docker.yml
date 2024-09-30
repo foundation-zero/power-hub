@@ -15,6 +15,21 @@ on:
       gcp_service_account:
         required: true
         type: string
+      application_name:
+        required: true
+        type: string
+      docker_file:
+        required: false
+        type: string
+        default: "Dockerfile"
+      context:
+        required: false
+        type: string
+        default: "."
+      build_args:
+        required: false
+        type: string
+        default: ""
     outputs:
       docker_image_tag:
         description: "Tag of the docker image built"
@@ -27,13 +42,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        application:
-          - name: control
-            build_args: POETRY_DEPS=control
-          - name: api
-          - name: mqtt_checker
-            docker_file: mqtt_bridge/Dockerfile
-            context: mqtt_bridge
         platform:
         - runner_os: ubuntu-latest
           name: linux/amd64
@@ -54,15 +62,13 @@ jobs:
     runs-on: ${{matrix.platform.runner_os}}
 
     steps:
-
       - uses: actions/checkout@v4
       - name: Prepare
         run: |
           platform=${{matrix.platform.name}}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application.name}}
+          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{inputs.application_name}}
           echo "REGISTRY_IMAGE=$image" >> $GITHUB_ENV
-
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: google-github-actions/auth@v2
@@ -90,11 +96,11 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          file: ${{ matrix.application.docker_file || 'python_script.Dockerfile'}}
+          file: ${{ inputs.docker_file }}
           platforms: ${{ matrix.platform.name }}
           tags: ${{env.REGISTRY_IMAGE}}
-          build-args: ${{ matrix.application.build_args || ''}}
-          context: ${{ matrix.application.context || '.'}}
+          build-args: ${{ inputs.build_args}}
+          context: ${{ inputs.context}}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{env.REGISTRY_IMAGE}},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
@@ -105,7 +111,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.application.name }}-${{env.PLATFORM_PAIR}}
+          name: digests-${{ inputs.application_name }}-${{env.PLATFORM_PAIR}}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -132,13 +138,13 @@ jobs:
     steps:
       - name: Prepare
         run: |
-          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{matrix.application}}
+          image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{inputs.application_name}}
           echo "REGISTRY_IMAGE=$image" >> $GITHUB_ENV
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests/
-          pattern: digests-${{ matrix.application }}-*
+          pattern: digests-${{ inputs.application_name }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx

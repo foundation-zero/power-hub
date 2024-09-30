@@ -67,13 +67,28 @@ jobs:
 
   docker-build-push:
     uses: ./.github/workflows/docker.yml
-    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    needs: test
+    #if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    #needs: test
+    strategy:
+      matrix:
+        application:
+          - name: control
+            build_args: POETRY_DEPS=control
+            docker_file: 'python_script.Dockerfile'
+          - name: api
+            docker_file: 'python_script.Dockerfile'
+          - name: mqtt_checker
+            docker_file: mqtt_bridge/Dockerfile
+            context: mqtt_bridge
     with:
       env: ${{  github.event_name == 'release' && 'prod' || 'staging' }}
       gcp_project_id:  ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
       gcp_workload_identity_provider: ${{vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{vars.STAGING_SERVICE_ACCOUNT}}
+      application_name: ${{ matrix.application.name }}
+      docker_file: ${{ matrix.application.docker_file }}
+      context: ${{ matrix.application.context }}
+      build_args: ${{ matrix.application.build_args || '' }}
 
   tofu-deploy-staging:
     uses: ./.github/workflows/terraform.yml
