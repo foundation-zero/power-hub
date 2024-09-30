@@ -1,4 +1,4 @@
-import mqtt from "mqtt";
+import mqtt, { type IClientPublishOptions } from "mqtt";
 import { fromEvent, merge, Observable } from "rxjs";
 import { filter, ignoreElements, map, share } from "rxjs/operators";
 
@@ -29,6 +29,20 @@ export class MqttClient {
     });
 
     return new MqttClient(client);
+  }
+
+  async publish<T = unknown>(
+    topic: string,
+    data: T,
+    opts?: IClientPublishOptions,
+  ): Promise<boolean> {
+    try {
+      const message = JSON.stringify(data);
+      await this.client.publishAsync(topic, message, opts);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   topic(topic: string): Observable<string> {

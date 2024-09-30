@@ -10,8 +10,8 @@ import {
 } from "@shared/api";
 import { MqttClient } from "@shared/mqtt";
 import type { NestedPath, PathValue, WeatherInfo } from "@shared/types";
-import type { SumTree, SensorsTree, ControlValues } from "@shared/types/power-hub";
-import { camelize, findValue, pick } from "@shared/utils";
+import type { SumTree, SensorsTree, ControlValues, Setpoints } from "@shared/types/power-hub";
+import { toCamelCase, findValue, pick } from "@shared/utils";
 import { defineStore } from "pinia";
 import { map, Observable } from "rxjs";
 
@@ -26,7 +26,7 @@ const cache: Record<string, Observable<any>> = {};
 const useTopic = <T>(topic: string): Observable<T> =>
   (cache[topic] ??= client
     .topic(`power_hub/${topic}`)
-    .pipe(map((val) => camelize(JSON.parse(val)) as T)));
+    .pipe(map((val) => toCamelCase(JSON.parse(val)) as T)));
 
 const useMqtt =
   <T>(topicPath: string) =>
@@ -50,10 +50,15 @@ export const usePowerHubStore = defineStore("powerHub", () => {
 
   const controlValues = {
     useMqtt: useMqtt<ControlValues>("control_values"),
+    useTopic: () => useTopic<ControlValues>("control_values"),
   };
 
   const controlModes = {
     useTopic: () => useTopic<ControlValues>("control_modes"),
+  };
+
+  const setpoints = {
+    useTopic: () => useTopic<Setpoints>("setpoints"),
   };
 
   const sum = {
@@ -75,11 +80,13 @@ export const usePowerHubStore = defineStore("powerHub", () => {
     );
 
     return {
+      client,
       sensors,
       sum,
       weather,
       controlValues,
       controlModes,
+      setpoints,
     };
   };
 

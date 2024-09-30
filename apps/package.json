@@ -5,8 +5,10 @@
   "scripts": {
     "dev:demo": "vite demo",
     "dev:dashboard": "vite dashboard",
+    "dev:dashboard:powerhub": "vite dashboard --mode powerhub",
     "build:demo": "vite build demo",
     "build:dashboard": "vite build dashboard",
+    "build:dashboard:powerhub": "vite build dashboard --mode powerhub",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore --max-warnings 0",
