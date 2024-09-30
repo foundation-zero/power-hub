@@ -96,6 +96,7 @@ jobs:
           platforms: ${{ matrix.platform.name }}
           tags: ${{env.REGISTRY_IMAGE}}
           build-args: ${{ inputs.build_args}}
+          # This secret is required to build the Docker image for HMI Dashboard and must be availabe on build-time.
           secrets: |
             "POWER_HUB_API_TOKEN=${{ secrets.POWER_HUB_API_TOKEN }}"
           context: ${{ inputs.context}}
