@@ -105,7 +105,7 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
         ),
         cooling_supply_control=CoolingSupplyControlState(
             control_state.cooling_supply_control.context,
-            CoolingSupplyControlMode.NO_SUPPLY,
+            CoolingSupplyControlMode.ENABLED_NO_SUPPLY,
         ),
         setpoints=control_state.setpoints,
     )

@@ -6,7 +6,6 @@ from energy_box_control.power_hub.control.cooling_supply.state import (
     CoolingSupplyControlState,
 )
 from energy_box_control.power_hub.control.state import Fn, PowerHubControlState
-from energy_box_control.power_hub.control.chill.control import low_battery
 from energy_box_control.power_hub.network import PowerHub
 from energy_box_control.power_hub.sensors import FancoilModes, PowerHubSensors
 
@@ -25,45 +24,58 @@ chilled_water_cold_enough = Fn.pred(
 
 cold_reservoir_cold_enough = Fn.pred(
     lambda control_state, sensors: sensors.cold_reservoir.temperature
-    < control_state.setpoints.cold_reservoir_min_temperature
+    < control_state.setpoints.cold_supply_min_temperature
 )
+
+water_cold_enough = chilled_water_cold_enough | cold_reservoir_cold_enough
 
 water_too_warm = Fn.pred(
     lambda control_state, sensors: sensors.rh33_cooling_demand.cold_temperature
     > control_state.setpoints.cold_supply_max_temperature
 ) & Fn.pred(lambda _, sensors: sensors.cooling_demand_flow_sensor.flow > 0)
 
-water_cold_enough = chilled_water_cold_enough | cold_reservoir_cold_enough
-
 scheduled_enabled = (
     Fn.state(
-        lambda state: state.setpoints.cooling_supply_disabled_time
+        lambda state: state.setpoints.cold_supply_disabled_time
     ).current_time_is_before()
     & Fn.state(
-        lambda state: state.setpoints.cooling_supply_enabled_time
+        lambda state: state.setpoints.cold_supply_enabled_time
     ).current_time_is_after()
 )
 scheduled_disabled = ~scheduled_enabled
+
+outside_temperature_low_enough = Fn.pred(
+    lambda state, sensors: sensors.weather.ambient_temperature
+    < state.setpoints.cold_supply_outside_temperature_threshold
+)
 
 cooling_supply_transitions: dict[
     tuple[CoolingSupplyControlMode, CoolingSupplyControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
     (
-        CoolingSupplyControlMode.NO_SUPPLY,
+        CoolingSupplyControlMode.DISABLED,
+        CoolingSupplyControlMode.ENABLED_NO_SUPPLY,
+    ): scheduled_enabled
+    & ~outside_temperature_low_enough,
+    (
+        CoolingSupplyControlMode.ENABLED_NO_SUPPLY,
         CoolingSupplyControlMode.SUPPLY,
     ): cooling_demand
-    & scheduled_enabled
     & water_cold_enough
-    & ~low_battery
     & Fn.const_pred(True).holds_true(
-        Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
+        Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=1)
     ),
-    (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.NO_SUPPLY): (
-        ~cooling_demand | water_too_warm | low_battery
-    )
+    (
+        CoolingSupplyControlMode.SUPPLY,
+        CoolingSupplyControlMode.ENABLED_NO_SUPPLY,
+    ): ~cooling_demand
+    | water_too_warm
     & Fn.const_pred(True).holds_true(
-        Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=5)
+        Marker("prevent cooling supply pump flip-flopping"), timedelta(minutes=1)
+    ),
+    (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.DISABLED): (
+        scheduled_disabled | outside_temperature_low_enough
     ),
 }
 
