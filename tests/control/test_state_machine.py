@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import time, timedelta, datetime
 from pytest import fixture
+import pytz
 from energy_box_control.control.state_machines import (
     Context,
     Functions,
@@ -102,14 +103,22 @@ def test_within(resolve):
     assert not resolve(Fn.state(lambda time: input_time).within(timedelta(hours=1)))  # type: ignore
 
 
-def test_before(resolve):
-    assert resolve(Fn.state(lambda reference: time(13)).before())
-    assert not resolve(Fn.state(lambda reference: time(11)).before())
+def test_current_time_is_before(resolve):
+    assert resolve(Fn.state(lambda reference: time(13)).current_time_is_before())
+    assert not resolve(Fn.state(lambda reference: time(11)).current_time_is_before())
 
 
-def test_after(resolve):
-    assert resolve(Fn.state(lambda reference: time(11)).after())
-    assert not resolve(Fn.state(lambda reference: time(13)).after())
+def test_current_time_is_after(resolve):
+    assert resolve(
+        Fn.state(
+            lambda reference: time(11, tzinfo=pytz.timezone("Europe/Madrid"))
+        ).current_time_is_after()
+    )
+    assert not resolve(
+        Fn.state(
+            lambda reference: time(13, tzinfo=pytz.timezone("Europe/Madrid"))
+        ).current_time_is_after()
+    )
 
 
 def test_holds_true(epoch):

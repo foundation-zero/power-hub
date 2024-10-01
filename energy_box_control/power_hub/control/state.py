@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, time, timezone
 
 from pydantic import BaseModel, Field
+import pytz
 
 from energy_box_control.control.pid import Pid, PidConfig
 from energy_box_control.control.state_machines import Context, Functions
@@ -154,8 +155,10 @@ def initial_setpoints() -> Setpoints:
         cold_reservoir_max_temperature=16.5,
         chill_min_supply_temperature=14,
         cold_supply_max_temperature=16,
-        cooling_supply_disabled_time=time(hour=22),
-        cooling_supply_enabled_time=time(hour=8),
+        cooling_supply_disabled_time=time(
+            hour=22, tzinfo=pytz.timezone("Europe/Madrid")
+        ),
+        cooling_supply_enabled_time=time(hour=8, tzinfo=pytz.timezone("Europe/Madrid")),
         minimum_preheat_offset=1,
         waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%

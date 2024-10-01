@@ -170,7 +170,9 @@ class WithinPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
 
 
 @dataclass
-class BeforePredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
+class TimeIsBeforeTimeOfDayPredicate[ControlState, Sensors](
+    Predicate[ControlState, Sensors]
+):
     reference: "Value[ControlState, Sensors, time]"
 
     def resolve(
@@ -201,15 +203,15 @@ class Value[ControlState, Sensors, V: float | int | datetime | time]:
     ) -> WithinPredicate[ControlState, Sensors]:
         return WithinPredicate(self, duration)
 
-    def before(
+    def current_time_is_before(
         self: "Value[ControlState, Sensors, time]",
-    ) -> BeforePredicate[ControlState, Sensors]:
-        return BeforePredicate(self)
+    ) -> TimeIsBeforeTimeOfDayPredicate[ControlState, Sensors]:
+        return TimeIsBeforeTimeOfDayPredicate(self)
 
-    def after(
+    def current_time_is_after(
         self: "Value[ControlState, Sensors, time]",
     ) -> Predicate[ControlState, Sensors]:
-        return ~BeforePredicate(self)
+        return ~TimeIsBeforeTimeOfDayPredicate(self)
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
