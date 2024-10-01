@@ -94,7 +94,7 @@ jobs:
         env:
           VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
 
-      - name: Deploy Dashboard
+      - name: Deploy Dashboard (Public)
         id: deploy_dashboard
         uses: cloudflare/pages-action@1
         with:
@@ -119,14 +119,17 @@ jobs:
           projectName: power-hub
           directory: "./apps/demo/dist"
           wranglerVersion: 3
+
   docker-build-push:
     uses: ./.github/workflows/docker.yml
     if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     needs: test
+    secrets: inherit
+
     with:
-      gcp_project_id:  ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
+      gcp_project_id: ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
       gcp_workload_identity_provider: ${{  github.event_name == 'release' &&  vars.PROD_WORKLOAD_IDENTITY_PROVIDER || vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
       gcp_service_account: ${{  github.event_name == 'release' &&  vars.PROD_SERVICE_ACCOUNT || vars.STAGING_SERVICE_ACCOUNT}}
-      application_name: 'dashboard'
-      docker_file: 'apps/Dockerfile.dashboard'
-      context: './apps'
+      application_name: "dashboard"
+      docker_file: "apps/Dockerfile.dashboard"
+      context: "./apps"

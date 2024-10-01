@@ -40,10 +40,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-        - runner_os: ubuntu-latest
-          name: linux/amd64
-        - runner_os: ubuntu-arm64
-          platform: linux/arm64/v8
+          - runner_os: ubuntu-latest
+            name: linux/amd64
+          - runner_os: ubuntu-arm64
+            platform: linux/arm64/v8
 
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
@@ -52,8 +52,8 @@ jobs:
       REPO: power-hub
 
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     runs-on: ${{matrix.platform.runner_os}}
 
@@ -65,15 +65,15 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
           image=${{env.GAR}}/${{env.PROJECT_ID}}/${{env.REPO}}/${{inputs.application_name}}
           echo "REGISTRY_IMAGE=$image" >> $GITHUB_ENV
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{inputs.gcp_workload_identity_provider}}
           service_account: ${{inputs.gcp_service_account}}
-      - id: 'login-art-registry'
-        name: 'Login to Artifact Registry'
+      - id: "login-art-registry"
+        name: "Login to Artifact Registry"
         uses: docker/login-action@v3
         with:
           registry: ${{env.GAR}}
@@ -96,6 +96,9 @@ jobs:
           platforms: ${{ matrix.platform.name }}
           tags: ${{env.REGISTRY_IMAGE}}
           build-args: ${{ inputs.build_args}}
+          # This secret is required to build the Docker image for HMI Dashboard and must be availabe on build-time.
+          secrets: |
+            "POWER_HUB_API_TOKEN=${{ secrets.POWER_HUB_API_TOKEN }}"
           context: ${{ inputs.context}}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{env.REGISTRY_IMAGE}},push-by-digest=true,name-canonical=true,push=true
@@ -115,11 +118,11 @@ jobs:
   merge-docker-images:
     timeout-minutes: 15
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     runs-on: ubuntu-latest
     outputs:
-      docker_image_tag:  ${{ steps.meta.outputs.tags }}
+      docker_image_tag: ${{ steps.meta.outputs.tags }}
     env:
       PROJECT_ID: ${{inputs.gcp_project_id}}
       ZONE: europe-west1
@@ -141,15 +144,15 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
         with:
           token_format: "access_token"
           workload_identity_provider: ${{inputs.gcp_workload_identity_provider}}
           service_account: ${{inputs.gcp_service_account}}
-      - id: 'login-art-registry'
-        name: 'Login to Artifact Registry'
+      - id: "login-art-registry"
+        name: "Login to Artifact Registry"
         uses: docker/login-action@v3
         with:
           registry: ${{env.GAR}}
@@ -168,7 +171,7 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)          
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |

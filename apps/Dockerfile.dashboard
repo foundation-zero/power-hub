@@ -7,7 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN pnpm install 
 COPY . .
-RUN pnpm build:dashboard
+# This command puts the token secret into the env (for this run command only!)
+RUN --mount=type=secret,id=POWER_HUB_API_TOKEN \
+  export VITE_API_BEARER_TOKEN=$(cat /run/secrets/POWER_HUB_API_TOKEN) && \
+  pnpm build:dashboard:powerhub
 
 FROM nginx:stable-alpine AS production-stage
 COPY --from=build-stage /app/dashboard/dist /usr/share/nginx/html

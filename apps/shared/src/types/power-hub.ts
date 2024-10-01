@@ -117,7 +117,7 @@ export interface FlowPort {
 
 export interface FlowSensor {
   flow: number;
-  glycol_concentration: number;
+  glycolConcentration: number;
   total_volume: number;
   temperature: number;
   status: number;
@@ -221,6 +221,37 @@ export type DateRange = [from: string, to: string];
 
 export type TimeInterval = "d" | "h" | "min" | "s";
 
+export interface Setpoints {
+  pcmMinTemperature: number;
+  pcmMaxTemperature: number;
+  targetChargingTemperatureOffset: number;
+  minimumChargingTemperatureOffset: number;
+  minimumGlobalIrradiance: number;
+  pcmDischarged: number;
+  pcmCharged: number;
+  yazakiMinimumChillPower: number;
+  yazakiInletTargetTemperature: number;
+  coldReservoirMaxTemperature: number;
+  coldReservoirMinTemperature: number;
+  coldSupplyMaxTemperature: number;
+  coolingSupplyDisabledTime: string;
+  coolingSupply_enabledTime: string;
+  chillMinSupplyTemperature: number;
+  minimumPreheatOffset: number;
+  wasteTargetTemperature: number;
+  waterTreatmentMaxfillRation: number;
+  waterTreatmentMinfillRation: number;
+  technicalWaterMaxfillRation: number;
+  technicalWaterMinfillRation: number;
+  freshWaterMinfillRation: number;
+  triggerFilterWaterTank: string;
+  stopFilterWaterTank: string;
+  lowBattery: number;
+  highHeatDumpTemperature: number;
+  heatDumpOutboardDivergenceTemperature: number;
+  manualOutboardOn: boolean;
+}
+
 export interface ControlValues {
   coolingDemandPump: Pump;
   hotSwitchValve: Valve;
@@ -242,5 +273,5 @@ export interface ControlValues {
   waterFilterBypassValve: Valve;
   technicalWaterRegulator: Valve;
   waterTreatment: Appliance;
-  time: number;
+  // time: number;
 }
