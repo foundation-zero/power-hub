@@ -8,6 +8,14 @@ const router = createRouter({
       name: "HMI Dashboard",
       component: async () => await import("@dashboard/views/HMIDashboard.vue"),
     },
+    {
+      path: "/setpoints",
+      name: "HMI Setpoints",
+      component: async () => await import("@dashboard/views/HMISetpoints.vue"),
+      beforeEnter: () => {
+        return !!import.meta.env.VITE_ENABLE_SETPOINTS;
+      },
+    },
   ],
 });
 

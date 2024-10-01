@@ -6,28 +6,35 @@ import { map, Observable } from "rxjs";
 
 const props = defineProps<{
   data: Observable<Record<string, any>>;
+  includedKeys?: string[];
 }>();
 
 const getValue = (key: string, value: any) => {
+  if (key === "time" || new Date(value).getFullYear() > 1970)
+    return new Date(value).toLocaleString();
+
   if (typeof value === "string") return replaceAll(snakeCase(value), "_", " ");
-  if (key === "time") return new Date(value).toLocaleString();
+
+  return value;
 };
 
 const rows = useObservable(
   props.data.pipe(
     map((val) =>
-      Object.entries(val).map(([key, value]) => ({
-        key: replaceAll(snakeCase(key), "_", " "),
-        value: getValue(key, value),
-      })),
+      Object.entries(val)
+        .filter(([key]) => !props.includedKeys?.length || props.includedKeys.includes(key))
+        .map(([key, value]) => ({
+          key: replaceAll(snakeCase(key), "_", " "),
+          value: getValue(key, value),
+        })),
     ),
   ),
 );
 </script>
 
 <template>
-  <v-table class="text-capitalize">
-    <tbody>
+  <v-table>
+    <tbody class="text-capitalize">
       <tr
         v-for="row in rows"
         :key="row.key"

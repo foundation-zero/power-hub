@@ -6,16 +6,22 @@ import { combineLatest, map, type Observable } from "rxjs";
 import { computed, watch, type Ref } from "vue";
 import { between } from "./numbers";
 
-export const camelize = <T extends Object>(obj: T): T => {
-  return <T>(
-    Object.fromEntries(
-      Object.entries(obj).map(([key, val]) => [
-        camelCase(key),
-        typeof val === "object" && !Array.isArray(val) ? camelize(val) : val,
-      ]),
-    )
-  );
+const formatObjectKeys = (formatFn: (input: string) => string) => {
+  const format = <T extends Object>(obj: T): T =>
+    <T>(
+      Object.fromEntries(
+        Object.entries(obj).map(([key, val]) => [
+          formatFn(key),
+          typeof val === "object" && !Array.isArray(val) ? format(val) : val,
+        ]),
+      )
+    );
+
+  return format;
 };
+
+export const toCamelCase = formatObjectKeys(camelCase);
+export const toSnakeCase = formatObjectKeys(snakeCase);
 
 export const findValue =
   <T>(obj: T) =>
