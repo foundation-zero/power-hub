@@ -71,12 +71,11 @@ jobs:
       - run: tofu init -backend-config=${{inputs.backend_config}}
         working-directory: ./infra
 
+      - name: Test Terraform
+        run: tofu plan -lock=false
+        working-directory: ./infra
+
       - name: Deploy Terraform
         run: tofu apply --auto-approve
         if: inputs.deploy == true
-        working-directory: ./infra
-
-      - name: Test Terraform
-        run: tofu plan -lock=false
-        if: inputs.deploy == false
         working-directory: ./infra

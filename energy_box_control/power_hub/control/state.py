@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from datetime import datetime, time, timezone
+from datetime import time, timezone
 
 from pydantic import BaseModel, Field
 
@@ -116,18 +116,15 @@ class Setpoints(BaseModel):
     fresh_water_min_fill_ratio: Ratio = Field(
         description="minimum level of fresh water"
     )
-    trigger_filter_water_tank: datetime = Field(
-        description="trigger filtering of water tank"
-    )
-    stop_filter_water_tank: datetime = Field(description="stop filtering of water tank")
+    filter_water_tank: bool = Field(description="run fresh water trough filter")
     low_battery: Ratio = Field(description="soc below which the chiller isn't used")
     high_heat_dump_temperature: Celsius = Field(
-        description="Trigger temperature for the outboard pump toggle"
+        description="trigger temperature for the outboard pump toggle"
     )
     heat_dump_outboard_divergence_temperature: Celsius = Field(
-        description="Trigger temperature difference for the outboard pump toggle"
+        description="trigger temperature difference for the outboard pump toggle"
     )
-    manual_outboard_on: bool = Field(description="Run the outboard pump")
+    manual_outboard_on: bool = Field(description="run the outboard pump")
 
 
 @dataclass
@@ -168,11 +165,10 @@ def initial_setpoints() -> Setpoints:
         waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
         technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
-        water_treatment_max_fill_ratio=0.925,  # avoid using water treatment
-        water_treatment_min_fill_ratio=0.9,
+        water_treatment_max_fill_ratio=1,  # avoid using water treatment
+        water_treatment_min_fill_ratio=1,  # avoid using water treatment
         fresh_water_min_fill_ratio=0.35,
-        trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-        stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        filter_water_tank=False,
         low_battery=0.55,  # allow chiller to turn with current soc at shore power
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
@@ -199,9 +195,7 @@ def initial_control_state() -> PowerHubControlState:
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
-            context=Context(),
-            control_mode=WasteControlMode.NO_OUTBOARD,
-            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.7, 1), reversed=True)),
+            context=Context(), control_mode=WasteControlMode.NO_OUTBOARD
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY
