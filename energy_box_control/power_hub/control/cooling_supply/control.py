@@ -73,6 +73,9 @@ cooling_supply_transitions: dict[
     (CoolingSupplyControlMode.SUPPLY, CoolingSupplyControlMode.DISABLED): (
         scheduled_disabled | outside_temperature_low_enough
     ),
+    (CoolingSupplyControlMode.ENABLED_NO_SUPPLY, CoolingSupplyControlMode.DISABLED): (
+        scheduled_disabled | outside_temperature_low_enough
+    ),
 }
 
 cooling_supply_control_machine = StateMachine(

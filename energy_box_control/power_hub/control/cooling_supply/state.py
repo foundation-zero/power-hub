@@ -4,7 +4,7 @@ from energy_box_control.control.state_machines import Context, State
 
 class CoolingSupplyControlMode(State):
     DISABLED = "disabled"
-    ENABLED_NO_SUPPLY = "no_supply"
+    ENABLED_NO_SUPPLY = "enabled_no_supply"
     SUPPLY = "supply"
 
 
