@@ -88,9 +88,7 @@ def survival_control_state(control_state: PowerHubControlState) -> PowerHubContr
             WASTE_SWITCH_VALVE_CHILLER_POSITION,
         ),
         waste_control=WasteControlState(
-            control_state.waste_control.context,
-            WasteControlMode.RUN_OUTBOARD,
-            control_state.waste_control.frequency_controller,
+            control_state.waste_control.context, WasteControlMode.RUN_OUTBOARD
         ),
         fresh_water_control=FreshWaterControlState(
             control_state.fresh_water_control.context, FreshWaterControlMode.READY
