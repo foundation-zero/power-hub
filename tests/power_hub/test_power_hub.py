@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from functools import partial
 from pandas import read_csv
 from pytest import approx, fixture, mark
@@ -23,6 +23,9 @@ from energy_box_control.power_hub.control.control import (
     no_control,
 )
 import energy_box_control.power_hub.components as phc
+from energy_box_control.power_hub.control.cooling_supply.state import (
+    CoolingSupplyControlMode,
+)
 from energy_box_control.power_hub.control.state import initial_control_state
 from energy_box_control.time import ProcessTime
 from tests.simulation.test_simulation import (
@@ -264,6 +267,49 @@ def control_values(scheduled_power_hub):
 @fixture
 def sensors(scheduled_power_hub, state):
     return scheduled_power_hub.sensors_from_state(state)
+
+
+def test_cold_supply_schedule(
+    scheduled_power_hub, state, control_state, control_values, sensors
+):
+
+    control_state.setpoints.cold_supply_enabled_time = replace(
+        state.time, step=3
+    ).timestamp.timetz()
+    control_state.setpoints.cold_supply_disabled_time = replace(
+        state.time, step=5
+    ).timestamp.timetz()
+
+    control_state, control_values = control_power_hub(
+        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+    )
+
+    for i in range(1, 10):
+        control_state, control_values = control_power_hub(
+            scheduled_power_hub,
+            control_state,
+            sensors,
+            replace(state.time, step=i).timestamp,
+            False,
+        )
+
+        if i <= 3:
+            assert (
+                control_state.cooling_supply_control.control_mode
+                == CoolingSupplyControlMode.DISABLED
+            )
+
+        if 3 < i <= 5:
+            assert control_state.cooling_supply_control.control_mode in [
+                CoolingSupplyControlMode.SUPPLY,
+                CoolingSupplyControlMode.ENABLED_NO_SUPPLY,
+            ]
+
+        if i > 5:
+            assert (
+                control_state.cooling_supply_control.control_mode
+                == CoolingSupplyControlMode.DISABLED
+            )
 
 
 def test_water_filter(

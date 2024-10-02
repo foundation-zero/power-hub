@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from enum import Enum
 from typing import Callable
 
@@ -169,6 +169,23 @@ class WithinPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
         return timedelta(seconds=0) < (time - since) < self.duration
 
 
+@dataclass
+class NowIsBeforeTimeOfDayPredicate[ControlState, Sensors](
+    Predicate[ControlState, Sensors]
+):
+    reference: "Value[ControlState, Sensors, time]"
+
+    def resolve(
+        self,
+        context: Context,
+        control_state: ControlState,
+        sensors: Sensors,
+        time: datetime,
+    ) -> bool:
+        reference = self.reference.fn(control_state, sensors, time)
+        return time.timetz() <= reference
+
+
 def _comp[
     ControlState, Sensors, R: float | int
 ](
@@ -178,13 +195,23 @@ def _comp[
 
 
 @dataclass(eq=False)
-class Value[ControlState, Sensors, V: float | int | datetime]:
+class Value[ControlState, Sensors, V: float | int | datetime | time]:
     fn: Callable[[ControlState, Sensors, datetime], V]
 
     def within(
         self: "Value[ControlState, Sensors, datetime]", duration: timedelta
     ) -> WithinPredicate[ControlState, Sensors]:
         return WithinPredicate(self, duration)
+
+    def now_is_before(
+        self: "Value[ControlState, Sensors, time]",
+    ) -> NowIsBeforeTimeOfDayPredicate[ControlState, Sensors]:
+        return NowIsBeforeTimeOfDayPredicate(self)
+
+    def now_is_after(
+        self: "Value[ControlState, Sensors, time]",
+    ) -> Predicate[ControlState, Sensors]:
+        return ~NowIsBeforeTimeOfDayPredicate(self)
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
@@ -199,7 +226,7 @@ class Functions[ControlState, Sensors]:
         pass
 
     def state[
-        V: float | int | datetime
+        V: float | int | datetime | time
     ](self, fn: Callable[[ControlState], V]) -> Value[ControlState, Sensors, V]:
         return Value(lambda control_state, _sensors, _time: fn(control_state))
 
