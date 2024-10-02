@@ -32,7 +32,7 @@ resource "google_secret_manager_secret" "powerhub_gar_sa_secret" {
     auto {}
   }
 
-  depends_on = ["google_project_iam_member.tofu_secret_manager_access"]
+  depends_on = [google_project_iam_member.tofu_secret_manager_access]
 }
 
 resource "google_secret_manager_secret_version" "powerhub_gar_sa_secret_version" {
