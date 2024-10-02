@@ -266,7 +266,7 @@ def sensors(scheduled_power_hub, state):
     return scheduled_power_hub.sensors_from_state(state)
 
 
-def test_water_filter_trigger(
+def test_water_filter(
     scheduled_power_hub, state, control_state, control_values, sensors
 ):
 
@@ -274,87 +274,38 @@ def test_water_filter_trigger(
         scheduled_power_hub, control_state, sensors, state.time.timestamp, False
     )
 
-    control_state.setpoints.trigger_filter_water_tank = replace(
-        state.time, step=10
-    ).timestamp
+    state = scheduled_power_hub.simulate(state, control_values)
+    sensors = scheduled_power_hub.sensors_from_state(state)
 
-    for i in range(31 * 60):
-        control_state, control_values = control_power_hub(
-            scheduled_power_hub,
-            control_state,
-            sensors,
-            replace(state.time, step=i).timestamp,
-            False,
-        )
+    assert control_state.setpoints.filter_water_tank == False
+    assert (
+        control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
+        .get()
+        .position
+        == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
+    )
+    assert control_state.fresh_water_control.control_mode == FreshWaterControlMode.READY
 
-        if i == 1:
-            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
-            assert (
-                control_state.fresh_water_control.control_mode
-                == FreshWaterControlMode.READY
-            )
+    control_state.setpoints.filter_water_tank = True
 
-        if i == 11:
-            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION  # type: ignore
-            assert (
-                control_state.fresh_water_control.control_mode
-                == FreshWaterControlMode.FILTER_TANK
-            )
-
-        if i == 12 + 30 * 60:
-            assert control_values.appliance(scheduled_power_hub.water_filter_bypass_valve).get().position == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION  # type: ignore
-            assert (
-                control_state.fresh_water_control.control_mode
-                == FreshWaterControlMode.READY
-            )
-
-
-def test_water_filter_stop(
-    scheduled_power_hub, state, control_state, control_values, sensors
-):
     control_state, control_values = control_power_hub(
-        scheduled_power_hub, control_state, sensors, state.time.timestamp, False
+        scheduled_power_hub,
+        control_state,
+        sensors,
+        state.time.timestamp,
+        False,
     )
 
-    control_state.setpoints.trigger_filter_water_tank = replace(
-        state.time, step=10
-    ).timestamp
-    control_state.setpoints.stop_filter_water_tank = replace(
-        state.time, step=12
-    ).timestamp
-
-    for i in range(31 * 60):
-        control_state, control_values = control_power_hub(
-            scheduled_power_hub,
-            control_state,
-            sensors,
-            replace(state.time, step=i).timestamp,
-            False,
-        )
-
-        if i == 11:
-            assert (
-                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
-                .get()
-                .position
-                == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
-            )
-            assert (
-                control_state.fresh_water_control.control_mode
-                == FreshWaterControlMode.FILTER_TANK
-            )
-
-        if i == 13:
-            assert (
-                control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
-                .get()
-                .position
-                == phc.WATER_FILTER_BYPASS_VALVE_CONSUMPTION_POSITION
-            )
-            assert (
-                control_state.fresh_water_control.control_mode
-                == FreshWaterControlMode.READY
-            )
+    assert (
+        control_values.appliance(scheduled_power_hub.water_filter_bypass_valve)
+        .get()
+        .position
+        == phc.WATER_FILTER_BYPASS_VALVE_FILTER_POSITION
+    )
+    assert (
+        control_state.fresh_water_control.control_mode
+        == FreshWaterControlMode.FILTER_TANK
+    )
 
 
 @mark.parametrize(

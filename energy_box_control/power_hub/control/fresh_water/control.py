@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from energy_box_control.control.state_machines import (
-    Marker,
     Predicate,
     StateMachine,
 )
@@ -24,15 +23,12 @@ fresh_water_transitions: dict[
     tuple[FreshWaterControlMode, FreshWaterControlMode],
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
-    (FreshWaterControlMode.READY, FreshWaterControlMode.FILTER_TANK): Fn.state(
-        lambda state: state.setpoints.trigger_filter_water_tank
-    ).within(timedelta(seconds=5)),
-    (FreshWaterControlMode.FILTER_TANK, FreshWaterControlMode.READY): Fn.const_pred(
-        True
-    ).holds_true(Marker("filter tank"), timedelta(minutes=30))
-    | Fn.state(lambda state: state.setpoints.stop_filter_water_tank).within(
-        timedelta(seconds=5)
-    ),  # 35 l/min pump
+    (FreshWaterControlMode.READY, FreshWaterControlMode.FILTER_TANK): Fn.pred(
+        lambda state, _: state.setpoints.filter_water_tank == True
+    ),
+    (FreshWaterControlMode.FILTER_TANK, FreshWaterControlMode.READY): Fn.pred(
+        lambda state, _: state.setpoints.filter_water_tank == False
+    ),
 }
 
 fresh_water_control_machine = StateMachine(
