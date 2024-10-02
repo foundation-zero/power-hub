@@ -1,5 +1,5 @@
 To generate a pdf from the notebook run 
 
 '''
-jupyter nbconvert energy-report/energy-report.ipynb --no-input --to pdf
+jupyter nbconvert energy-report/energy-report.ipynb --no-input --to pdf --output power-hub-report-<date>
 '''
