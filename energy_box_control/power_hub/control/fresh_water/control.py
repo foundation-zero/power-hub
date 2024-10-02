@@ -24,10 +24,10 @@ fresh_water_transitions: dict[
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
     (FreshWaterControlMode.READY, FreshWaterControlMode.FILTER_TANK): Fn.pred(
-        lambda state, _: state.setpoints.filter_water_tank == True
+        lambda state, _: state.setpoints.filter_water_tank
     ),
     (FreshWaterControlMode.FILTER_TANK, FreshWaterControlMode.READY): Fn.pred(
-        lambda state, _: state.setpoints.filter_water_tank == False
+        lambda state, _: not state.setpoints.filter_water_tank
     ),
 }
 
