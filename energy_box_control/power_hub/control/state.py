@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, time, timezone
 
 from pydantic import BaseModel, Field
 
@@ -161,8 +161,8 @@ def initial_setpoints() -> Setpoints:
         chill_min_supply_temperature=14,
         cold_supply_min_temperature=15,
         cold_supply_max_temperature=16,
-        cold_supply_disabled_time=time(hour=21, tzinfo=timezone(timedelta(hours=2))),
-        cold_supply_enabled_time=time(hour=8, tzinfo=timezone(timedelta(hours=2))),
+        cold_supply_disabled_time=time(hour=23, tzinfo=timezone.utc),
+        cold_supply_enabled_time=time(hour=10, tzinfo=timezone.utc),
         cold_supply_outside_temperature_threshold=22,
         minimum_preheat_offset=1,
         waste_target_temperature=28,
