@@ -28,7 +28,6 @@ on:
         required: true
         type: string
 
-
 jobs:
   run:
     permissions:
@@ -47,7 +46,7 @@ jobs:
       TF_VAR_pagerduty_control_app_key: ${{ secrets.STAGING_PAGERDUTY_CONTROL_APP_KEY }}
       TF_VAR_pagerduty_mqtt_checker_key: ${{inputs.env == 'prod' && secrets.PROD_PAGERDUTY_MQTT_CHECKER_KEY || secrets.STAGING_PAGERDUTY_MQTT_CHECKER_KEY}}
       TF_VAR_pagerduty_gke_key: ${{inputs.env == 'prod' &&  secrets.PROD_PAGERDUTY_GKE_KEY || secrets.STAGING_PAGERDUTY_GKE_KEY}}
-      TF_VAR_python_app_image_tag: ${{ needs.docker-build-push.outputs.docker_image_tag }}
+      TF_VAR_python_app_image_tag: ${{ inputs.image_tag }}
       TF_VAR_env: ${{ inputs.env }}
       TF_VAR_project_id: ${{ inputs.gcp_project_id }}
       TF_VAR_influxdb_bucket: ${{inputs.influxdb_bucket}}
