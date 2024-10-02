@@ -57,7 +57,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/power-hub-staging-docker-credenti
 ```
 Edit docker-compose.yaml, replace the image with the correct url+tag, and restart the container.
 
-## Update powerhub docker images
+## Update Power Hub docker images
 - Copy the full link+sha (find this in Google Artifact Repository or in the docker Github action output)
 - At the time of writing, only staging credentials are in the powerhub
 - Then:
