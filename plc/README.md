@@ -36,7 +36,7 @@ To automatically configure the docker on the PLC run:
 poetry run python plc/configure_plc.py
 ```
 
-## Setting up the Google Artifact Repository
+## Setting up the Google Artifact Repository (One time setup)
 
 Following [this](https://cloud.google.com/artifact-registry/docs/docker/authentication#standalone-helper) guide:
 On your laptop retrieve the service account key:
@@ -49,9 +49,27 @@ gcloud secrets versions access latest --secret="powerhub-gar-secret"
 docker-credential-gcr configure-docker --registries=europe-west1-docker.pkg.dev
 ```
 - Copy credentials to `/home/pi/power-hub-staging-docker-credentials.json`
-- To pull images:
+- Add credentials to root user environment
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/home/pi/power-hub-staging-docker-credentials.json"
-docker pull europe-west1-docker.pkg.dev/power-hub-423312/power-hub/python-app:[tag]
+nano /root/.bashrc
+# add this to the bottom: 
+export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/power-hub-staging-docker-credentials.json
 ```
 Edit docker-compose.yaml, replace the image with the correct url+tag, and restart the container.
+
+## Update powerhub docker images
+- Copy the full link+sha (find this in Google Artifact Repository or in the docker Github action output)
+- At the time of writing, only staging credentials are in the powerhub
+- Then:
+```bash
+ssh power-hub
+#become root
+sudo su
+docker pull europe-west1-docker.pkg.dev/power-hub-423312/power-hub/[image]:[tag] 
+# Image is now pre pulled
+# change the tag in the application you want to update:
+nano /home/pi/docker-compose.yaml
+# Update tag and save
+# Use the new image (docker compose restart does not work)
+docker compose up -d [component] --no-deps
+```
