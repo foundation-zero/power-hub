@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from energy_box_control.control.pid import Pid
 from energy_box_control.control.state_machines import Context, State
 
 
@@ -15,4 +14,3 @@ class WasteControlMode(State):
 class WasteControlState:
     context: Context
     control_mode: WasteControlMode
-    frequency_controller: Pid
