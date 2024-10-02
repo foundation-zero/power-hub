@@ -91,7 +91,7 @@ jobs:
 
   tofu-deploy-staging:
     uses: ./.github/workflows/terraform.yml
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: docker-build-push
     concurrency:
       group: ${{ github.workflow }}-tofu-staging
@@ -127,8 +127,6 @@ jobs:
     uses: ./.github/workflows/terraform.yml
     if: github.event_name != 'release' && !(github.ref == 'refs/heads/main' && github.event_name == 'push')
     needs: test
-    concurrency:
-      group: ${{ github.workflow }}-tofu
     secrets: inherit
     with:
       deploy: false
