@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from datetime import datetime, time, timezone
+from datetime import time
 
 from pydantic import BaseModel, Field
 
@@ -81,10 +81,10 @@ class Setpoints(BaseModel):
         description="temperature of water coming out of cold reservoir above which cooling supply stops"
     )
     cooling_supply_disabled_time: time = Field(
-        description="Time from which cooling supply is disabled"
+        description="time from which cooling supply is disabled"
     )
     cooling_supply_enabled_time: time = Field(
-        description="Time from which cooling supply is enabled"
+        description="time from which cooling supply is enabled"
     )
     chill_min_supply_temperature: Celsius = Field(
         description="temperature of chilled water below which cooling supply can start"
@@ -110,18 +110,15 @@ class Setpoints(BaseModel):
     fresh_water_min_fill_ratio: Ratio = Field(
         description="minimum level of fresh water"
     )
-    trigger_filter_water_tank: datetime = Field(
-        description="trigger filtering of water tank"
-    )
-    stop_filter_water_tank: datetime = Field(description="stop filtering of water tank")
+    filter_water_tank: bool = Field(description="run fresh water trough filter")
     low_battery: Ratio = Field(description="soc below which the chiller isn't used")
     high_heat_dump_temperature: Celsius = Field(
-        description="Trigger temperature for the outboard pump toggle"
+        description="trigger temperature for the outboard pump toggle"
     )
     heat_dump_outboard_divergence_temperature: Celsius = Field(
-        description="Trigger temperature difference for the outboard pump toggle"
+        description="trigger temperature difference for the outboard pump toggle"
     )
-    manual_outboard_on: bool = Field(description="Run the outboard pump")
+    manual_outboard_on: bool = Field(description="run the outboard pump")
 
 
 @dataclass
@@ -163,8 +160,7 @@ def initial_setpoints() -> Setpoints:
         water_treatment_max_fill_ratio=1,  # avoid using water treatment
         water_treatment_min_fill_ratio=1,  # avoid using water treatment
         fresh_water_min_fill_ratio=0.35,
-        trigger_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
-        stop_filter_water_tank=datetime(2017, 6, 1, 0, 0, 0, tzinfo=timezone.utc),
+        filter_water_tank=False,
         low_battery=0.55,  # allow chiller to turn with current soc at shore power
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
