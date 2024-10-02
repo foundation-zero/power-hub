@@ -68,7 +68,7 @@ jobs:
   docker-build-push:
     uses: ./.github/workflows/docker.yml
     #if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    needs: test
+    #needs: test
     strategy:
       matrix:
         application:
