@@ -105,7 +105,10 @@ chill_transitions: dict[
     (
         ChillControlMode.CHECK_YAZAKI_BOUNDS,
         ChillControlMode.CHILL_YAZAKI,
-    ): within_yazaki_bounds,
+    ): within_yazaki_bounds.holds_true(
+        Marker("Make sure values are consistently within reference values"),
+        timedelta(minutes=15),
+    ),
     (
         ChillControlMode.CHECK_YAZAKI_BOUNDS,
         ChillControlMode.PREPARE_CHILLER_VALVES,
@@ -124,7 +127,7 @@ chill_transitions: dict[
     & (
         pcm_discharged
         | low_yazaki_chill_power.holds_true(
-            Marker("Yazaki not supplying chill"), timedelta(minutes=30)
+            Marker("Yazaki not supplying chill"), timedelta(minutes=15)
         )
         | Fn.const_pred(True).holds_true(
             Marker("Switch off Yazaki after two hours to engage Electric chiller"),
@@ -216,7 +219,7 @@ def chill_control(
     )
     run_yazaki = (
         power_hub.control(power_hub.pcm_to_yazaki_pump)
-        .value(SwitchPumpControl(True, 5500))
+        .value(SwitchPumpControl(True, 7000))
         .control(power_hub.yazaki)
         .value(YazakiControl(True))
         .control(power_hub.chiller)

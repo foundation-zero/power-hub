@@ -143,10 +143,10 @@ def initial_setpoints() -> Setpoints:
         target_charging_temperature_offset=2,
         minimum_charging_temperature_offset=1,
         minimum_global_irradiance=100,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-        pcm_discharged=76,
-        pcm_charged=79,
-        yazaki_minimum_chill_power=500,  # Give the Yazaki a chance to do something
-        yazaki_inlet_target_temperature=1000,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
+        pcm_discharged=73,
+        pcm_charged=80,
+        yazaki_minimum_chill_power=1000,  # Give the Yazaki a chance to do something
+        yazaki_inlet_target_temperature=100,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
         cold_reservoir_min_temperature=14,
         cold_reservoir_max_temperature=16,
         chill_min_supply_temperature=14,
@@ -159,9 +159,9 @@ def initial_setpoints() -> Setpoints:
         technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
         water_treatment_max_fill_ratio=1,  # avoid using water treatment
         water_treatment_min_fill_ratio=1,  # avoid using water treatment
-        fresh_water_min_fill_ratio=0.5,
+        fresh_water_min_fill_ratio=0.35,
         filter_water_tank=False,
-        low_battery=0.4,  # soc at which chiller shuts down
+        low_battery=0.3,  # soc at which chiller shuts down
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
         manual_outboard_on=False,
