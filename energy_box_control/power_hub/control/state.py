@@ -191,9 +191,7 @@ def initial_control_state() -> PowerHubControlState:
             waste_switch_valve_position=WASTE_SWITCH_VALVE_YAZAKI_POSITION,
         ),
         waste_control=WasteControlState(
-            context=Context(),
-            control_mode=WasteControlMode.NO_OUTBOARD,
-            frequency_controller=Pid(PidConfig(0, 0.01, 0, (0.7, 1), reversed=True)),
+            context=Context(), control_mode=WasteControlMode.NO_OUTBOARD
         ),
         fresh_water_control=FreshWaterControlState(
             context=Context(), control_mode=FreshWaterControlMode.READY

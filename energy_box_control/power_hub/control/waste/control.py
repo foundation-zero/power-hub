@@ -57,12 +57,12 @@ waste_transitions: dict[
 ] = {
     (
         WasteControlMode.NO_OUTBOARD,
-        WasteControlMode.MANUAL_RUN_OUTBOARD,
+        WasteControlMode.TOGGLE_OUTBOARD,
     ): manual_outboard_on,
     (
-        WasteControlMode.MANUAL_RUN_OUTBOARD,
-        WasteControlMode.NO_OUTBOARD,
-    ): ~manual_outboard_on,
+        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
+        WasteControlMode.TOGGLE_OUTBOARD,
+    ): manual_outboard_on,
     (WasteControlMode.NO_OUTBOARD, WasteControlMode.RUN_OUTBOARD): (
         Fn.const_pred(True).holds_true(
             Marker("Prevent outboard pump from flip-flopping"), timedelta(minutes=2)
@@ -77,18 +77,28 @@ waste_transitions: dict[
     (
         WasteControlMode.RUN_OUTBOARD,
         WasteControlMode.TOGGLE_OUTBOARD,
-    ): high_temp_heat_dump
-    & diverge_heat_dump_outboard,
+    ): (high_temp_heat_dump & diverge_heat_dump_outboard)
+    | manual_outboard_on,
     (
         WasteControlMode.TOGGLE_OUTBOARD,
         WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
-    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1)),
+    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1))
+    & ~manual_outboard_on,
     (
         WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
         WasteControlMode.RUN_OUTBOARD,
     ): Fn.const_pred(True).holds_true(
         Marker("run outboard until temperatures have stabilized"), timedelta(minutes=10)
     ),
+    (
+        WasteControlMode.TOGGLE_OUTBOARD,
+        WasteControlMode.MANUAL_RUN_OUTBOARD,
+    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1))
+    & manual_outboard_on,
+    (
+        WasteControlMode.MANUAL_RUN_OUTBOARD,
+        WasteControlMode.NO_OUTBOARD,
+    ): ~manual_outboard_on,
 }
 
 waste_control_machine = StateMachine(WasteControlMode, waste_transitions)
@@ -109,22 +119,8 @@ def waste_control(
         time,
     )
 
-    if waste_control_mode in [
-        WasteControlMode.RUN_OUTBOARD,
-        WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
-    ]:
-        frequency_controller, frequency_control = (
-            control_state.waste_control.frequency_controller.run(
-                control_state.setpoints.waste_target_temperature,
-                sensors.rh33_heat_dump.cold_temperature,
-            )
-        )
-    else:  # off or toggle
-        frequency_controller = control_state.waste_control.frequency_controller
-        frequency_control = 0.5
-
     return (
-        WasteControlState(context, waste_control_mode, frequency_controller),
+        WasteControlState(context, waste_control_mode),
         power_hub.control(power_hub.outboard_pump).value(
             FrequencyPumpControl(
                 waste_control_mode
@@ -133,7 +129,7 @@ def waste_control(
                     WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
                     WasteControlMode.MANUAL_RUN_OUTBOARD,
                 ],
-                frequency_control,
+                0.5,
             )
         ),
     )
