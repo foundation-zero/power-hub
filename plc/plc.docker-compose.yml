@@ -87,5 +87,17 @@ services:
       PUBLISH_TIMEOUT_SECONDS: 30
       SUBSCRIBE_TO: "power_hub/#"
 
+  hmi_dashboard:
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    container_name: power_hub_dashboard
+    image: europe-west1-docker.pkg.dev/power-hub-423312/power-hub/dashboard:sha-5f925a4
+    ports:
+      - "8180:80"
+    networks:
+      - power_hub_control
+    logging: *logging
+
 networks:
   power_hub_control:
