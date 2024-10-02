@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from datetime import time
+from datetime import time, timezone
 
 from pydantic import BaseModel, Field
 
@@ -77,14 +77,20 @@ class Setpoints(BaseModel):
     cold_reservoir_min_temperature: Celsius = Field(
         description="minimum temperature of cold reservoir to be maintained by chillers"
     )
+    cold_supply_min_temperature: Celsius = Field(
+        description="temperature of cold reservoir below which cooling supply is enabled"
+    )
     cold_supply_max_temperature: Celsius = Field(
         description="temperature of water coming out of cold reservoir above which cooling supply stops"
     )
-    cooling_supply_disabled_time: time = Field(
-        description="time from which cooling supply is disabled"
+    cold_supply_disabled_time: time = Field(
+        description="Time from which cooling supply is disabled"
     )
-    cooling_supply_enabled_time: time = Field(
-        description="time from which cooling supply is enabled"
+    cold_supply_enabled_time: time = Field(
+        description="Time from which cooling supply is enabled"
+    )
+    cold_supply_outside_temperature_threshold: Celsius = Field(
+        description="Outside temperature below which cold supply shuts off"
     )
     chill_min_supply_temperature: Celsius = Field(
         description="temperature of chilled water below which cooling supply can start"
@@ -150,9 +156,11 @@ def initial_setpoints() -> Setpoints:
         cold_reservoir_min_temperature=14,
         cold_reservoir_max_temperature=16,
         chill_min_supply_temperature=14,
+        cold_supply_min_temperature=15,
         cold_supply_max_temperature=16,
-        cooling_supply_disabled_time=time(hour=22),
-        cooling_supply_enabled_time=time(hour=8),
+        cold_supply_disabled_time=time(hour=23, tzinfo=timezone.utc),
+        cold_supply_enabled_time=time(hour=10, tzinfo=timezone.utc),
+        cold_supply_outside_temperature_threshold=20,
         minimum_preheat_offset=1,
         waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
@@ -197,6 +205,6 @@ def initial_control_state() -> PowerHubControlState:
             context=Context(), control_mode=WaterTreatmentControlMode.NO_RUN
         ),
         cooling_supply_control=CoolingSupplyControlState(
-            context=Context(), control_mode=CoolingSupplyControlMode.NO_SUPPLY
+            context=Context(), control_mode=CoolingSupplyControlMode.ENABLED_NO_SUPPLY
         ),
     )
