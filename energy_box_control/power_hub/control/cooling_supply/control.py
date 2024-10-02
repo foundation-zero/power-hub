@@ -35,12 +35,8 @@ water_too_warm = Fn.pred(
 ) & Fn.pred(lambda _, sensors: sensors.cooling_demand_flow_sensor.flow > 0)
 
 scheduled_enabled = (
-    Fn.state(
-        lambda state: state.setpoints.cold_supply_disabled_time
-    ).current_time_is_before()
-    & Fn.state(
-        lambda state: state.setpoints.cold_supply_enabled_time
-    ).current_time_is_after()
+    Fn.state(lambda state: state.setpoints.cold_supply_enabled_time).now_is_after()
+    & Fn.state(lambda state: state.setpoints.cold_supply_disabled_time).now_is_before()
 )
 scheduled_disabled = ~scheduled_enabled
 

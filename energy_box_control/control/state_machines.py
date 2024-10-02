@@ -170,7 +170,7 @@ class WithinPredicate[ControlState, Sensors](Predicate[ControlState, Sensors]):
 
 
 @dataclass
-class TimeIsBeforeTimeOfDayPredicate[ControlState, Sensors](
+class NowIsBeforeTimeOfDayPredicate[ControlState, Sensors](
     Predicate[ControlState, Sensors]
 ):
     reference: "Value[ControlState, Sensors, time]"
@@ -183,7 +183,7 @@ class TimeIsBeforeTimeOfDayPredicate[ControlState, Sensors](
         time: datetime,
     ) -> bool:
         reference = self.reference.fn(control_state, sensors, time)
-        return time.time() <= reference
+        return time.timetz() <= reference
 
 
 def _comp[
@@ -203,15 +203,15 @@ class Value[ControlState, Sensors, V: float | int | datetime | time]:
     ) -> WithinPredicate[ControlState, Sensors]:
         return WithinPredicate(self, duration)
 
-    def current_time_is_before(
+    def now_is_before(
         self: "Value[ControlState, Sensors, time]",
-    ) -> TimeIsBeforeTimeOfDayPredicate[ControlState, Sensors]:
-        return TimeIsBeforeTimeOfDayPredicate(self)
+    ) -> NowIsBeforeTimeOfDayPredicate[ControlState, Sensors]:
+        return NowIsBeforeTimeOfDayPredicate(self)
 
-    def current_time_is_after(
+    def now_is_after(
         self: "Value[ControlState, Sensors, time]",
     ) -> Predicate[ControlState, Sensors]:
-        return ~TimeIsBeforeTimeOfDayPredicate(self)
+        return ~NowIsBeforeTimeOfDayPredicate(self)
 
     __lt__ = _comp(lambda a, b: a < b)
     __le__ = _comp(lambda a, b: a <= b)
