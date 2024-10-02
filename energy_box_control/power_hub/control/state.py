@@ -108,7 +108,7 @@ class Setpoints(BaseModel):
         description="maximum level of grey water tank for freshwater fill"
     )
     fresh_water_min_fill_ratio: Ratio = Field(
-        description="minimum level of fresh water"
+        description="minimum level of fresh water for filling technical"
     )
     filter_water_tank: bool = Field(description="run fresh water trough filter")
     low_battery: Ratio = Field(description="soc below which the chiller isn't used")
@@ -142,13 +142,13 @@ def initial_setpoints() -> Setpoints:
         pcm_max_temperature=95,
         target_charging_temperature_offset=2,
         minimum_charging_temperature_offset=1,
-        minimum_global_irradiance=20,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
-        pcm_discharged=72,
+        minimum_global_irradiance=100,  # at 20 W/m2 we should have around 16*20*.5 = 160W thermal yield, versus 60W electric for running the heat pipes pump
+        pcm_discharged=76,
         pcm_charged=79,
-        yazaki_minimum_chill_power=1000,  # Give the Yazaki a chance to do something
-        yazaki_inlet_target_temperature=100,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
-        cold_reservoir_min_temperature=15,
-        cold_reservoir_max_temperature=16.5,
+        yazaki_minimum_chill_power=500,  # Give the Yazaki a chance to do something
+        yazaki_inlet_target_temperature=1000,  # ideally lower than pcm charged temperature, set to 100 for now to just have the control valve open
+        cold_reservoir_min_temperature=14,
+        cold_reservoir_max_temperature=16,
         chill_min_supply_temperature=14,
         cold_supply_max_temperature=16,
         cooling_supply_disabled_time=time(hour=22),
@@ -159,9 +159,9 @@ def initial_setpoints() -> Setpoints:
         technical_water_max_fill_ratio=0.55,  # don't want to pull too much fresh water at once, so 100 liters intervals are pretty nice
         water_treatment_max_fill_ratio=1,  # avoid using water treatment
         water_treatment_min_fill_ratio=1,  # avoid using water treatment
-        fresh_water_min_fill_ratio=0.35,
+        fresh_water_min_fill_ratio=0.5,
         filter_water_tank=False,
-        low_battery=0.55,  # allow chiller to turn with current soc at shore power
+        low_battery=0.4,  # soc at which chiller shuts down
         high_heat_dump_temperature=38,
         heat_dump_outboard_divergence_temperature=3,
         manual_outboard_on=False,
@@ -174,9 +174,7 @@ def initial_control_state() -> PowerHubControlState:
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
-            feedback_valve_controller=Pid(
-                PidConfig(0, 0.005, 0, (0, 0.52))
-            ),  # can't fully bypass, otherwise temperature difference doesn't reach temperature sensor
+            feedback_valve_controller=Pid(PidConfig(0, 0.005, 0)),
             hot_switch_valve_position=HOT_SWITCH_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(

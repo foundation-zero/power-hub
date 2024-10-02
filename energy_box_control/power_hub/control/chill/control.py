@@ -34,11 +34,11 @@ should_chill = Fn.sensors(
 stop_chill = Fn.sensors(lambda sensors: sensors.cold_reservoir.temperature) < Fn.state(
     lambda state: state.setpoints.cold_reservoir_min_temperature
 )
-pcm_charged = Fn.sensors(lambda sensors: sensors.pcm.temperature) > Fn.state(
-    lambda state: state.setpoints.pcm_charged
+pcm_charged = Fn.pred(
+    lambda state, sensors: sensors.pcm.temperature > state.setpoints.pcm_charged
 )
-pcm_discharged = Fn.sensors(lambda sensors: sensors.pcm.temperature) < Fn.state(
-    lambda state: state.setpoints.pcm_discharged
+pcm_discharged = Fn.pred(
+    lambda state, sensors: sensors.pcm.temperature < state.setpoints.pcm_discharged
 )
 low_yazaki_chill_power = Fn.pred(
     lambda control_state, sensors: sensors.yazaki.chill_power
@@ -94,7 +94,10 @@ chill_transitions: dict[
     Predicate[PowerHubControlState, PowerHubSensors],
 ] = {
     (ChillControlMode.NO_CHILL, ChillControlMode.PREPARE_YAZAKI_VALVES): should_chill
-    & pcm_charged,  # try to chill with Yazaki if PCM is at temperature
+    & pcm_charged.holds_true(
+        Marker("Make sure PCM temperature has been at charged temperature for an hour"),
+        timedelta(hours=1),
+    ),
     (
         ChillControlMode.PREPARE_YAZAKI_VALVES,
         ChillControlMode.CHECK_YAZAKI_BOUNDS,
@@ -121,11 +124,14 @@ chill_transitions: dict[
     & (
         pcm_discharged
         | low_yazaki_chill_power.holds_true(
-            Marker("Yazaki not supplying chill"), timedelta(minutes=5)
+            Marker("Yazaki not supplying chill"), timedelta(minutes=30)
         )
         | Fn.const_pred(True).holds_true(
             Marker("Switch off Yazaki after two hours to engage Electric chiller"),
             timedelta(hours=2),
+        )
+        | outside_yazaki_bounds.holds_true(
+            Marker("Outside reference values"), timedelta(minutes=10)
         )
     )
     & ~low_battery,  # switch from Yazaki to chiller if PCM is fully discharged
