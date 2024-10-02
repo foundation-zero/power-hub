@@ -163,7 +163,7 @@ def initial_setpoints() -> Setpoints:
         cold_supply_max_temperature=16,
         cold_supply_disabled_time=time(hour=23, tzinfo=timezone.utc),
         cold_supply_enabled_time=time(hour=10, tzinfo=timezone.utc),
-        cold_supply_outside_temperature_threshold=22,
+        cold_supply_outside_temperature_threshold=20,
         minimum_preheat_offset=1,
         waste_target_temperature=28,
         technical_water_min_fill_ratio=0.5,  # want to keep enough technical water that we have some margin if there is an issue; max is 0.8, so this is ~50%
