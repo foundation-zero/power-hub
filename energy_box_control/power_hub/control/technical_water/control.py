@@ -18,7 +18,16 @@ from energy_box_control.power_hub.components import (
 from energy_box_control.appliances.valve import ValveControl
 
 from energy_box_control.power_hub.sensors import PowerHubSensors
+from energy_box_control.power_hub.components import black_water_tank
 
+BLACK_WATER_TANK_SAFETY_MARGIN = 50
+
+could_overflow_black = Fn.pred(
+    lambda _, sensors: (
+        sensors.technical_water_tank.fill + sensors.black_water_tank.fill
+    )
+    > (black_water_tank.capacity - BLACK_WATER_TANK_SAFETY_MARGIN)
+)
 
 should_fill_technical_from_fresh = Fn.pred(
     lambda control_state, sensors: sensors.technical_water_tank.fill_ratio
@@ -43,12 +52,14 @@ technical_water_transitions: dict[
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
         TechnicalWaterControlMode.FILL_FROM_FRESH,
     ): should_fill_technical_from_fresh
-    & has_sufficient_fresh,
+    & has_sufficient_fresh
+    & ~could_overflow_black,
     (
         TechnicalWaterControlMode.FILL_FROM_FRESH,
         TechnicalWaterControlMode.NO_FILL_FROM_FRESH,
     ): stop_fill_technical_from_fresh
-    | ~has_sufficient_fresh,
+    | ~has_sufficient_fresh
+    | could_overflow_black,
 }
 
 technical_water_control_machine = StateMachine(
