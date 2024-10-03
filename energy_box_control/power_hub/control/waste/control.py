@@ -28,8 +28,8 @@ water_maker_on = Fn.pred(
     == WaterMakerStatus.WATER_PRODUCTION.value
 )
 water_maker_off = Fn.pred(
-    lambda _, sensors: not sensors.water_maker.status
-    == WaterMakerStatus.WATER_PRODUCTION.value
+    lambda _, sensors: sensors.water_maker.status
+    != WaterMakerStatus.WATER_PRODUCTION.value
 )
 high_temp_heat_dump = Fn.pred(
     lambda control_state, sensors: sensors.rh33_heat_dump.average_temperature()

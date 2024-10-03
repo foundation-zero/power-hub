@@ -1,0 +1,31 @@
+name: HMI
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - run: pipx install poetry==1.7.1
+
+      - run: poetry install
+
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+
+      - name: Run simulation notebook
+        run: poetry run jupyter nbconvert --execute --to html control_graph.ipynb
+        working-directory: analysis
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: control_graphs
+          path: "analysis/control_graphs/*.svg"
