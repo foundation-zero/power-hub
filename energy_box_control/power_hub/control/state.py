@@ -186,7 +186,7 @@ def initial_control_state() -> PowerHubControlState:
         hot_control=HotControlState(
             context=Context(),
             control_mode=HotControlMode.IDLE,
-            feedback_valve_controller=Pid(PidConfig(0, 0.005, 0)),
+            feedback_valve_controller=Pid(PidConfig(0, 0.005, 0, (0, 1))),
             hot_switch_valve_position=HOT_SWITCH_VALVE_PCM_POSITION,
         ),
         chill_control=ChillControlState(
