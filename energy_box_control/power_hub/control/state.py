@@ -158,8 +158,12 @@ def initial_setpoints() -> Setpoints:
         chill_min_supply_temperature=14,
         cold_supply_min_temperature=15,
         cold_supply_max_temperature=16,
-        cold_supply_disabled_time=time(hour=23, tzinfo=timezone.utc),
-        cold_supply_enabled_time=time(hour=10, tzinfo=timezone.utc),
+        cold_supply_disabled_time=time(
+            hour=20, tzinfo=timezone.utc
+        ),  # 10pm in Barcelona (in summer)
+        cold_supply_enabled_time=time(
+            hour=7, tzinfo=timezone.utc
+        ),  # 9am in Barcelona (in summer)
         cold_supply_outside_temperature_threshold=20,
         minimum_preheat_offset=1,
         waste_target_temperature=28,
