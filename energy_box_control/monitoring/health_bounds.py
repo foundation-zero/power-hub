@@ -69,4 +69,4 @@ HEAT_PIPES_BOUNDS = {
 }
 
 
-BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.35, 1)}
+BATTERY_HEALTH_BOUNDS = {"soc": HealthBound(0.29, 1)}
