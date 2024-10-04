@@ -82,7 +82,9 @@ waste_transitions: dict[
     (
         WasteControlMode.TOGGLE_OUTBOARD,
         WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
-    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1))
+    ): Fn.const_pred(True).holds_true(
+        Marker("Keep low for run after toggle"), timedelta(seconds=1)
+    )
     & ~manual_outboard_on,
     (
         WasteControlMode.RUN_OUTBOARD_AFTER_TOGGLE,
@@ -93,7 +95,9 @@ waste_transitions: dict[
     (
         WasteControlMode.TOGGLE_OUTBOARD,
         WasteControlMode.MANUAL_RUN_OUTBOARD,
-    ): Fn.const_pred(True).holds_true(Marker("Keep low"), timedelta(seconds=1))
+    ): Fn.const_pred(True).holds_true(
+        Marker("Keep low for manual run"), timedelta(seconds=1)
+    )
     & manual_outboard_on,
     (
         WasteControlMode.MANUAL_RUN_OUTBOARD,
