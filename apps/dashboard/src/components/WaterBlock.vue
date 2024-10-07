@@ -13,14 +13,14 @@
       <div class="d-flex align-center">
         <ThresholdAlarm
           v-if="thresholds?.[0]"
-          :threshold="thresholds?.[0]"
+          :threshold="(thresholds?.[0] ?? 0) * max"
           icon="far fa-bell"
           unit="L"
         />
         <ThresholdAlarm
           v-if="thresholds?.[1]"
           class="ml-2"
-          :threshold="thresholds?.[1]"
+          :threshold="(thresholds?.[1] ?? 0) * max"
           unit="L"
         />
       </div>
