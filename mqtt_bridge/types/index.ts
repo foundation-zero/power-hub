@@ -1,4 +1,4 @@
-import { MqttProtocol } from "mqtt";
+import { IPublishPacket, MqttProtocol } from "mqtt";
 
 export interface MqttBrokerAuth {
   username?: string;
@@ -16,7 +16,7 @@ export interface MqttBrokerOptions {
 }
 
 export type MqttMessage = string | Buffer;
-export type MqttTopicMessage = [topic: string, message: MqttMessage];
+export type MqttTopicMessage = [topic: string, message: MqttMessage, packet?: IPublishPacket];
 
 export interface MqttBridgeOptions {
   connectionTimeoutSeconds: number;
