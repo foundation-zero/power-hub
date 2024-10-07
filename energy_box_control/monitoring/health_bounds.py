@@ -17,7 +17,7 @@ TANK_BOUNDS = {
     ),  # 80 cm is max, 92 cm is 1000 L * 2, need some margin to actually get the black water service in there
     "technical_water_tank": HealthBound(0.4, 0.8),
     "fresh_water_tank": HealthBound(
-        0.325, 0.85
+        0.325, 0.9
     ),  # water maker kicks in around 375 liters
 }
 
