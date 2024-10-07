@@ -1,4 +1,4 @@
-import { MqttClient, connectAsync } from "mqtt";
+import { IPublishPacket, MqttClient, connectAsync } from "mqtt";
 import { MqttBrokerOptions, MqttMessage, MqttTopicMessage } from "../types/index.js";
 import { Rx, Tx } from "./channel.mjs";
 
@@ -48,8 +48,8 @@ export class MqttBroker {
         console.error(`Error occurred on ${this.name}: ${e}`),
       );
 
-      this.client.on("message", (topic: string, message: Buffer) => {
-        tx.queue([topic, message]);
+      this.client.on("message", (topic: string, message: Buffer, packet: IPublishPacket) => {
+        tx.queue([topic, message, packet]);
         this.lastMessageReceived = new Date();
       });
       await this.subscribeToTopics();
@@ -85,14 +85,19 @@ export class MqttBroker {
     }
   }
 
-  public async publish(topic: string, message: MqttMessage, retryQueue: MqttTopicMessage[]) {
+  public async publish(
+    topic: string,
+    message: MqttMessage,
+    packet?: IPublishPacket,
+    retryQueue: MqttTopicMessage[] = [],
+  ) {
     if (!this.client || !this.isConnected()) {
-      retryQueue.push([topic, message]);
+      retryQueue.push([topic, message, packet]);
       return;
     }
 
     try {
-      await this.client.publishAsync(topic, message);
+      await this.client.publishAsync(topic, message, { retain: packet?.retain });
       this.lastMessageSent = new Date();
     } catch (e) {
       // If it fails because of a parse error we should not try and publish again, it will yield the same result.
@@ -111,7 +116,7 @@ export class MqttBroker {
     }
 
     try {
-      await this.publish("health/bridge", "connected", []);
+      await this.publish("health/bridge", "connected");
       return true;
     } catch (e) {
       return false;
