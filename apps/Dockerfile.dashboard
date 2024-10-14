@@ -1,20 +1,49 @@
+FROM --platform=$BUILDPLATFORM python:3.12-bookworm AS control_graph
+ENV POETRY_HOME="/opt/poetry"
+
+
+RUN apt-get update && apt-get install -y graphviz \
+&& python -m venv ${POETRY_HOME} \
+&& ${POETRY_HOME}/bin/pip install poetry==1.8.2 \
+&& ${POETRY_HOME}/bin/poetry --version
+
+COPY ./pyproject.toml ./poetry.lock /app/
+
+WORKDIR /app/
+
+RUN ${POETRY_HOME}/bin/poetry install
+
+COPY . .
+
+RUN ${POETRY_HOME}/bin/poetry install
+
+WORKDIR /app/analysis
+RUN ${POETRY_HOME}/bin/poetry run jupyter nbconvert --execute --to html control_graph.ipynb
+
 FROM node:20-slim AS build-stage
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-COPY package*.json ./
-RUN pnpm install 
-COPY . .
+COPY apps/package*.json ./apps/
+
+WORKDIR /app/apps
+RUN pnpm install
+
+COPY ./apps ./
+COPY --from=control_graph /app/analysis/control_graphs /app/apps/dashboard/public/control-graphs
+
+WORKDIR /app/apps
+
 # This command puts the token secret into the env (for this run command only!)
 RUN --mount=type=secret,id=POWER_HUB_API_TOKEN \
   export VITE_API_BEARER_TOKEN=$(cat /run/secrets/POWER_HUB_API_TOKEN) && \
   pnpm build:dashboard:powerhub
 
 FROM nginx:stable-alpine AS production-stage
-COPY --from=build-stage /app/dashboard/dist /usr/share/nginx/html
-COPY ./dashboard/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build-stage /app/apps/dashboard/dist /usr/share/nginx/html
+COPY ./apps/dashboard/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
