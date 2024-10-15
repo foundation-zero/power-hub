@@ -24,7 +24,7 @@
           :history="useLast24Hours('freshWaterTank/fillRatio')"
           :max="WATER_TANK_CAPACITY.freshWater"
           :status="freshWaterStatus"
-          :thresholds="WATER_TANK_THRESHOLDS.freshWater"
+          :thresholds="[setPoints?.freshWaterMinFillRatio]"
         />
       </v-col>
       <v-col
@@ -40,7 +40,10 @@
           :value="useValue('greyWaterTank/fillRatio')"
           :history="useLast24Hours('greyWaterTank/fillRatio')"
           :max="WATER_TANK_CAPACITY.greyWater"
-          :thresholds="WATER_TANK_THRESHOLDS.greyWater"
+          :thresholds="[
+            setPoints?.waterTreatmentMinFillRatio,
+            setPoints?.waterTreatmentMaxFillRatio,
+          ]"
         />
       </v-col>
       <v-col
@@ -55,7 +58,10 @@
           :value="useValue('technicalWaterTank/fillRatio')"
           :history="useLast24Hours('technicalWaterTank/fillRatio')"
           :status="technicalWaterStatus"
-          :thresholds="WATER_TANK_THRESHOLDS.technicalWater"
+          :thresholds="[
+            setPoints?.technicalWaterMinFillRatio,
+            setPoints?.technicalWaterMaxFillRatio,
+          ]"
           :max="WATER_TANK_CAPACITY.technicalWater"
         />
       </v-col>
@@ -71,7 +77,6 @@
           color="grey-lighten-3"
           :value="useValue('blackWaterTank/fillRatio')"
           :history="useLast24Hours('blackWaterTank/fillRatio')"
-          :thresholds="WATER_TANK_THRESHOLDS.blackWater"
           :max="WATER_TANK_CAPACITY.blackWater"
         />
       </v-col>
@@ -99,16 +104,14 @@ import WaterBlock from "./WaterBlock.vue";
 import { useObservable } from "@vueuse/rxjs";
 import type { PowerHubStore } from "@shared/stores/power-hub";
 import { map } from "rxjs";
-import {
-  WATER_MAKER_STATUS,
-  WATER_TANK_CAPACITY,
-  WATER_TANK_THRESHOLDS,
-} from "@dashboard/utils/const";
+import { WATER_MAKER_STATUS, WATER_TANK_CAPACITY } from "@dashboard/utils/const";
 import { useLast24Hours, useSensorValue } from "@shared/utils";
 import FlowBlock from "./FlowBlock.vue";
 
 const { powerHub } = defineProps<{ powerHub: PowerHubStore }>();
 const useValue = useSensorValue(powerHub);
+
+const setPoints = useObservable(powerHub.setpoints.useTopic());
 
 const freshWaterStatus = useObservable(
   powerHub.controlValues
