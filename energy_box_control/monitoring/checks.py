@@ -608,6 +608,7 @@ all_checks = (
     + battery_alarm_checks
     + battery_warning_checks
     + battery_soc_checks
+    + shore_power_available_checks
     + weather_station_alarm_checks
     + valve_alarm_checks
     + pump_alarm_checks
