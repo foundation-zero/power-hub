@@ -6,3 +6,10 @@ services:
     container_name: powerhub-dashboard
     ports:
       - 8180:80
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.14
+    restart: always
+    volumes:
+      - ../plc/mosquitto:/mosquitto/config
+      - ./certs/ISRG_ROOT_X1.crt:/mosquitto/certs/ca.crt
