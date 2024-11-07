@@ -1,9 +1,9 @@
-name: HMI
+name: PowerHub HMI
 on:
   push:
 
 jobs:
-  test:
+  graphs:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,3 +29,113 @@ jobs:
         with:
           name: control_graphs
           path: "analysis/control_graphs/*.svg"
+
+  app-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "./apps/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: apps/pnpm-lock.yaml
+
+      - run: pnpm install
+        working-directory: apps
+
+      - run: pnpm lint --max-warnings 0
+        working-directory: apps
+
+      - run: pnpm type-check
+        working-directory: apps
+
+      - run: pnpm test:unit
+        working-directory: apps
+
+  deploy:
+    needs: app-test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Extract alias
+        shell: bash
+        run: |
+          export BRANCH=${GITHUB_REF#refs/heads/}
+          echo alias=$(ruby -e "puts '$BRANCH'.tr('/_', '-').chomp('-')[0..27]") >> $GITHUB_OUTPUT
+        id: extract-alias
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create Dashboard GitHub deployment
+        id: dashboard_deployment
+        with:
+          token: "${{ github.token }}"
+          initial-status: success
+          environment-url: http://${{steps.extract-alias.outputs.alias}}.power-hub-dashboard.pages.dev
+          environment: ${{steps.deploy.outputs.environment}}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node env
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: "./apps/.nvmrc"
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install dependencies
+        working-directory: ./apps
+        run: pnpm install
+
+      - name: Download latest control graphs
+        uses: actions/download-artifact@v4
+        with:
+          name: control_graphs
+          path: "./apps/dashboard/public/control-graphs"
+          github-token: ${{ secrets.GH_PAT }}
+          repository: ${{ github.repository }}
+
+      - name: Generate Dashboard
+        working-directory: ./apps
+        run: pnpm build:dashboard
+        env:
+          VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
+
+      - name: Deploy Dashboard (Public)
+        id: deploy_dashboard
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: power-hub-dashboard
+          directory: "./apps/dashboard/dist"
+          wranglerVersion: 3
+
+  docker-build-push:
+    uses: ./.github/workflows/docker.yml
+    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    needs: app-test
+    secrets: inherit
+
+    with:
+      gcp_project_id: ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
+      gcp_workload_identity_provider: ${{  github.event_name == 'release' &&  vars.PROD_WORKLOAD_IDENTITY_PROVIDER || vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
+      gcp_service_account: ${{  github.event_name == 'release' &&  vars.PROD_SERVICE_ACCOUNT || vars.STAGING_SERVICE_ACCOUNT}}
+      application_name: "dashboard"
+      docker_file: "apps/Dockerfile.dashboard.powerhub"
+      context: "./apps"

@@ -10,7 +10,13 @@ import {
 } from "@shared/api";
 import { MqttClient } from "@shared/mqtt";
 import type { NestedPath, PathValue, WeatherInfo } from "@shared/types";
-import type { SumTree, SensorsTree, ControlValues, Setpoints } from "@shared/types/power-hub";
+import type {
+  SumTree,
+  SensorsTree,
+  ControlValues,
+  Setpoints,
+  ControlModes,
+} from "@shared/types/power-hub";
 import { toCamelCase, findValue, pick } from "@shared/utils";
 import { defineStore } from "pinia";
 import { map, Observable } from "rxjs";
@@ -54,7 +60,7 @@ export const usePowerHubStore = defineStore("powerHub", () => {
   };
 
   const controlModes = {
-    useTopic: () => useTopic<ControlValues>("control_modes"),
+    useTopic: () => useTopic<ControlModes>("control_modes"),
   };
 
   const setpoints = {

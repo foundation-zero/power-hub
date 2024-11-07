@@ -275,3 +275,14 @@ export interface ControlValues {
   waterTreatment: Appliance;
   // time: number;
 }
+
+export interface ControlModes {
+  hotControl: string;
+  chillControl: string;
+  wasteControl: string;
+  freshWaterControl: string;
+  technicalWaterControl: string;
+  waterTreatmentControl: string;
+  coolingSupplyControl: string;
+  time: number;
+}
