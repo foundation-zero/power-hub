@@ -1,4 +1,4 @@
-name: PowerHub Apps
+name: PowerHub Demo
 on:
   push:
 
@@ -22,7 +22,7 @@ jobs:
       - run: pnpm install
         working-directory: apps
 
-      - run: pnpm lint
+      - run: pnpm lint --max-warnings 0
         working-directory: apps
 
       - run: pnpm type-check
@@ -46,15 +46,6 @@ jobs:
           export BRANCH=${GITHUB_REF#refs/heads/}
           echo alias=$(ruby -e "puts '$BRANCH'.tr('/_', '-').chomp('-')[0..27]") >> $GITHUB_OUTPUT
         id: extract-alias
-
-      - uses: chrnorm/deployment-action@v2
-        name: Create Dashboard GitHub deployment
-        id: dashboard_deployment
-        with:
-          token: "${{ github.token }}"
-          initial-status: success
-          environment-url: http://${{steps.extract-alias.outputs.alias}}.power-hub-dashboard.pages.dev
-          environment: ${{steps.deploy.outputs.environment}}
 
       - uses: chrnorm/deployment-action@v2
         name: Create Demo GitHub deployment
@@ -84,26 +75,6 @@ jobs:
         working-directory: ./apps
         run: pnpm install
 
-      - name: Lint check
-        working-directory: ./apps
-        run: pnpm lint --max-warnings 0
-
-      - name: Generate Dashboard
-        working-directory: ./apps
-        run: pnpm build:dashboard
-        env:
-          VITE_API_BEARER_TOKEN: ${{secrets.POWER_HUB_API_TOKEN}}
-
-      - name: Deploy Dashboard (Public)
-        id: deploy_dashboard
-        uses: cloudflare/pages-action@1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: power-hub-dashboard
-          directory: "./apps/dashboard/dist"
-          wranglerVersion: 3
-
       - name: Generate Demo
         working-directory: ./apps
         run: pnpm build:demo
@@ -119,17 +90,3 @@ jobs:
           projectName: power-hub
           directory: "./apps/demo/dist"
           wranglerVersion: 3
-
-  docker-build-push:
-    uses: ./.github/workflows/docker.yml
-    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    needs: test
-    secrets: inherit
-
-    with:
-      gcp_project_id: ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
-      gcp_workload_identity_provider: ${{  github.event_name == 'release' &&  vars.PROD_WORKLOAD_IDENTITY_PROVIDER || vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-      gcp_service_account: ${{  github.event_name == 'release' &&  vars.PROD_SERVICE_ACCOUNT || vars.STAGING_SERVICE_ACCOUNT}}
-      application_name: "dashboard"
-      docker_file: "apps/Dockerfile.dashboard"
-      context: "./apps"
