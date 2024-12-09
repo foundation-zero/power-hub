@@ -272,7 +272,7 @@ def sensors(scheduled_power_hub, state):
 def test_cold_supply_schedule(
     scheduled_power_hub, state, control_state, control_values, sensors
 ):
-
+    control_state.setpoints.cold_supply_outside_temperature_threshold = -100
     control_state.setpoints.cold_supply_enabled_time = replace(
         state.time, step=3
     ).timestamp.timetz()
