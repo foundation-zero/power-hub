@@ -5,3 +5,7 @@ Run the command below to quickly read a mqtt value from the PLC.
 ```bash
 ./read_mqtt.sh <appliance>
 ```
+
+## TODOs
+
+* Fix kWh meter attributes in CodeSys
