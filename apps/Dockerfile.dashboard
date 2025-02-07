@@ -3,9 +3,9 @@ ENV POETRY_HOME="/opt/poetry"
 
 
 RUN apt-get update && apt-get install -y graphviz \
-&& python -m venv ${POETRY_HOME} \
-&& ${POETRY_HOME}/bin/pip install poetry==1.8.2 \
-&& ${POETRY_HOME}/bin/poetry --version
+  && python -m venv ${POETRY_HOME} \
+  && ${POETRY_HOME}/bin/pip install poetry==1.8.2 \
+  && ${POETRY_HOME}/bin/poetry --version
 
 COPY ./pyproject.toml ./poetry.lock /app/
 
@@ -20,9 +20,11 @@ RUN ${POETRY_HOME}/bin/poetry install
 WORKDIR /app/analysis
 RUN ${POETRY_HOME}/bin/poetry run jupyter nbconvert --execute --to html control_graph.ipynb
 
-FROM node:20-slim AS build-stage
+FROM node:22-slim AS build-stage
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# Update corepack to version with proper keys
+RUN npm install -g corepack@0.31
 RUN corepack enable
 WORKDIR /app
 
