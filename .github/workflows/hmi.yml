@@ -125,17 +125,3 @@ jobs:
           projectName: power-hub-dashboard
           directory: "./apps/dashboard/dist"
           wranglerVersion: 3
-
-  docker-build-push:
-    uses: ./.github/workflows/docker.yml
-    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    needs: app-test
-    secrets: inherit
-
-    with:
-      gcp_project_id: ${{  github.event_name == 'release' && 'power-hub-prod' || 'power-hub-423312' }}
-      gcp_workload_identity_provider: ${{  github.event_name == 'release' &&  vars.PROD_WORKLOAD_IDENTITY_PROVIDER || vars.STAGING_WORKLOAD_IDENTITY_PROVIDER}}
-      gcp_service_account: ${{  github.event_name == 'release' &&  vars.PROD_SERVICE_ACCOUNT || vars.STAGING_SERVICE_ACCOUNT}}
-      application_name: "dashboard"
-      docker_file: "apps/Dockerfile.dashboard.powerhub"
-      context: "./apps"
