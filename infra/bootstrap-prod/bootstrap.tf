@@ -14,7 +14,7 @@ resource "google_kms_key_ring" "terraform_state" {
 resource "google_kms_crypto_key" "terraform_state_bucket" {
   name            = "${var.name}-${var.env}-state-bucket"
   key_ring        = google_kms_key_ring.terraform_state.id
-  rotation_period = "86400s"
+  rotation_period = "7776000s" # 90 days; each key version is billed monthly
 
   lifecycle {
     prevent_destroy = false
