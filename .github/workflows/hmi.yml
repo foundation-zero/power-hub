@@ -118,10 +118,10 @@ jobs:
 
       - name: Deploy Dashboard (Public)
         id: deploy_dashboard
-        uses: cloudflare/pages-action@1
+        # cloudflare/pages-action was removed; wrangler-action is its replacement
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: power-hub-dashboard
-          directory: "./apps/dashboard/dist"
-          wranglerVersion: 3
+          wranglerVersion: "3"
+          command: pages deploy ./apps/dashboard/dist --project-name=power-hub-dashboard --branch=${{ github.ref_name }}
