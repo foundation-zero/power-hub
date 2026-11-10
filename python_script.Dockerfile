@@ -15,8 +15,10 @@ RUN ${POETRY_HOME}/bin/poetry export -f requirements.txt --output requirements.t
 FROM python:3.12-bookworm AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# libc6-dev is not pinned: it has to match the libc6 of the base image, and Debian drops
+# old versions from the archive on every point release, which breaks the build.
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y gcc=4:12.2.0-3 musl-dev=1.2.3-1 libc6-dev=2.36-9+deb12u9 cmake=3.25.1-1
+  && apt-get install --no-install-recommends -y gcc=4:12.2.0-3 musl-dev=1.2.3-1 libc6-dev cmake=3.25.1-1
 
 WORKDIR /app
 

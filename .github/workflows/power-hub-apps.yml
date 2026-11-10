@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          package_json_file: apps/package.json # use the packageManager pnpm version
 
       - uses: actions/setup-node@v4
         with:
@@ -19,7 +19,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: apps/pnpm-lock.yaml
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
         working-directory: apps
 
       - run: pnpm lint --max-warnings 0
@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           export BRANCH=${GITHUB_REF#refs/heads/}
-          echo alias=$(ruby -e "puts '$BRANCH'.tr('/_', '-').chomp('-')[0..27]") >> $GITHUB_OUTPUT
+          echo "alias=$(ruby -e "puts ENV['BRANCH'].tr('/_', '-').chomp('-')[0..27]")" >> "$GITHUB_OUTPUT"
         id: extract-alias
 
       - uses: chrnorm/deployment-action@v2
@@ -64,16 +64,16 @@ jobs:
         with:
           node-version-file: "./apps/.nvmrc"
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          package_json_file: apps/package.json # use the packageManager pnpm version
           run_install: false
 
       - name: Install dependencies
         working-directory: ./apps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Demo
         working-directory: ./apps
@@ -83,10 +83,9 @@ jobs:
 
       - name: Deploy Demo
         id: deploy_demo
-        uses: cloudflare/pages-action@1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: power-hub
-          directory: "./apps/demo/dist"
-          wranglerVersion: 3
+        # the branch name is passed via env, never interpolated into the script
+        run: npx --yes wrangler@3 pages deploy ./apps/demo/dist --project-name=power-hub --branch="$BRANCH"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BRANCH: ${{ github.ref_name }}
