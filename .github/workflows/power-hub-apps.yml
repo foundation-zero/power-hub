@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          package_json_file: apps/package.json # use the packageManager pnpm version
 
       - uses: actions/setup-node@v4
         with:
@@ -19,7 +19,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: apps/pnpm-lock.yaml
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
         working-directory: apps
 
       - run: pnpm lint --max-warnings 0
@@ -64,16 +64,16 @@ jobs:
         with:
           node-version-file: "./apps/.nvmrc"
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          package_json_file: apps/package.json # use the packageManager pnpm version
           run_install: false
 
       - name: Install dependencies
         working-directory: ./apps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Demo
         working-directory: ./apps
