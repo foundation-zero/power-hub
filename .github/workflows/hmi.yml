@@ -71,7 +71,7 @@ jobs:
         shell: bash
         run: |
           export BRANCH=${GITHUB_REF#refs/heads/}
-          echo alias=$(ruby -e "puts '$BRANCH'.tr('/_', '-').chomp('-')[0..27]") >> $GITHUB_OUTPUT
+          echo "alias=$(ruby -e "puts ENV['BRANCH'].tr('/_', '-').chomp('-')[0..27]")" >> "$GITHUB_OUTPUT"
         id: extract-alias
 
       - uses: chrnorm/deployment-action@v2
@@ -117,10 +117,9 @@ jobs:
 
       - name: Deploy Dashboard (Public)
         id: deploy_dashboard
-        # cloudflare/pages-action was removed; wrangler-action is its replacement
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "3"
-          command: pages deploy ./apps/dashboard/dist --project-name=power-hub-dashboard --branch=${{ github.ref_name }}
+        # the branch name is passed via env, never interpolated into the script
+        run: npx --yes wrangler@3 pages deploy ./apps/dashboard/dist --project-name=power-hub-dashboard --branch="$BRANCH"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BRANCH: ${{ github.ref_name }}
